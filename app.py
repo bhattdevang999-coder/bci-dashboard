@@ -19,8 +19,6 @@ from collections import defaultdict
 
 from flask import Flask, request, jsonify, render_template, send_file, abort
 from flask_cors import CORS
-import pandas as pd
-
 import openpyxl
 from openpyxl.styles import PatternFill, Font, Border, Alignment
 from openpyxl.utils import get_column_letter, column_index_from_string
@@ -1840,8 +1838,8 @@ def generate_csv():
 
 
 # ═══ CATALOG HEALTH ═══
-import pandas as pd
-import numpy as np
+import csv
+# numpy removed — not needed
 
 # ── Catalog Health: in-memory session storage ──────────────────────────────────
 catalog_health_state = {
@@ -1953,25 +1951,42 @@ def detect_format(headers, detected_fields):
 
 
 def read_file_to_rows(file_storage):
-    """Read uploaded file (CSV, TSV, XLSX) into list of dicts."""
+    """Read uploaded file (CSV, TSV, XLSX) into list of dicts. No pandas needed."""
     filename = file_storage.filename.lower()
     content = file_storage.read()
     
-    try:
-        if filename.endswith(".xlsx") or filename.endswith(".xls"):
-            df = pd.read_excel(io.BytesIO(content), header=0, dtype=str)
-        elif filename.endswith(".tsv") or "\t" in content[:2000].decode("utf-8", errors="ignore"):
-            df = pd.read_csv(io.BytesIO(content), sep="\t", dtype=str, encoding_errors="replace")
-        else:
-            # Try comma CSV
-            df = pd.read_csv(io.BytesIO(content), sep=",", dtype=str, encoding_errors="replace")
-    except Exception:
-        # Last resort
-        df = pd.read_csv(io.BytesIO(content), sep=None, engine="python", dtype=str, encoding_errors="replace")
-    
-    df.columns = [str(c).strip() for c in df.columns]
-    df = df.where(pd.notna(df), "")
-    return df.to_dict("records"), list(df.columns)
+    if filename.endswith(".xlsx") or filename.endswith(".xls") or filename.endswith(".xlsm"):
+        wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True, read_only=True)
+        ws = wb.active
+        rows_iter = ws.iter_rows(values_only=True)
+        raw_headers = next(rows_iter, None)
+        if not raw_headers:
+            return [], []
+        headers = [str(h).strip() if h else f"col_{i}" for i, h in enumerate(raw_headers)]
+        records = []
+        for row_vals in rows_iter:
+            row_dict = {}
+            for i, val in enumerate(row_vals):
+                if i < len(headers):
+                    row_dict[headers[i]] = str(val).strip() if val is not None else ""
+            if any(v for v in row_dict.values()):
+                records.append(row_dict)
+        wb.close()
+        return records, headers
+    else:
+        # CSV or TSV
+        text = content.decode("utf-8", errors="replace")
+        # Detect separator
+        first_line = text.split("\n")[0] if text else ""
+        sep = "\t" if "\t" in first_line else ","
+        reader = csv.DictReader(io.StringIO(text), delimiter=sep)
+        headers = [str(f).strip() for f in (reader.fieldnames or [])]
+        records = []
+        for row in reader:
+            cleaned = {str(k).strip(): str(v).strip() if v else "" for k, v in row.items()}
+            if any(v for v in cleaned.values()):
+                records.append(cleaned)
+        return records, headers
 
 
 def score_content(row, detected_fields):
