@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+uploads/products/*
+uploads/keywords/*
+uploads/output/*
+!uploads/products/.gitkeep
+!uploads/keywords/.gitkeep
+!uploads/output/.gitkeep
+*.zip

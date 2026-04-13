@@ -1,0 +1,2998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIS Wizard v2 — Bhatt Commerce Intelligence</title>
+<style>
+  /* ── Design tokens ─────────────────────────────────── */
+  :root {
+    --bg:        #F7F6F2;
+    --surface:   #FFFFFF;
+    --accent:    #01696F;
+    --accent-lt: #E6F3F3;
+    --accent-dk: #015558;
+    --text:      #28251D;
+    --text-sec:  #7A7974;
+    --border:    #D4D1CA;
+    --error:     #C0392B;
+    --error-bg:  #FDECEA;
+    --warn:      #D68910;
+    --warn-bg:   #FEF9EC;
+    --success:   #1A7A50;
+    --success-bg:#E8F5EE;
+    --shadow:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.10);
+    --radius:    8px;
+    --font:      Calibri, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── Sidebar ───────────────────────────────────────── */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-mark {
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .logo-mark .b { color: var(--accent); }
+  .logo-mark .rest { color: var(--text); }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-sec);
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 16px 0;
+    overflow-y: auto;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-sec);
+    padding: 12px 20px 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    color: var(--text-sec);
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active {
+    background: var(--accent-lt);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .nav-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+    color: var(--text-sec);
+  }
+  .nav-item.active .nav-icon {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+  .sidebar-footer strong { color: var(--accent); }
+
+  .nav-section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 12px;
+  }
+
+  .nav-item-catalog {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    color: var(--text-sec);
+    user-select: none;
+  }
+  .nav-item-catalog:hover { background: var(--bg); color: var(--text); }
+  .nav-item-catalog.active {
+    background: var(--accent-lt);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .nav-catalog-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  /* ── Main content ──────────────────────────────────── */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .topbar-sub {
+    font-size: 13px;
+    color: var(--text-sec);
+    margin-top: 2px;
+  }
+  .topbar-right { display: flex; gap: 10px; align-items: center; }
+
+  .content {
+    flex: 1;
+    padding: 32px;
+    max-width: 960px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* ── Cards ─────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--accent-lt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .card-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .card-desc  { font-size: 13px; color: var(--text-sec); margin-top: 2px; }
+
+  /* ── Form controls ─────────────────────────────────── */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .form-label span { font-weight: 400; color: var(--text-sec); }
+
+  select, input[type="text"], input[type="number"], textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font);
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+    appearance: none;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237A7974' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; cursor: pointer; }
+  select:focus, input:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(1,105,111,.12);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ── Buttons ───────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-dk); }
+  .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: #EEECEA; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #145E3C; }
+  .btn-danger { background: var(--error); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Icon buttons for field actions ─────────────────── */
+  .field-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    color: var(--text-sec);
+  }
+  .field-action-btn:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+  .field-action-btn.accepted {
+    background: var(--success-bg);
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .field-action-btn.editing {
+    background: var(--accent-lt);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .field-action-btn.spinning { animation: spin 0.7s linear infinite; }
+
+  /* ── Upload zones ──────────────────────────────────── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    background: var(--bg);
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-lt);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .upload-zone-icon { font-size: 32px; margin-bottom: 10px; }
+  .upload-zone-text { font-size: 14px; color: var(--text-sec); }
+  .upload-zone-text strong { color: var(--accent); }
+  .upload-zone-hint { font-size: 12px; color: var(--text-sec); margin-top: 4px; }
+
+  .upload-success {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--success-bg);
+    border: 1px solid #A8D5BC;
+    border-radius: var(--radius);
+    color: var(--success);
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  /* ── Stats cards ───────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
+  .stat-num.error { color: var(--error); }
+  .stat-num.warn  { color: var(--warn); }
+  .stat-num.success { color: var(--success); }
+  .stat-label { font-size: 12px; color: var(--text-sec); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+
+  /* ── Alerts ────────────────────────────────────────── */
+  .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .alert-error   { background: var(--error-bg); color: var(--error); border: 1px solid #EAB0AA; }
+  .alert-warning { background: var(--warn-bg); color: var(--warn); border: 1px solid #F0D490; }
+  .alert-success { background: var(--success-bg); color: var(--success); border: 1px solid #A8D5BC; }
+  .alert-info    { background: var(--accent-lt); color: var(--accent-dk); border: 1px solid #A0CDD0; }
+  .alert-icon    { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Tables ────────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--bg);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-sec);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--bg);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-error   { background: var(--error-bg); color: var(--error); }
+  .badge-warning { background: var(--warn-bg);  color: var(--warn); }
+  .badge-success { background: var(--success-bg); color: var(--success); }
+  .badge-neutral { background: var(--bg); color: var(--text-sec); border: 1px solid var(--border); }
+
+  /* ── Accordion/Expandable ──────────────────────────── */
+  .accordion-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    background: var(--surface);
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .accordion-header:hover { background: var(--bg); }
+  .accordion-header-left { display: flex; align-items: center; gap: 10px; }
+  .accordion-title { font-weight: 700; font-size: 14px; }
+  .accordion-meta { font-size: 12px; color: var(--text-sec); }
+  .accordion-chevron {
+    transition: transform 0.2s;
+    color: var(--text-sec);
+    font-size: 12px;
+  }
+  .accordion-item.open .accordion-chevron { transform: rotate(180deg); }
+  .accordion-body {
+    display: none;
+    padding: 16px 18px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .accordion-item.open .accordion-body { display: block; }
+
+  /* ── Style cards (generated content) ──────────────── */
+  .style-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .style-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface);
+    transition: background 0.15s;
+  }
+  .style-card-header:hover { background: var(--bg); }
+  .style-card-body {
+    display: none;
+    padding: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .style-card.open .style-card-body { display: block; }
+
+  /* ── Field block with Why + action buttons ─────────── */
+  .field-block {
+    margin-bottom: 18px;
+  }
+  .field-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .field-block-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-sec);
+  }
+  .field-block-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .field-content-wrap {
+    position: relative;
+  }
+  .field-content {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font);
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 36px;
+  }
+  .field-content.accepted {
+    border-color: var(--success);
+    background: #FAFDFB;
+  }
+  .field-content.regenerating {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .field-content.alternative-shown {
+    border-color: var(--accent);
+    background: var(--accent-lt);
+  }
+
+  .field-alt-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .field-original-label {
+    font-size: 11px;
+    color: var(--text-sec);
+    font-style: italic;
+    margin-bottom: 4px;
+  }
+
+  .field-edit-area {
+    display: none;
+    margin-top: 8px;
+  }
+  .field-edit-area.visible { display: block; }
+  .field-edit-area textarea {
+    font-size: 13px;
+    min-height: 60px;
+  }
+
+  .char-counter {
+    font-size: 11px;
+    color: var(--text-sec);
+    text-align: right;
+    margin-top: 2px;
+  }
+  .char-counter.over-limit { color: var(--error); font-weight: 600; }
+
+  /* ── Why explanation ───────────────────────────────── */
+  .why-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+    margin-top: 4px;
+    user-select: none;
+    transition: opacity 0.15s;
+  }
+  .why-toggle:hover { opacity: 0.75; }
+  .why-toggle-arrow { font-size: 10px; transition: transform 0.2s; }
+  .why-content {
+    display: none;
+    margin-top: 6px;
+    padding: 10px 14px;
+    background: var(--accent-lt);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--accent-dk);
+    line-height: 1.6;
+    border-left: 3px solid var(--accent);
+  }
+  .why-content.open { display: block; }
+  .why-toggle.open .why-toggle-arrow { transform: rotate(90deg); }
+
+  /* ── Info box ──────────────────────────────────────── */
+  .info-box {
+    background: var(--accent-lt);
+    border: 1px solid #A0CDD0;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--accent-dk);
+    margin-bottom: 16px;
+  }
+  .info-box h4 { font-weight: 700; margin-bottom: 6px; }
+  .info-box ol, .info-box ul { padding-left: 18px; }
+  .info-box li { margin-bottom: 4px; }
+
+  /* ── Config summary ────────────────────────────────── */
+  .config-summary {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .config-item-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-sec); }
+  .config-item-val   { font-size: 14px; color: var(--text); font-weight: 600; margin-top: 2px; }
+
+  /* ── Loading spinner ───────────────────────────────── */
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .spinner.dark {
+    border-color: rgba(1,105,111,.2);
+    border-top-color: var(--accent);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Progress bar ──────────────────────────────────── */
+  .progress-bar-wrap {
+    background: var(--bg);
+    border-radius: 20px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 20px;
+    transition: width 0.3s ease;
+  }
+
+  /* ── Optional tag ──────────────────────────────────── */
+  .optional-tag {
+    display: inline-block;
+    background: #F0EDE8;
+    color: var(--text-sec);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    vertical-align: middle;
+    margin-left: 6px;
+  }
+
+  /* ── Color dot ─────────────────────────────────────── */
+  .color-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: currentColor;
+    margin-right: 4px;
+    border: 1px solid rgba(0,0,0,.15);
+    vertical-align: middle;
+  }
+
+  /* ── Detection card ────────────────────────────────── */
+  .detection-card {
+    background: var(--accent-lt);
+    border: 1px solid #A0CDD0;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--accent-dk);
+  }
+  .detection-card strong { font-weight: 700; }
+
+  /* ── Download section ──────────────────────────────── */
+  .download-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 24px;
+    box-shadow: var(--shadow);
+  }
+  .download-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .download-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* ── Results table ─────────────────────────────────── */
+  .results-table tr td:last-child { white-space: nowrap; }
+
+  /* ── Catalog Health extras ─────────────────────────────────── */
+  #catalog-page { display: none; }
+  .ch-upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .ch-upload-grid { grid-template-columns: 1fr; } }
+
+  .ch-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 900px) { .ch-stats-grid { grid-template-columns: repeat(3,1fr); } }
+  @media (max-width: 560px) { .ch-stats-grid { grid-template-columns: repeat(2,1fr); } }
+
+  .ch-score-bar {
+    display: flex;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 10px;
+    margin-top: 6px;
+  }
+  .ch-score-bar span { display: block; height: 100%; }
+  .ch-score-green  { background: #1A7A50; }
+  .ch-score-yellow { background: #D68910; }
+  .ch-score-orange { background: #C0651B; }
+  .ch-score-red    { background: #C0392B; }
+
+  .sev-critical { background: #FDECEA; color: #C0392B; }
+  .sev-high     { background: #FEF3EC; color: #C0651B; }
+  .sev-medium   { background: #FEF9EC; color: #D68910; }
+  .sev-low      { background: #E6F3F3; color: #015558; }
+
+  .ch-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .ch-filters select, .ch-filters input[type=range] { width: auto; min-width: 140px; }
+  .ch-filters label { font-size: 12px; font-weight: 600; color: var(--text-sec); }
+  .ch-filter-group { display: flex; flex-direction: column; gap: 4px; }
+
+  .ch-issues-table th { cursor: pointer; user-select: none; }
+  .ch-issues-table th:hover { color: var(--accent); }
+  .ch-score-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .chip-green  { background: #E8F5EE; color: #1A7A50; }
+  .chip-yellow { background: #FEF9EC; color: #D68910; }
+  .chip-orange { background: #FEF3EC; color: #C0651B; }
+  .chip-red    { background: #FDECEA; color: #C0392B; }
+
+  .ch-row-expanded {
+    background: #FAFAF8;
+    border-top: 1px solid var(--border);
+  }
+  .ch-row-expanded td { padding: 12px 14px; font-size: 12px; }
+
+  .ch-matrix-grid { overflow-x: auto; }
+  .ch-matrix-table { border-collapse: collapse; min-width: 300px; }
+  .ch-matrix-table th, .ch-matrix-table td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: center;
+    font-size: 13px;
+    min-width: 80px;
+  }
+  .ch-matrix-table th { background: var(--bg); font-weight: 700; }
+  .ch-cell-present-green  { background: #E8F5EE; color: #1A7A50; font-weight: 700; }
+  .ch-cell-present-yellow { background: #FEF9EC; color: #D68910; font-weight: 700; }
+  .ch-cell-missing        { background: #FDECEA; color: #C0392B; font-weight: 700; }
+  .ch-cell-empty          { background: var(--bg); color: var(--text-sec); }
+
+  .ch-detection-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .ch-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .ch-pill-ok      { background: var(--success-bg); color: var(--success); }
+  .ch-pill-missing { background: var(--error-bg);   color: var(--error); }
+
+  .ch-help-toggle {
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .ch-help-content {
+    display: none;
+    margin-top: 8px;
+    padding: 10px 14px;
+    background: var(--accent-lt);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--accent-dk);
+    line-height: 1.6;
+  }
+  .ch-help-content.open { display: block; }
+
+  .ch-progress-overlay {
+    padding: 20px;
+    text-align: center;
+  }
+  .ch-progress-bar-wrap {
+    background: var(--bg);
+    border-radius: 20px;
+    height: 8px;
+    overflow: hidden;
+    margin: 12px 0;
+  }
+  .ch-progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 20px;
+    transition: width 0.4s ease;
+  }
+
+  .content-wide {
+    max-width: 1200px !important;
+  }
+
+  /* ── Utilities ─────────────────────────────────────── */
+  .hidden { display: none !important; }
+  .text-sec { color: var(--text-sec); }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mb-8 { margin-bottom: 8px; }
+  .flex { display: flex; }
+  .gap-8 { gap: 8px; }
+  .flex-wrap { flex-wrap: wrap; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+
+  /* ── Responsive ────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .content { padding: 20px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-row, .form-row-3 { grid-template-columns: 1fr; }
+    .config-summary { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── Scrollbar ─────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #BCB9B1; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ SIDEBAR ═══════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <span class="b">B</span><span class="rest">HATT</span>
+    </div>
+    <div class="logo-sub">Commerce Intelligence</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-label">NIS Creation</div>
+    <div class="nav-item active" id="nav-nis" onclick="showNISPage()">
+      <span class="nav-icon">✦</span> Upload &amp; Generate
+    </div>
+
+    <div class="nav-section-divider"></div>
+    <div class="nav-label">Catalog Health</div>
+    <div class="nav-item-catalog" id="nav-catalog" onclick="showCatalogPage()">
+      <span class="nav-catalog-icon">&#10003;</span> Upload &amp; Analyze
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <strong>NIS Wizard</strong> v2.0<br>
+    Amazon NIS File Generator
+  </div>
+</aside>
+
+<!-- ═══════════════════════════ MAIN ═══════════════════════════════ -->
+<div class="main">
+  <header class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">NIS Creation — Upload &amp; Generate</div>
+      <div class="topbar-sub" id="topbar-sub">Upload product data to generate Amazon-ready NIS content</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-secondary btn-sm" onclick="resetSession()" id="reset-btn" style="display:none;">↺ New Session</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ NIS PAGE ═══════════════════ -->
+  <div class="content" id="nis-page">
+
+    <!-- ════════════════ SECTION 1: UPLOAD ════════════════ -->
+    <div class="card" id="section-upload">
+      <div class="card-header">
+        <div class="card-icon">📑</div>
+        <div>
+          <div class="card-title">Upload Product Data</div>
+          <div class="card-desc">This is the only required file. Everything else is optional.</div>
+        </div>
+      </div>
+
+      <div class="upload-zone" id="product-dropzone">
+        <input type="file" id="product-file-input" accept=".xlsx,.xls,.xlsm,.csv,.tsv" onchange="handleProductUpload(this.files)">
+        <div class="upload-zone-icon">📊</div>
+        <div class="upload-zone-text"><strong>Click to upload</strong> or drag and drop</div>
+        <div class="upload-zone-hint">Excel (.xlsx, .xls, .xlsm) or CSV/TSV — max 50MB</div>
+      </div>
+
+      <div id="product-loading" class="hidden mt-16">
+        <div class="alert alert-info">
+          <div class="spinner dark"></div>
+          Parsing product data and running validation...
+        </div>
+      </div>
+
+      <div id="product-results" class="hidden mt-16">
+        <div id="detection-card" class="detection-card hidden"></div>
+        <div class="stats-grid mt-16" id="product-stats"></div>
+        <div id="product-alerts"></div>
+        <div id="product-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ════════════════ SECTION 2: OPTIONAL ENHANCEMENTS ════════════════ -->
+    <div id="section-optional" class="hidden">
+
+      <!-- 2a: Brand Config -->
+      <div class="accordion-item" id="acc-brand">
+        <div class="accordion-header" onclick="toggleAccordion('acc-brand')">
+          <div class="accordion-header-left">
+            <span style="font-size:18px;">🏷️</span>
+            <div>
+              <div class="accordion-title">Brand Configuration</div>
+              <div class="accordion-meta" id="acc-brand-meta">Auto-populated from your data — editable</div>
+            </div>
+          </div>
+          <span class="accordion-chevron">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div id="brand-saved-notice" class="hidden alert alert-info mb-8">
+            <span class="alert-icon">ℹ</span>
+            <span id="brand-saved-notice-text"></span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Brand Name</label>
+              <input type="text" id="cfg-brand" placeholder="e.g. Stella Parker" oninput="onBrandConfigChange()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Vendor Code <span>(for .xlsm output)</span></label>
+              <input type="text" id="cfg-vendor-code" placeholder="e.g. Stella Parker Sportswear, us_apparel, FC0C0">
+            </div>
+          </div>
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">UPF Protection</label>
+              <select id="cfg-upf">
+                <option value="">None</option>
+                <option value="30+">UPF 30+</option>
+                <option value="50+">UPF 50+</option>
+                <option value="custom">Custom...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lead Feature (Bullet 1)</label>
+              <select id="cfg-lead-feature">
+                <option value="UPF sun protection">Sun Protection (UPF)</option>
+                <option value="Fabric Quality">Fabric Quality</option>
+                <option value="Lifestyle/Brand Story">Lifestyle / Brand Story</option>
+                <option value="Butterlux fabric softness">Butterlux Fabric</option>
+                <option value="Beach/surf lifestyle">Beach / Surf Lifestyle</option>
+                <option value="custom">Custom...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Gender</label>
+              <select id="cfg-gender">
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Unisex">Unisex</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Default COO <span>(if not in data)</span></label>
+              <input type="text" id="cfg-coo" placeholder="e.g. MX, US, BD">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Default Care</label>
+              <select id="cfg-care">
+                <option value="Machine Wash">Machine Wash</option>
+                <option value="Hand Wash">Hand Wash</option>
+                <option value="Dry Clean">Dry Clean</option>
+                <option value="Spot Clean Only">Spot Clean Only</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Never-Use Words</label>
+              <input type="text" id="cfg-never-words" placeholder="e.g. affordable, cheap, budget">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Always-Include Words</label>
+              <input type="text" id="cfg-always-words" placeholder="e.g. wrinkle-free, machine-washable">
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:16px; margin-top:4px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+              <input type="checkbox" id="cfg-save-check" checked style="width:auto;">
+              Save for next time
+            </label>
+            <button class="btn btn-primary btn-sm" onclick="saveBrandConfig()">Save Config</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2b: Amazon Template -->
+      <div class="accordion-item" id="acc-template">
+        <div class="accordion-header" onclick="toggleAccordion('acc-template')">
+          <div class="accordion-header-left">
+            <span style="font-size:18px;">📋</span>
+            <div>
+              <div class="accordion-title">Amazon NIS Template <span class="optional-tag">Optional</span></div>
+              <div class="accordion-meta" id="acc-template-meta">Upload to get .xlsm output — otherwise CSV only</div>
+            </div>
+          </div>
+          <span class="accordion-chevron">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div class="form-group">
+            <label class="form-label">Category Template</label>
+            <select id="template-select" onchange="onTemplateSelectChange()">
+              <option value="dresses">Dresses (pre-loaded)</option>
+              <option value="upload">Upload custom template...</option>
+            </select>
+          </div>
+          <div id="template-upload-zone" class="hidden">
+            <div class="upload-zone" id="template-dropzone">
+              <input type="file" id="template-file-input" accept=".xlsm" onchange="handleTemplateUpload(this.files)">
+              <div class="upload-zone-icon">📂</div>
+              <div class="upload-zone-text"><strong>Click to upload</strong> or drag and drop</div>
+              <div class="upload-zone-hint">Amazon NIS template (.xlsm only)</div>
+            </div>
+          </div>
+          <div id="template-status" class="hidden mt-16">
+            <div class="upload-success">
+              <span>✓</span>
+              <span id="template-status-msg"></span>
+            </div>
+          </div>
+          <div class="alert alert-info mt-16" id="template-hint" style="margin-bottom:0;">
+            <span class="alert-icon">ℹ</span>
+            <div id="template-hint-text">Using pre-loaded Dresses template. Output will include .xlsm files.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2c: Keywords -->
+      <div class="accordion-item" id="acc-keywords">
+        <div class="accordion-header" onclick="toggleAccordion('acc-keywords')">
+          <div class="accordion-header-left">
+            <span style="font-size:18px;">🔍</span>
+            <div>
+              <div class="accordion-title">Keyword Intelligence <span class="optional-tag">Optional</span></div>
+              <div class="accordion-meta" id="acc-kw-meta">No keyword data — using category defaults</div>
+            </div>
+          </div>
+          <span class="accordion-chevron">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-item" id="kw-explainer" style="margin-bottom:12px;">
+            <div class="accordion-header" onclick="toggleAccordion('kw-explainer')" style="padding:10px 14px;">
+              <span style="font-size:13px; font-weight:600;">What are we looking for?</span>
+              <span class="accordion-chevron" style="font-size:11px;">▼</span>
+            </div>
+            <div class="accordion-body" style="padding:12px 14px;">
+              <div class="info-box" style="margin-bottom:0;">
+                <h4>Helium 10 Keyword Export</h4>
+                <ol>
+                  <li>Go to <strong>Helium 10 → Cerebro</strong> or <strong>Magnet</strong></li>
+                  <li>Enter your parent ASIN or seed keyword</li>
+                  <li>Filter: Search Volume &gt; 500, Keyword Sales &gt; 5</li>
+                  <li>Click <strong>Export → CSV</strong></li>
+                  <li>Upload the downloaded CSV below</li>
+                </ol>
+                <br>
+                <p>We extract: <strong>Search Volume, Keyword Phrase</strong> columns. High-volume keywords are prioritized for title slots.</p>
+              </div>
+            </div>
+          </div>
+          <div class="upload-zone" id="kw-dropzone">
+            <input type="file" id="kw-file-input" accept=".csv,.tsv" onchange="handleKeywordsUpload(this.files)">
+            <div class="upload-zone-icon">📄</div>
+            <div class="upload-zone-text"><strong>Click to upload</strong> Helium 10 export</div>
+            <div class="upload-zone-hint">CSV or TSV format</div>
+          </div>
+          <div id="kw-results" class="hidden mt-16"></div>
+        </div>
+      </div>
+
+      <!-- 2d: Brand Analytics -->
+      <div class="accordion-item" id="acc-analytics">
+        <div class="accordion-header" onclick="toggleAccordion('acc-analytics')">
+          <div class="accordion-header-left">
+            <span style="font-size:18px;">📈</span>
+            <div>
+              <div class="accordion-title">Brand Analytics <span class="optional-tag">Optional</span></div>
+              <div class="accordion-meta" id="acc-ba-meta">No analytics data loaded</div>
+            </div>
+          </div>
+          <span class="accordion-chevron">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-item" id="ba-explainer" style="margin-bottom:12px;">
+            <div class="accordion-header" onclick="toggleAccordion('ba-explainer')" style="padding:10px 14px;">
+              <span style="font-size:13px; font-weight:600;">What is Brand Analytics and how do I export it?</span>
+              <span class="accordion-chevron" style="font-size:11px;">▼</span>
+            </div>
+            <div class="accordion-body" style="padding:12px 14px;">
+              <div class="info-box" style="margin-bottom:0;">
+                <h4>Exporting Brand Analytics from Seller Central</h4>
+                <ol>
+                  <li>Go to <strong>Seller Central → Brands → Brand Analytics</strong></li>
+                  <li>Select <strong>Amazon Search Terms</strong> report</li>
+                  <li>Choose your date range (last 90 days recommended)</li>
+                  <li>Click <strong>Request Report</strong>, then download the CSV</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+          <div class="upload-zone" id="ba-dropzone">
+            <input type="file" id="ba-file-input" accept=".csv,.tsv" onchange="handleAnalyticsUpload(this.files)">
+            <div class="upload-zone-icon">📊</div>
+            <div class="upload-zone-text"><strong>Click to upload</strong> Brand Analytics CSV</div>
+            <div class="upload-zone-hint">CSV or TSV format</div>
+          </div>
+          <div id="ba-results" class="hidden mt-16"></div>
+        </div>
+      </div>
+
+      <!-- Generate Button -->
+      <div style="text-align:center; margin: 24px 0;">
+        <button class="btn btn-primary" id="generate-btn" onclick="generateContent()" style="font-size:15px; padding:12px 32px;">
+          ✦ Generate Content
+        </button>
+        <div class="text-sec mt-8" style="font-size:12px;">Generates titles, bullets, descriptions, and keywords for all styles</div>
+      </div>
+    </div>
+
+    <!-- ════════════════ SECTION 3: GENERATED CONTENT ════════════════ -->
+    <div id="section-content" class="hidden">
+
+      <!-- Loading state -->
+      <div id="content-loading" class="card hidden">
+        <div class="card-header">
+          <div class="card-icon">✍️</div>
+          <div>
+            <div class="card-title">Generating Content...</div>
+            <div class="card-desc">Creating titles, bullets, descriptions, and keywords for all styles</div>
+          </div>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="gen-progress" style="width: 0%"></div>
+        </div>
+        <div class="text-sec" id="gen-progress-text" style="font-size:13px;">Initializing...</div>
+      </div>
+
+      <!-- Global feedback -->
+      <div class="card" id="global-feedback-card" style="margin-bottom:16px;">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="card-title">Review Generated Content</div>
+            <div class="card-desc text-sec mt-8" id="content-summary"></div>
+          </div>
+          <div class="flex gap-8">
+            <button class="btn btn-secondary btn-sm" onclick="expandAllStyles()">Expand All</button>
+            <button class="btn btn-secondary btn-sm" onclick="collapseAllStyles()">Collapse All</button>
+          </div>
+        </div>
+        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+          <label class="form-label">Feedback for ALL styles in this batch</label>
+          <textarea id="global-feedback" placeholder="e.g. Never use 'affordable'. Always mention 'wrinkle-free' for Stella Parker." rows="2" style="font-size:13px;"></textarea>
+          <button class="btn btn-secondary btn-sm mt-8" onclick="submitGlobalFeedback()">Save Global Feedback</button>
+        </div>
+      </div>
+
+      <!-- Style cards container -->
+      <div id="style-cards"></div>
+
+      <!-- Download / Output Section -->
+      <div class="download-section" id="download-section">
+        <div class="download-section-title">Generate Output Files</div>
+
+        <!-- NIS progress -->
+        <div id="nis-gen-loading" class="hidden mb-8">
+          <div class="alert alert-info">
+            <div class="spinner dark"></div>
+            <span id="nis-gen-status-text">Building .xlsm files...</span>
+          </div>
+          <div class="progress-bar-wrap mt-16">
+            <div class="progress-bar-fill" id="nis-progress" style="width: 0%;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:12px; color:var(--text-sec);">
+            <span id="nis-gen-count"></span>
+            <span id="nis-gen-eta"></span>
+          </div>
+        </div>
+
+        <div class="download-actions" id="download-actions">
+          <button class="btn btn-primary" id="btn-download-csv" onclick="downloadCSV()">↓ Download All as CSV</button>
+          <button class="btn btn-success" id="btn-download-xlsm" onclick="generateNIS()" style="display:none;">↓ Download All as .xlsm (ZIP)</button>
+        </div>
+
+        <!-- NIS results table -->
+        <div id="nis-results" class="hidden mt-16">
+          <div class="flex items-center justify-between mb-8">
+            <div id="nis-result-summary" style="font-size:13px; font-weight:600;"></div>
+          </div>
+          <div class="table-wrap results-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Style #</th><th>Style Name</th><th>Rows</th><th>File</th><th>Download</th>
+                </tr>
+              </thead>
+              <tbody id="nis-results-tbody"></tbody>
+            </table>
+          </div>
+          <div id="nis-errors" class="hidden mt-16"></div>
+        </div>
+      </div>
+
+    </div><!-- /section-content -->
+
+  </div><!-- /nis-page -->
+
+  <!-- ═══════════════════════ CATALOG HEALTH PAGE ═══════════════════════ -->
+  <div id="catalog-page" class="content content-wide">
+
+    <!-- Section 1: Upload Zones -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">📂</div>
+        <div>
+          <div class="card-title">Upload Catalog &amp; Sales Data</div>
+          <div class="card-desc">Auto-detects columns from any Vendor Central, Seller Central, or custom format</div>
+        </div>
+      </div>
+
+      <div class="ch-upload-grid">
+        <!-- Catalog Upload -->
+        <div>
+          <div class="form-label">Catalog File <span style="color:var(--error)">*</span></div>
+          <div class="upload-zone" id="ch-catalog-zone">
+            <input type="file" id="ch-catalog-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadCatalog(this.files)">
+            <div class="upload-zone-icon">📋</div>
+            <div class="upload-zone-text"><strong>Click to upload</strong> or drag &amp; drop</div>
+            <div class="upload-zone-hint">CSV, TSV, or Excel — any Amazon catalog export</div>
+          </div>
+          <div id="ch-catalog-status" class="hidden mt-8">
+            <div class="upload-success"><span>✓</span><span id="ch-catalog-status-msg"></span></div>
+          </div>
+          <span class="ch-help-toggle" onclick="toggleChHelp('ch-help-catalog')">What report is this? Where to download it?</span>
+          <div id="ch-help-catalog" class="ch-help-content">
+            <strong>Vendor Central:</strong> Reports &gt; Detail Page Sales &amp; Traffic &gt; Export<br>
+            <strong>Seller Central:</strong> Inventory &gt; Manage Inventory &gt; Export<br>
+            <strong>Custom:</strong> Any flat file with ASIN or SKU column. Column headers are auto-detected.
+          </div>
+        </div>
+
+        <!-- Sales Upload -->
+        <div>
+          <div class="form-label">Sales Data <span class="optional-tag">Optional</span></div>
+          <div class="upload-zone" id="ch-sales-zone">
+            <input type="file" id="ch-sales-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadSales(this.files)">
+            <div class="upload-zone-icon">💰</div>
+            <div class="upload-zone-text"><strong>Click to upload</strong> or drag &amp; drop</div>
+            <div class="upload-zone-hint">Sessions, units, revenue by ASIN</div>
+          </div>
+          <div id="ch-sales-status" class="hidden mt-8">
+            <div class="upload-success"><span>✓</span><span id="ch-sales-status-msg"></span></div>
+          </div>
+          <span class="ch-help-toggle" onclick="toggleChHelp('ch-help-sales')">What report is this? Where to download it?</span>
+          <div id="ch-help-sales" class="ch-help-content">
+            <strong>Vendor Central:</strong> Reports &gt; Detail Page Sales &amp; Traffic By ASIN<br>
+            <strong>Seller Central:</strong> Reports &gt; Business Reports &gt; Detail Page Sales &amp; Traffic by ASIN<br>
+            Needs columns: ASIN, Sessions (or Glance Views), Units Ordered, Revenue.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Detection Summary -->
+    <div id="ch-detection-card" class="card hidden">
+      <div class="card-header">
+        <div class="card-icon">🔍</div>
+        <div>
+          <div class="card-title" id="ch-detection-title">Column Detection</div>
+          <div class="card-desc" id="ch-detection-sub"></div>
+        </div>
+      </div>
+      <div id="ch-detection-pills" class="ch-detection-pills"></div>
+    </div>
+
+    <!-- Section 2b: Progress overlay -->
+    <div id="ch-progress-card" class="card hidden">
+      <div class="ch-progress-overlay">
+        <div class="spinner dark" style="width:24px;height:24px;border-width:3px;display:inline-block;"></div>
+        <div style="margin-top:12px;font-weight:600;" id="ch-progress-msg">Analyzing catalog...</div>
+        <div class="ch-progress-bar-wrap" style="max-width:400px;margin:12px auto;">
+          <div class="ch-progress-bar-fill" id="ch-progress-fill" style="width:0%"></div>
+        </div>
+        <div style="font-size:13px;color:var(--text-sec);" id="ch-progress-count"></div>
+      </div>
+    </div>
+
+    <!-- Section 3: Summary Dashboard -->
+    <div id="ch-summary-section" class="hidden">
+      <div class="ch-stats-grid" id="ch-stat-cards"></div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header" style="margin-bottom:10px;padding-bottom:10px;">
+          <div class="card-icon">📊</div>
+          <div><div class="card-title">Score Distribution</div></div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+          <div style="flex:1;min-width:200px;">
+            <div class="ch-score-bar" id="ch-score-bar" style="height:18px;border-radius:8px;"></div>
+            <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
+              <span style="font-size:12px;"><span style="color:#1A7A50;font-weight:700;">&#9632;</span> 90+ (Excellent)</span>
+              <span style="font-size:12px;"><span style="color:#D68910;font-weight:700;">&#9632;</span> 70–89 (Good)</span>
+              <span style="font-size:12px;"><span style="color:#C0651B;font-weight:700;">&#9632;</span> 50–69 (Fair)</span>
+              <span style="font-size:12px;"><span style="color:#C0392B;font-weight:700;">&#9632;</span> &lt;50 (Poor)</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="chExportFixFile()">↓ Export Fix File</button>
+            <button class="btn btn-primary btn-sm" onclick="chExportFull()">↓ Full Analysis CSV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Filters -->
+    <div id="ch-filters-section" class="hidden">
+      <div class="ch-filters">
+        <div class="ch-filter-group">
+          <label>Brand</label>
+          <select id="ch-filter-brand" onchange="chApplyFilters()"><option value="">All Brands</option></select>
+        </div>
+        <div class="ch-filter-group">
+          <label>Category</label>
+          <select id="ch-filter-category" onchange="chApplyFilters()"><option value="">All Categories</option></select>
+        </div>
+        <div class="ch-filter-group">
+          <label>Subcategory</label>
+          <select id="ch-filter-subcat" onchange="chApplyFilters()"><option value="">All Subcategories</option></select>
+        </div>
+        <div class="ch-filter-group">
+          <label>Health Score</label>
+          <select id="ch-filter-score" onchange="chApplyFilters()">
+            <option value="">All Scores</option>
+            <option value="green">90+ Excellent</option>
+            <option value="yellow">70–89 Good</option>
+            <option value="orange">50–69 Fair</option>
+            <option value="red">&lt;50 Poor</option>
+          </select>
+        </div>
+        <div class="ch-filter-group">
+          <label>Issue Type</label>
+          <select id="ch-filter-issue" onchange="chApplyFilters()">
+            <option value="">All Issues</option>
+            <option value="Orphan">Orphans</option>
+            <option value="Missing from variation">Missing Variations</option>
+            <option value="Content issue">Content Issues</option>
+            <option value="Missing main image">Missing Images</option>
+            <option value="Missing all bullet">Missing Bullets</option>
+            <option value="Zero traffic">Zero Traffic</option>
+            <option value="Duplicate">Duplicates</option>
+          </select>
+        </div>
+        <div class="ch-filter-group" style="justify-content:flex-end;margin-left:auto;">
+          <label>&nbsp;</label>
+          <button class="btn btn-secondary btn-sm" onclick="chClearFilters()">Clear Filters</button>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text-sec);margin-bottom:10px;" id="ch-filter-count"></div>
+    </div>
+
+    <!-- Section 5: Issues Table -->
+    <div id="ch-issues-section" class="hidden">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div class="card-title">Issues — Sorted by Priority</div>
+            <div class="card-desc">Click any row to expand for full details and recommendations</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="chExportFixFile()">↓ Export Fix File</button>
+            <button class="btn btn-primary btn-sm" onclick="chExportFull()">↓ Full Analysis</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="border:none;border-radius:0;">
+          <table class="ch-issues-table" id="ch-issues-table">
+            <thead>
+              <tr>
+                <th onclick="chSortBy('priority')" title="Sort by priority">Priority &#x25BC;</th>
+                <th onclick="chSortBy('asin')">ASIN</th>
+                <th onclick="chSortBy('title')">Title</th>
+                <th onclick="chSortBy('brand')">Brand</th>
+                <th onclick="chSortBy('category')">Category</th>
+                <th onclick="chSortBy('issue')">Issue</th>
+                <th onclick="chSortBy('severity_label')">Severity</th>
+                <th onclick="chSortBy('revenue_impact')">Revenue Impact</th>
+                <th>Fix Action</th>
+              </tr>
+            </thead>
+            <tbody id="ch-issues-tbody"></tbody>
+          </table>
+        </div>
+        <div style="padding:12px 20px;font-size:13px;color:var(--text-sec);border-top:1px solid var(--border);">
+          Showing <span id="ch-showing-count">0</span> of <span id="ch-total-count">0</span> issues
+          &nbsp;|&nbsp;
+          <button class="btn btn-secondary btn-sm" id="ch-load-more-btn" onclick="chLoadMore()" style="display:none;">Load More</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6: Variation Matrix -->
+    <div id="ch-matrix-section" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🔲</div>
+          <div>
+            <div class="card-title">Variation Matrix</div>
+            <div class="card-desc">Color × Size grid for a parent ASIN — green = healthy, yellow = incomplete, red = missing</div>
+          </div>
+        </div>
+        <div class="form-row" style="max-width:500px;">
+          <div class="form-group">
+            <label class="form-label">Parent ASIN</label>
+            <select id="ch-matrix-parent" onchange="chRenderMatrix()">
+              <option value="">— Select a Parent ASIN —</option>
+            </select>
+          </div>
+        </div>
+        <div id="ch-matrix-grid" class="ch-matrix-grid" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+  </div><!-- /catalog-page -->
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════ STATE ═══════════════════════
+const state = {
+  brand: null,
+  brandConfig: null,
+  vendorCode: '',
+  templatePath: null,
+  templateLoaded: false,
+  styles: [],
+  keywords: [],
+  generatedContent: {},
+  nisResults: [],
+  hasTemplate: true,  // default template loaded
+};
+
+// ═══════════════════════ NAVIGATION ═══════════════════════
+function showNISPage() {
+  document.getElementById('catalog-page').style.display = 'none';
+  document.getElementById('nis-page').style.display = 'block';
+  document.getElementById('topbar-title').textContent = 'NIS Creation — Upload & Generate';
+  document.getElementById('topbar-sub').textContent = 'Upload product data to generate Amazon-ready NIS content';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item-catalog').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-nis').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showCatalogPage() {
+  document.getElementById('nis-page').style.display = 'none';
+  document.getElementById('catalog-page').style.display = 'block';
+  document.getElementById('topbar-title').textContent = 'Catalog Health';
+  document.getElementById('topbar-sub').textContent = 'Structural + content analysis for any Amazon catalog';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-catalog').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ═══════════════════════ SECTION 1: PRODUCT UPLOAD ═══════════════════════
+async function handleProductUpload(files) {
+  if (!files.length) return;
+  const file = files[0];
+
+  const loadingEl = document.getElementById('product-loading');
+  const resultsEl = document.getElementById('product-results');
+
+  loadingEl.classList.remove('hidden');
+  resultsEl.classList.add('hidden');
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/upload-product-data', { method: 'POST', body: formData });
+    const data = await res.json();
+    loadingEl.classList.add('hidden');
+
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    state.styles = data.styles || [];
+
+    // Auto-detect brand from first style
+    const detectedBrand = (data.styles && data.styles[0]) ? data.styles[0].brand : '';
+    const totalVariants = data.total_variants || 0;
+    const subclasses = [...new Set((data.styles || []).map(s => s.subclass).filter(Boolean))];
+
+    // Detection card
+    const detectionCard = document.getElementById('detection-card');
+    detectionCard.classList.remove('hidden');
+    detectionCard.innerHTML = `<strong>Detected:</strong> ${detectedBrand || 'Unknown Brand'}, ${data.total_styles} styles, ${totalVariants} variants${subclasses.length ? ', ' + subclasses[0] : ''}. File processed successfully.`;
+
+    // Stats
+    const statsEl = document.getElementById('product-stats');
+    statsEl.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-num success">${data.total_styles}</div>
+        <div class="stat-label">Total Styles</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">${totalVariants}</div>
+        <div class="stat-label">Total Variants</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num ${data.error_count > 0 ? 'error' : 'success'}">${data.error_count}</div>
+        <div class="stat-label">Errors</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num ${data.warning_count > 0 ? 'warn' : 'success'}">${data.warning_count}</div>
+        <div class="stat-label">Warnings</div>
+      </div>
+    `;
+
+    // Alerts
+    const alertsEl = document.getElementById('product-alerts');
+    alertsEl.innerHTML = '';
+    if (data.errors && data.errors.length) {
+      const shown = data.errors.slice(0, 5);
+      alertsEl.innerHTML += `<div class="alert alert-error"><span class="alert-icon">✗</span><div>${shown.map(e => `<div>${e}</div>`).join('')}${data.errors.length > 5 ? `<div>...and ${data.errors.length - 5} more errors</div>` : ''}</div></div>`;
+    }
+    if (data.warnings && data.warnings.length) {
+      const shown = data.warnings.slice(0, 5);
+      alertsEl.innerHTML += `<div class="alert alert-warning"><span class="alert-icon">⚠</span><div>${shown.map(w => `<div>${w}</div>`).join('')}${data.warnings.length > 5 ? `<div>...and ${data.warnings.length - 5} more warnings</div>` : ''}</div></div>`;
+    }
+    if (!data.errors.length && !data.warnings.length) {
+      alertsEl.innerHTML = '<div class="alert alert-success"><span class="alert-icon">✓</span><div>All validation checks passed — no errors or warnings!</div></div>';
+    }
+
+    // Styles table
+    const tableWrap = document.getElementById('product-table-wrap');
+    if (data.styles && data.styles.length > 0) {
+      const rows = data.styles.map(s => {
+        const errCount = (s.errors || []).length;
+        const warnCount = (s.warnings || []).length;
+        const badges = [
+          errCount > 0 ? `<span class="badge badge-error">${errCount} error${errCount > 1 ? 's' : ''}</span>` : '',
+          warnCount > 0 ? `<span class="badge badge-warning">${warnCount} warning${warnCount > 1 ? 's' : ''}</span>` : '',
+          errCount === 0 && warnCount === 0 ? `<span class="badge badge-success">OK</span>` : '',
+        ].join(' ');
+        const colors = [...new Set((s.variants || []).map(v => v.color_name).filter(Boolean))];
+        const sizes = [...new Set((s.variants || []).map(v => v.size).filter(Boolean))];
+        return `<tr>
+          <td><strong>${s.style_num}</strong></td>
+          <td>${s.style_name || ''}</td>
+          <td>${s.subclass || ''}</td>
+          <td>${(s.variants || []).length}</td>
+          <td style="max-width:160px; font-size:12px;">${colors.slice(0,4).join(', ')}${colors.length > 4 ? ` +${colors.length-4}` : ''}</td>
+          <td style="max-width:120px; font-size:12px;">${sizes.join(', ')}</td>
+          <td>${badges}</td>
+        </tr>`;
+      }).join('');
+
+      tableWrap.innerHTML = `
+        <div style="margin-top:16px;">
+          <div style="font-size:13px; font-weight:700; margin-bottom:8px; color:var(--text-sec);">Styles (${data.styles.length})</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Style #</th><th>Style Name</th><th>Category</th><th>Variants</th><th>Colors</th><th>Sizes</th><th>Status</th></tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    resultsEl.classList.remove('hidden');
+
+    // Show optional section
+    document.getElementById('section-optional').classList.remove('hidden');
+
+    // Pre-populate brand config from detected brand
+    if (detectedBrand) {
+      state.brand = detectedBrand;
+      document.getElementById('cfg-brand').value = detectedBrand;
+      await loadBrandConfigForBrand(detectedBrand);
+    }
+
+    // Show reset button
+    document.getElementById('reset-btn').style.display = 'inline-flex';
+
+    showToast(`Loaded ${data.total_styles} styles, ${totalVariants} variants`, 'success');
+
+  } catch(e) {
+    loadingEl.classList.add('hidden');
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+setupDropzoneOnce('product-dropzone', 'product-file-input', handleProductUpload);
+
+// ═══════════════════════ SECTION 2: BRAND CONFIG ═══════════════════════
+async function loadBrandConfigForBrand(brand) {
+  if (!brand) return;
+  try {
+    const res = await fetch('/api/load-brand-config?brand=' + encodeURIComponent(brand));
+    const data = await res.json();
+    if (data.error) return;
+
+    const cfg = data.config || {};
+    state.brand = brand;
+    state.brandConfig = cfg;
+
+    // Populate fields
+    document.getElementById('cfg-vendor-code').value = cfg.vendor_code_full || '';
+    document.getElementById('cfg-coo').value = cfg.default_coo || '';
+
+    const upfSel = document.getElementById('cfg-upf');
+    const upfVal = cfg.default_upf || '';
+    if (['', '30+', '50+'].includes(upfVal)) {
+      upfSel.value = upfVal;
+    } else {
+      upfSel.value = 'custom';
+    }
+
+    const careSel = document.getElementById('cfg-care');
+    if (cfg.default_care) careSel.value = cfg.default_care;
+
+    const genderSel = document.getElementById('cfg-gender');
+    if (cfg.gender) genderSel.value = cfg.gender;
+
+    const leadSel = document.getElementById('cfg-lead-feature');
+    const focusVal = cfg.bullet_1_focus || '';
+    let matched = false;
+    for (let opt of leadSel.options) {
+      if (opt.value === focusVal) { leadSel.value = focusVal; matched = true; break; }
+    }
+    if (!matched && focusVal) leadSel.value = 'custom';
+
+    document.getElementById('cfg-never-words').value = (cfg.never_words || []).join(', ');
+
+    // Show saved notice
+    if (data.has_saved_config) {
+      const notice = document.getElementById('brand-saved-notice');
+      document.getElementById('brand-saved-notice-text').textContent = `Using saved ${brand} config. Edit below to update.`;
+      notice.classList.remove('hidden');
+    }
+
+    document.getElementById('acc-brand-meta').textContent = `${brand} — config loaded`;
+
+  } catch(e) {
+    console.error('Brand config load error', e);
+  }
+}
+
+function onBrandConfigChange() {
+  const brand = document.getElementById('cfg-brand').value.trim();
+  if (brand) {
+    state.brand = brand;
+    loadBrandConfigForBrand(brand);
+  }
+}
+
+async function saveBrandConfig() {
+  const brand = document.getElementById('cfg-brand').value.trim();
+  if (!brand) { showToast('Enter a brand name first', 'error'); return; }
+
+  const config = {
+    vendor_code_full: document.getElementById('cfg-vendor-code').value.trim(),
+    default_upf: document.getElementById('cfg-upf').value === 'custom' ? '' : document.getElementById('cfg-upf').value,
+    default_coo: document.getElementById('cfg-coo').value.trim(),
+    default_care: document.getElementById('cfg-care').value,
+    gender: document.getElementById('cfg-gender').value,
+    bullet_1_focus: document.getElementById('cfg-lead-feature').value === 'custom' ? '' : document.getElementById('cfg-lead-feature').value,
+    never_words: document.getElementById('cfg-never-words').value.split(',').map(w => w.trim()).filter(Boolean),
+  };
+
+  state.brand = brand;
+  state.brandConfig = config;
+  state.vendorCode = config.vendor_code_full;
+
+  const shouldSave = document.getElementById('cfg-save-check').checked;
+  if (shouldSave) {
+    try {
+      await fetch('/api/save-brand-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand, config }),
+      });
+      showToast(`${brand} config saved`, 'success');
+    } catch(e) {
+      showToast('Save failed: ' + e.message, 'error');
+    }
+  } else {
+    showToast(`${brand} config applied (not saved)`, 'info');
+  }
+  document.getElementById('acc-brand-meta').textContent = `${brand} — config saved`;
+}
+
+// ═══════════════════════ SECTION 2b: TEMPLATE ═══════════════════════
+function onTemplateSelectChange() {
+  const val = document.getElementById('template-select').value;
+  const zone = document.getElementById('template-upload-zone');
+  const hint = document.getElementById('template-hint-text');
+  if (val === 'upload') {
+    zone.classList.remove('hidden');
+    hint.textContent = 'Upload a .xlsm template to enable .xlsm output.';
+    state.hasTemplate = false;
+    document.getElementById('btn-download-xlsm').style.display = 'none';
+  } else {
+    zone.classList.add('hidden');
+    hint.textContent = 'Using pre-loaded Dresses template. Output will include .xlsm files.';
+    loadDefaultTemplate();
+  }
+}
+
+async function loadDefaultTemplate() {
+  try {
+    const res = await fetch('/api/upload-template', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (data.error) return;
+    state.templatePath = data.template_path;
+    state.templateLoaded = true;
+    state.hasTemplate = true;
+    document.getElementById('template-status-msg').textContent = data.message;
+    document.getElementById('template-status').classList.remove('hidden');
+    document.getElementById('acc-template-meta').textContent = 'Dresses template loaded — .xlsm output enabled';
+  } catch(e) {
+    console.error('Template load error:', e);
+  }
+}
+
+async function handleTemplateUpload(files) {
+  if (!files.length) return;
+  const file = files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const res = await fetch('/api/upload-template', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+    state.templatePath = data.template_path;
+    state.templateLoaded = true;
+    state.hasTemplate = true;
+    document.getElementById('template-status-msg').textContent = data.message;
+    document.getElementById('template-status').classList.remove('hidden');
+    document.getElementById('acc-template-meta').textContent = `${file.name} — .xlsm output enabled`;
+    document.getElementById('template-hint-text').textContent = `Template loaded: ${file.name}. .xlsm output enabled.`;
+    showToast('Template loaded: ' + file.name, 'success');
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════ SECTION 2c: KEYWORDS ═══════════════════════
+async function handleKeywordsUpload(files) {
+  if (!files.length) return;
+  const file = files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const res = await fetch('/api/upload-keywords', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+    state.keywords = data.keywords || [];
+    const resultsEl = document.getElementById('kw-results');
+    resultsEl.innerHTML = `
+      <div class="alert alert-success">
+        <span class="alert-icon">✓</span>
+        <div><strong>${data.total_keywords}</strong> keywords loaded. Top 5: <em>${(data.top5 || []).join(', ')}</em></div>
+      </div>`;
+    resultsEl.classList.remove('hidden');
+    document.getElementById('acc-kw-meta').textContent = `${data.total_keywords} keywords loaded`;
+    showToast(data.message, 'success');
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+setupDropzoneOnce('kw-dropzone', 'kw-file-input', handleKeywordsUpload);
+
+// ═══════════════════════ SECTION 2d: ANALYTICS ═══════════════════════
+async function handleAnalyticsUpload(files) {
+  if (!files.length) return;
+  const file = files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const res = await fetch('/api/upload-analytics', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+    const resultsEl = document.getElementById('ba-results');
+    resultsEl.innerHTML = `
+      <div class="alert alert-success">
+        <span class="alert-icon">✓</span>
+        <div>${data.message}</div>
+      </div>`;
+    resultsEl.classList.remove('hidden');
+    document.getElementById('acc-ba-meta').textContent = data.message;
+    showToast(data.message, 'success');
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+setupDropzoneOnce('ba-dropzone', 'ba-file-input', handleAnalyticsUpload);
+
+// ═══════════════════════ SECTION 3: GENERATE CONTENT ═══════════════════════
+async function generateContent() {
+  if (state.styles.length === 0) {
+    showToast('Please upload product data first.', 'error');
+    return;
+  }
+
+  // Auto-save brand config if brand set
+  if (state.brand) {
+    const cfg = {
+      vendor_code_full: document.getElementById('cfg-vendor-code').value.trim(),
+      default_upf: document.getElementById('cfg-upf').value === 'custom' ? '' : document.getElementById('cfg-upf').value,
+      default_coo: document.getElementById('cfg-coo').value.trim(),
+      default_care: document.getElementById('cfg-care').value,
+      gender: document.getElementById('cfg-gender').value,
+      bullet_1_focus: document.getElementById('cfg-lead-feature').value === 'custom' ? '' : document.getElementById('cfg-lead-feature').value,
+      never_words: document.getElementById('cfg-never-words').value.split(',').map(w => w.trim()).filter(Boolean),
+    };
+    state.brandConfig = cfg;
+    state.vendorCode = cfg.vendor_code_full;
+    if (document.getElementById('cfg-save-check').checked) {
+      fetch('/api/save-brand-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand: state.brand, config: cfg }),
+      }).catch(() => {});
+    }
+  }
+
+  const sectionContent = document.getElementById('section-content');
+  const loadingEl = document.getElementById('content-loading');
+  const progressEl = document.getElementById('gen-progress');
+  const progressTextEl = document.getElementById('gen-progress-text');
+
+  sectionContent.classList.remove('hidden');
+  loadingEl.classList.remove('hidden');
+  document.getElementById('global-feedback-card').classList.add('hidden');
+  document.getElementById('style-cards').innerHTML = '';
+  window.scrollTo(0, sectionContent.offsetTop - 100);
+
+  let progress = 0;
+  const messages = [
+    'Analyzing style names...', 'Deriving neck and sleeve types...',
+    'Building title formulas...', 'Writing bullet points...',
+    'Composing descriptions...', 'Generating backend keywords...', 'Finalizing content...',
+  ];
+  let msgIdx = 0;
+  const interval = setInterval(() => {
+    progress = Math.min(progress + Math.random() * 15, 90);
+    progressEl.style.width = progress + '%';
+    if (msgIdx < messages.length - 1) progressTextEl.textContent = messages[msgIdx++];
+  }, 400);
+
+  try {
+    const res = await fetch('/api/generate-content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brand: state.brand, styles: state.styles }),
+    });
+    const data = await res.json();
+
+    clearInterval(interval);
+    progressEl.style.width = '100%';
+    progressTextEl.textContent = 'Complete!';
+    if (data.error) { showToast(data.error, 'error'); loadingEl.classList.add('hidden'); return; }
+
+    state.generatedContent = data.content || {};
+    await new Promise(r => setTimeout(r, 400));
+    loadingEl.classList.add('hidden');
+    document.getElementById('global-feedback-card').classList.remove('hidden');
+
+    const total = Object.keys(state.generatedContent).length;
+    document.getElementById('content-summary').textContent = `${total} styles generated. Expand any style to review, edit, or regenerate fields.`;
+
+    renderStyleCards();
+
+    // Show xlsm button only if template loaded
+    if (state.hasTemplate) {
+      document.getElementById('btn-download-xlsm').style.display = 'inline-flex';
+    }
+
+    showToast(`${total} styles generated!`, 'success');
+
+  } catch(e) {
+    clearInterval(interval);
+    loadingEl.classList.add('hidden');
+    showToast('Content generation failed: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════ RENDER STYLE CARDS ═══════════════════════
+function renderStyleCards() {
+  const container = document.getElementById('style-cards');
+  container.innerHTML = '';
+
+  Object.entries(state.generatedContent).forEach(([styleNum, c]) => {
+    const style = state.styles.find(s => s.style_num === styleNum) || {};
+    const errCount = (style.errors || []).length;
+    const warnCount = (style.warnings || []).length;
+    const variantCount = (style.variants || []).length;
+    const statusBadge = errCount > 0
+      ? `<span class="badge badge-error">${errCount} error${errCount > 1 ? 's' : ''}</span>`
+      : warnCount > 0
+        ? `<span class="badge badge-warning">${warnCount} warning${warnCount > 1 ? 's' : ''}</span>`
+        : `<span class="badge badge-success">Ready</span>`;
+
+    const card = document.createElement('div');
+    card.className = 'style-card';
+    card.id = 'sc-' + styleNum;
+
+    card.innerHTML = `
+      <div class="style-card-header" onclick="toggleStyleCard('${styleNum}')">
+        <div class="flex items-center gap-8">
+          <div>
+            <div style="font-weight:700; font-size:14px;">${escHtml(styleNum)} — ${escHtml(c.style_name)}</div>
+            <div style="font-size:12px; color:var(--text-sec); margin-top:2px;">${escHtml(c.category || '')} · ${escHtml(c.silhouette || '')} · ${variantCount} variants</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-8">
+          ${statusBadge}
+          <span class="accordion-chevron" id="sc-chevron-${styleNum}">▼</span>
+        </div>
+      </div>
+      <div class="style-card-body" id="scb-${styleNum}">
+        ${buildFieldBlock(styleNum, 'title', 'Title', c.title, c.title_why, 200)}
+        <div style="margin-top:4px; margin-bottom:16px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec);">Bullet Points</div>
+        ${(c.bullets || []).map((b, i) => buildFieldBlock(styleNum, 'bullet_' + (i+1), 'Bullet ' + (i+1), b, (c.bullet_whys || [])[i] || '', 500)).join('')}
+        ${buildFieldBlock(styleNum, 'description', 'Description', c.description, c.description_why, 2000)}
+        ${buildFieldBlock(styleNum, 'backend_keywords', 'Backend Keywords', c.backend_keywords, c.backend_keywords_why, 250)}
+
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+          <div><div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:4px;">Neck Type</div><div style="font-size:13px;">${c.neck_type || '—'}</div></div>
+          <div><div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:4px;">Sleeve</div><div style="font-size:13px;">${c.sleeve_type || '—'}</div></div>
+          <div><div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:4px;">Silhouette</div><div style="font-size:13px;">${c.silhouette || '—'}</div></div>
+          <div><div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:4px;">Color Map</div><div style="font-size:13px;">${c.color_map || '—'}</div></div>
+        </div>
+
+        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+          <label class="form-label" style="font-size:12px;">Style Feedback</label>
+          <textarea id="sfb-${styleNum}" rows="2" placeholder="Any feedback on this style's content? (saved automatically on blur)" style="font-size:13px;" onblur="autoSaveStyleFeedback('${styleNum}')"></textarea>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function buildFieldBlock(styleNum, field, label, content, why, charLimit) {
+  const fieldId = `f-${styleNum}-${field}`;
+  const charNote = charLimit ? ` <span style="font-weight:400;">(max ${charLimit} chars)</span>` : '';
+  const charCount = (content || '').length;
+  const charOver = charLimit && charCount > charLimit;
+  return `
+    <div class="field-block" id="fb-${styleNum}-${field}">
+      <div class="field-block-header">
+        <div class="field-block-label">${label}${charNote}</div>
+        <div class="field-block-actions">
+          <button class="field-action-btn accepted" id="btn-accept-${styleNum}-${field}" title="Accept (default)" onclick="acceptField('${styleNum}','${field}')">✓</button>
+          <button class="field-action-btn" id="btn-regen-${styleNum}-${field}" title="Regenerate alternative" onclick="regenerateField('${styleNum}','${field}')">↻</button>
+          <button class="field-action-btn" id="btn-edit-${styleNum}-${field}" title="Edit manually" onclick="editField('${styleNum}','${field}')">✏</button>
+        </div>
+      </div>
+      <div class="field-content-wrap">
+        <div class="field-content accepted" id="${fieldId}">${escHtml(content)}</div>
+        ${charLimit ? `<div class="char-counter ${charOver ? 'over-limit' : ''}" id="cc-${styleNum}-${field}">${charCount} / ${charLimit}</div>` : ''}
+      </div>
+      <div class="field-edit-area" id="fea-${styleNum}-${field}">
+        <div class="field-original-label" id="forig-${styleNum}-${field}">Original: <span id="forig-text-${styleNum}-${field}"></span></div>
+        <textarea id="fedit-${styleNum}-${field}" style="font-size:13px;" rows="3" onblur="saveFieldEdit('${styleNum}','${field}')" oninput="updateFieldCharCount('${styleNum}','${field}',${charLimit || 0})">${escHtml(content)}</textarea>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+          <button class="btn btn-primary btn-sm" onclick="confirmFieldEdit('${styleNum}','${field}')">Save Edit</button>
+          <button class="btn btn-secondary btn-sm" onclick="cancelFieldEdit('${styleNum}','${field}')">Cancel</button>
+        </div>
+        ${charLimit ? `<div class="char-counter" id="cc-edit-${styleNum}-${field}">${(content||'').length} / ${charLimit}</div>` : ''}
+      </div>
+      ${why ? `
+        <div class="why-toggle" id="why-toggle-${styleNum}-${field}" onclick="toggleWhy('${styleNum}','${field}')">
+          <span class="why-toggle-arrow">▶</span> Why this ${label.toLowerCase().split(' ')[0]}?
+        </div>
+        <div class="why-content" id="why-${styleNum}-${field}">${escHtml(why)}</div>
+      ` : ''}
+    </div>
+  `;
+}
+
+// ─── Field action: Accept ───────────────────────────────────────────
+function acceptField(styleNum, field) {
+  const acceptBtn = document.getElementById(`btn-accept-${styleNum}-${field}`);
+  acceptBtn.classList.add('accepted');
+  showToast('Field accepted', 'success');
+}
+
+// ─── Field action: Toggle Why ───────────────────────────────────────
+function toggleWhy(styleNum, field) {
+  const toggle = document.getElementById(`why-toggle-${styleNum}-${field}`);
+  const content = document.getElementById(`why-${styleNum}-${field}`);
+  const isOpen = content.classList.contains('open');
+  content.classList.toggle('open', !isOpen);
+  toggle.classList.toggle('open', !isOpen);
+}
+
+// ─── Field action: Regenerate ──────────────────────────────────────
+async function regenerateField(styleNum, field) {
+  const fieldEl = document.getElementById(`f-${styleNum}-${field}`);
+  const regenBtn = document.getElementById(`btn-regen-${styleNum}-${field}`);
+
+  fieldEl.classList.add('regenerating');
+  regenBtn.classList.add('spinning');
+  regenBtn.disabled = true;
+
+  const currentContent = state.generatedContent[styleNum]?.[field] || fieldEl.textContent;
+
+  try {
+    const res = await fetch('/api/regenerate-field', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        style_id: styleNum,
+        field: field,
+        current_content: currentContent,
+        brand: state.brand,
+      }),
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      showToast(data.error, 'error');
+    } else {
+      // Show alternative
+      fieldEl.classList.remove('regenerating', 'accepted');
+      fieldEl.classList.add('alternative-shown');
+
+      // Insert alt label if not present
+      const wrap = fieldEl.parentElement;
+      let altLabel = wrap.querySelector('.field-alt-label');
+      if (!altLabel) {
+        altLabel = document.createElement('div');
+        altLabel.className = 'field-alt-label';
+        altLabel.textContent = 'Alternative:';
+        wrap.insertBefore(altLabel, fieldEl);
+      }
+
+      fieldEl.textContent = data.content;
+      updateContentState(styleNum, field, data.content);
+
+      // Update why if provided
+      if (data.why) {
+        const whyEl = document.getElementById(`why-${styleNum}-${field}`);
+        if (whyEl) whyEl.textContent = data.why;
+      }
+
+      showToast('Alternative generated', 'success');
+    }
+  } catch(e) {
+    showToast('Regeneration failed: ' + e.message, 'error');
+  } finally {
+    fieldEl.classList.remove('regenerating');
+    regenBtn.classList.remove('spinning');
+    regenBtn.disabled = false;
+  }
+}
+
+// ─── Field action: Edit ─────────────────────────────────────────────
+function editField(styleNum, field) {
+  const fieldEl = document.getElementById(`f-${styleNum}-${field}`);
+  const editArea = document.getElementById(`fea-${styleNum}-${field}`);
+  const editBtn = document.getElementById(`btn-edit-${styleNum}-${field}`);
+  const editTA = document.getElementById(`fedit-${styleNum}-${field}`);
+  const origText = document.getElementById(`forig-text-${styleNum}-${field}`);
+
+  // Store original
+  editTA.value = fieldEl.textContent;
+  origText.textContent = fieldEl.textContent.substring(0, 80) + (fieldEl.textContent.length > 80 ? '...' : '');
+
+  editArea.classList.add('visible');
+  fieldEl.style.display = 'none';
+  editBtn.classList.add('editing');
+  editTA.focus();
+}
+
+function confirmFieldEdit(styleNum, field) {
+  const fieldEl = document.getElementById(`f-${styleNum}-${field}`);
+  const editArea = document.getElementById(`fea-${styleNum}-${field}`);
+  const editTA = document.getElementById(`fedit-${styleNum}-${field}`);
+  const editBtn = document.getElementById(`btn-edit-${styleNum}-${field}`);
+  const original = fieldEl.textContent;
+  const newVal = editTA.value.trim();
+
+  // Save diff as feedback
+  fetch('/api/submit-feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ style_num: styleNum, field, original, updated: newVal }),
+  }).catch(() => {});
+
+  fieldEl.textContent = newVal;
+  updateContentState(styleNum, field, newVal);
+  fieldEl.classList.remove('alternative-shown');
+  fieldEl.classList.add('accepted');
+  fieldEl.style.display = '';
+  editArea.classList.remove('visible');
+  editBtn.classList.remove('editing');
+  showToast('Edit saved', 'success');
+}
+
+function cancelFieldEdit(styleNum, field) {
+  const fieldEl = document.getElementById(`f-${styleNum}-${field}`);
+  const editArea = document.getElementById(`fea-${styleNum}-${field}`);
+  const editBtn = document.getElementById(`btn-edit-${styleNum}-${field}`);
+  fieldEl.style.display = '';
+  editArea.classList.remove('visible');
+  editBtn.classList.remove('editing');
+}
+
+function saveFieldEdit(styleNum, field) {
+  // Called on blur — don't auto-confirm, just update state silently
+  const editTA = document.getElementById(`fedit-${styleNum}-${field}`);
+  if (editTA) updateContentState(styleNum, field, editTA.value.trim());
+}
+
+function updateFieldCharCount(styleNum, field, limit) {
+  if (!limit) return;
+  const editTA = document.getElementById(`fedit-${styleNum}-${field}`);
+  const counter = document.getElementById(`cc-edit-${styleNum}-${field}`);
+  if (editTA && counter) {
+    const len = editTA.value.length;
+    counter.textContent = `${len} / ${limit}`;
+    counter.classList.toggle('over-limit', len > limit);
+  }
+}
+
+function updateContentState(styleNum, field, value) {
+  if (!state.generatedContent[styleNum]) return;
+  if (field === 'title') state.generatedContent[styleNum].title = value;
+  else if (field === 'description') state.generatedContent[styleNum].description = value;
+  else if (field === 'backend_keywords') state.generatedContent[styleNum].backend_keywords = value;
+  else if (field.startsWith('bullet_')) {
+    const idx = parseInt(field.split('_')[1]) - 1;
+    if (!state.generatedContent[styleNum].bullets) state.generatedContent[styleNum].bullets = [];
+    state.generatedContent[styleNum].bullets[idx] = value;
+  }
+}
+
+// ─── Style card toggle ──────────────────────────────────────────────
+function toggleStyleCard(styleNum) {
+  const card = document.getElementById('sc-' + styleNum);
+  const chevron = document.getElementById('sc-chevron-' + styleNum);
+  const isOpen = card.classList.contains('open');
+  card.classList.toggle('open', !isOpen);
+  chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function expandAllStyles() {
+  Object.keys(state.generatedContent).forEach(sn => {
+    document.getElementById('sc-' + sn)?.classList.add('open');
+    const ch = document.getElementById('sc-chevron-' + sn);
+    if (ch) ch.style.transform = 'rotate(180deg)';
+  });
+}
+function collapseAllStyles() {
+  Object.keys(state.generatedContent).forEach(sn => {
+    document.getElementById('sc-' + sn)?.classList.remove('open');
+    const ch = document.getElementById('sc-chevron-' + sn);
+    if (ch) ch.style.transform = '';
+  });
+}
+
+// ─── Style feedback ─────────────────────────────────────────────────
+async function autoSaveStyleFeedback(styleNum) {
+  const text = document.getElementById('sfb-' + styleNum)?.value || '';
+  if (!text.trim()) return;
+  await fetch('/api/submit-feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ style_num: styleNum, feedback: text }),
+  }).catch(() => {});
+}
+
+async function submitGlobalFeedback() {
+  const text = document.getElementById('global-feedback').value;
+  if (!text.trim()) return;
+  await fetch('/api/submit-feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ style_num: null, feedback: text, field: 'global' }),
+  });
+  document.getElementById('global-feedback').value = '';
+  showToast('Global feedback saved', 'success');
+}
+
+// ═══════════════════════ OUTPUT: CSV ═══════════════════════
+async function downloadCSV() {
+  const btn = document.getElementById('btn-download-csv');
+  btn.disabled = true;
+  btn.textContent = 'Generating CSV...';
+  try {
+    const res = await fetch('/api/generate-csv', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand: state.brand,
+        styles: state.styles,
+        content: state.generatedContent,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      showToast(err.error || 'CSV generation failed', 'error');
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeBrand = (state.brand || 'NIS').replace(/\s+/g, '_');
+    a.href = url;
+    a.download = `NIS_${safeBrand}_Content.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV downloaded!', 'success');
+  } catch(e) {
+    showToast('CSV failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↓ Download All as CSV';
+  }
+}
+
+// ═══════════════════════ OUTPUT: XLSM ═══════════════════════
+async function generateNIS() {
+  const loadingEl = document.getElementById('nis-gen-loading');
+  const resultsEl = document.getElementById('nis-results');
+  const progressEl = document.getElementById('nis-progress');
+
+  loadingEl.classList.remove('hidden');
+  resultsEl.classList.add('hidden');
+
+  const statusText = document.getElementById('nis-gen-status-text');
+  const countText = document.getElementById('nis-gen-count');
+  const etaText = document.getElementById('nis-gen-eta');
+
+  const progressPoll = setInterval(async () => {
+    try {
+      const pr = await fetch('/api/generate-progress');
+      const pg = await pr.json();
+      if (pg.total > 0) {
+        progressEl.style.width = pg.percent + '%';
+        countText.textContent = pg.completed + ' of ' + pg.total + ' styles';
+        etaText.textContent = pg.eta || '';
+        statusText.textContent = 'Building NIS files — ' + pg.completed + ' of ' + pg.total + ' (' + pg.percent + '%)';
+      }
+    } catch(e) {}
+  }, 1000);
+
+  try {
+    const res = await fetch('/api/generate-nis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand: state.brand,
+        vendor_code: state.vendorCode,
+        styles: state.styles,
+        content: state.generatedContent,
+        template_path: state.templatePath,
+      }),
+    });
+    const data = await res.json();
+    clearInterval(progressPoll);
+    progressEl.style.width = '100%';
+    loadingEl.classList.add('hidden');
+    resultsEl.classList.remove('hidden');
+
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    state.nisResults = data.results || [];
+    const successCount = (data.results || []).length;
+    const errorCount = (data.errors || []).length;
+
+    document.getElementById('nis-result-summary').innerHTML = `<strong>${successCount}</strong> NIS files generated${errorCount > 0 ? `, <span style="color:var(--error)">${errorCount} failed</span>` : ''}`;
+
+    const tbody = document.getElementById('nis-results-tbody');
+    tbody.innerHTML = (data.results || []).map(r => `
+      <tr>
+        <td><strong>${r.style_num}</strong></td>
+        <td>${r.style_name}</td>
+        <td>${r.rows} rows</td>
+        <td style="font-size:12px; color:var(--text-sec);">${r.filename}</td>
+        <td><a href="/api/download/${encodeURIComponent(r.filename)}" class="btn btn-secondary btn-sm" download>↓ Download</a></td>
+      </tr>
+    `).join('');
+
+    if (data.errors && data.errors.length) {
+      const errEl = document.getElementById('nis-errors');
+      errEl.innerHTML = `<div class="alert alert-error"><span class="alert-icon">✗</span><div>${data.errors.map(e => `<div>${e}</div>`).join('')}</div></div>`;
+      errEl.classList.remove('hidden');
+    }
+
+    // Show zip download button
+    const zipBtn = document.createElement('button');
+    zipBtn.className = 'btn btn-success';
+    zipBtn.textContent = '↓ Download All as ZIP';
+    zipBtn.onclick = () => { window.location.href = '/api/download-all'; };
+    document.getElementById('download-actions').appendChild(zipBtn);
+
+    showToast(`${successCount} NIS files generated!`, 'success');
+
+  } catch(e) {
+    clearInterval(progressPoll);
+    loadingEl.classList.add('hidden');
+    showToast('Generation failed: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════ SESSION RESET ═══════════════════════
+async function resetSession() {
+  if (!confirm('Reset session? This clears all uploaded data and generated content.')) return;
+  try {
+    await fetch('/api/session-reset', { method: 'POST' });
+    state.brand = null;
+    state.brandConfig = null;
+    state.vendorCode = '';
+    state.styles = [];
+    state.keywords = [];
+    state.generatedContent = {};
+    state.nisResults = [];
+    state.hasTemplate = true;
+    state.templateLoaded = false;
+
+    // Reset UI
+    document.getElementById('product-results').classList.add('hidden');
+    document.getElementById('product-loading').classList.add('hidden');
+    document.getElementById('section-optional').classList.add('hidden');
+    document.getElementById('section-content').classList.add('hidden');
+    document.getElementById('reset-btn').style.display = 'none';
+
+    // Reset upload zones
+    document.getElementById('product-file-input').value = '';
+    document.getElementById('kw-file-input').value = '';
+    document.getElementById('ba-file-input').value = '';
+    document.getElementById('kw-results').classList.add('hidden');
+    document.getElementById('ba-results').classList.add('hidden');
+    document.getElementById('detection-card').classList.add('hidden');
+
+    showToast('Session reset', 'success');
+  } catch(e) {
+    showToast('Reset failed: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════ UTILITIES ═══════════════════════
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function toggleAccordion(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+function setupDropzoneOnce(zoneId, inputId, handler) {
+  // Deferred to DOMContentLoaded
+  window._dropzones = window._dropzones || [];
+  window._dropzones.push({ zoneId, inputId, handler });
+}
+
+function _initDropzones() {
+  (window._dropzones || []).forEach(({ zoneId, inputId, handler }) => {
+    const zone = document.getElementById(zoneId);
+    if (!zone) return;
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      handler(e.dataTransfer.files);
+    });
+  });
+}
+
+let toastTimeout;
+function showToast(msg, type = 'info') {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = `
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0,0,0,.18); max-width: 380px;
+      transition: opacity 0.3s; font-family: Calibri, sans-serif;
+    `;
+    document.body.appendChild(toast);
+  }
+  const colors = {
+    success: { bg: '#E8F5EE', color: '#1A7A50', border: '#A8D5BC' },
+    error:   { bg: '#FDECEA', color: '#C0392B', border: '#EAB0AA' },
+    warning: { bg: '#FEF9EC', color: '#D68910', border: '#F0D490' },
+    info:    { bg: '#E6F3F3', color: '#015558', border: '#A0CDD0' },
+  };
+  const c = colors[type] || colors.info;
+  toast.style.background = c.bg;
+  toast.style.color = c.color;
+  toast.style.border = `1px solid ${c.border}`;
+  const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
+  toast.textContent = (icons[type] || '') + ' ' + msg;
+  toast.style.opacity = '1';
+  toast.style.display = 'block';
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.style.display = 'none', 300); }, 3500);
+}
+
+// ═══════════════════════ INIT ═══════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  _initDropzones();
+
+  // Load default template silently
+  loadDefaultTemplate();
+
+  // Init template dropzone
+  const tmplZone = document.getElementById('template-dropzone');
+  if (tmplZone) {
+    tmplZone.addEventListener('dragover', e => { e.preventDefault(); tmplZone.classList.add('drag-over'); });
+    tmplZone.addEventListener('dragleave', () => tmplZone.classList.remove('drag-over'));
+    tmplZone.addEventListener('drop', e => {
+      e.preventDefault();
+      tmplZone.classList.remove('drag-over');
+      handleTemplateUpload(e.dataTransfer.files);
+    });
+  }
+
+  // Restore session state
+  try {
+    const res = await fetch('/api/session-restore');
+    const session = await res.json();
+    if (session.brand && session.styles_count > 0) {
+      state.brand = session.brand;
+      state.brandConfig = session.brand_config;
+      state.vendorCode = session.vendor_code || '';
+      state.styles = session.styles || [];
+      if (session.template_loaded) {
+        state.templateLoaded = true;
+        state.hasTemplate = true;
+      }
+      if (session.content_generated) {
+        state.generatedContent = session.generated_content;
+      }
+      document.getElementById('reset-btn').style.display = 'inline-flex';
+      showToast('Session restored — ' + session.brand + ', ' + session.styles_count + ' styles.', 'success');
+    }
+  } catch(e) { /* fresh session */ }
+});
+
+
+// ═══════════════════════ CATALOG HEALTH ═══════════════════════
+
+const chState = {
+  analysis: null,
+  allIssues: [],
+  filteredIssues: [],
+  visibleCount: 100,
+  sortField: 'priority',
+  sortAsc: false,
+  polling: null,
+};
+
+// ── Help text toggle ────────────────────────────────────────────
+function toggleChHelp(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ── Upload Catalog ──────────────────────────────────────────────
+async function chUploadCatalog(files) {
+  if (!files || !files[0]) return;
+  const file = files[0];
+
+  const zone = document.getElementById('ch-catalog-zone');
+  zone.style.borderColor = 'var(--accent)';
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  showToast('Uploading catalog...', 'info');
+
+  try {
+    const res = await fetch('/api/catalog/upload-catalog', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    document.getElementById('ch-catalog-status').classList.remove('hidden');
+    document.getElementById('ch-catalog-status-msg').textContent =
+      `${file.name} — ${data.rows.toLocaleString()} rows loaded`;
+
+    chShowDetection(data);
+    showToast(`Catalog loaded: ${data.rows.toLocaleString()} ASINs. Analyzing...`, 'success');
+    chStartPolling();
+
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+// ── Upload Sales ────────────────────────────────────────────────
+async function chUploadSales(files) {
+  if (!files || !files[0]) return;
+  const file = files[0];
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  showToast('Uploading sales data...', 'info');
+
+  try {
+    const res = await fetch('/api/catalog/upload-sales', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    document.getElementById('ch-sales-status').classList.remove('hidden');
+    document.getElementById('ch-sales-status-msg').textContent =
+      `${file.name} — ${data.rows.toLocaleString()} rows, ${data.asins_matched.toLocaleString()} ASINs matched`;
+
+    showToast(`Sales data loaded. Re-running analysis with revenue data...`, 'success');
+    chStartPolling();
+
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+// ── Show Detection Summary ──────────────────────────────────────
+function chShowDetection(data) {
+  const card = document.getElementById('ch-detection-card');
+  card.classList.remove('hidden');
+  document.getElementById('ch-detection-title').textContent =
+    `Format: ${data.format} — ${data.mapped_count} of ${data.total_fields} fields detected`;
+  document.getElementById('ch-detection-sub').textContent = data.detection_summary;
+
+  const pills = document.getElementById('ch-detection-pills');
+  const detected = data.detected_fields || {};
+  const allFields = ['asin','parent_asin','sku','title','brand','color','size',
+    'bullet_1','bullet_2','bullet_3','bullet_4','bullet_5','description',
+    'backend_keywords','main_image','price','quantity','category','variation_theme','status'];
+
+  pills.innerHTML = allFields.map(f => {
+    const mapped = detected[f];
+    const ok = !!mapped;
+    return `<span class="ch-pill ${ok ? 'ch-pill-ok' : 'ch-pill-missing'}">
+      ${ok ? '✓' : '✗'} ${f.replace(/_/g,' ')}${ok ? ` → ${mapped}` : ''}
+    </span>`;
+  }).join('');
+}
+
+// ── Polling ─────────────────────────────────────────────────────
+function chStartPolling() {
+  if (chState.polling) clearInterval(chState.polling);
+
+  const progressCard = document.getElementById('ch-progress-card');
+  progressCard.classList.remove('hidden');
+
+  chState.polling = setInterval(async () => {
+    try {
+      const pr = await fetch('/api/catalog/progress');
+      const pg = await pr.json();
+
+      if (pg.total > 0) {
+        document.getElementById('ch-progress-fill').style.width = pg.percent + '%';
+        document.getElementById('ch-progress-msg').textContent = pg.message || 'Analyzing...';
+        document.getElementById('ch-progress-count').textContent =
+          pg.processed.toLocaleString() + ' of ' + pg.total.toLocaleString() + ' ASINs';
+      }
+
+      if (pg.status === 'done') {
+        clearInterval(chState.polling);
+        chState.polling = null;
+        progressCard.classList.add('hidden');
+        chLoadResults();
+      }
+    } catch(e) {}
+  }, 800);
+}
+
+// ── Load Results ─────────────────────────────────────────────────
+async function chLoadResults() {
+  try {
+    const res = await fetch('/api/catalog/results');
+    const data = await res.json();
+    if (data.status !== 'done' || !data.analysis) return;
+
+    chState.analysis = data.analysis;
+    chState.allIssues = data.analysis.issues || [];
+    chState.filteredIssues = [...chState.allIssues];
+
+    chRenderSummary(data.analysis.summary);
+    chPopulateFilters(data.analysis.summary);
+    chApplyFilters();
+    chRenderMatrix();
+
+    document.getElementById('ch-summary-section').classList.remove('hidden');
+    document.getElementById('ch-filters-section').classList.remove('hidden');
+    document.getElementById('ch-issues-section').classList.remove('hidden');
+    if (Object.keys(data.analysis.variation_matrix || {}).length > 0) {
+      document.getElementById('ch-matrix-section').classList.remove('hidden');
+    }
+
+    showToast('Analysis complete!', 'success');
+
+  } catch(e) {
+    showToast('Failed to load results: ' + e.message, 'error');
+  }
+}
+
+// ── Render Summary Cards ─────────────────────────────────────────
+function chRenderSummary(summary) {
+  const cards = [
+    { label: 'Total ASINs',      val: summary.total_asins.toLocaleString(),     cls: '' },
+    { label: 'Total Parents',    val: summary.total_parents.toLocaleString(),   cls: '' },
+    { label: 'Total Children',   val: summary.total_children.toLocaleString(),  cls: '' },
+    { label: 'Avg Health Score', val: summary.avg_score,                        cls: summary.avg_score >= 80 ? 'success' : summary.avg_score >= 60 ? 'warn' : 'error' },
+    { label: 'Critical Issues',  val: summary.critical_issues.toLocaleString(), cls: 'error' },
+    {
+      label: summary.revenue_at_risk > 0 ? 'Revenue at Risk' : 'Total Issues',
+      val: summary.revenue_at_risk > 0 ? '$' + summary.revenue_at_risk.toLocaleString('en-US', {maximumFractionDigits:0}) : summary.total_issues.toLocaleString(),
+      cls: 'error'
+    },
+  ];
+
+  document.getElementById('ch-stat-cards').innerHTML = cards.map(c => `
+    <div class="stat-card">
+      <div class="stat-num ${c.cls}">${c.val}</div>
+      <div class="stat-label">${c.label}</div>
+    </div>
+  `).join('');
+
+  const dist = summary.score_distribution || {};
+  const total = summary.total_asins || 1;
+  const bar = document.getElementById('ch-score-bar');
+  bar.innerHTML = ['green','yellow','orange','red'].map(color => {
+    const count = dist[color] || 0;
+    const pct = (count / total * 100).toFixed(1);
+    return `<span class="ch-score-${color}" style="width:${pct}%" title="${color}: ${count} (${pct}%)"></span>`;
+  }).join('');
+}
+
+// ── Populate Filters ─────────────────────────────────────────────
+function chPopulateFilters(summary) {
+  const brandSel = document.getElementById('ch-filter-brand');
+  const catSel   = document.getElementById('ch-filter-category');
+  const subcatSel= document.getElementById('ch-filter-subcat');
+
+  (summary.brands || []).forEach(b => {
+    const opt = document.createElement('option'); opt.value = b; opt.textContent = b;
+    brandSel.appendChild(opt);
+  });
+  (summary.categories || []).forEach(c => {
+    const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
+    catSel.appendChild(opt);
+  });
+  (summary.subcategories || []).forEach(s => {
+    const opt = document.createElement('option'); opt.value = s; opt.textContent = s;
+    subcatSel.appendChild(opt);
+  });
+
+  const matrixSel = document.getElementById('ch-matrix-parent');
+  const matrix = chState.analysis?.variation_matrix || {};
+  Object.keys(matrix).forEach(p => {
+    const opt = document.createElement('option'); opt.value = p; opt.textContent = p;
+    matrixSel.appendChild(opt);
+  });
+}
+
+// ── Apply Filters ────────────────────────────────────────────────
+function chApplyFilters() {
+  const brand  = document.getElementById('ch-filter-brand').value;
+  const cat    = document.getElementById('ch-filter-category').value;
+  const subcat = document.getElementById('ch-filter-subcat').value;
+  const score  = document.getElementById('ch-filter-score').value;
+  const issue  = document.getElementById('ch-filter-issue').value;
+
+  chState.filteredIssues = chState.allIssues.filter(iss => {
+    if (brand  && iss.brand !== brand) return false;
+    if (cat    && iss.category !== cat) return false;
+    if (subcat && iss.subcategory !== subcat) return false;
+    if (score) {
+      const asinData = (chState.analysis?.scored_rows || []).find(r => r.asin === iss.asin);
+      if (asinData && asinData.score_color !== score) return false;
+    }
+    if (issue && !iss.issue.toLowerCase().includes(issue.toLowerCase())) return false;
+    return true;
+  });
+
+  chState.visibleCount = 100;
+  document.getElementById('ch-filter-count').textContent =
+    `Showing ${Math.min(chState.filteredIssues.length, chState.visibleCount).toLocaleString()} of ${chState.filteredIssues.length.toLocaleString()} issues`;
+
+  chRenderIssuesTable();
+}
+
+function chClearFilters() {
+  document.getElementById('ch-filter-brand').value = '';
+  document.getElementById('ch-filter-category').value = '';
+  document.getElementById('ch-filter-subcat').value = '';
+  document.getElementById('ch-filter-score').value = '';
+  document.getElementById('ch-filter-issue').value = '';
+  chApplyFilters();
+}
+
+// ── Render Issues Table ──────────────────────────────────────────
+function chRenderIssuesTable() {
+  const tbody = document.getElementById('ch-issues-tbody');
+  const issues = chState.filteredIssues.slice(0, chState.visibleCount);
+  const total  = chState.filteredIssues.length;
+
+  document.getElementById('ch-showing-count').textContent = Math.min(total, chState.visibleCount).toLocaleString();
+  document.getElementById('ch-total-count').textContent   = total.toLocaleString();
+
+  const loadMoreBtn = document.getElementById('ch-load-more-btn');
+  loadMoreBtn.style.display = total > chState.visibleCount ? 'inline-flex' : 'none';
+
+  const sevClass = { Critical:'sev-critical', High:'sev-high', Medium:'sev-medium', Low:'sev-low' };
+
+  tbody.innerHTML = issues.map((iss, idx) => {
+    const revStr = iss.revenue_impact > 0 ? '$' + iss.revenue_impact.toLocaleString('en-US', {maximumFractionDigits:0}) : '—';
+    const sc = sevClass[iss.severity_label] || 'sev-low';
+    return `
+      <tr onclick="chToggleRow(${idx})" style="cursor:pointer;" id="ch-row-${idx}">
+        <td><strong>${Math.round(iss.priority)}</strong></td>
+        <td style="font-family:monospace;font-size:12px;">${escHtml(iss.asin)}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(iss.title)}</td>
+        <td>${escHtml(iss.brand)}</td>
+        <td>${escHtml(iss.category)}</td>
+        <td>${escHtml(iss.issue)}</td>
+        <td><span class="badge ${sc}">${iss.severity_label}</span></td>
+        <td>${revStr}</td>
+        <td style="font-size:12px;color:var(--text-sec);">${escHtml(iss.fix_action)}</td>
+      </tr>
+      <tr id="ch-expand-${idx}" class="ch-row-expanded" style="display:none;">
+        <td colspan="9">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div><strong>ASIN:</strong> ${escHtml(iss.asin)}</div>
+            <div><strong>Issue:</strong> ${escHtml(iss.issue)}</div>
+            <div><strong>Severity:</strong> ${iss.severity}/10</div>
+            <div><strong>Content Score:</strong> <span class="ch-score-chip chip-${chScoreColor(iss.content_score)}">${iss.content_score}/100</span></div>
+            <div><strong>Revenue Impact:</strong> ${revStr}</div>
+            <div><strong>Priority Score:</strong> ${iss.priority}</div>
+          </div>
+          <div style="margin-top:10px;padding:10px;background:var(--accent-lt);border-radius:6px;">
+            <strong>Recommended Fix:</strong> ${escHtml(iss.fix_action)}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function chToggleRow(idx) {
+  const expandRow = document.getElementById('ch-expand-' + idx);
+  if (!expandRow) return;
+  expandRow.style.display = expandRow.style.display === 'none' ? 'table-row' : 'none';
+}
+
+function chScoreColor(score) {
+  if (score >= 90) return 'green';
+  if (score >= 70) return 'yellow';
+  if (score >= 50) return 'orange';
+  return 'red';
+}
+
+function chLoadMore() {
+  chState.visibleCount += 100;
+  chRenderIssuesTable();
+  document.getElementById('ch-filter-count').textContent =
+    `Showing ${Math.min(chState.filteredIssues.length, chState.visibleCount).toLocaleString()} of ${chState.filteredIssues.length.toLocaleString()} issues`;
+}
+
+// ── Sorting ──────────────────────────────────────────────────────
+function chSortBy(field) {
+  if (chState.sortField === field) {
+    chState.sortAsc = !chState.sortAsc;
+  } else {
+    chState.sortField = field;
+    chState.sortAsc = field !== 'priority' && field !== 'revenue_impact';
+  }
+  chState.filteredIssues.sort((a, b) => {
+    let av = a[field], bv = b[field];
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av < bv) return chState.sortAsc ? -1 : 1;
+    if (av > bv) return chState.sortAsc ? 1 : -1;
+    return 0;
+  });
+  chState.visibleCount = 100;
+  chRenderIssuesTable();
+}
+
+// ── Variation Matrix ─────────────────────────────────────────────
+function chRenderMatrix() {
+  const parent = document.getElementById('ch-matrix-parent').value;
+  const grid = document.getElementById('ch-matrix-grid');
+  if (!parent || !chState.analysis) { grid.innerHTML = ''; return; }
+
+  const matrix = chState.analysis.variation_matrix || {};
+  const m = matrix[parent];
+  if (!m) { grid.innerHTML = '<div class="alert alert-info"><span class="alert-icon">ℹ</span> No variation matrix data for this parent.</div>'; return; }
+
+  const colors = m.colors || [];
+  const sizes  = m.sizes  || [];
+  const present= new Set((m.present || []).map(p => p[0]+'|'+p[1]));
+  const missing= new Set((m.missing || []).map(p => p[0]+'|'+p[1]));
+
+  const childMap = {};
+  (chState.analysis.scored_rows || []).forEach(r => {
+    if (r.parent_asin === parent) {
+      const key = (r.color || '') + '|' + (r.size || '');
+      childMap[key] = r;
+    }
+  });
+
+  let tableHtml = '<table class="ch-matrix-table"><thead><tr><th>Color \\ Size</th>';
+  sizes.forEach(s => { tableHtml += `<th>${escHtml(s)}</th>`; });
+  tableHtml += '</tr></thead><tbody>';
+
+  colors.forEach(color => {
+    tableHtml += `<tr><th style="text-align:left;">${escHtml(color)}</th>`;
+    sizes.forEach(size => {
+      const key = color + '|' + size;
+      if (missing.has(key)) {
+        tableHtml += `<td class="ch-cell-missing" title="Missing from catalog">✗</td>`;
+      } else if (present.has(key)) {
+        const child = childMap[key];
+        if (child) {
+          const cls = child.content_score >= 80 ? 'ch-cell-present-green' : 'ch-cell-present-yellow';
+          const symbol = child.content_score >= 80 ? '✓' : '⚠';
+          tableHtml += `<td class="${cls}" title="ASIN: ${child.asin}, Score: ${child.content_score}">${symbol}<br><span style="font-size:10px;">${child.content_score}</span></td>`;
+        } else {
+          tableHtml += `<td class="ch-cell-present-green">✓</td>`;
+        }
+      } else {
+        tableHtml += `<td class="ch-cell-empty">—</td>`;
+      }
+    });
+    tableHtml += '</tr>';
+  });
+
+  tableHtml += '</tbody></table>';
+  tableHtml += `<div style="margin-top:10px;display:flex;gap:12px;font-size:12px;flex-wrap:wrap;">
+    <span><span style="color:#1A7A50;font-weight:700;">✓</span> Present &amp; healthy (80+)</span>
+    <span><span style="color:#D68910;font-weight:700;">⚠</span> Present but incomplete</span>
+    <span><span style="color:#C0392B;font-weight:700;">✗</span> Missing from catalog</span>
+  </div>`;
+
+  grid.innerHTML = tableHtml;
+}
+
+// ── Exports ──────────────────────────────────────────────────────
+function chExportFixFile() {
+  if (!chState.analysis) { showToast('Run analysis first', 'error'); return; }
+  window.location.href = '/api/catalog/fix-file';
+}
+
+function chExportFull() {
+  if (!chState.analysis) { showToast('Run analysis first', 'error'); return; }
+  window.location.href = '/api/catalog/export';
+}
+
+// ── Dropzone setup ───────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const setupDZ = (zoneId, inputId, handler) => {
+    const zone = document.getElementById(zoneId);
+    if (!zone) return;
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      handler(e.dataTransfer.files);
+    });
+  };
+  setupDZ('ch-catalog-zone', 'ch-catalog-input', chUploadCatalog);
+  setupDZ('ch-sales-zone',   'ch-sales-input',   chUploadSales);
+});
+
+</script>
+</body>
+</html>
