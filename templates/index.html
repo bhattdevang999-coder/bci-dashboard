@@ -1284,9 +1284,22 @@
           </div>
         </div>
 
-        <div class="download-actions" id="download-actions">
-          <button class="btn btn-primary" id="btn-download-csv" onclick="downloadCSV()">↓ Download All as CSV</button>
-          <button class="btn btn-success" id="btn-download-xlsm" onclick="generateNIS()" style="display:none;">↓ Download All as .xlsm (ZIP)</button>
+        <div class="download-actions" id="download-actions" style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="btn-download-csv" onclick="downloadCSV()">↓ Download All as CSV</button>
+            <button class="btn btn-success" id="btn-download-xlsm" onclick="generateNIS()" style="display:none;">↓ Download All as .xlsm (ZIP)</button>
+            <button class="btn" id="btn-download-combined" onclick="downloadCombined()" style="display:none; background:#28251D; color:#fff;">↓ Download All in One File (.xlsm)</button>
+          </div>
+          <div id="category-downloads" style="display:none;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-sec); margin-bottom:6px;">DOWNLOAD BY CATEGORY</div>
+            <div id="category-buttons" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+          </div>
+        </div>
+
+        <!-- Category filter -->
+        <div id="category-filter" style="display:none; margin:12px 0;">
+          <label style="font-size:12px; font-weight:600; color:var(--text-sec);">FILTER BY CATEGORY</label>
+          <div id="category-filter-buttons" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;"></div>
         </div>
 
         <!-- NIS results table -->
@@ -1983,6 +1996,7 @@ async function generateContent() {
     document.getElementById('content-summary').textContent = `${total} styles generated. Expand any style to review, edit, or regenerate fields.`;
 
     renderStyleCards();
+    loadCategoryButtons();
 
     // Show xlsm button only if template loaded
     if (state.hasTemplate) {
@@ -2017,6 +2031,7 @@ function renderStyleCards() {
     const card = document.createElement('div');
     card.className = 'style-card';
     card.id = 'sc-' + styleNum;
+    card.dataset.category = c.sub_class || c.category || '';
 
     card.innerHTML = `
       <div class="style-card-header" onclick="toggleStyleCard('${styleNum}')">
@@ -2300,6 +2315,60 @@ async function submitGlobalFeedback() {
 }
 
 // ═══════════════════════ OUTPUT: CSV ═══════════════════════
+function downloadCombined() {
+  window.location.href = '/api/download-combined';
+}
+
+function downloadCategory(category) {
+  window.location.href = '/api/download-category/' + encodeURIComponent(category);
+}
+
+async function loadCategoryButtons() {
+  try {
+    const res = await fetch('/api/categories');
+    const cats = await res.json();
+    if (cats.length > 1) {
+      // Show category filter buttons
+      const filterDiv = document.getElementById('category-filter');
+      const filterBtns = document.getElementById('category-filter-buttons');
+      filterDiv.style.display = 'block';
+      filterBtns.innerHTML = '<button class="btn btn-sm" style="font-size:11px; padding:4px 10px; background:var(--accent); color:#fff;" onclick="filterStyles(null)">All</button>';
+      cats.forEach(c => {
+        filterBtns.innerHTML += `<button class="btn btn-sm" style="font-size:11px; padding:4px 10px;" onclick="filterStyles('${c.name}')">${c.name} (${c.count})</button>`;
+      });
+      
+      // Show category download buttons
+      const catDownloads = document.getElementById('category-downloads');
+      const catBtns = document.getElementById('category-buttons');
+      catDownloads.style.display = 'block';
+      catBtns.innerHTML = '';
+      cats.forEach(c => {
+        catBtns.innerHTML += `<button class="btn" style="font-size:11px; padding:6px 12px; background:var(--accent); color:#fff;" onclick="downloadCategory('${c.name}')">↓ ${c.name} (${c.count} styles, ${c.variants} rows)</button>`;
+      });
+      
+      // Show combined download button
+      document.getElementById('btn-download-combined').style.display = 'inline-block';
+    }
+  } catch(e) { console.error('Failed to load categories', e); }
+}
+
+function filterStyles(category) {
+  const cards = document.querySelectorAll('.style-card');
+  cards.forEach(card => {
+    if (!category) {
+      card.style.display = '';
+    } else {
+      const cat = card.dataset.category || '';
+      card.style.display = cat.toLowerCase() === category.toLowerCase() ? '' : 'none';
+    }
+  });
+  // Update filter button styles
+  document.querySelectorAll('#category-filter-buttons .btn').forEach(btn => {
+    btn.style.background = '';
+    btn.style.color = '';
+  });
+}
+
 async function downloadCSV() {
   const btn = document.getElementById('btn-download-csv');
   btn.disabled = true;

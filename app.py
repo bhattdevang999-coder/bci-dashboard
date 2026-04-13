@@ -1169,6 +1169,7 @@ def generate_content():
             "silhouette": silhouette,
             "color_map": color_map_val,
             "category": category,
+            "sub_class": sub_class,
             "subcategory": subcategory,
             "fabric": fabric,
             "care": care,
@@ -1621,6 +1622,396 @@ def download_all():
         download_name="NIS_All_Files.zip",
         mimetype="application/zip",
     )
+
+@app.route("/api/download-combined")
+def download_combined():
+    """Download ALL styles combined into a single .xlsm file."""
+    brand = session_data.get("brand", "Brand")
+    styles = session_data.get("styles", [])
+    content_map = session_data.get("generated_content", {})
+    template_path = session_data.get("template_path", str(DEFAULT_TEMPLATE))
+    brand_cfg = _load_brand_config_data(brand)
+    vendor_code = session_data.get("vendor_code", brand_cfg.get("vendor_code_full", ""))
+    
+    if not styles or not content_map:
+        return jsonify({"error": "No generated content. Run Generate Content first."}), 400
+    
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        wb = openpyxl.load_workbook(template_path, keep_vba=True)
+    
+    ws = None
+    for name in wb.sheetnames:
+        if "template" in name.lower() or "dress" in name.lower():
+            ws = wb[name]
+            break
+    if ws is None:
+        ws = wb.active
+    
+    # Build column map
+    col_map = {}
+    max_col = ws.max_column or 254
+    for col in range(1, max_col + 1):
+        h = _safe(ws.cell(row=3, column=col).value)
+        fid = _safe(ws.cell(row=4, column=col).value)
+        col_map[col] = {"header": h, "field_id": fid}
+    
+    def find_col(fid_sub):
+        for c, info in col_map.items():
+            if fid_sub.lower() in info["field_id"].lower():
+                return c
+        return None
+    def find_col_exact(fid_exact):
+        for c, info in col_map.items():
+            if info["field_id"].lower() == fid_exact.lower():
+                return c
+        return None
+    
+    # Same column lookups as do_xlsm_surgery
+    COL = {
+        "vendor_code": find_col("rtip_vendor_code"),
+        "vendor_sku": find_col("vendor_sku"),
+        "product_type": find_col("product_type"),
+        "parentage": find_col("parentage_level"),
+        "child_rel": find_col("child_relationship_type"),
+        "parent_sku": find_col("parent_sku"),
+        "var_theme": find_col("variation_theme"),
+        "item_name": find_col("item_name"),
+        "brand": find_col("brand#1"),
+        "ext_id_type": find_col("external_product_id#1.type"),
+        "ext_id_val": find_col("external_product_id#1.value"),
+        "itk": find_col("item_type_keyword"),
+        "model_num": find_col("model_number"),
+        "model_name": find_col("model_name"),
+        "bullet1": find_col_exact("bullet_point#1.value"),
+        "bullet2": find_col_exact("bullet_point#2.value"),
+        "bullet3": find_col_exact("bullet_point#3.value"),
+        "bullet4": find_col_exact("bullet_point#4.value"),
+        "bullet5": find_col_exact("bullet_point#5.value"),
+        "keywords": find_col_exact("generic_keyword#1.value"),
+        "dept": find_col("department#1"),
+        "gender": find_col("target_gender"),
+        "size_sys": find_col_exact("apparel_size#1.size_system"),
+        "size_class": find_col_exact("apparel_size#1.size_class"),
+        "size_val": find_col_exact("apparel_size#1.size"),
+        "material": find_col_exact("material#1.value"),
+        "desc": find_col("rtip_product_description"),
+        "color_map": find_col("color#1.standardized"),
+        "color": find_col_exact("color#1.value"),
+        "care": find_col("care_instructions"),
+        "upf": find_col("ultraviolet_protection"),
+        "coo": find_col("country_of_origin"),
+        "list_price": find_col("list_price") or find_col("standard_price"),
+    }
+    
+    # Capture styles from row 7
+    cell_styles = {}
+    for col in range(1, max_col + 1):
+        cell = ws.cell(row=7, column=col)
+        cell_styles[col] = {
+            "font": copy(cell.font), "fill": copy(cell.fill),
+            "border": copy(cell.border), "alignment": copy(cell.alignment),
+            "number_format": cell.number_format,
+        }
+    
+    # Clear existing data rows
+    for row in range(7, ws.max_row + 1):
+        for col in range(1, max_col + 1):
+            ws.cell(row=row, column=col).value = None
+    
+    # Write ALL styles into the same file
+    current_row = 7
+    for style in styles:
+        style_num = style["style_num"]
+        content = content_map.get(style_num, {})
+        if not content:
+            continue
+        
+        parent_sku = f"{brand_cfg.get('vendor_code_prefix', '')}-{style_num}".strip("-")
+        category = content.get("category", "casual-and-day-dresses")
+        sub_class = style.get("sub_class", "")
+        product_type = "DRESS"  # from template
+        
+        # Parent row
+        def write_cell(row, col_key, value):
+            c = COL.get(col_key)
+            if c and value:
+                cell = ws.cell(row=row, column=c)
+                cell.value = str(value)
+                for prop, sval in cell_styles.get(c, {}).items():
+                    if prop == "number_format":
+                        cell.number_format = sval
+                    else:
+                        setattr(cell, prop, sval)
+        
+        write_cell(current_row, "vendor_code", vendor_code)
+        write_cell(current_row, "vendor_sku", parent_sku)
+        write_cell(current_row, "product_type", product_type)
+        write_cell(current_row, "parentage", "Parent")
+        write_cell(current_row, "var_theme", "ColorSize")
+        write_cell(current_row, "item_name", content.get("title", ""))
+        write_cell(current_row, "brand", brand)
+        write_cell(current_row, "itk", category)
+        write_cell(current_row, "model_num", style_num)
+        write_cell(current_row, "model_name", style.get("style_name", "").title())
+        write_cell(current_row, "bullet1", content.get("bullet_1", ""))
+        write_cell(current_row, "bullet2", content.get("bullet_2", ""))
+        write_cell(current_row, "bullet3", content.get("bullet_3", ""))
+        write_cell(current_row, "bullet4", content.get("bullet_4", ""))
+        write_cell(current_row, "bullet5", content.get("bullet_5", ""))
+        write_cell(current_row, "keywords", content.get("backend_keywords", ""))
+        write_cell(current_row, "desc", content.get("description", ""))
+        write_cell(current_row, "dept", brand_cfg.get("department", "Womens"))
+        write_cell(current_row, "gender", brand_cfg.get("gender", "Female"))
+        current_row += 1
+        
+        # Child rows
+        for var in style.get("variants", []):
+            color = var.get("color", "")
+            size = var.get("size", "")
+            upc = var.get("upc", "")
+            child_sku = f"{parent_sku}-{color}-{size}".replace(" ", "_")
+            child_title = content.get("title", "").replace(style.get("style_name", "").title(), style.get("style_name", "").title())
+            if color:
+                child_title = child_title.split(",")[0] + f", {color.title()}, {SIZE_MAP.get(size, size)}"
+            
+            write_cell(current_row, "vendor_code", vendor_code)
+            write_cell(current_row, "vendor_sku", child_sku)
+            write_cell(current_row, "product_type", product_type)
+            write_cell(current_row, "parentage", "Child")
+            write_cell(current_row, "child_rel", "Variation")
+            write_cell(current_row, "parent_sku", parent_sku)
+            write_cell(current_row, "var_theme", "ColorSize")
+            write_cell(current_row, "item_name", child_title)
+            write_cell(current_row, "brand", brand)
+            if upc:
+                write_cell(current_row, "ext_id_type", "UPC")
+                write_cell(current_row, "ext_id_val", upc)
+            write_cell(current_row, "itk", category)
+            write_cell(current_row, "model_num", style_num)
+            write_cell(current_row, "bullet1", content.get("bullet_1", ""))
+            write_cell(current_row, "bullet2", content.get("bullet_2", ""))
+            write_cell(current_row, "bullet3", content.get("bullet_3", ""))
+            write_cell(current_row, "bullet4", content.get("bullet_4", ""))
+            write_cell(current_row, "bullet5", content.get("bullet_5", ""))
+            write_cell(current_row, "keywords", content.get("backend_keywords", ""))
+            write_cell(current_row, "desc", content.get("description", ""))
+            write_cell(current_row, "color_map", COLOR_MAP_LOOKUP.get(color.upper(), "Multicolour"))
+            write_cell(current_row, "color", color.title())
+            write_cell(current_row, "size_sys", "US")
+            write_cell(current_row, "size_class", "Alpha")
+            write_cell(current_row, "size_val", SIZE_MAP.get(size, size))
+            write_cell(current_row, "material", brand_cfg.get("default_fabric", ""))
+            write_cell(current_row, "care", brand_cfg.get("default_care", "Machine Wash"))
+            write_cell(current_row, "coo", brand_cfg.get("default_coo", ""))
+            write_cell(current_row, "dept", brand_cfg.get("department", "Womens"))
+            write_cell(current_row, "gender", brand_cfg.get("gender", "Female"))
+            if brand_cfg.get("default_upf"):
+                write_cell(current_row, "upf", f"UPF {brand_cfg['default_upf']}")
+            write_cell(current_row, "list_price", var.get("list_price", ""))
+            current_row += 1
+    
+    # Save combined file
+    safe_brand = brand.replace(" ", "_")
+    combined_name = f"NIS_{safe_brand}_ALL_STYLES.xlsm"
+    combined_path = UPLOAD_OUTPUT / combined_name
+    wb.save(str(combined_path))
+    
+    return send_file(
+        str(combined_path),
+        as_attachment=True,
+        download_name=combined_name,
+        mimetype="application/vnd.ms-excel.sheet.macroEnabled.12",
+    )
+
+
+@app.route("/api/download-category/<category>")
+def download_category(category):
+    """Download all styles of a specific category combined into one .xlsm file."""
+    brand = session_data.get("brand", "Brand")
+    styles = session_data.get("styles", [])
+    content_map = session_data.get("generated_content", {})
+    template_path = session_data.get("template_path", str(DEFAULT_TEMPLATE))
+    brand_cfg = _load_brand_config_data(brand)
+    vendor_code = session_data.get("vendor_code", brand_cfg.get("vendor_code_full", ""))
+    
+    if not styles or not content_map:
+        return jsonify({"error": "No generated content. Run Generate Content first."}), 400
+    
+    # Filter styles by category
+    filtered_styles = [s for s in styles if s.get("sub_class", "").lower() == category.lower() 
+                       or s.get("category", "").lower() == category.lower()]
+    
+    if not filtered_styles:
+        return jsonify({"error": f"No styles found for category '{category}'"}), 404
+    
+    # Use the combined download logic but only for filtered styles
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        wb = openpyxl.load_workbook(template_path, keep_vba=True)
+    
+    ws = None
+    for name in wb.sheetnames:
+        if "template" in name.lower() or "dress" in name.lower():
+            ws = wb[name]
+            break
+    if ws is None:
+        ws = wb.active
+    
+    col_map = {}
+    max_col = ws.max_column or 254
+    for col in range(1, max_col + 1):
+        h = _safe(ws.cell(row=3, column=col).value)
+        fid = _safe(ws.cell(row=4, column=col).value)
+        col_map[col] = {"header": h, "field_id": fid}
+    
+    def find_col(fid_sub):
+        for c, info in col_map.items():
+            if fid_sub.lower() in info["field_id"].lower():
+                return c
+        return None
+    def find_col_exact(fid_exact):
+        for c, info in col_map.items():
+            if info["field_id"].lower() == fid_exact.lower():
+                return c
+        return None
+    
+    COL = {
+        "vendor_code": find_col("rtip_vendor_code"), "vendor_sku": find_col("vendor_sku"),
+        "product_type": find_col("product_type"), "parentage": find_col("parentage_level"),
+        "child_rel": find_col("child_relationship_type"), "parent_sku": find_col("parent_sku"),
+        "var_theme": find_col("variation_theme"), "item_name": find_col("item_name"),
+        "brand": find_col("brand#1"), "ext_id_type": find_col("external_product_id#1.type"),
+        "ext_id_val": find_col("external_product_id#1.value"), "itk": find_col("item_type_keyword"),
+        "model_num": find_col("model_number"), "model_name": find_col("model_name"),
+        "bullet1": find_col_exact("bullet_point#1.value"), "bullet2": find_col_exact("bullet_point#2.value"),
+        "bullet3": find_col_exact("bullet_point#3.value"), "bullet4": find_col_exact("bullet_point#4.value"),
+        "bullet5": find_col_exact("bullet_point#5.value"), "keywords": find_col_exact("generic_keyword#1.value"),
+        "dept": find_col("department#1"), "gender": find_col("target_gender"),
+        "size_sys": find_col_exact("apparel_size#1.size_system"), "size_class": find_col_exact("apparel_size#1.size_class"),
+        "size_val": find_col_exact("apparel_size#1.size"), "material": find_col_exact("material#1.value"),
+        "desc": find_col("rtip_product_description"), "color_map": find_col("color#1.standardized"),
+        "color": find_col_exact("color#1.value"), "care": find_col("care_instructions"),
+        "upf": find_col("ultraviolet_protection"), "coo": find_col("country_of_origin"),
+        "list_price": find_col("list_price") or find_col("standard_price"),
+    }
+    
+    cell_styles = {}
+    for col in range(1, max_col + 1):
+        cell = ws.cell(row=7, column=col)
+        cell_styles[col] = {
+            "font": copy(cell.font), "fill": copy(cell.fill),
+            "border": copy(cell.border), "alignment": copy(cell.alignment),
+            "number_format": cell.number_format,
+        }
+    
+    for row in range(7, ws.max_row + 1):
+        for col in range(1, max_col + 1):
+            ws.cell(row=row, column=col).value = None
+    
+    current_row = 7
+    for style in filtered_styles:
+        style_num = style["style_num"]
+        content = content_map.get(style_num, {})
+        if not content:
+            continue
+        
+        parent_sku = f"{brand_cfg.get('vendor_code_prefix', '')}-{style_num}".strip("-")
+        cat_kw = content.get("category", "casual-and-day-dresses")
+        
+        def write_cell(row, col_key, value):
+            c = COL.get(col_key)
+            if c and value:
+                cell = ws.cell(row=row, column=c)
+                cell.value = str(value)
+                for prop, sval in cell_styles.get(c, {}).items():
+                    if prop == "number_format": cell.number_format = sval
+                    else: setattr(cell, prop, sval)
+        
+        write_cell(current_row, "vendor_code", vendor_code)
+        write_cell(current_row, "vendor_sku", parent_sku)
+        write_cell(current_row, "product_type", "DRESS")
+        write_cell(current_row, "parentage", "Parent")
+        write_cell(current_row, "var_theme", "ColorSize")
+        write_cell(current_row, "item_name", content.get("title", ""))
+        write_cell(current_row, "brand", brand)
+        write_cell(current_row, "itk", cat_kw)
+        write_cell(current_row, "model_num", style_num)
+        write_cell(current_row, "model_name", style.get("style_name", "").title())
+        write_cell(current_row, "bullet1", content.get("bullet_1", ""))
+        write_cell(current_row, "bullet2", content.get("bullet_2", ""))
+        write_cell(current_row, "bullet3", content.get("bullet_3", ""))
+        write_cell(current_row, "bullet4", content.get("bullet_4", ""))
+        write_cell(current_row, "bullet5", content.get("bullet_5", ""))
+        write_cell(current_row, "keywords", content.get("backend_keywords", ""))
+        write_cell(current_row, "desc", content.get("description", ""))
+        current_row += 1
+        
+        for var in style.get("variants", []):
+            color = var.get("color", "")
+            size = var.get("size", "")
+            upc = var.get("upc", "")
+            child_sku = f"{parent_sku}-{color}-{size}".replace(" ", "_")
+            child_title = content.get("title", "").split(",")[0] + f", {color.title()}, {SIZE_MAP.get(size, size)}" if color else content.get("title", "")
+            
+            write_cell(current_row, "vendor_code", vendor_code)
+            write_cell(current_row, "vendor_sku", child_sku)
+            write_cell(current_row, "product_type", "DRESS")
+            write_cell(current_row, "parentage", "Child")
+            write_cell(current_row, "child_rel", "Variation")
+            write_cell(current_row, "parent_sku", parent_sku)
+            write_cell(current_row, "var_theme", "ColorSize")
+            write_cell(current_row, "item_name", child_title)
+            write_cell(current_row, "brand", brand)
+            if upc:
+                write_cell(current_row, "ext_id_type", "UPC")
+                write_cell(current_row, "ext_id_val", upc)
+            write_cell(current_row, "itk", cat_kw)
+            write_cell(current_row, "model_num", style_num)
+            write_cell(current_row, "bullet1", content.get("bullet_1", ""))
+            write_cell(current_row, "bullet2", content.get("bullet_2", ""))
+            write_cell(current_row, "bullet3", content.get("bullet_3", ""))
+            write_cell(current_row, "bullet4", content.get("bullet_4", ""))
+            write_cell(current_row, "bullet5", content.get("bullet_5", ""))
+            write_cell(current_row, "keywords", content.get("backend_keywords", ""))
+            write_cell(current_row, "desc", content.get("description", ""))
+            write_cell(current_row, "color_map", COLOR_MAP_LOOKUP.get(color.upper(), "Multicolour"))
+            write_cell(current_row, "color", color.title())
+            write_cell(current_row, "size_sys", "US")
+            write_cell(current_row, "size_class", "Alpha")
+            write_cell(current_row, "size_val", SIZE_MAP.get(size, size))
+            write_cell(current_row, "material", brand_cfg.get("default_fabric", ""))
+            write_cell(current_row, "care", brand_cfg.get("default_care", "Machine Wash"))
+            write_cell(current_row, "coo", brand_cfg.get("default_coo", ""))
+            if brand_cfg.get("default_upf"):
+                write_cell(current_row, "upf", f"UPF {brand_cfg['default_upf']}")
+            write_cell(current_row, "list_price", var.get("list_price", ""))
+            current_row += 1
+    
+    safe_brand = brand.replace(" ", "_")
+    safe_cat = category.replace(" ", "_").replace("/", "_")
+    fname = f"NIS_{safe_brand}_{safe_cat}.xlsm"
+    fpath = UPLOAD_OUTPUT / fname
+    wb.save(str(fpath))
+    
+    return send_file(str(fpath), as_attachment=True, download_name=fname,
+                     mimetype="application/vnd.ms-excel.sheet.macroEnabled.12")
+
+@app.route("/api/categories")
+def get_categories():
+    """Return list of unique categories from uploaded styles."""
+    styles = session_data.get("styles", [])
+    cats = {}
+    for s in styles:
+        cat = s.get("sub_class", "Uncategorized") or "Uncategorized"
+        if cat not in cats:
+            cats[cat] = {"name": cat, "count": 0, "variants": 0}
+        cats[cat]["count"] += 1
+        cats[cat]["variants"] += len(s.get("variants", []))
+    return jsonify(list(cats.values()))
+
 
 @app.route("/api/session-state")
 def session_state():
