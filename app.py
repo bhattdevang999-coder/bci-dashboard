@@ -2877,7 +2877,17 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         col_num = _col(field_id)
         if col_num is None or value is None:
             return
+        if value == "":
+            return
         cell = ws.cell(row=row_idx, column=col_num)
+        # Try numeric conversion for price/dimension fields
+        if isinstance(value, str):
+            try:
+                value = float(value)
+                if value == int(value):
+                    value = int(value)
+            except (ValueError, TypeError):
+                pass
         cell.value = value if isinstance(value, (int, float)) else str(value)
         cached = style_cache.get(col_num, {})
         if cached.get("font"):          cell.font          = copy.copy(cached["font"])
@@ -3003,11 +3013,13 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(current_row, "apparel_size#1.size",          size_normalized or size)
         write_cell(current_row, "color#1.standardized_values#1",         color_family)
         write_cell(current_row, "color#1.value",                color_name.title() if color_name else "")
-        # Child cost price
+        # Child cost price — always write so overrides can apply even if source is empty
         child_cost = v.get("cost_price") or cost_price
         if child_cost:
             try:    write_cell(current_row, "cost_price#1.value",     float(child_cost))
             except: write_cell(current_row, "cost_price#1.value",     child_cost)
+        else:
+            write_cell(current_row, "cost_price#1.value",             "")  # trigger override check
         current_row += 1
 
     # ── Save ──────────────────────────────────────────────────────────────────
@@ -3108,7 +3120,18 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         c = _col(field_id)
         if c is None or value is None:
             return
+        # Skip truly empty values (don't write blank cells)
+        if value == "":
+            return
         cell = ws.cell(row=row_idx, column=c)
+        # Try numeric conversion for price/dimension fields
+        if isinstance(value, str):
+            try:
+                value = float(value)
+                if value == int(value):
+                    value = int(value)
+            except (ValueError, TypeError):
+                pass
         cell.value = value if isinstance(value, (int, float)) else str(value)
         cached = cell_styles.get(c, {})
         if cached.get("font"):          cell.font          = copy.copy(cached["font"])
@@ -3261,9 +3284,13 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             if v_list_price:
                 try:    wc(cr, "list_price#1.value",  float(v_list_price), style_num=sn)
                 except: wc(cr, "list_price#1.value",  v_list_price, style_num=sn)
+            else:
+                wc(cr, "list_price#1.value",  "", style_num=sn)  # trigger override check
             if v_cost:
                 try:    wc(cr, "cost_price#1.value",        float(v_cost), style_num=sn)
                 except: wc(cr, "cost_price#1.value",        v_cost, style_num=sn)
+            else:
+                wc(cr, "cost_price#1.value",  "", style_num=sn)  # trigger override check
             cr += 1
 
     import warnings as _w2
@@ -3274,60 +3301,82 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
 
 @app.route("/api/download-all")
 def download_all():
-    """Generate per-category .xlsm files and ZIP them together."""
+    """Generate one .xlsm per style and ZIP them together.
+    Each style gets its own file for maximum flexibility.
+    """
     brand = session_data.get("brand", "Brand")
     styles = session_data.get("styles", [])
     content_map = session_data.get("generated_content", {})
-    
+
     if not styles or not content_map:
         return jsonify({"error": "No generated content"}), 400
-    
+
     date_str = datetime.now().strftime("%m%d%y")
     safe_brand = brand.replace(" ", "_")
-    
-    # Group styles by category
-    cat_groups = {}
-    for s in styles:
-        cat = s.get("sub_class", "Uncategorized") or "Uncategorized"
-        if cat not in cat_groups:
-            cat_groups[cat] = []
-        cat_groups[cat].append(s)
-    
-    # Generate one .xlsm per category
-    cat_files = []
     template_path = session_data.get("template_path") or str(DEFAULT_TEMPLATE)
     brand_cfg = _load_brand_config_data(brand)
     vendor_code = session_data.get("vendor_code") or brand_cfg.get("vendor_code_full", "")
-    
-    for cat, cat_styles in cat_groups.items():
-        safe_cat = cat.replace(" ", "_").replace("/", "_")
-        fname = f"NIS_{safe_brand}_{safe_cat}_{date_str}.xlsm"
+
+    # Generate one .xlsm per style
+    style_files = []
+    for s in styles:
+        sn = s["style_num"]
+        if sn not in content_map:
+            continue
+        safe_sn = re.sub(r'[^\w\-]', '_', sn)
+        fname = f"NIS_{safe_brand}_{safe_sn}_{date_str}.xlsm"
         fpath = UPLOAD_OUTPUT / fname
-        
         try:
-            _generate_category_file(cat_styles, content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
-            cat_files.append((fname, str(fpath)))
+            _generate_category_file([s], content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
+            style_files.append((fname, str(fpath)))
         except Exception as e:
             traceback.print_exc()
-    
-    if not cat_files:
-        # Fallback: zip individual files
-        xlsm_files = list(UPLOAD_OUTPUT.glob("NIS_*.xlsm"))
-        zip_name = f"NIS_{safe_brand}_{date_str}.zip"
-        zip_path = UPLOAD_OUTPUT / zip_name
-        with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
-            for f in xlsm_files:
-                zf.write(str(f), f.name)
-        return send_file(str(zip_path), as_attachment=True, download_name=zip_name, mimetype="application/zip")
-    
-    # ZIP the category files
+
+    if not style_files:
+        return jsonify({"error": "No files generated"}), 500
+
+    # If only one style, return the single file directly
+    if len(style_files) == 1:
+        fname, fpath = style_files[0]
+        return send_file(fpath, as_attachment=True, download_name=fname,
+                         mimetype="application/vnd.ms-excel.sheet.macroEnabled.12")
+
+    # Multiple styles: ZIP them
     zip_name = f"NIS_{safe_brand}_{date_str}.zip"
     zip_path = UPLOAD_OUTPUT / zip_name
     with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
-        for fname, fpath in cat_files:
+        for fname, fpath in style_files:
             zf.write(fpath, fname)
-    
+
     return send_file(str(zip_path), as_attachment=True, download_name=zip_name, mimetype="application/zip")
+
+@app.route("/api/download-style/<style_num>")
+def download_style(style_num):
+    """Generate and download a single .xlsm for one style."""
+    brand = session_data.get("brand", "Brand")
+    styles = session_data.get("styles", [])
+    content_map = session_data.get("generated_content", {})
+    template_path = session_data.get("template_path") or str(DEFAULT_TEMPLATE)
+    brand_cfg = _load_brand_config_data(brand)
+    vendor_code = session_data.get("vendor_code") or brand_cfg.get("vendor_code_full", "")
+
+    style = next((s for s in styles if s["style_num"] == style_num), None)
+    if not style:
+        return jsonify({"error": f"Style {style_num} not found"}), 404
+    if style_num not in content_map:
+        return jsonify({"error": f"No content for style {style_num}"}), 400
+
+    date_str = datetime.now().strftime("%m%d%y")
+    safe_brand = brand.replace(" ", "_")
+    safe_sn = re.sub(r'[^\w\-]', '_', style_num)
+    fname = f"NIS_{safe_brand}_{safe_sn}_{date_str}.xlsm"
+    fpath = UPLOAD_OUTPUT / fname
+
+    _generate_category_file([style], content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
+
+    return send_file(str(fpath), as_attachment=True, download_name=fname,
+                     mimetype="application/vnd.ms-excel.sheet.macroEnabled.12")
+
 
 @app.route("/api/download-combined")
 def download_combined():

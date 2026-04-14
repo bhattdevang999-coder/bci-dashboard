@@ -5841,62 +5841,72 @@ async function wsApplySharedFields() {
 //  DOWNLOAD MODAL
 // ════════════════════════════════════════════════════════════
 async function wsShowDownloadModal() {
-  // No modal — just generate and download directly
-  wsGenerateAndDownload();
+  wsShowDownloadPanel();
 }
-function wsCloseDownloadModal() { /* no-op, modal removed */ }
+function wsCloseDownloadModal() { /* no-op */ }
 
-async function wsGenerateAndDownload() {
-  // Show inline progress in the action bar
-  const bar = document.getElementById('ws-action-bar-stats');
-  if (bar) bar.innerHTML = '<div class="spinner dark" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></div> Generating .xlsm files...';
-
-  // Trigger NIS file generation
-  try {
-    await fetch('/api/generate-nis', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        brand: state.brand,
-        styles: state.styles,
-        content_map: state.generatedContent || {},
-        vendor_code: state.vendorCode || '',
-      }),
-    });
-  } catch(e) {
-    if (bar) bar.textContent = 'Generation failed: ' + e.message;
+function wsShowDownloadPanel() {
+  const stylesList = (state.styles || []).filter(s => (state.generatedContent || {})[s.style_num]);
+  if (!stylesList.length) {
+    showToast('No generated content to download', 'error');
     return;
   }
 
-  // Poll NIS generation progress
-  const poll = setInterval(async () => {
-    try {
-      const r = await fetch('/api/generate-progress');
-      const pg = await r.json();
-      if (bar) {
-        bar.innerHTML = `<div class="spinner dark" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></div> Building .xlsm: ${pg.current_style || ''} (${pg.completed || 0}/${pg.total || 0})`;
-      }
-      if (pg.status === 'done' || (pg.total > 0 && pg.completed >= pg.total)) {
-        clearInterval(poll);
-        if (bar) bar.textContent = '\u2713 Files ready — downloading...';
+  // Hide other tab panels, show download panel
+  document.querySelectorAll('.ws-tab-panel').forEach(p => p.style.display = 'none');
+  let dlPanel = document.getElementById('ws-tab-download');
+  if (!dlPanel) {
+    dlPanel = document.createElement('div');
+    dlPanel.id = 'ws-tab-download';
+    dlPanel.className = 'ws-tab-panel';
+    const body = document.querySelector('.ws-main-body');
+    if (body) body.appendChild(dlPanel);
+  }
+  dlPanel.style.display = 'block';
 
-        // Ask for quick session feedback inline (non-blocking)
-        const note = prompt('Quick session note (optional — helps improve the system):');
-        if (note) {
-          wsSendFeedback('session', 'download', { scope: 'brand' }, { note });
-        }
+  let html = '<div style="padding:4px 0;">';
+  html += '<div style="font-size:16px; font-weight:700; margin-bottom:4px;">Generate & Download</div>';
+  html += '<div style="font-size:13px; color:var(--text-sec); margin-bottom:16px;">';
+  html += stylesList.length + ' style' + (stylesList.length > 1 ? 's' : '') + ' with generated content. Download individually or all at once.';
+  html += '</div>';
 
-        // Download
-        window.location.href = '/api/download-all';
-        setTimeout(() => {
-          if (bar) bar.textContent = '\u2713 Downloaded';
-        }, 2000);
-      }
-    } catch(e) { /* keep polling */ }
-  }, 1000);
+  html += '<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">';
+  html += '<button class="btn btn-primary" onclick="wsDownloadAllZip()" style="font-size:13px;">\u2193 Download All (ZIP)</button>';
+  html += '<button class="btn btn-secondary" onclick="window.location.href=\'/api/download-combined\'" style="font-size:12px;">\u2193 All in One .xlsm</button>';
+  html += '</div>';
+
+  html += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Individual Styles</div>';
+  html += '<table class="ws-fields-table"><thead><tr><th>Style #</th><th>Style Name</th><th>Variants</th><th style="width:110px;"></th></tr></thead><tbody>';
+
+  stylesList.forEach(s => {
+    const vc = (s.variants || []).length;
+    html += '<tr>';
+    html += '<td style="font-family:monospace;font-size:12px;">' + escHtml(s.style_num) + '</td>';
+    html += '<td>' + escHtml(s.style_name) + '</td>';
+    html += '<td>' + vc + '</td>';
+    html += '<td><button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 10px;" onclick="window.location.href=\'/api/download-style/' + encodeURIComponent(s.style_num) + '\'">\u2193 Download</button></td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  html += '<div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border);">';
+  html += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Session Feedback</div>';
+  html += '<textarea id="ws-dl-session-note" class="nis-feedback-textarea" rows="2" placeholder="Any notes? (optional)" style="width:100%;max-width:500px;"></textarea>';
+  html += '<button class="btn btn-secondary btn-sm" style="margin-top:6px;font-size:11px;" onclick="var n=document.getElementById(\'ws-dl-session-note\');if(n&&n.value.trim()){wsSendFeedback(\'session\',\'download\',{scope:\'brand\'},{note:n.value.trim()});n.value=\'\';showToast(\'Saved\',\'success\');}">Save Note</button>';
+  html += '</div></div>';
+
+  dlPanel.innerHTML = html;
+  document.querySelectorAll('.ws-tab-btn').forEach(b => b.classList.remove('active'));
 }
 
-async function wsDownload() { wsGenerateAndDownload(); }
+function wsDownloadAllZip() {
+  showToast('Generating files...', 'info');
+  window.location.href = '/api/download-all';
+}
+
+async function wsDownload() { wsShowDownloadPanel(); }
+async function wsGenerateAndDownload() { wsShowDownloadPanel(); }
+
 
 // ════════════════════════════════════════════════════════════
 //  SESSION RESET
