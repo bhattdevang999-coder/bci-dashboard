@@ -1565,6 +1565,80 @@ def list_templates():
     return jsonify({"templates": result})
 
 
+# All product types we know about (from master_nis_reference + common Amazon categories)
+ALL_PRODUCT_TYPES = [
+    {"id": "DRESS", "label": "Dresses", "sub_classes": ["Day Dress", "Cocktail Dress", "Active Dress", "Swimdress", "Maxi Dress", "Mini Dress", "Wrap Dress", "Shirt Dress"]},
+    {"id": "SWIMWEAR", "label": "Swimwear (1PC, 2PC, Tops, Bottoms)", "sub_classes": ["One Piece", "Bikini Top", "Bikini Bottom", "Tankini", "Cover Up", "Boardshorts"]},
+    {"id": "SHIRT", "label": "Shirts / Tops (Pullovers, Tanks, Tees, Blouses)", "sub_classes": ["Pullover", "Tank", "Tee", "Blouse", "Shirt"]},
+    {"id": "SHORTS", "label": "Shorts / Skorts", "sub_classes": ["Shorts", "Skort"]},
+    {"id": "PANTS", "label": "Pants / Leggings", "sub_classes": ["Pants", "Leggings", "Joggers"]},
+    {"id": "SKIRT", "label": "Skirts", "sub_classes": ["Skirt"]},
+    {"id": "COAT", "label": "Jackets / Coats / Outerwear", "sub_classes": ["Jacket", "Coat", "Blazer", "Vest"]},
+    {"id": "SWEATSHIRT", "label": "Sweatshirts / Hoodies", "sub_classes": ["Sweatshirt", "Hoodie"]},
+    {"id": "OVERALLS", "label": "Overalls / Jumpsuits", "sub_classes": ["Overalls", "Jumpsuit", "Romper"]},
+    {"id": "SANDAL", "label": "Sandals / Footwear", "sub_classes": ["Sandal", "Flip Flop"]},
+]
+
+
+@app.route("/api/product-types")
+def product_types():
+    """Return all known product types with their training status.
+    'trained' = we have a template uploaded + dropdowns extracted.
+    'untrained' = we know it exists but no template yet.
+    """
+    result = []
+    for pt in ALL_PRODUCT_TYPES:
+        pt_id = pt["id"]
+        dropdowns = load_dropdown_cache(pt_id)
+        has_template = any(
+            pt_id.upper() in str(p.name).upper()
+            for p in UPLOAD_TEMPLATES.glob("*.xlsm")
+        ) or pt_id in session_data.get("templates", {})
+
+        result.append({
+            "id": pt_id,
+            "label": pt["label"],
+            "sub_classes": pt["sub_classes"],
+            "trained": len(dropdowns) > 0,
+            "has_template": has_template,
+            "dropdown_fields": len(dropdowns),
+        })
+
+    return jsonify({"product_types": result})
+
+
+@app.route("/api/request-template-training", methods=["POST"])
+def request_template_training():
+    """Log a request for a product type template to be trained.
+    Operator is telling us they need this product type but we don't have a template.
+    """
+    data = request.get_json(force=True)
+    product_type = data.get("product_type", "")
+    operator = data.get("operator", "") or session_data.get("operator", "")
+    brand = data.get("brand", "") or session_data.get("brand", "")
+    note = data.get("note", "")
+
+    # Store as feedback
+    _store_feedback({
+        "id": f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{_uuid.uuid4().hex[:8]}",
+        "timestamp": datetime.utcnow().isoformat(),
+        "operator": operator,
+        "brand": brand,
+        "type": "template_request",
+        "phase": "upload",
+        "context": {"scope": "brand", "brand": brand, "product_type": product_type},
+        "data": {"product_type": product_type, "note": note, "message": f"Need {product_type} template for {brand}"},
+        "maps_to": "operator_note",
+    })
+
+    return jsonify({
+        "ok": True,
+        "message": f"Template request logged for {product_type}. Send the Amazon .xlsm template to Devang to enable this product type.",
+        "email_to": "devang",
+        "product_type": product_type,
+    })
+
+
 @app.route("/api/upload-product-data", methods=["POST"])
 def upload_product_data():
     if "file" not in request.files:

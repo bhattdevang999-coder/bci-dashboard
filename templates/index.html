@@ -4437,12 +4437,108 @@ function showStyleSummary(data) {
     : (sizeRange ? `Sizes: <strong>${escHtml(sizeRange)}</strong>` : '');
 
   card.innerHTML = `
-    ✓ <strong>${totalStyles} styles detected</strong> · <strong>${totalVariants} variants</strong>${catNames.length ? ' · ' + catNames.length + ' categories' : ''}
+    <div>✓ <strong>${totalStyles} styles detected</strong> · <strong>${totalVariants} variants</strong>${catNames.length ? ' · ' + catNames.length + ' categories' : ''}
     ${catLine}
     ${colorLine ? `<br><span style="font-size:12px; color:var(--success);">${colorLine}</span>` : ''}
+    </div>
+    <div id="pt-confirm-section" style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+      <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; color:var(--text-sec); margin-bottom:8px;">Product Type Confirmation</div>
+      <div id="pt-confirm-list" style="font-size:13px;">Loading product types...</div>
+    </div>
   `;
   card.classList.remove('hidden');
   if (fbWrap) fbWrap.classList.remove('hidden');
+
+  // Load product types and build the confirmation UI
+  wsLoadProductTypeConfirmation();
+}
+
+async function wsLoadProductTypeConfirmation() {
+  const container = document.getElementById('pt-confirm-list');
+  if (!container) return;
+
+  // Fetch product types with training status
+  let ptData;
+  try {
+    const res = await fetch('/api/product-types');
+    ptData = await res.json();
+  } catch(e) {
+    container.textContent = 'Failed to load product types';
+    return;
+  }
+
+  const types = ptData.product_types || [];
+
+  // Auto-detect product type per style based on sub_class
+  const styles = state.styles || [];
+  // Group styles by detected product type
+  const stylesByPT = {};
+  styles.forEach(s => {
+    const subClass = s.sub_class || s.sub_subclass || '';
+    let detected = 'DRESS'; // default
+    for (const pt of types) {
+      if ((pt.sub_classes || []).some(sc => sc.toLowerCase() === subClass.toLowerCase())) {
+        detected = pt.id;
+        break;
+      }
+    }
+    if (!stylesByPT[detected]) stylesByPT[detected] = [];
+    stylesByPT[detected].push(s);
+    // Store on the style object for later use
+    s._detected_product_type = detected;
+  });
+
+  let html = '';
+  for (const [ptId, ptStyles] of Object.entries(stylesByPT)) {
+    const ptInfo = types.find(t => t.id === ptId) || { id: ptId, label: ptId, trained: false };
+    const isTrained = ptInfo.trained;
+    const ddCount = ptInfo.dropdown_fields || 0;
+
+    const statusBadge = isTrained
+      ? `<span style="background:var(--success-bg); color:var(--success); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">✓ Trained (${ddCount} dropdowns)</span>`
+      : `<span style="background:var(--warn-bg); color:var(--warn); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">⚠ Not Trained Yet</span>`;
+
+    const styleNames = ptStyles.map(s => s.style_name || s.style_num).slice(0, 3).join(', ');
+    const moreCount = ptStyles.length > 3 ? ` +${ptStyles.length - 3} more` : '';
+
+    html += `<div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);">`;
+    html += `<div style="flex:1;"><strong>${escHtml(ptInfo.label)}</strong> <span style="color:var(--text-sec); font-size:12px;">(${ptStyles.length} style${ptStyles.length > 1 ? 's' : ''}: ${escHtml(styleNames)}${moreCount})</span></div>`;
+    html += statusBadge;
+
+    if (!isTrained) {
+      html += ` <button class="btn btn-secondary btn-sm" style="font-size:11px; padding:3px 10px;" onclick="wsRequestTemplate('${escHtml(ptId)}','${escHtml(ptInfo.label)}')">Request Template</button>`;
+    }
+    html += `</div>`;
+  }
+
+  // Check if any untrained
+  const hasUntrained = Object.keys(stylesByPT).some(ptId => {
+    const pt = types.find(t => t.id === ptId);
+    return pt && !pt.trained;
+  });
+
+  if (hasUntrained) {
+    html += `<div style="margin-top:8px; font-size:12px; color:var(--warn);">⚠ Untrained product types will generate files without dropdown validation. Send the Amazon template to Devang to enable full validation.</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+async function wsRequestTemplate(ptId, ptLabel) {
+  const note = prompt(`Request training for ${ptLabel}:\n\nAdd a note (optional):`);
+  if (note === null) return; // cancelled
+
+  try {
+    const res = await fetch('/api/request-template-training', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_type: ptId, note: note || '' }),
+    });
+    const d = await res.json();
+    showToast(d.message || 'Request sent', 'success');
+  } catch(e) {
+    showToast('Request failed', 'error');
+  }
 }
 
 // ════════════════════════════════════════════════════════════
