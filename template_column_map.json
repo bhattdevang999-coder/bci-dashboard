@@ -1,0 +1,2034 @@
+[
+  {
+    "col": 1,
+    "header": "Vendor Code",
+    "field_id": "rtip_vendor_code#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "AMZN4",
+    "sample": "Roxy Women's Swimwear, us_apparel, PG823"
+  },
+  {
+    "col": 2,
+    "header": "Vendor SKU",
+    "field_id": "vendor_sku#1.value",
+    "required": "REQUIRED",
+    "example": "CR0970004-001-XL",
+    "sample": "H25-434004609-B96-M"
+  },
+  {
+    "col": 3,
+    "header": "Product Type",
+    "field_id": "product_type#1.value",
+    "required": "REQUIRED",
+    "example": "SHIRT",
+    "sample": "DRESS"
+  },
+  {
+    "col": 4,
+    "header": "Parentage Level",
+    "field_id": "parentage_level#1.value",
+    "required": "OPTIONAL",
+    "example": "Parent",
+    "sample": ""
+  },
+  {
+    "col": 5,
+    "header": "Child Relationship Type",
+    "field_id": "child_parent_sku_relationship#1.child_relationship_type",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "accessory",
+    "sample": ""
+  },
+  {
+    "col": 6,
+    "header": "Parent SKU",
+    "field_id": "child_parent_sku_relationship#1.parent_sku",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "ABC123",
+    "sample": ""
+  },
+  {
+    "col": 7,
+    "header": "Variation Theme Name",
+    "field_id": "variation_theme#1.name",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Size/Color",
+    "sample": ""
+  },
+  {
+    "col": 8,
+    "header": "Item Name",
+    "field_id": "item_name#1.value",
+    "required": "REQUIRED",
+    "example": "Robert Graham Men's Maya Bay Short Sleeve Classic Fit Shirt, Cranberry, X-Large",
+    "sample": "Roxy Women's Casual Dress \u2013 Sundress & Swimsuit Cover-Ups for Beach, Poolside, Resort Wear, BROWN/BL"
+  },
+  {
+    "col": 9,
+    "header": "Brand Name",
+    "field_id": "brand#1.value",
+    "required": "REQUIRED",
+    "example": "Calvin Klein, Hanes, Goodthreads, Under Armour",
+    "sample": "Roxy"
+  },
+  {
+    "col": 10,
+    "header": "External Product ID Type",
+    "field_id": "external_product_id#1.type",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "UPC",
+    "sample": "UPC"
+  },
+  {
+    "col": 11,
+    "header": "External Product ID",
+    "field_id": "external_product_id#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "714532191586",
+    "sample": "198108873364"
+  },
+  {
+    "col": 12,
+    "header": "Merchant Suggested ASIN",
+    "field_id": "merchant_suggested_asin#1.value",
+    "required": "OPTIONAL",
+    "example": "B007KQBXN0",
+    "sample": "B0FXWH631L"
+  },
+  {
+    "col": 13,
+    "header": "Product Category",
+    "field_id": "product_category#1.value",
+    "required": "REQUIRED",
+    "example": "Men's Tops",
+    "sample": ""
+  },
+  {
+    "col": 14,
+    "header": "Product Subcategory",
+    "field_id": "product_subcategory#1.value",
+    "required": "REQUIRED",
+    "example": "Knit Tops",
+    "sample": ""
+  },
+  {
+    "col": 15,
+    "header": "Item Type Keyword",
+    "field_id": "item_type_keyword#1.value",
+    "required": "REQUIRED",
+    "example": "School uniform dresses",
+    "sample": "fashion-swimwear-cover-ups"
+  },
+  {
+    "col": 16,
+    "header": "Collar Style",
+    "field_id": "collar_style#1.value",
+    "required": "OPTIONAL",
+    "example": "Buttoned, Spread, Cutaway",
+    "sample": ""
+  },
+  {
+    "col": 17,
+    "header": "Collar Style",
+    "field_id": "collar_style#2.value",
+    "required": "OPTIONAL",
+    "example": "Buttoned, Spread, Cutaway",
+    "sample": ""
+  },
+  {
+    "col": 18,
+    "header": "Model Number",
+    "field_id": "model_number#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "RXZER23",
+    "sample": "434004609"
+  },
+  {
+    "col": 19,
+    "header": "Model Name",
+    "field_id": "model_name#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Maya Bay Short Sleeve Classic Fit Shirt",
+    "sample": "Casual Dress \u2013 Sundress & Swimsuit Cover-Ups for Beach, Poolside, Resort Wear"
+  },
+  {
+    "col": 20,
+    "header": "Main Image URL",
+    "field_id": "main_product_image_locator#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.main.jpg",
+    "sample": ""
+  },
+  {
+    "col": 21,
+    "header": "Other Image URL",
+    "field_id": "other_product_image_locator_1#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.other1.jpg",
+    "sample": ""
+  },
+  {
+    "col": 22,
+    "header": "Other Image URL",
+    "field_id": "other_product_image_locator_2#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.other1.jpg",
+    "sample": ""
+  },
+  {
+    "col": 23,
+    "header": "Other Image URL",
+    "field_id": "other_product_image_locator_3#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.other1.jpg",
+    "sample": ""
+  },
+  {
+    "col": 24,
+    "header": "Other Image URL",
+    "field_id": "other_product_image_locator_4#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.other1.jpg",
+    "sample": ""
+  },
+  {
+    "col": 25,
+    "header": "Other Image URL",
+    "field_id": "other_product_image_locator_5#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.other1.jpg",
+    "sample": ""
+  },
+  {
+    "col": 26,
+    "header": "Other Image URL",
+    "field_id": "other_product_image_locator_6#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.other1.jpg",
+    "sample": ""
+  },
+  {
+    "col": 27,
+    "header": "Other Image URL",
+    "field_id": "other_product_image_locator_7#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.other1.jpg",
+    "sample": ""
+  },
+  {
+    "col": 28,
+    "header": "Other Image URL",
+    "field_id": "other_product_image_locator_8#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.other1.jpg",
+    "sample": ""
+  },
+  {
+    "col": 29,
+    "header": "Swatch Image URL",
+    "field_id": "swatch_product_image_locator#1.media_location",
+    "required": "OPTIONAL",
+    "example": "http://www.companyname.com/images/1250.swatch.jpg",
+    "sample": ""
+  },
+  {
+    "col": 30,
+    "header": "Bullet Point",
+    "field_id": "bullet_point#1.value",
+    "required": "REQUIRED",
+    "example": "Breathable Leather Lining",
+    "sample": "ROXY \u2013a globally recognized brand known for its trendy beachwear, swimwear, and women\u2019s casual fashi"
+  },
+  {
+    "col": 31,
+    "header": "Bullet Point",
+    "field_id": "bullet_point#2.value",
+    "required": "OPTIONAL",
+    "example": "Breathable Leather Lining",
+    "sample": "VERSATILE BEACH DRESS: Designed as a sundress, beach cover-up, or swimsuit cover-up, perfect for poo"
+  },
+  {
+    "col": 32,
+    "header": "Bullet Point",
+    "field_id": "bullet_point#3.value",
+    "required": "OPTIONAL",
+    "example": "Breathable Leather Lining",
+    "sample": "PERFECT FOR EVERY OCCASION: Whether you're wearing it as a beach dress, floral dress, or swim dress,"
+  },
+  {
+    "col": 33,
+    "header": "Bullet Point",
+    "field_id": "bullet_point#4.value",
+    "required": "OPTIONAL",
+    "example": "Breathable Leather Lining",
+    "sample": "EFFORTLESS STYLE: A midi length dress with a relaxed fit, making it the perfect casual sundress for "
+  },
+  {
+    "col": 34,
+    "header": "Bullet Point",
+    "field_id": "bullet_point#5.value",
+    "required": "OPTIONAL",
+    "example": "Breathable Leather Lining",
+    "sample": "PREMIUM QUALITY: Roxy is A trusted brand in women\u2019s casual dresses and swimwear cover-ups, designed "
+  },
+  {
+    "col": 35,
+    "header": "Generic Keywords",
+    "field_id": "generic_keyword#1.value",
+    "required": "OPTIONAL",
+    "example": "Casual shirt; Button down; Relaxed fit; Men's shirt",
+    "sample": "2026 sundress, beach cover-up, swimsuit cover-up, sun dresses women, womens 2025 cover-ups for swimw"
+  },
+  {
+    "col": 36,
+    "header": "Special Features",
+    "field_id": "special_feature#1.value",
+    "required": "OPTIONAL",
+    "example": "Dishwasher Safe",
+    "sample": "Moisture Wicking"
+  },
+  {
+    "col": 37,
+    "header": "Special Features",
+    "field_id": "special_feature#2.value",
+    "required": "OPTIONAL",
+    "example": "Dishwasher Safe",
+    "sample": "Lightweight"
+  },
+  {
+    "col": 38,
+    "header": "Special Features",
+    "field_id": "special_feature#3.value",
+    "required": "OPTIONAL",
+    "example": "Dishwasher Safe",
+    "sample": "Breathable"
+  },
+  {
+    "col": 39,
+    "header": "Special Features",
+    "field_id": "special_feature#4.value",
+    "required": "OPTIONAL",
+    "example": "Dishwasher Safe",
+    "sample": "Quick Dry"
+  },
+  {
+    "col": 40,
+    "header": "Special Features",
+    "field_id": "special_feature#5.value",
+    "required": "OPTIONAL",
+    "example": "Dishwasher Safe",
+    "sample": "UV Protection"
+  },
+  {
+    "col": 41,
+    "header": "Lifestyle",
+    "field_id": "lifestyle#1.value",
+    "required": "RECOMMENDED",
+    "example": "Athletic",
+    "sample": "Casual"
+  },
+  {
+    "col": 42,
+    "header": "Lifestyle",
+    "field_id": "lifestyle#2.value",
+    "required": "RECOMMENDED",
+    "example": "Athletic",
+    "sample": "Comfort"
+  },
+  {
+    "col": 43,
+    "header": "Lifestyle",
+    "field_id": "lifestyle#3.value",
+    "required": "RECOMMENDED",
+    "example": "Athletic",
+    "sample": "Evening"
+  },
+  {
+    "col": 44,
+    "header": "Lifestyle",
+    "field_id": "lifestyle#4.value",
+    "required": "RECOMMENDED",
+    "example": "Athletic",
+    "sample": ""
+  },
+  {
+    "col": 45,
+    "header": "Lifestyle",
+    "field_id": "lifestyle#5.value",
+    "required": "RECOMMENDED",
+    "example": "Athletic",
+    "sample": ""
+  },
+  {
+    "col": 46,
+    "header": "Style",
+    "field_id": "style#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Maya Bay Short Sleeve Classic Fit Shirt",
+    "sample": "Casual Dress \u2013 Sundress & Swimsuit Cover-Ups for Beach, Poolside, Resort Wear"
+  },
+  {
+    "col": 47,
+    "header": "Department Name",
+    "field_id": "department#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Mens",
+    "sample": "Womens"
+  },
+  {
+    "col": 48,
+    "header": "Target Gender",
+    "field_id": "target_gender#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Female",
+    "sample": "Female"
+  },
+  {
+    "col": 49,
+    "header": "Age Range Description",
+    "field_id": "age_range_description#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Adult, Big Kid, Toddler",
+    "sample": "Adult"
+  },
+  {
+    "col": 50,
+    "header": "Apparel Size System",
+    "field_id": "apparel_size#1.size_system",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "US, UK, FR/ES",
+    "sample": ""
+  },
+  {
+    "col": 51,
+    "header": "Apparel Size Class",
+    "field_id": "apparel_size#1.size_class",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Alpha, Numeric, Age",
+    "sample": ""
+  },
+  {
+    "col": 52,
+    "header": "Apparel Size Value",
+    "field_id": "apparel_size#1.size",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "10, Medium, 2 Years",
+    "sample": ""
+  },
+  {
+    "col": 53,
+    "header": "Apparel Size To Range",
+    "field_id": "apparel_size#1.size_to",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "10, Large, 3 Years",
+    "sample": ""
+  },
+  {
+    "col": 54,
+    "header": "Apparel Size Body Type",
+    "field_id": "apparel_size#1.body_type",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Regular, Plus",
+    "sample": ""
+  },
+  {
+    "col": 55,
+    "header": "Apparel Size Height Type",
+    "field_id": "apparel_size#1.height_type",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Petite, Short, Tall",
+    "sample": ""
+  },
+  {
+    "col": 56,
+    "header": "Material",
+    "field_id": "material#1.value",
+    "required": "RECOMMENDED",
+    "example": "Acrylic, Chiffon",
+    "sample": "Rayon"
+  },
+  {
+    "col": 57,
+    "header": "Material",
+    "field_id": "material#2.value",
+    "required": "RECOMMENDED",
+    "example": "Acrylic, Chiffon",
+    "sample": ""
+  },
+  {
+    "col": 58,
+    "header": "Material",
+    "field_id": "material#3.value",
+    "required": "RECOMMENDED",
+    "example": "Acrylic, Chiffon",
+    "sample": ""
+  },
+  {
+    "col": 59,
+    "header": "Fabric Type",
+    "field_id": "fabric_type#1.value",
+    "required": "REQUIRED",
+    "example": "75% Cotton, 15% Nylon, 10% Wool",
+    "sample": "100% Rayon"
+  },
+  {
+    "col": 60,
+    "header": "Lining Description",
+    "field_id": "lining_description#1.value",
+    "required": "RECOMMENDED",
+    "example": "Cotton, Fabric",
+    "sample": ""
+  },
+  {
+    "col": 61,
+    "header": "Number of Items",
+    "field_id": "number_of_items#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "5",
+    "sample": "1"
+  },
+  {
+    "col": 62,
+    "header": "Item Type Name",
+    "field_id": "item_type_name#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Wedding Dress",
+    "sample": "Swimwear Cover Up"
+  },
+  {
+    "col": 63,
+    "header": "Strap Type",
+    "field_id": "strap_type#1.value",
+    "required": "RECOMMENDED",
+    "example": "Basic",
+    "sample": "Adjustable"
+  },
+  {
+    "col": 64,
+    "header": "Strap Type",
+    "field_id": "strap_type#2.value",
+    "required": "RECOMMENDED",
+    "example": "Basic",
+    "sample": ""
+  },
+  {
+    "col": 65,
+    "header": "Strap Type",
+    "field_id": "strap_type#3.value",
+    "required": "RECOMMENDED",
+    "example": "Basic",
+    "sample": ""
+  },
+  {
+    "col": 66,
+    "header": "Special Size",
+    "field_id": "special_size_type#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Petite, Husky Boys",
+    "sample": "Standard"
+  },
+  {
+    "col": 67,
+    "header": "Product Description",
+    "field_id": "rtip_product_description#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "This summer, boots by Jette made from high quality suede leather are real gems. They visually highli",
+    "sample": "Elevate your style with the Roxy Playa Hermosa Tank Dress, a versatile midi-length dress designed fo"
+  },
+  {
+    "col": 68,
+    "header": "Color Map",
+    "field_id": "color#1.standardized_values#1",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Red",
+    "sample": "Multicolor"
+  },
+  {
+    "col": 69,
+    "header": "Color",
+    "field_id": "color#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Cranberry",
+    "sample": "BROWN/BLACK COMBO"
+  },
+  {
+    "col": 70,
+    "header": "Item Length Description",
+    "field_id": "item_length_description#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Mini, Knee-Length",
+    "sample": "Mini"
+  },
+  {
+    "col": 71,
+    "header": "Occasion",
+    "field_id": "occasion_type#1.value",
+    "required": "RECOMMENDED",
+    "example": "Anniversary",
+    "sample": ""
+  },
+  {
+    "col": 72,
+    "header": "Occasion",
+    "field_id": "occasion_type#2.value",
+    "required": "RECOMMENDED",
+    "example": "Anniversary",
+    "sample": ""
+  },
+  {
+    "col": 73,
+    "header": "Occasion",
+    "field_id": "occasion_type#3.value",
+    "required": "RECOMMENDED",
+    "example": "Anniversary",
+    "sample": ""
+  },
+  {
+    "col": 74,
+    "header": "Occasion",
+    "field_id": "occasion_type#4.value",
+    "required": "RECOMMENDED",
+    "example": "Anniversary",
+    "sample": ""
+  },
+  {
+    "col": 75,
+    "header": "Occasion",
+    "field_id": "occasion_type#5.value",
+    "required": "RECOMMENDED",
+    "example": "Anniversary",
+    "sample": ""
+  },
+  {
+    "col": 76,
+    "header": "Part Number",
+    "field_id": "part_number#1.value",
+    "required": "OPTIONAL",
+    "example": "RXZER23",
+    "sample": "434004609"
+  },
+  {
+    "col": 77,
+    "header": "Item Booking Date",
+    "field_id": "item_booking_date#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "2020-12-01",
+    "sample": "2025-10-20T00:00:00Z"
+  },
+  {
+    "col": 78,
+    "header": "Theme",
+    "field_id": "theme#1.value",
+    "required": "OPTIONAL",
+    "example": "Aliens, Animals",
+    "sample": "Sport"
+  },
+  {
+    "col": 79,
+    "header": "Theme",
+    "field_id": "theme#2.value",
+    "required": "OPTIONAL",
+    "example": "Aliens, Animals",
+    "sample": "Beach"
+  },
+  {
+    "col": 80,
+    "header": "Theme",
+    "field_id": "theme#3.value",
+    "required": "OPTIONAL",
+    "example": "Aliens, Animals",
+    "sample": ""
+  },
+  {
+    "col": 81,
+    "header": "Theme",
+    "field_id": "theme#4.value",
+    "required": "OPTIONAL",
+    "example": "Aliens, Animals",
+    "sample": ""
+  },
+  {
+    "col": 82,
+    "header": "Theme",
+    "field_id": "theme#5.value",
+    "required": "OPTIONAL",
+    "example": "Aliens, Animals",
+    "sample": ""
+  },
+  {
+    "col": 83,
+    "header": "Fit Type",
+    "field_id": "fit_type#1.value",
+    "required": "OPTIONAL",
+    "example": "Skinny, Relaxed",
+    "sample": "Regular"
+  },
+  {
+    "col": 84,
+    "header": "Pocket Description",
+    "field_id": "pocket_description#1.value",
+    "required": "RECOMMENDED",
+    "example": "Back-Flap-Pocket, Basic-5-Pocket",
+    "sample": ""
+  },
+  {
+    "col": 85,
+    "header": "Pocket Description",
+    "field_id": "pocket_description#2.value",
+    "required": "RECOMMENDED",
+    "example": "Back-Flap-Pocket, Basic-5-Pocket",
+    "sample": ""
+  },
+  {
+    "col": 86,
+    "header": "Pocket Description",
+    "field_id": "pocket_description#3.value",
+    "required": "RECOMMENDED",
+    "example": "Back-Flap-Pocket, Basic-5-Pocket",
+    "sample": ""
+  },
+  {
+    "col": 87,
+    "header": "Pocket Description",
+    "field_id": "pocket_description#4.value",
+    "required": "RECOMMENDED",
+    "example": "Back-Flap-Pocket, Basic-5-Pocket",
+    "sample": ""
+  },
+  {
+    "col": 88,
+    "header": "Pocket Description",
+    "field_id": "pocket_description#5.value",
+    "required": "RECOMMENDED",
+    "example": "Back-Flap-Pocket, Basic-5-Pocket",
+    "sample": ""
+  },
+  {
+    "col": 89,
+    "header": "Care Instructions",
+    "field_id": "care_instructions#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Hand Wash, Machine Wash",
+    "sample": "Machine Wash"
+  },
+  {
+    "col": 90,
+    "header": "Pattern",
+    "field_id": "pattern#1.value",
+    "required": "OPTIONAL",
+    "example": "Floral, Geometric, Polka Dot",
+    "sample": "Graphic Print"
+  },
+  {
+    "col": 91,
+    "header": "Unit Count",
+    "field_id": "unit_count#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "72.0",
+    "sample": ""
+  },
+  {
+    "col": 92,
+    "header": "Unit Count Type",
+    "field_id": "unit_count#1.type.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Ounces",
+    "sample": ""
+  },
+  {
+    "col": 93,
+    "header": "Product Site Launch Date",
+    "field_id": "product_site_launch_date#1.value",
+    "required": "OPTIONAL",
+    "example": "2017-07-20",
+    "sample": "2025-10-20T00:00:00Z"
+  },
+  {
+    "col": 94,
+    "header": "Included Components",
+    "field_id": "included_components#1.value",
+    "required": "OPTIONAL",
+    "example": "Camera Body",
+    "sample": ""
+  },
+  {
+    "col": 95,
+    "header": "Included Components",
+    "field_id": "included_components#2.value",
+    "required": "OPTIONAL",
+    "example": "Camera Body",
+    "sample": ""
+  },
+  {
+    "col": 96,
+    "header": "Included Components",
+    "field_id": "included_components#3.value",
+    "required": "OPTIONAL",
+    "example": "Camera Body",
+    "sample": ""
+  },
+  {
+    "col": 97,
+    "header": "Included Components",
+    "field_id": "included_components#4.value",
+    "required": "OPTIONAL",
+    "example": "Camera Body",
+    "sample": ""
+  },
+  {
+    "col": 98,
+    "header": "Included Components",
+    "field_id": "included_components#5.value",
+    "required": "OPTIONAL",
+    "example": "Camera Body",
+    "sample": ""
+  },
+  {
+    "col": 99,
+    "header": "League Name",
+    "field_id": "league_name#1.value",
+    "required": "OPTIONAL",
+    "example": "NBA",
+    "sample": ""
+  },
+  {
+    "col": 100,
+    "header": "Team Name",
+    "field_id": "team_name#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Seattle Seahawks",
+    "sample": ""
+  },
+  {
+    "col": 101,
+    "header": "Back Style",
+    "field_id": "back#1.style#1.value",
+    "required": "RECOMMENDED",
+    "example": "cushion, pillow",
+    "sample": ""
+  },
+  {
+    "col": 102,
+    "header": "Back Style",
+    "field_id": "back#1.style#2.value",
+    "required": "RECOMMENDED",
+    "example": "cushion, pillow",
+    "sample": ""
+  },
+  {
+    "col": 103,
+    "header": "Back Style",
+    "field_id": "back#1.style#3.value",
+    "required": "RECOMMENDED",
+    "example": "cushion, pillow",
+    "sample": ""
+  },
+  {
+    "col": 104,
+    "header": "Back Style",
+    "field_id": "back#1.style#4.value",
+    "required": "RECOMMENDED",
+    "example": "cushion, pillow",
+    "sample": ""
+  },
+  {
+    "col": 105,
+    "header": "Back Style",
+    "field_id": "back#1.style#5.value",
+    "required": "RECOMMENDED",
+    "example": "cushion, pillow",
+    "sample": ""
+  },
+  {
+    "col": 106,
+    "header": "Chest Size",
+    "field_id": "chest#1.size#1.value",
+    "required": "RECOMMENDED",
+    "example": "5.5, .75, 28.6",
+    "sample": ""
+  },
+  {
+    "col": 107,
+    "header": "Chest Size Unit",
+    "field_id": "chest#1.size#1.unit",
+    "required": "RECOMMENDED",
+    "example": "inches, meters, centimeters",
+    "sample": ""
+  },
+  {
+    "col": 108,
+    "header": "Embellishment Feature",
+    "field_id": "embellishment_feature#1.value",
+    "required": "RECOMMENDED",
+    "example": "Buckle",
+    "sample": ""
+  },
+  {
+    "col": 109,
+    "header": "Embellishment Feature",
+    "field_id": "embellishment_feature#2.value",
+    "required": "RECOMMENDED",
+    "example": "Buckle",
+    "sample": ""
+  },
+  {
+    "col": 110,
+    "header": "Embellishment Feature",
+    "field_id": "embellishment_feature#3.value",
+    "required": "RECOMMENDED",
+    "example": "Buckle",
+    "sample": ""
+  },
+  {
+    "col": 111,
+    "header": "Embellishment Feature",
+    "field_id": "embellishment_feature#4.value",
+    "required": "RECOMMENDED",
+    "example": "Buckle",
+    "sample": ""
+  },
+  {
+    "col": 112,
+    "header": "Embellishment Feature",
+    "field_id": "embellishment_feature#5.value",
+    "required": "RECOMMENDED",
+    "example": "Buckle",
+    "sample": ""
+  },
+  {
+    "col": 113,
+    "header": "External Product Url",
+    "field_id": "external_product_url#1.value",
+    "required": "OPTIONAL",
+    "example": "",
+    "sample": ""
+  },
+  {
+    "col": 114,
+    "header": "External Product Url",
+    "field_id": "external_product_url#2.value",
+    "required": "OPTIONAL",
+    "example": "",
+    "sample": ""
+  },
+  {
+    "col": 115,
+    "header": "External Product Url",
+    "field_id": "external_product_url#3.value",
+    "required": "OPTIONAL",
+    "example": "",
+    "sample": ""
+  },
+  {
+    "col": 116,
+    "header": "External Product Url",
+    "field_id": "external_product_url#4.value",
+    "required": "OPTIONAL",
+    "example": "",
+    "sample": ""
+  },
+  {
+    "col": 117,
+    "header": "External Product Url",
+    "field_id": "external_product_url#5.value",
+    "required": "OPTIONAL",
+    "example": "",
+    "sample": ""
+  },
+  {
+    "col": 118,
+    "header": "Neck Style",
+    "field_id": "neck#1.neck_style#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Crew neck",
+    "sample": "Scoop Neck"
+  },
+  {
+    "col": 119,
+    "header": "Neck Style",
+    "field_id": "neck#1.neck_style#2.value",
+    "required": "RECOMMENDED",
+    "example": "Crew neck",
+    "sample": ""
+  },
+  {
+    "col": 120,
+    "header": "Neck Style",
+    "field_id": "neck#1.neck_style#3.value",
+    "required": "RECOMMENDED",
+    "example": "Crew neck",
+    "sample": ""
+  },
+  {
+    "col": 121,
+    "header": "Neck Style",
+    "field_id": "neck#1.neck_style#4.value",
+    "required": "RECOMMENDED",
+    "example": "Crew neck",
+    "sample": ""
+  },
+  {
+    "col": 122,
+    "header": "Neck Style",
+    "field_id": "neck#1.neck_style#5.value",
+    "required": "RECOMMENDED",
+    "example": "Crew neck",
+    "sample": ""
+  },
+  {
+    "col": 123,
+    "header": "Waist Size",
+    "field_id": "waist#1.size#1.value",
+    "required": "OPTIONAL",
+    "example": "48, 121.92",
+    "sample": ""
+  },
+  {
+    "col": 124,
+    "header": "Waist Size Unit",
+    "field_id": "waist#1.size#1.unit",
+    "required": "OPTIONAL",
+    "example": "Inches, Centimeters",
+    "sample": ""
+  },
+  {
+    "col": 125,
+    "header": "Waist Style",
+    "field_id": "waist#1.style#1.value",
+    "required": "OPTIONAL",
+    "example": "Cross, High, Low Rise",
+    "sample": ""
+  },
+  {
+    "col": 126,
+    "header": "Product Lifecycle Supply Type",
+    "field_id": "lifecycle_supply_type#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Fashion",
+    "sample": "Perennial"
+  },
+  {
+    "col": 127,
+    "header": "Seasons",
+    "field_id": "seasons#1.value",
+    "required": "RECOMMENDED",
+    "example": "Fall, Spring",
+    "sample": "Fall"
+  },
+  {
+    "col": 128,
+    "header": "Apparel Silhouette",
+    "field_id": "apparel_silhouette#1.value",
+    "required": "RECOMMENDED",
+    "example": "A-line",
+    "sample": ""
+  },
+  {
+    "col": 129,
+    "header": "Sleeve Length Description",
+    "field_id": "sleeve#1.length_description#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Sleeveless",
+    "sample": ""
+  },
+  {
+    "col": 130,
+    "header": "Sleeve Type",
+    "field_id": "sleeve#1.type#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "3-4-Sleeve, Cap-sleeve",
+    "sample": "Sleeveless"
+  },
+  {
+    "col": 131,
+    "header": "Closure Type",
+    "field_id": "closure#1.type#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Snap,Buckle",
+    "sample": "Pull On"
+  },
+  {
+    "col": 132,
+    "header": "Closure Type",
+    "field_id": "closure#1.type#2.value",
+    "required": "RECOMMENDED",
+    "example": "Snap,Buckle",
+    "sample": ""
+  },
+  {
+    "col": 133,
+    "header": "Hemline Form",
+    "field_id": "hemline_form#1.value",
+    "required": "OPTIONAL",
+    "example": "Fishtail Hemline",
+    "sample": ""
+  },
+  {
+    "col": 134,
+    "header": "Hemline Form",
+    "field_id": "hemline_form#2.value",
+    "required": "OPTIONAL",
+    "example": "Fishtail Hemline",
+    "sample": ""
+  },
+  {
+    "col": 135,
+    "header": "Hemline Form",
+    "field_id": "hemline_form#3.value",
+    "required": "OPTIONAL",
+    "example": "Fishtail Hemline",
+    "sample": ""
+  },
+  {
+    "col": 136,
+    "header": "Hemline Form",
+    "field_id": "hemline_form#4.value",
+    "required": "OPTIONAL",
+    "example": "Fishtail Hemline",
+    "sample": ""
+  },
+  {
+    "col": 137,
+    "header": "Hemline Form",
+    "field_id": "hemline_form#5.value",
+    "required": "OPTIONAL",
+    "example": "Fishtail Hemline",
+    "sample": ""
+  },
+  {
+    "col": 138,
+    "header": "Ultraviolet Protection Factor",
+    "field_id": "ultraviolet_protection_factor#1.value",
+    "required": "OPTIONAL",
+    "example": "UPF 15",
+    "sample": "UPF 50+"
+  },
+  {
+    "col": 139,
+    "header": "Weave Method",
+    "field_id": "weave_method#1.value",
+    "required": "OPTIONAL",
+    "example": "Handloom",
+    "sample": ""
+  },
+  {
+    "col": 140,
+    "header": "Apparel Fabric Weight Class",
+    "field_id": "apparel_fabric_weight_class#1.value",
+    "required": "OPTIONAL",
+    "example": "Lightweight",
+    "sample": "Lightweight"
+  },
+  {
+    "col": 141,
+    "header": "Garment Size Country",
+    "field_id": "garment_size_country#1.value",
+    "required": "OPTIONAL",
+    "example": "Germany",
+    "sample": ""
+  },
+  {
+    "col": 142,
+    "header": "Shoulder to Bottom Hem Length",
+    "field_id": "shoulder_to_bottom_hem_length#1.value",
+    "required": "OPTIONAL",
+    "example": "30.75",
+    "sample": ""
+  },
+  {
+    "col": 143,
+    "header": "Shoulder to Bottom Hem Length Unit",
+    "field_id": "shoulder_to_bottom_hem_length#1.unit",
+    "required": "OPTIONAL",
+    "example": "Inches",
+    "sample": ""
+  },
+  {
+    "col": 144,
+    "header": "Apparel Fabric Stretch",
+    "field_id": "apparel_fabric_stretch#1.value",
+    "required": "OPTIONAL",
+    "example": "Low Stretch",
+    "sample": ""
+  },
+  {
+    "col": 145,
+    "header": "Fit to Size Sentiment",
+    "field_id": "fit_to_size_sentiment#1.value",
+    "required": "OPTIONAL",
+    "example": "Runs Small",
+    "sample": ""
+  },
+  {
+    "col": 146,
+    "header": "Government Contract Name",
+    "field_id": "government_contract_information#1.name",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "NASA SEWP V",
+    "sample": ""
+  },
+  {
+    "col": 147,
+    "header": "Government Contract Number",
+    "field_id": "government_contract_information#1.number",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "47QTCA19D000C",
+    "sample": ""
+  },
+  {
+    "col": 148,
+    "header": "Collection Item",
+    "field_id": "collection_item#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Dinner Plate",
+    "sample": ""
+  },
+  {
+    "col": 149,
+    "header": "Skip Offer",
+    "field_id": "skip_offer#1.value",
+    "required": "OPTIONAL",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 150,
+    "header": "List Price",
+    "field_id": "list_price#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "64",
+    "sample": "58.00"
+  },
+  {
+    "col": 151,
+    "header": "Cost Price",
+    "field_id": "cost_price#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "25",
+    "sample": "29.00"
+  },
+  {
+    "col": 152,
+    "header": "Import Designation",
+    "field_id": "import_designation#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Imported",
+    "sample": "Imported"
+  },
+  {
+    "col": 153,
+    "header": "Earliest Shipping Date",
+    "field_id": "rtip_earliest_shipping_date#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "20210915",
+    "sample": "20251020"
+  },
+  {
+    "col": 154,
+    "header": "Item Length",
+    "field_id": "item_dimensions#1.length.value",
+    "required": "RECOMMENDED",
+    "example": "10",
+    "sample": ""
+  },
+  {
+    "col": 155,
+    "header": "Item Length Unit",
+    "field_id": "item_dimensions#1.length.unit",
+    "required": "RECOMMENDED",
+    "example": "Inches",
+    "sample": ""
+  },
+  {
+    "col": 156,
+    "header": "Item Width",
+    "field_id": "item_dimensions#1.width.value",
+    "required": "RECOMMENDED",
+    "example": "2",
+    "sample": ""
+  },
+  {
+    "col": 157,
+    "header": "Item Width Unit",
+    "field_id": "item_dimensions#1.width.unit",
+    "required": "RECOMMENDED",
+    "example": "Inches",
+    "sample": ""
+  },
+  {
+    "col": 158,
+    "header": "Item Height",
+    "field_id": "item_dimensions#1.height.value",
+    "required": "RECOMMENDED",
+    "example": "2.7",
+    "sample": ""
+  },
+  {
+    "col": 159,
+    "header": "Item Height Unit",
+    "field_id": "item_dimensions#1.height.unit",
+    "required": "RECOMMENDED",
+    "example": "Inches",
+    "sample": ""
+  },
+  {
+    "col": 160,
+    "header": "Item Package Length",
+    "field_id": "item_package_dimensions#1.length.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "10",
+    "sample": "10"
+  },
+  {
+    "col": 161,
+    "header": "Package Length Unit",
+    "field_id": "item_package_dimensions#1.length.unit",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Inches",
+    "sample": "Inches"
+  },
+  {
+    "col": 162,
+    "header": "Item Package Width",
+    "field_id": "item_package_dimensions#1.width.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "2",
+    "sample": "8"
+  },
+  {
+    "col": 163,
+    "header": "Package Width Unit",
+    "field_id": "item_package_dimensions#1.width.unit",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Inches",
+    "sample": "Inches"
+  },
+  {
+    "col": 164,
+    "header": "Item Package Height",
+    "field_id": "item_package_dimensions#1.height.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "2.7",
+    "sample": "1"
+  },
+  {
+    "col": 165,
+    "header": "Package Height Unit",
+    "field_id": "item_package_dimensions#1.height.unit",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Inches",
+    "sample": "Inches"
+  },
+  {
+    "col": 166,
+    "header": "Package Weight",
+    "field_id": "item_package_weight#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "0.65",
+    "sample": "0.5"
+  },
+  {
+    "col": 167,
+    "header": "Package Weight Unit",
+    "field_id": "item_package_weight#1.unit",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Pounds",
+    "sample": "Pounds"
+  },
+  {
+    "col": 168,
+    "header": "Order Aggregate Type",
+    "field_id": "rtip_order_aggregate_type#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Each",
+    "sample": "Each"
+  },
+  {
+    "col": 169,
+    "header": "Items per Inner Pack",
+    "field_id": "rtip_items_per_inner_pack#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "5",
+    "sample": "1"
+  },
+  {
+    "col": 170,
+    "header": "Country of Origin",
+    "field_id": "country_of_origin#1.value",
+    "required": "REQUIRED",
+    "example": "China",
+    "sample": "China"
+  },
+  {
+    "col": 171,
+    "header": "Are batteries required?",
+    "field_id": "batteries_required#1.value",
+    "required": "REQUIRED",
+    "example": "Yes",
+    "sample": "No"
+  },
+  {
+    "col": 172,
+    "header": "Are batteries included?",
+    "field_id": "batteries_included#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 173,
+    "header": "Battery Cell Composition",
+    "field_id": "battery#1.cell_composition#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "NiMh",
+    "sample": ""
+  },
+  {
+    "col": 174,
+    "header": "Battery Cell Composition Other Than Listed",
+    "field_id": "battery#1.cell_composition_other_than_listed#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Silver Oxide (Ag\u2082O)",
+    "sample": ""
+  },
+  {
+    "col": 175,
+    "header": "Battery IEC Code",
+    "field_id": "battery#1.iec_code#1.value",
+    "required": "OPTIONAL",
+    "example": "CR2320",
+    "sample": ""
+  },
+  {
+    "col": 176,
+    "header": "Battery Weight",
+    "field_id": "battery#1.weight#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "2.5",
+    "sample": ""
+  },
+  {
+    "col": 177,
+    "header": "Battery Weight Unit",
+    "field_id": "battery#1.weight#1.unit",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Grams",
+    "sample": ""
+  },
+  {
+    "col": 178,
+    "header": "Number of Batteries",
+    "field_id": "num_batteries#1.quantity",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "1, 4",
+    "sample": ""
+  },
+  {
+    "col": 179,
+    "header": "Battery Type",
+    "field_id": "num_batteries#1.type",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "12V",
+    "sample": ""
+  },
+  {
+    "col": 180,
+    "header": "Number of Lithium Metal Cells",
+    "field_id": "number_of_lithium_metal_cells#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "7",
+    "sample": ""
+  },
+  {
+    "col": 181,
+    "header": "Number of Lithium-ion Cells",
+    "field_id": "number_of_lithium_ion_cells#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "7",
+    "sample": ""
+  },
+  {
+    "col": 182,
+    "header": "Lithium Battery Energy Content",
+    "field_id": "lithium_battery#1.energy_content#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "2.6",
+    "sample": ""
+  },
+  {
+    "col": 183,
+    "header": "Lithium Battery Energy Content Unit",
+    "field_id": "lithium_battery#1.energy_content#1.unit",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Watt Hours",
+    "sample": ""
+  },
+  {
+    "col": 184,
+    "header": "Lithium Battery Packaging",
+    "field_id": "lithium_battery#1.packaging#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Batteries contained in equipment, Batteries packed with equipment, Batteries only",
+    "sample": ""
+  },
+  {
+    "col": 185,
+    "header": "Lithium Battery Weight",
+    "field_id": "lithium_battery#1.weight#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "0.5, 0.03",
+    "sample": ""
+  },
+  {
+    "col": 186,
+    "header": "Lithium Battery Weight Unit",
+    "field_id": "lithium_battery#1.weight#1.unit",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Grams",
+    "sample": ""
+  },
+  {
+    "col": 187,
+    "header": "Item Weight",
+    "field_id": "item_weight#1.value",
+    "required": "OPTIONAL",
+    "example": "30.0, 1.5",
+    "sample": ""
+  },
+  {
+    "col": 188,
+    "header": "Item Weight Unit",
+    "field_id": "item_weight#1.unit",
+    "required": "OPTIONAL",
+    "example": "Pounds, Grams",
+    "sample": ""
+  },
+  {
+    "col": 189,
+    "header": "Is This Product Subject To Buyer Age Restrictions",
+    "field_id": "is_this_product_subject_to_buyer_age_restrictions#1.value",
+    "required": "OPTIONAL",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 190,
+    "header": "California Proposition 65 Warning Type",
+    "field_id": "california_proposition_65#1.compliance_type",
+    "required": "OPTIONAL",
+    "example": "Furniture",
+    "sample": ""
+  },
+  {
+    "col": 191,
+    "header": "California Proposition 65 Chemical Name(s)",
+    "field_id": "california_proposition_65#1.chemical_names#1",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Lead",
+    "sample": ""
+  },
+  {
+    "col": 192,
+    "header": "California Proposition 65 Chemical Name(s)",
+    "field_id": "california_proposition_65#1.chemical_names#2",
+    "required": "OPTIONAL",
+    "example": "Lead",
+    "sample": ""
+  },
+  {
+    "col": 193,
+    "header": "California Proposition 65 Chemical Name(s)",
+    "field_id": "california_proposition_65#1.chemical_names#3",
+    "required": "OPTIONAL",
+    "example": "Lead",
+    "sample": ""
+  },
+  {
+    "col": 194,
+    "header": "California Proposition 65 Chemical Name(s)",
+    "field_id": "california_proposition_65#1.chemical_names#4",
+    "required": "OPTIONAL",
+    "example": "Lead",
+    "sample": ""
+  },
+  {
+    "col": 195,
+    "header": "California Proposition 65 Chemical Name(s)",
+    "field_id": "california_proposition_65#1.chemical_names#5",
+    "required": "OPTIONAL",
+    "example": "Lead",
+    "sample": ""
+  },
+  {
+    "col": 196,
+    "header": "Pesticide Marking",
+    "field_id": "pesticide_marking#1.marking_type",
+    "required": "OPTIONAL",
+    "example": "EPA Establishment Number",
+    "sample": ""
+  },
+  {
+    "col": 197,
+    "header": "Pesticide Registration Status",
+    "field_id": "pesticide_marking#1.registration_status",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Product is not a pesticide or pesticide device, as defined under the U.S. Federal Insecticide, Fungi",
+    "sample": ""
+  },
+  {
+    "col": 198,
+    "header": "Pesticide Certification Number",
+    "field_id": "pesticide_marking#1.certification_number",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "138263",
+    "sample": ""
+  },
+  {
+    "col": 199,
+    "header": "Pesticide Marking",
+    "field_id": "pesticide_marking#2.marking_type",
+    "required": "OPTIONAL",
+    "example": "EPA Establishment Number",
+    "sample": ""
+  },
+  {
+    "col": 200,
+    "header": "Pesticide Registration Status",
+    "field_id": "pesticide_marking#2.registration_status",
+    "required": "OPTIONAL",
+    "example": "Product is not a pesticide or pesticide device, as defined under the U.S. Federal Insecticide, Fungi",
+    "sample": ""
+  },
+  {
+    "col": 201,
+    "header": "Pesticide Certification Number",
+    "field_id": "pesticide_marking#2.certification_number",
+    "required": "OPTIONAL",
+    "example": "138263",
+    "sample": ""
+  },
+  {
+    "col": 202,
+    "header": "Pesticide Marking",
+    "field_id": "pesticide_marking#3.marking_type",
+    "required": "OPTIONAL",
+    "example": "EPA Establishment Number",
+    "sample": ""
+  },
+  {
+    "col": 203,
+    "header": "Pesticide Registration Status",
+    "field_id": "pesticide_marking#3.registration_status",
+    "required": "OPTIONAL",
+    "example": "Product is not a pesticide or pesticide device, as defined under the U.S. Federal Insecticide, Fungi",
+    "sample": ""
+  },
+  {
+    "col": 204,
+    "header": "Pesticide Certification Number",
+    "field_id": "pesticide_marking#3.certification_number",
+    "required": "OPTIONAL",
+    "example": "138263",
+    "sample": ""
+  },
+  {
+    "col": 205,
+    "header": "Radio Frequency Emission & Authorization Status",
+    "field_id": "fcc_radio_frequency_emission_compliance#1.registration_status",
+    "required": "OPTIONAL",
+    "example": "Product has FCC ID",
+    "sample": ""
+  },
+  {
+    "col": 206,
+    "header": "FCC ID",
+    "field_id": "fcc_radio_frequency_emission_compliance#1.identification_number",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "2AFZZ-XMSF10G",
+    "sample": ""
+  },
+  {
+    "col": 207,
+    "header": "SDoC Contact Name",
+    "field_id": "fcc_radio_frequency_emission_compliance#1.point_of_contact_name",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "John Doe",
+    "sample": ""
+  },
+  {
+    "col": 208,
+    "header": "SDoC Contact US Mailing Address",
+    "field_id": "fcc_radio_frequency_emission_compliance#1.point_of_contact_address",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "500 Oak Street_x000D_\nChicago, IL 60707",
+    "sample": ""
+  },
+  {
+    "col": 209,
+    "header": "SDoC Contact Email Address",
+    "field_id": "fcc_radio_frequency_emission_compliance#1.point_of_contact_email",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "jdoe@example.eg",
+    "sample": ""
+  },
+  {
+    "col": 210,
+    "header": "SDOC Contact US Phone Number",
+    "field_id": "fcc_radio_frequency_emission_compliance#1.point_of_contact_phone_number",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "777-767-1000",
+    "sample": ""
+  },
+  {
+    "col": 211,
+    "header": "Compliance Regulation Type",
+    "field_id": "regulatory_compliance_certification#1.regulation_type",
+    "required": "OPTIONAL",
+    "example": "CDPR Pest Identification",
+    "sample": ""
+  },
+  {
+    "col": 212,
+    "header": "Regulatory Identification",
+    "field_id": "regulatory_compliance_certification#1.value",
+    "required": "OPTIONAL",
+    "example": "1AB1331-121A",
+    "sample": ""
+  },
+  {
+    "col": 213,
+    "header": "Compliance Regulation Type",
+    "field_id": "regulatory_compliance_certification#2.regulation_type",
+    "required": "OPTIONAL",
+    "example": "CDPR Pest Identification",
+    "sample": ""
+  },
+  {
+    "col": 214,
+    "header": "Regulatory Identification",
+    "field_id": "regulatory_compliance_certification#2.value",
+    "required": "OPTIONAL",
+    "example": "1AB1331-121A",
+    "sample": ""
+  },
+  {
+    "col": 215,
+    "header": "Compliance Regulation Type",
+    "field_id": "regulatory_compliance_certification#3.regulation_type",
+    "required": "OPTIONAL",
+    "example": "CDPR Pest Identification",
+    "sample": ""
+  },
+  {
+    "col": 216,
+    "header": "Regulatory Identification",
+    "field_id": "regulatory_compliance_certification#3.value",
+    "required": "OPTIONAL",
+    "example": "1AB1331-121A",
+    "sample": ""
+  },
+  {
+    "col": 217,
+    "header": "Compliance Regulation Type",
+    "field_id": "regulatory_compliance_certification#4.regulation_type",
+    "required": "OPTIONAL",
+    "example": "CDPR Pest Identification",
+    "sample": ""
+  },
+  {
+    "col": 218,
+    "header": "Regulatory Identification",
+    "field_id": "regulatory_compliance_certification#4.value",
+    "required": "OPTIONAL",
+    "example": "1AB1331-121A",
+    "sample": ""
+  },
+  {
+    "col": 219,
+    "header": "Compliance Regulation Type",
+    "field_id": "regulatory_compliance_certification#5.regulation_type",
+    "required": "OPTIONAL",
+    "example": "CDPR Pest Identification",
+    "sample": ""
+  },
+  {
+    "col": 220,
+    "header": "Regulatory Identification",
+    "field_id": "regulatory_compliance_certification#5.value",
+    "required": "OPTIONAL",
+    "example": "1AB1331-121A",
+    "sample": ""
+  },
+  {
+    "col": 221,
+    "header": "Responsible Person's Email or Electronic Address",
+    "field_id": "dsa_responsible_party_address#1.value",
+    "required": "OPTIONAL",
+    "example": "rsp-email@example.com",
+    "sample": ""
+  },
+  {
+    "col": 222,
+    "header": "Compliance Media Content Type",
+    "field_id": "compliance_media#1.content_type",
+    "required": "OPTIONAL",
+    "example": "Safety Data Sheet",
+    "sample": ""
+  },
+  {
+    "col": 223,
+    "header": "Compliance Media Language",
+    "field_id": "compliance_media#1.content_language",
+    "required": "OPTIONAL",
+    "example": "en_US",
+    "sample": ""
+  },
+  {
+    "col": 224,
+    "header": "Compliance Media Source Location",
+    "field_id": "compliance_media#1.source_location",
+    "required": "OPTIONAL",
+    "example": "http://example.eg/sds_1.pdf",
+    "sample": ""
+  },
+  {
+    "col": 225,
+    "header": "GPSR Safety Attestation",
+    "field_id": "gpsr_safety_attestation#1.value",
+    "required": "OPTIONAL",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 226,
+    "header": "Manufacturer\u2019s Email or Electronic Address",
+    "field_id": "gpsr_manufacturer_reference#1.gpsr_manufacturer_email_address",
+    "required": "OPTIONAL",
+    "example": "abc@example.com",
+    "sample": ""
+  },
+  {
+    "col": 227,
+    "header": "Contains PFAS",
+    "field_id": "contains_pfas#1.value",
+    "required": "OPTIONAL",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 228,
+    "header": "Has Multiple Battery Powered Components",
+    "field_id": "has_multiple_battery_powered_components#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 229,
+    "header": "Ships Globally",
+    "field_id": "ships_globally#1.value",
+    "required": "OPTIONAL",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 230,
+    "header": "Contains Battery or Cell",
+    "field_id": "contains_battery_or_cell#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Battery",
+    "sample": ""
+  },
+  {
+    "col": 231,
+    "header": "Compliance - Chest Size",
+    "field_id": "compliance_chest_size#1.value",
+    "required": "OPTIONAL",
+    "example": "86 cm or More",
+    "sample": ""
+  },
+  {
+    "col": 232,
+    "header": "Compliance - Is Handmade",
+    "field_id": "compliance_is_handmade#1.value",
+    "required": "OPTIONAL",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 233,
+    "header": "Compliance - Printing method",
+    "field_id": "compliance_printing_method#1.value",
+    "required": "OPTIONAL",
+    "example": "Hand Printed - Batik",
+    "sample": ""
+  },
+  {
+    "col": 234,
+    "header": "Compliance - Age Range",
+    "field_id": "compliance_age_range#1.value",
+    "required": "OPTIONAL",
+    "example": "Women",
+    "sample": ""
+  },
+  {
+    "col": 235,
+    "header": "Compliance Weave Type",
+    "field_id": "compliance_weave_type#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Knitted, Crocheted, Woven",
+    "sample": ""
+  },
+  {
+    "col": 236,
+    "header": "Compliance - Warp Or Filling Coloring",
+    "field_id": "compliance_warp_or_filling_coloring#1.value",
+    "required": "OPTIONAL",
+    "example": "2 or More",
+    "sample": ""
+  },
+  {
+    "col": 237,
+    "header": "Compliance - Dress Type",
+    "field_id": "compliance_dress_type#1.value",
+    "required": "OPTIONAL",
+    "example": "Blazers",
+    "sample": ""
+  },
+  {
+    "col": 238,
+    "header": "Battery Contains free Unabsorbed Liquid",
+    "field_id": "battery_contains_free_unabsorbed_liquid#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 239,
+    "header": "Is Battery Non Spillable",
+    "field_id": "is_battery_non_spillable#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 240,
+    "header": "Non-Lithium Battery Packaging",
+    "field_id": "non_lithium_battery_packaging#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Batteries Only",
+    "sample": ""
+  },
+  {
+    "col": 241,
+    "header": "Has Replaceable Battery",
+    "field_id": "has_replaceable_battery#1.value",
+    "required": "OPTIONAL",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 242,
+    "header": "Non-Lithium Battery Energy Content",
+    "field_id": "non_lithium_battery_energy_content#1.value",
+    "required": "OPTIONAL",
+    "example": "2.6",
+    "sample": ""
+  },
+  {
+    "col": 243,
+    "header": "Non-Lithium Battery Energy Content Unit",
+    "field_id": "non_lithium_battery_energy_content#1.unit",
+    "required": "OPTIONAL",
+    "example": "Watt Hours",
+    "sample": ""
+  },
+  {
+    "col": 244,
+    "header": "Has Less than 30 Percent State of Charge",
+    "field_id": "has_less_than_30_percent_state_of_charge#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 245,
+    "header": "Battery Installation Device Type",
+    "field_id": "battery_installation_device_type#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Installed In Vessel",
+    "sample": ""
+  },
+  {
+    "col": 246,
+    "header": "Is OEM Sourced Product",
+    "field_id": "is_oem_sourced_product#1.value",
+    "required": "OPTIONAL",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 247,
+    "header": "GHS Chemical H Code",
+    "field_id": "ghs_chemical_h_code#1.value",
+    "required": "OPTIONAL",
+    "example": "H200",
+    "sample": ""
+  },
+  {
+    "col": 248,
+    "header": "GHS Chemical H Code",
+    "field_id": "ghs_chemical_h_code#2.value",
+    "required": "OPTIONAL",
+    "example": "H200",
+    "sample": ""
+  },
+  {
+    "col": 249,
+    "header": "GHS Chemical H Code",
+    "field_id": "ghs_chemical_h_code#3.value",
+    "required": "OPTIONAL",
+    "example": "H200",
+    "sample": ""
+  },
+  {
+    "col": 250,
+    "header": "GHS Chemical H Code",
+    "field_id": "ghs_chemical_h_code#4.value",
+    "required": "OPTIONAL",
+    "example": "H200",
+    "sample": ""
+  },
+  {
+    "col": 251,
+    "header": "GHS Chemical H Code",
+    "field_id": "ghs_chemical_h_code#5.value",
+    "required": "OPTIONAL",
+    "example": "H200",
+    "sample": ""
+  },
+  {
+    "col": 252,
+    "header": "BAA/TAA Regulation Compliance",
+    "field_id": "baa_taa_regulation_compliance#1.value",
+    "required": "OPTIONAL",
+    "example": "Buy American Act Compliant (BAA)",
+    "sample": ""
+  },
+  {
+    "col": 253,
+    "header": "BAA TAA Compliance Acknowledgement",
+    "field_id": "baa_taa_compliance_acknowledgement#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Yes",
+    "sample": ""
+  },
+  {
+    "col": 254,
+    "header": "TAA Compliant Country",
+    "field_id": "taa_compliant_country#1.value",
+    "required": "CONDITIONALLY REQUIRED",
+    "example": "Canada",
+    "sample": ""
+  }
+]
