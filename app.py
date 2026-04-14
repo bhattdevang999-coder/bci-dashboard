@@ -2347,334 +2347,260 @@ def nis_qa_summary():
 
 def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content):
     """
-    .xlsm surgery:
+    .xlsm surgery — field-ID based dynamic column mapping:
     1. Load template with keep_vba=True
-    2. Find Template-DRESS sheet
-    3. Capture cell styles from row 7
-    4. Clear rows 7+
-    5. Write new rows (parent + children) — fills ALL required/conditionally-required columns
-    6. Save as new file
+    2. Find the Template-* sheet; derive product_type from sheet name
+    3. Build field_id → column_number map from row 4 (exact matches, stripped)
+    4. Capture cell styles from row 7
+    5. Clear rows 7+
+    6. Write parent + child rows using exact field_id lookups
+    7. Save as new file
     """
     import warnings
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         wb = openpyxl.load_workbook(template_path, keep_vba=True)
-    
+
+    # ── Find Template sheet and detect product type ───────────────────────────
     ws = None
+    detected_product_type = "DRESS"  # safe default
     for name in wb.sheetnames:
-        if "template" in name.lower() or "dress" in name.lower():
+        if name.upper().startswith("TEMPLATE"):
             ws = wb[name]
+            # Extract product type: "Template-SWIMWEAR" → "SWIMWEAR"
+            parts = name.split("-", 1)
+            if len(parts) == 2 and parts[1].strip():
+                detected_product_type = parts[1].strip().upper()
             break
     if ws is None:
+        # Fallback: any sheet with "template" in name
+        for name in wb.sheetnames:
+            if "template" in name.lower():
+                ws = wb[name]
+                break
+    if ws is None:
         ws = wb.active
-    
-    # Build column map from sheet rows 3/4
-    col_map = {}
+
+    # ── Build field_id → column_number map from row 4 ─────────────────────────
     max_col = ws.max_column or 254
+    col_map = {}  # field_id_string → column_number
     for col in range(1, max_col + 1):
-        h = _safe(ws.cell(row=3, column=col).value)
-        fid = _safe(ws.cell(row=4, column=col).value)
-        col_map[col] = {"header": h, "field_id": fid}
-    
-    def find_col(field_id_substr):
-        for c, info in col_map.items():
-            if field_id_substr.lower() in info["field_id"].lower():
-                return c
-        return None
-    
-    def find_col_exact(field_id_exact):
-        for c, info in col_map.items():
-            if info["field_id"].lower() == field_id_exact.lower():
-                return c
-        return None
-    
-    # ── Column lookups ────────────────────────────────────────────────────────
-    COL_VENDOR_CODE  = find_col("rtip_vendor_code")                     # Col 1
-    COL_VENDOR_SKU   = find_col("vendor_sku")                            # Col 2
-    COL_PRODUCT_TYPE = find_col("product_type")                          # Col 3
-    COL_PARENTAGE    = find_col("parentage_level")                       # Col 4
-    COL_CHILD_REL    = find_col("child_relationship_type")               # Col 5
-    COL_PARENT_SKU   = find_col("parent_sku")                            # Col 6
-    COL_VAR_THEME    = find_col("variation_theme")                       # Col 7
-    COL_ITEM_NAME    = find_col("item_name")                             # Col 8
-    COL_BRAND        = find_col("brand#1")                               # Col 9
-    COL_EXT_ID_TYPE  = find_col("external_product_id#1.type")            # Col 10
-    COL_EXT_ID_VAL   = find_col("external_product_id#1.value")           # Col 11
-    COL_PROD_CAT     = find_col("product_category")                      # Col 13
-    COL_PROD_SUBCAT  = find_col("product_subcategory")                   # Col 14
-    COL_ITK          = find_col("item_type_keyword")                     # Col 15
-    COL_MODEL_NUM    = find_col("model_number")                          # Col 18
-    COL_MODEL_NAME   = find_col("model_name")                            # Col 19
-    COL_BULLET1      = find_col_exact("bullet_point#1.value")            # Col 30
-    COL_BULLET2      = find_col_exact("bullet_point#2.value")            # Col 31
-    COL_BULLET3      = find_col_exact("bullet_point#3.value")            # Col 32
-    COL_BULLET4      = find_col_exact("bullet_point#4.value")            # Col 33
-    COL_BULLET5      = find_col_exact("bullet_point#5.value")            # Col 34
-    COL_GENERIC_KW   = find_col_exact("generic_keyword#1.value")         # Col 35
-    COL_STYLE        = find_col("style#1") or find_col("style_name")     # Col 46
-    COL_DEPT         = find_col("department#1")                          # Col 47
-    COL_GENDER       = find_col("target_gender")                         # Col 48
-    COL_AGE_RANGE    = find_col("age_range_description")                 # Col 49
-    COL_SIZE_SYS     = find_col_exact("apparel_size#1.size_system")      # Col 50
-    COL_SIZE_CLASS   = find_col_exact("apparel_size#1.size_class")       # Col 51
-    COL_SIZE_VAL     = find_col_exact("apparel_size#1.size")             # Col 52
-    COL_MAT1         = find_col_exact("material#1.value")                # Col 56
-    COL_FABRIC_TYPE  = find_col("fabric_type")                           # Col 59
-    COL_NUMBER_ITEMS = find_col("number_of_items")                       # Col 61
-    COL_ITEM_TYPE_NAME = find_col("item_type_name") or find_col("item_form")  # Col 62
-    COL_SPECIAL_SIZE = find_col("special_size_type") or find_col("special_size")  # Col 66
-    COL_DESC         = find_col("rtip_product_description")              # Col 67
-    COL_COLOR_MAP    = find_col("color#1.standardized")                  # Col 68
-    COL_COLOR        = find_col_exact("color#1.value")                   # Col 69
-    COL_ITEM_LEN     = find_col("item_length_description")               # Col 70
-    COL_ITEM_BOOKING = find_col("item_booking_date") or find_col("booking_date")  # Col 77
-    COL_CARE         = find_col("care_instructions")                     # Col 89
-    COL_UNIT_COUNT   = find_col_exact("unit_count#1.value")              # Col 91
-    COL_UNIT_TYPE    = find_col_exact("unit_count#1.type")               # Col 92
-    COL_NECK         = find_col_exact("collar_style#1.value")            # Col 118
-    COL_LIFECYCLE    = find_col("product_lifecycle_supply_type") or find_col("lifecycle")  # Col 126
-    COL_SILHOUETTE   = find_col("apparel_silhouette")                    # Col 128
-    COL_SLEEVE_LEN   = find_col("sleeve_length_description")             # Col 129
-    COL_SLEEVE_TYPE  = find_col("sleeve_type")                           # Col 130
-    COL_CLOSURE      = find_col("closure_type")                          # Col 131
-    COL_UPF          = find_col("ultraviolet_protection")                # Col 138
-    COL_SKIP_OFFER   = find_col("skip_offer")                            # Col 149
-    COL_LIST_PRICE   = find_col("list_price") or find_col("standard_price")   # Col 150
-    COL_COST_PRICE   = find_col("cost_price") or find_col("map_price")   # Col 151
-    COL_IMPORT_DESIG = find_col("import_designation")                    # Col 152
-    COL_SHIP_DATE    = find_col("earliest_shipping_date") or find_col("shipping_date")  # Col 153
-    # Package dimensions — defaults for a folded dress (operators should override)
-    COL_PKG_LEN      = find_col("item_package_length") or find_col("package_length")   # Col 160
-    COL_PKG_LEN_UNIT = find_col("package_length_unit")                   # Col 161
-    COL_PKG_WID      = find_col("item_package_width") or find_col("package_width")     # Col 162
-    COL_PKG_WID_UNIT = find_col("package_width_unit")                    # Col 163
-    COL_PKG_HGT      = find_col("item_package_height") or find_col("package_height")   # Col 164
-    COL_PKG_HGT_UNIT = find_col("package_height_unit")                   # Col 165
-    COL_PKG_WGT      = find_col("item_package_weight") or find_col("package_weight")   # Col 166
-    COL_PKG_WGT_UNIT = find_col("package_weight_unit")                   # Col 167
-    COL_ORDER_AGG    = find_col("order_aggregate_type") or find_col("order_aggregate")  # Col 168
-    COL_ITEMS_INNER  = find_col("items_per_inner_pack") or find_col("inner_pack")       # Col 169
-    COL_COO          = find_col("country_of_origin")                     # Col 170
-    COL_BATT_REQ     = find_col("are_batteries_required") or find_col("batteries_required")  # Col 171
-    COL_BATT_INC     = find_col("are_batteries_included") or find_col("batteries_included")  # Col 172
-    # Additional lookups kept for backward compat
-    COL_SWATCH       = find_col("swatch_product_image")
-    COL_PART_NUM     = find_col("part_number")
-    
-    # Capture style from row 7 template (first data row)
+        raw = ws.cell(row=4, column=col).value
+        if raw is not None:
+            fid = str(raw).strip()
+            if fid:
+                col_map[fid] = col
+
+    def _col(field_id):
+        """Exact field_id lookup. Returns column number or None."""
+        return col_map.get(field_id)
+
+    # ── Capture styles from row 7 (before clearing) ───────────────────────────
     style_cache = {}
     for col in range(1, max_col + 1):
         cell = ws.cell(row=7, column=col)
         style_cache[col] = {
-            "font": copy.copy(cell.font) if cell.font else None,
-            "fill": copy.copy(cell.fill) if cell.fill else None,
-            "border": copy.copy(cell.border) if cell.border else None,
-            "alignment": copy.copy(cell.alignment) if cell.alignment else None,
+            "font":          copy.copy(cell.font)      if cell.font      else None,
+            "fill":          copy.copy(cell.fill)      if cell.fill      else None,
+            "border":        copy.copy(cell.border)    if cell.border    else None,
+            "alignment":     copy.copy(cell.alignment) if cell.alignment else None,
             "number_format": cell.number_format,
         }
-    
-    # Clear existing data rows (7+)
+
+    # ── Clear existing data rows (7+) ─────────────────────────────────────────
     for row_idx in range(7, (ws.max_row or 100) + 1):
         for col in range(1, max_col + 1):
             ws.cell(row=row_idx, column=col).value = None
-    
-    style_num     = style["style_num"]
-    style_name    = style["style_name"]
-    variants      = style["variants"]
-    list_price    = style.get("list_price", "")
-    cost_price    = style.get("cost_price", "")
-    parent_asin   = style.get("parent_asin", "")
+
+    # ── Unpack style / content data ───────────────────────────────────────────
+    style_num      = style["style_num"]
+    style_name     = style["style_name"]
+    variants       = style["variants"]
+    list_price     = style.get("list_price", "")
+    cost_price     = style.get("cost_price", "")
     model_name_raw = style.get("model_name", "") or style_name
-    sub_class     = style.get("sub_class", "Day Dress")
-    sub_subclass  = style.get("sub_subclass", "")
-    
-    bullets      = content.get("bullets", [])
-    description  = content.get("description", "")
-    backend_kw   = content.get("backend_keywords", "")
-    neck_type    = content.get("neck_type", "") or derive_neck_type(style_name)
-    sleeve_type  = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
-    silhouette   = content.get("silhouette", "") or derive_silhouette(sub_subclass)
-    category     = content.get("category", "") or _derive_amazon_product_category(sub_class)
-    subcategory  = content.get("subcategory", "casual-dresses")
-    fabric       = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
-    care         = content.get("care", "") or brand_cfg.get("default_care", "")
-    upf          = content.get("upf", "") or brand_cfg.get("default_upf", "")
-    coo          = content.get("coo", "") or brand_cfg.get("default_coo", "") or "Imported"
-    
-    # Derived field values
-    clean_brand      = clean_brand_name(brand)
-    item_type_name   = _derive_item_type_name(sub_class)
-    item_length      = _derive_item_length(sub_subclass, style_name)
-    fabric_type      = _derive_fabric_type(fabric)
-    itk_value        = _derive_item_type_keyword(sub_class)
-    today_str        = datetime.now().strftime("%Y%m%d")  # YYYYMMDD format
-    
-    # Parent SKU for NIS = style_num (vendor-side SKU, not ASIN)
+    sub_class      = style.get("sub_class", "Day Dress")
+    sub_subclass   = style.get("sub_subclass", "")
+
+    bullets     = content.get("bullets", [])
+    description = content.get("description", "")
+    backend_kw  = content.get("backend_keywords", "")
+    neck_type   = content.get("neck_type", "")  or derive_neck_type(style_name)
+    sleeve_type = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
+    silhouette  = content.get("silhouette", "")  or derive_silhouette(sub_subclass)
+    category    = content.get("category", "")    or _derive_amazon_product_category(sub_class)
+    subcategory = content.get("subcategory", "casual-dresses")
+    fabric      = content.get("fabric", "")      or brand_cfg.get("default_fabric", "")
+    care        = content.get("care", "")        or brand_cfg.get("default_care", "")
+    upf         = content.get("upf", "")         or brand_cfg.get("default_upf", "")
+    coo         = content.get("coo", "")         or brand_cfg.get("default_coo", "") or "Imported"
+
+    clean_brand    = clean_brand_name(brand)
+    item_type_name = _derive_item_type_name(sub_class)
+    item_length    = _derive_item_length(sub_subclass, style_name)
+    fabric_type    = _derive_fabric_type(fabric)
+    itk_value      = _derive_item_type_keyword(sub_class)
+    sleeve_len     = _derive_sleeve_length(sleeve_type)
+    today_str      = datetime.now().strftime("%Y%m%d")
+
     parent_sku = style_num
-    
-    # Load any QA field overrides for this style
+
+    # Load any QA field overrides for this style (keyed by field_id)
     _field_overrides = session_data.get("field_overrides", {}).get(style_num, {})
-    
-    # Group variants by color (retained for future use)
-    color_groups = defaultdict(list)
-    for v in variants:
-        color_groups[v.get("color_name", "")].append(v)
-    
-    # Helper to write a row
-    def write_row(row_idx, values_dict):
-        for col_num, value in values_dict.items():
-            if col_num is None:
-                continue
-            # Check if operator has overridden this column via QA review
-            override_key = str(col_num)
-            if override_key in _field_overrides:
-                value = _field_overrides[override_key]
-            cell = ws.cell(row=row_idx, column=col_num)
-            cell.value = value
-            # Apply style from row 7
-            cached = style_cache.get(col_num, {})
-            if cached.get("font"):
-                cell.font = copy.copy(cached["font"])
-            if cached.get("fill"):
-                cell.fill = copy.copy(cached["fill"])
-            if cached.get("border"):
-                cell.border = copy.copy(cached["border"])
-            if cached.get("alignment"):
-                cell.alignment = copy.copy(cached["alignment"])
-            if cached.get("number_format"):
-                cell.number_format = cached["number_format"]
-    
-    # ── Shared fields helper (parent + child rows) ────────────────────────────
-    def _shared_fields(row_dict, vendor_sku_val):
-        """Fill all fields that appear in BOTH parent and child rows."""
-        if COL_VENDOR_CODE:   row_dict[COL_VENDOR_CODE]  = vendor_code or brand_cfg.get("vendor_code_full", "")
-        if COL_VENDOR_SKU:    row_dict[COL_VENDOR_SKU]   = vendor_sku_val
-        if COL_PRODUCT_TYPE:  row_dict[COL_PRODUCT_TYPE] = "DRESS"
-        if COL_VAR_THEME:     row_dict[COL_VAR_THEME]    = "COLOR/SIZE"
-        if COL_ITEM_NAME:     row_dict[COL_ITEM_NAME]    = content.get("title", style_name)
-        # Col 9 Brand Name — CRITICAL: use clean_brand_name to strip vendor labels
-        if COL_BRAND:         row_dict[COL_BRAND]        = clean_brand
-        if COL_PROD_CAT:      row_dict[COL_PROD_CAT]     = category
-        if COL_PROD_SUBCAT:   row_dict[COL_PROD_SUBCAT]  = subcategory
-        if COL_ITK:           row_dict[COL_ITK]          = itk_value
-        if COL_MODEL_NUM:     row_dict[COL_MODEL_NUM]    = style_num
-        if COL_MODEL_NAME:    row_dict[COL_MODEL_NAME]   = (model_name_raw or style_name).title()
-        if COL_BULLET1 and bullets:          row_dict[COL_BULLET1] = bullets[0][:500]
-        if COL_BULLET2 and len(bullets) > 1: row_dict[COL_BULLET2] = bullets[1][:500]
-        if COL_BULLET3 and len(bullets) > 2: row_dict[COL_BULLET3] = bullets[2][:500]
-        if COL_BULLET4 and len(bullets) > 3: row_dict[COL_BULLET4] = bullets[3][:500]
-        if COL_BULLET5 and len(bullets) > 4: row_dict[COL_BULLET5] = bullets[4][:500]
-        if COL_GENERIC_KW:    row_dict[COL_GENERIC_KW]  = backend_kw
-        if COL_STYLE:         row_dict[COL_STYLE]        = style_name.title()
-        if COL_DEPT:          row_dict[COL_DEPT]         = brand_cfg.get("department", "Womens")
-        if COL_GENDER:        row_dict[COL_GENDER]       = brand_cfg.get("gender", "Female")
-        if COL_AGE_RANGE:     row_dict[COL_AGE_RANGE]   = "Adult"
-        if COL_MAT1 and fabric: row_dict[COL_MAT1]      = fabric
-        if COL_FABRIC_TYPE:   row_dict[COL_FABRIC_TYPE] = fabric_type
-        if COL_NUMBER_ITEMS:  row_dict[COL_NUMBER_ITEMS] = "1"
-        if COL_ITEM_TYPE_NAME: row_dict[COL_ITEM_TYPE_NAME] = item_type_name
-        if COL_SPECIAL_SIZE:  row_dict[COL_SPECIAL_SIZE] = "Standard"
-        if COL_DESC:          row_dict[COL_DESC]         = description
-        if COL_ITEM_LEN:      row_dict[COL_ITEM_LEN]    = item_length
-        if COL_ITEM_BOOKING:  row_dict[COL_ITEM_BOOKING] = today_str
-        if COL_CARE and care: row_dict[COL_CARE]         = care
-        if COL_UNIT_COUNT:    row_dict[COL_UNIT_COUNT]   = "1"
-        if COL_UNIT_TYPE:     row_dict[COL_UNIT_TYPE]    = "Count"
-        if COL_NECK and neck_type:       row_dict[COL_NECK]       = neck_type
-        if COL_LIFECYCLE:     row_dict[COL_LIFECYCLE]   = "new"
-        if COL_SILHOUETTE and silhouette: row_dict[COL_SILHOUETTE] = silhouette
-        if COL_SLEEVE_LEN:    row_dict[COL_SLEEVE_LEN]  = _derive_sleeve_length(sleeve_type)
-        if COL_SLEEVE_TYPE and sleeve_type: row_dict[COL_SLEEVE_TYPE] = sleeve_type
-        if COL_CLOSURE:       row_dict[COL_CLOSURE]     = "Pull On"  # default for dresses
-        if COL_UPF and upf:   row_dict[COL_UPF]         = upf
-        if COL_SKIP_OFFER:    row_dict[COL_SKIP_OFFER]  = "No"
-        if COL_LIST_PRICE and list_price:
-            try:    row_dict[COL_LIST_PRICE] = float(list_price)
-            except: row_dict[COL_LIST_PRICE] = list_price
-        if COL_IMPORT_DESIG:  row_dict[COL_IMPORT_DESIG] = "Imported"  # COO is not US by default
-        if COL_SHIP_DATE:     row_dict[COL_SHIP_DATE]   = today_str
-        # Package dimensions — defaults for a folded dress; OPERATORS should override these
-        if COL_PKG_LEN:       row_dict[COL_PKG_LEN]     = "14"
-        if COL_PKG_LEN_UNIT:  row_dict[COL_PKG_LEN_UNIT] = "IN"
-        if COL_PKG_WID:       row_dict[COL_PKG_WID]     = "10"
-        if COL_PKG_WID_UNIT:  row_dict[COL_PKG_WID_UNIT] = "IN"
-        if COL_PKG_HGT:       row_dict[COL_PKG_HGT]     = "2"
-        if COL_PKG_HGT_UNIT:  row_dict[COL_PKG_HGT_UNIT] = "IN"
-        if COL_PKG_WGT:       row_dict[COL_PKG_WGT]     = "0.5"
-        if COL_PKG_WGT_UNIT:  row_dict[COL_PKG_WGT_UNIT] = "LB"
-        if COL_ORDER_AGG:     row_dict[COL_ORDER_AGG]   = "Each"
-        if COL_ITEMS_INNER:   row_dict[COL_ITEMS_INNER] = "1"
-        if COL_COO and coo:   row_dict[COL_COO]         = coo
-        if COL_BATT_REQ:      row_dict[COL_BATT_REQ]   = "No"
-        if COL_BATT_INC:      row_dict[COL_BATT_INC]   = "No"
-    
+
+    # ── Cell writer ───────────────────────────────────────────────────────────
+    def write_cell(row_idx, field_id, value):
+        """Write value to the cell for field_id, applying row-7 styles.
+        Checks field_overrides first (keyed by field_id).
+        """
+        # Field-ID-keyed override takes priority
+        if field_id in _field_overrides:
+            value = _field_overrides[field_id]
+        col_num = _col(field_id)
+        if col_num is None or value is None:
+            return
+        cell = ws.cell(row=row_idx, column=col_num)
+        cell.value = value if isinstance(value, (int, float)) else str(value)
+        cached = style_cache.get(col_num, {})
+        if cached.get("font"):          cell.font          = copy.copy(cached["font"])
+        if cached.get("fill"):          cell.fill          = copy.copy(cached["fill"])
+        if cached.get("border"):        cell.border        = copy.copy(cached["border"])
+        if cached.get("alignment"):     cell.alignment     = copy.copy(cached["alignment"])
+        if cached.get("number_format"): cell.number_format = cached["number_format"]
+
+    # ── Shared-fields writer (called for both parent and child rows) ──────────
+    def write_shared(row_idx, vendor_sku_val, is_child=False):
+        """Write all fields common to parent and child rows."""
+        write_cell(row_idx, "rtip_vendor_code#1.value",         vendor_code or brand_cfg.get("vendor_code_full", ""))
+        write_cell(row_idx, "vendor_sku#1.value",               vendor_sku_val)
+        write_cell(row_idx, "product_type#1.value",             detected_product_type)
+        write_cell(row_idx, "variation_theme_name#1.value",     "COLOR/SIZE")
+        write_cell(row_idx, "brand#1.value",                    clean_brand)
+        write_cell(row_idx, "item_type_keyword#1.value",        itk_value)
+        write_cell(row_idx, "model_number#1.value",             style_num)
+        write_cell(row_idx, "model_name#1.value",               (model_name_raw or style_name).title())
+        # Bullets
+        for i, bkey in enumerate(["bullet_point#1.value", "bullet_point#2.value",
+                                   "bullet_point#3.value", "bullet_point#4.value",
+                                   "bullet_point#5.value"]):
+            if i < len(bullets):
+                write_cell(row_idx, bkey, bullets[i][:500])
+        write_cell(row_idx, "generic_keyword#1.value",          backend_kw)
+        write_cell(row_idx, "style#1.value",                    style_name.title())
+        write_cell(row_idx, "fit_type#1.value",                 "Regular")
+        write_cell(row_idx, "department#1.value",               brand_cfg.get("department", "Womens"))
+        write_cell(row_idx, "target_gender#1.value",            brand_cfg.get("gender", "Female"))
+        write_cell(row_idx, "age_range_description#1.value",    "Adult")
+        write_cell(row_idx, "apparel_size#1.body_type",         "All Body Types")
+        write_cell(row_idx, "apparel_size#1.height_type",       "All Heights")
+        if fabric:
+            write_cell(row_idx, "material#1.value",             fabric)
+        write_cell(row_idx, "fabric_type#1.value",              fabric_type)
+        write_cell(row_idx, "item_display_number_of_items#1.value", "1")
+        write_cell(row_idx, "item_type_name#1.value",           item_type_name)
+        write_cell(row_idx, "special_size#1.value",             "Standard")
+        write_cell(row_idx, "rtip_product_description#1.value", description)
+        write_cell(row_idx, "item_length_description#1.value",  item_length)
+        write_cell(row_idx, "item_booking_date#1.value",        today_str)
+        if care:
+            write_cell(row_idx, "care_instructions#1.value",    care)
+        write_cell(row_idx, "unit_count#1.value",               "1")
+        write_cell(row_idx, "unit_count#1.type",                "Count")
+        if neck_type:
+            write_cell(row_idx, "neck#1.style#1.value",         neck_type)
+        write_cell(row_idx, "product_lifecycle_supply_type#1.value", "new")
+        if silhouette:
+            write_cell(row_idx, "apparel_silhouette#1.value",   silhouette)
+        write_cell(row_idx, "sleeve_length_description#1.value", sleeve_len)
+        if sleeve_type:
+            write_cell(row_idx, "sleeve#1.type#1.value",        sleeve_type)
+        write_cell(row_idx, "closure_type#1.value",             "Pull On")
+        if upf:
+            write_cell(row_idx, "ultraviolet_protection_factor#1.value", upf)
+        write_cell(row_idx, "skip_offer",                       "No")
+        # Import designation: "Imported" unless COO is US
+        import_desig = "Imported" if coo.upper() not in ("US", "USA", "UNITED STATES") else "Domestic"
+        write_cell(row_idx, "import_designation#1.value",       import_desig)
+        write_cell(row_idx, "compliance_earliest_shipping_date#1.value", today_str)
+        # Package dimensions
+        write_cell(row_idx, "item_package_length#1.value",      "14")
+        write_cell(row_idx, "item_package_length#1.unit",       "IN")
+        write_cell(row_idx, "item_package_width#1.value",       "10")
+        write_cell(row_idx, "item_package_width#1.unit",        "IN")
+        write_cell(row_idx, "item_package_height#1.value",      "2")
+        write_cell(row_idx, "item_package_height#1.unit",       "IN")
+        write_cell(row_idx, "item_package_weight#1.value",      "0.5")
+        write_cell(row_idx, "item_package_weight#1.unit",       "LB")
+        write_cell(row_idx, "order_aggregate_type#1.value",     "Each")
+        write_cell(row_idx, "items_per_inner_pack#1.value",     "1")
+        if coo:
+            write_cell(row_idx, "country_of_origin#1.value",   coo)
+        write_cell(row_idx, "are_batteries_required#1.value",  "No")
+        write_cell(row_idx, "are_batteries_included#1.value",  "No")
+        # List price on shared fields (applies to parent; child may override)
+        if list_price:
+            try:    write_cell(row_idx, "list_price#1.value",   float(list_price))
+            except: write_cell(row_idx, "list_price#1.value",   list_price)
+
     current_row = 7
-    
-    # ── Write parent row ──────────────────────────────────────────────────────
-    parent_row = {}
-    _shared_fields(parent_row, parent_sku)
-    # Parent-specific overrides
-    if COL_PARENTAGE: parent_row[COL_PARENTAGE] = "Parent"
-    # Parent gets title without color/size
-    if COL_ITEM_NAME: parent_row[COL_ITEM_NAME] = content.get("title", style_name)
-    
-    write_row(current_row, parent_row)
+
+    # ── Parent row ────────────────────────────────────────────────────────────
+    write_shared(current_row, parent_sku, is_child=False)
+    write_cell(current_row, "parentage_level#1.value",          "Parent")
+    write_cell(current_row, "item_name#1.value",                content.get("title", style_name))
     current_row += 1
-    
-    # ── Write child rows (one per variant) ───────────────────────────────────
+
+    # ── Child rows (one per variant) ──────────────────────────────────────────
     for v in variants:
         color_name = v.get("color_name", "")
         size       = v.get("size", "")
         upc        = v.get("upc", "")
         child_asin = v.get("child_asin", "")
         sku        = v.get("sku", "") or f"{style_num}-{color_name}-{size}".replace(" ", "-")
-        
+
         color_family    = COLOR_MAP.get(color_name.upper().strip(), normalize_color(color_name))
         size_normalized = normalize_size(size)
-        
-        # Generate per-variant title
+
         variant_title = generate_title(
-            brand_cfg, brand, style_name, "Dress",
+            brand_cfg, brand, style_name, detected_product_type.title(),
             color_name, size, upf
         )
-        
-        child_row = {}
-        _shared_fields(child_row, sku)
-        # Child-specific fields
-        if COL_PARENTAGE:  child_row[COL_PARENTAGE]  = "Child"
-        if COL_CHILD_REL:  child_row[COL_CHILD_REL]  = "Variation"
-        if COL_PARENT_SKU: child_row[COL_PARENT_SKU] = parent_sku
-        if COL_ITEM_NAME:  child_row[COL_ITEM_NAME]  = variant_title
-        if COL_EXT_ID_TYPE and upc: child_row[COL_EXT_ID_TYPE] = "UPC"
-        if COL_EXT_ID_VAL and upc:  child_row[COL_EXT_ID_VAL]  = re.sub(r'\D', '', str(upc))
+
+        write_shared(current_row, sku, is_child=True)
+        write_cell(current_row, "parentage_level#1.value",      "Child")
+        write_cell(current_row, "child_relationship_type#1.value", "Variation")
+        write_cell(current_row, "parent_sku#1.value",           parent_sku)
+        write_cell(current_row, "item_name#1.value",            variant_title)
+        if upc:
+            write_cell(current_row, "external_product_id#1.type",  "UPC")
+            write_cell(current_row, "external_product_id#1.value", re.sub(r'\D', '', str(upc)))
         if child_asin:
-            try:
-                asin_col = find_col("merchant_suggested_asin")
-                if asin_col: child_row[asin_col] = child_asin
-            except: pass
-        if COL_SIZE_SYS:   child_row[COL_SIZE_SYS]  = "US"
-        if COL_SIZE_CLASS:  child_row[COL_SIZE_CLASS] = "Alpha"
-        if COL_SIZE_VAL:   child_row[COL_SIZE_VAL]   = size_normalized or size
-        if COL_COLOR_MAP:  child_row[COL_COLOR_MAP]  = color_family
-        if COL_COLOR:      child_row[COL_COLOR]      = color_name.title() if color_name else ""
-        if COL_COST_PRICE and (v.get("cost_price") or cost_price):
-            try:    child_row[COL_COST_PRICE] = float(v.get("cost_price") or cost_price)
-            except: child_row[COL_COST_PRICE] = v.get("cost_price") or cost_price
-        
-        write_row(current_row, child_row)
+            asin_col = _col("merchant_suggested_asin#1.value")
+            if asin_col:
+                ws.cell(row=current_row, column=asin_col).value = child_asin
+        write_cell(current_row, "apparel_size#1.size_system",   "US")
+        write_cell(current_row, "apparel_size#1.size_class",    "Alpha")
+        write_cell(current_row, "apparel_size#1.size",          size_normalized or size)
+        write_cell(current_row, "color#1.standardized",         color_family)
+        write_cell(current_row, "color#1.value",                color_name.title() if color_name else "")
+        # Child cost price
+        child_cost = v.get("cost_price") or cost_price
+        if child_cost:
+            try:    write_cell(current_row, "cost#1.value",     float(child_cost))
+            except: write_cell(current_row, "cost#1.value",     child_cost)
         current_row += 1
-    
-    # Save
+
+    # ── Save ──────────────────────────────────────────────────────────────────
     safe_name = re.sub(r'[^\w\-]', '_', style_num)
     output_filename = f"NIS_{brand.replace(' ', '_')}_{safe_name}.xlsm"
     output_path = str(UPLOAD_OUTPUT / output_filename)
-    
-    import warnings as w
-    with w.catch_warnings():
-        w.simplefilter("ignore")
+
+    import warnings as _w
+    with _w.catch_warnings():
+        _w.simplefilter("ignore")
         wb.save(output_path)
     wb.close()
-    
+
     return output_path
 
 @app.route("/api/download/<filename>")
@@ -2692,326 +2618,229 @@ def download_file(filename):
     )
 
 def _generate_category_file(cat_styles, content_map, template_path, brand, brand_cfg, vendor_code, output_path):
-    """Generate a single .xlsm with all styles of one category.
+    """Generate a single .xlsm with all styles of one category — field-ID based.
     Fills ALL required and conditionally-required Amazon columns.
     """
     import warnings
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         wb = openpyxl.load_workbook(template_path, keep_vba=True)
-    
+
     ws = None
+    detected_product_type = "DRESS"  # safe default
     for name in wb.sheetnames:
-        if "template" in name.lower() or "dress" in name.lower():
+        if name.upper().startswith("TEMPLATE"):
             ws = wb[name]
+            parts = name.split("-", 1)
+            if len(parts) == 2 and parts[1].strip():
+                detected_product_type = parts[1].strip().upper()
             break
     if ws is None:
+        for name in wb.sheetnames:
+            if "template" in name.lower():
+                ws = wb[name]
+                break
+    if ws is None:
         ws = wb.active
-    
-    col_map = {}
+
+    # ── Build field_id → column_number map from row 4 ─────────────────────────
     max_col = ws.max_column or 254
+    col_map = {}  # field_id_string → column_number
     for col in range(1, max_col + 1):
-        h = _safe(ws.cell(row=3, column=col).value)
-        fid = _safe(ws.cell(row=4, column=col).value)
-        col_map[col] = {"header": h, "field_id": fid}
+        raw = ws.cell(row=4, column=col).value
+        if raw is not None:
+            fid = str(raw).strip()
+            if fid:
+                col_map[fid] = col
+
+    def _col(field_id):
+        return col_map.get(field_id)
     
-    def fc(fid_sub):
-        for c, info in col_map.items():
-            if fid_sub.lower() in info["field_id"].lower(): return c
-        return None
-    def fce(fid_exact):
-        for c, info in col_map.items():
-            if info["field_id"].lower() == fid_exact.lower(): return c
-        return None
-    
-    # ── Complete column map ─────────────────────────────────────────────────────
-    COL = {
-        # Core identification
-        "vc":    fc("rtip_vendor_code"),
-        "vsku":  fc("vendor_sku"),
-        "pt":    fc("product_type"),
-        "par":   fc("parentage_level"),
-        "crel":  fc("child_relationship_type"),
-        "psku":  fc("parent_sku"),
-        "vt":    fc("variation_theme"),
-        "iname": fc("item_name"),
-        "br":    fc("brand#1"),
-        "eidt":  fc("external_product_id#1.type"),
-        "eidv":  fc("external_product_id#1.value"),
-        "pcat":  fc("product_category"),
-        "pscat": fc("product_subcategory"),
-        "itk":   fc("item_type_keyword"),
-        "mnum":  fc("model_number"),
-        "mname": fc("model_name"),
-        # Bullets & keywords
-        "b1": fce("bullet_point#1.value"),
-        "b2": fce("bullet_point#2.value"),
-        "b3": fce("bullet_point#3.value"),
-        "b4": fce("bullet_point#4.value"),
-        "b5": fce("bullet_point#5.value"),
-        "kw": fce("generic_keyword#1.value"),
-        # Style / classification
-        "style":   fc("style#1"),
-        "dept":    fc("department#1"),
-        "gen":     fc("target_gender"),
-        "age":     fc("age_range_description"),
-        # Size
-        "ssys":  fce("apparel_size#1.size_system"),
-        "scls":  fce("apparel_size#1.size_class"),
-        "sval":  fce("apparel_size#1.size"),
-        # Fabric / material
-        "mat":     fce("material#1.value"),
-        "ftype":   fc("fabric_type"),
-        # Counts
-        "nitem":   fc("number_of_items"),
-        "itn":     fc("item_type_name") or fc("item_form"),
-        # Description / search
-        "ssize":   fc("special_size_type") or fc("special_size"),
-        "desc":    fc("rtip_product_description"),
-        # Color
-        "cmap":  fc("color#1.standardized"),
-        "cval":  fce("color#1.value"),
-        # Dimensions
-        "ilen":    fc("item_length_description"),
-        "ibookdt": fc("item_booking_date") or fc("booking_date"),
-        "care":    fc("care_instructions"),
-        "uc":      fce("unit_count#1.value"),
-        "uct":     fce("unit_count#1.type"),
-        "neck":    fce("collar_style#1.value"),
-        "lc":      fc("product_lifecycle_supply_type") or fc("lifecycle"),
-        "sil":     fc("apparel_silhouette"),
-        "slvlen":  fc("sleeve_length_description"),
-        "slvtype": fc("sleeve_type"),
-        "closure": fc("closure_type"),
-        "upf":     fc("ultraviolet_protection"),
-        "skip":    fc("skip_offer"),
-        "lp":      fc("list_price") or fc("standard_price"),
-        "cp":      fc("cost_price") or fc("map_price"),
-        "import":  fc("import_designation"),
-        "shipdt":  fc("earliest_shipping_date") or fc("shipping_date"),
-        # Package dimensions — defaults for a folded dress; OPERATORS should override
-        "pkglen":   fc("item_package_length") or fc("package_length"),
-        "pkglenU":  fc("package_length_unit"),
-        "pkgwid":   fc("item_package_width") or fc("package_width"),
-        "pkgwidU":  fc("package_width_unit"),
-        "pkghgt":   fc("item_package_height") or fc("package_height"),
-        "pkghgtU":  fc("package_height_unit"),
-        "pkgwgt":   fc("item_package_weight") or fc("package_weight"),
-        "pkgwgtU":  fc("package_weight_unit"),
-        "ordagg":   fc("order_aggregate_type") or fc("order_aggregate"),
-        "ipack":    fc("items_per_inner_pack") or fc("inner_pack"),
-        "coo":      fc("country_of_origin"),
-        "battreq":  fc("are_batteries_required") or fc("batteries_required"),
-        "battinc":  fc("are_batteries_included") or fc("batteries_included"),
-    }
-    
+    # ── Capture styles from row 7 ────────────────────────────────────────────
     cell_styles = {}
     for col in range(1, max_col + 1):
         cell = ws.cell(row=7, column=col)
         cell_styles[col] = {
-            "font": copy(cell.font), "fill": copy(cell.fill),
-            "border": copy(cell.border), "alignment": copy(cell.alignment),
+            "font":          copy.copy(cell.font)      if cell.font      else None,
+            "fill":          copy.copy(cell.fill)      if cell.fill      else None,
+            "border":        copy.copy(cell.border)    if cell.border    else None,
+            "alignment":     copy.copy(cell.alignment) if cell.alignment else None,
             "number_format": cell.number_format,
         }
-    
-    for row in range(7, ws.max_row + 1):
+
+    # ── Clear data rows ───────────────────────────────────────────────────────
+    for row in range(7, (ws.max_row or 100) + 1):
         for col in range(1, max_col + 1):
             ws.cell(row=row, column=col).value = None
-    
-    def wc(row, key, value):
-        """Write a value to the cell identified by COL key, applying row-7 styles."""
-        c = COL.get(key)
+
+    clean_brand = clean_brand_name(brand)
+    today_str   = datetime.now().strftime("%Y%m%d")
+
+    def wc(row_idx, field_id, value):
+        """Write value to the cell for field_id, applying row-7 styles."""
+        c = _col(field_id)
         if c is None or value is None:
             return
-        # Allow empty string for fields that must be explicitly blank
-        cell = ws.cell(row=row, column=c)
-        cell.value = str(value) if not isinstance(value, (int, float)) else value
-        for prop, sval in cell_styles.get(c, {}).items():
-            if prop == "number_format":
-                cell.number_format = sval
-            else:
-                setattr(cell, prop, sval)
-    
-    clean_brand = clean_brand_name(brand)
-    today_str   = datetime.now().strftime("%Y%m%d")  # YYYYMMDD format
-    coo_default = brand_cfg.get("default_coo", "") or "Imported"
-    
+        cell = ws.cell(row=row_idx, column=c)
+        cell.value = value if isinstance(value, (int, float)) else str(value)
+        cached = cell_styles.get(c, {})
+        if cached.get("font"):          cell.font          = copy.copy(cached["font"])
+        if cached.get("fill"):          cell.fill          = copy.copy(cached["fill"])
+        if cached.get("border"):        cell.border        = copy.copy(cached["border"])
+        if cached.get("alignment"):     cell.alignment     = copy.copy(cached["alignment"])
+        if cached.get("number_format"): cell.number_format = cached["number_format"]
+
     cr = 7
     for style in cat_styles:
-        sn         = style["style_num"]
-        style_name = style.get("style_name", sn)
-        sub_class  = style.get("sub_class", "Day Dress")
+        sn           = style["style_num"]
+        style_name   = style.get("style_name", sn)
+        sub_class    = style.get("sub_class", "Day Dress")
         sub_subclass = style.get("sub_subclass", "")
-        content    = content_map.get(sn, {})
+        content      = content_map.get(sn, {})
         if not content:
             continue
-        
-        psku      = f"{brand_cfg.get('vendor_code_prefix', '')}-{sn}".strip("-") or sn
-        
+
+        psku = f"{brand_cfg.get('vendor_code_prefix', '')}-{sn}".strip("-") or sn
+
         # Derive per-style fields
-        fabric    = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
-        care      = content.get("care", "") or brand_cfg.get("default_care", "")
-        upf       = content.get("upf", "") or brand_cfg.get("default_upf", "")
-        coo       = content.get("coo", "") or brand_cfg.get("default_coo", "") or "Imported"
-        neck      = content.get("neck_type", "") or derive_neck_type(style_name)
-        sleeve    = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
-        sil       = content.get("silhouette", "") or derive_silhouette(sub_subclass)
-        cat_kw    = content.get("category", "") or _derive_amazon_product_category(sub_class)
-        itk       = _derive_item_type_keyword(sub_class)
-        itn       = _derive_item_type_name(sub_class)
-        ilen      = _derive_item_length(sub_subclass, style_name)
-        ftype     = _derive_fabric_type(fabric)
-        slvlen    = _derive_sleeve_length(sleeve)
+        fabric     = content.get("fabric", "")     or brand_cfg.get("default_fabric", "")
+        care       = content.get("care", "")       or brand_cfg.get("default_care", "")
+        upf        = content.get("upf", "")        or brand_cfg.get("default_upf", "")
+        coo        = content.get("coo", "")        or brand_cfg.get("default_coo", "") or "Imported"
+        neck       = content.get("neck_type", "") or derive_neck_type(style_name)
+        sleeve     = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
+        sil        = content.get("silhouette", "") or derive_silhouette(sub_subclass)
+        itk        = _derive_item_type_keyword(sub_class)
+        itn        = _derive_item_type_name(sub_class)
+        ilen       = _derive_item_length(sub_subclass, style_name)
+        ftype      = _derive_fabric_type(fabric)
+        slvlen     = _derive_sleeve_length(sleeve)
         list_price = style.get("list_price", "") or content.get("list_price", "")
-        bullets   = content.get("bullets", [])
-        
-        # ── Parent row ──────────────────────────────────────────────────
-        wc(cr, "vc",    vendor_code)
-        wc(cr, "vsku",  psku)
-        wc(cr, "pt",    "DRESS")
-        wc(cr, "par",   "Parent")
-        wc(cr, "vt",    "COLOR/SIZE")
-        wc(cr, "iname", content.get("title", style_name))
-        wc(cr, "br",    clean_brand)  # Col 9: use clean brand name
-        wc(cr, "pcat",  cat_kw)
-        wc(cr, "pscat", content.get("subcategory", "casual-dresses"))
-        wc(cr, "itk",   itk)
-        wc(cr, "mnum",  sn)
-        wc(cr, "mname", style_name.title())
-        # Bullets (support both list format and bullet_N keys)
-        if bullets:
-            for idx, bkey in enumerate(["b1","b2","b3","b4","b5"]):
-                if idx < len(bullets): wc(cr, bkey, bullets[idx][:500])
-        else:
-            for i in range(1, 6): wc(cr, f"b{i}", content.get(f"bullet_{i}", ""))
-        wc(cr, "kw",    content.get("backend_keywords", ""))
-        wc(cr, "style", style_name.title())
-        wc(cr, "dept",  brand_cfg.get("department", "Womens"))
-        wc(cr, "gen",   brand_cfg.get("gender", "Female"))
-        wc(cr, "age",   "Adult")
-        wc(cr, "mat",   fabric)
-        wc(cr, "ftype", ftype)
-        wc(cr, "nitem", "1")
-        wc(cr, "itn",   itn)
-        wc(cr, "ssize", "Standard")
-        wc(cr, "desc",  content.get("description", ""))
-        wc(cr, "ilen",  ilen)
-        wc(cr, "ibookdt", today_str)
-        wc(cr, "care",  care)
-        wc(cr, "uc",    "1")
-        wc(cr, "uct",   "Count")
-        wc(cr, "neck",  neck)
-        wc(cr, "lc",    "new")
-        wc(cr, "sil",   sil)
-        wc(cr, "slvlen", slvlen)
-        wc(cr, "slvtype", sleeve)
-        wc(cr, "closure", "Pull On")
-        if upf: wc(cr, "upf", upf)
-        wc(cr, "skip",   "No")
+        bullets    = content.get("bullets", [])
+        import_desig = "Imported" if coo.upper() not in ("US", "USA", "UNITED STATES") else "Domestic"
+
+        # ── Shared-fields helper for this style ─────────────────────────────
+        def write_shared_row(r, sku_val, _fabric=fabric, _care=care, _upf=upf,
+                             _coo=coo, _neck=neck, _sleeve=sleeve, _sil=sil,
+                             _itk=itk, _itn=itn, _ilen=ilen, _ftype=ftype,
+                             _slvlen=slvlen, _bullets=bullets, _content=content,
+                             _style_name=style_name, _sn=sn, _import_desig=import_desig):
+            wc(r, "rtip_vendor_code#1.value",         vendor_code)
+            wc(r, "vendor_sku#1.value",               sku_val)
+            wc(r, "product_type#1.value",             detected_product_type)
+            wc(r, "variation_theme_name#1.value",     "COLOR/SIZE")
+            wc(r, "brand#1.value",                    clean_brand)
+            wc(r, "item_type_keyword#1.value",        _itk)
+            wc(r, "model_number#1.value",             _sn)
+            wc(r, "model_name#1.value",               _style_name.title())
+            for i, bfid in enumerate(["bullet_point#1.value", "bullet_point#2.value",
+                                      "bullet_point#3.value", "bullet_point#4.value",
+                                      "bullet_point#5.value"]):
+                if i < len(_bullets):
+                    wc(r, bfid, _bullets[i][:500])
+                else:
+                    bullet_fallback = _content.get(f"bullet_{i+1}", "")
+                    if bullet_fallback:
+                        wc(r, bfid, bullet_fallback[:500])
+            wc(r, "generic_keyword#1.value",          _content.get("backend_keywords", ""))
+            wc(r, "style#1.value",                    _style_name.title())
+            wc(r, "fit_type#1.value",                 "Regular")
+            wc(r, "department#1.value",               brand_cfg.get("department", "Womens"))
+            wc(r, "target_gender#1.value",            brand_cfg.get("gender", "Female"))
+            wc(r, "age_range_description#1.value",    "Adult")
+            wc(r, "apparel_size#1.body_type",         "All Body Types")
+            wc(r, "apparel_size#1.height_type",       "All Heights")
+            if _fabric:
+                wc(r, "material#1.value",             _fabric)
+            wc(r, "fabric_type#1.value",              _ftype)
+            wc(r, "item_display_number_of_items#1.value", "1")
+            wc(r, "item_type_name#1.value",           _itn)
+            wc(r, "special_size#1.value",             "Standard")
+            wc(r, "rtip_product_description#1.value", _content.get("description", ""))
+            wc(r, "item_length_description#1.value",  _ilen)
+            wc(r, "item_booking_date#1.value",        today_str)
+            if _care:
+                wc(r, "care_instructions#1.value",   _care)
+            wc(r, "unit_count#1.value",               "1")
+            wc(r, "unit_count#1.type",                "Count")
+            if _neck:
+                wc(r, "neck#1.style#1.value",         _neck)
+            wc(r, "product_lifecycle_supply_type#1.value", "new")
+            if _sil:
+                wc(r, "apparel_silhouette#1.value",   _sil)
+            wc(r, "sleeve_length_description#1.value", _slvlen)
+            if _sleeve:
+                wc(r, "sleeve#1.type#1.value",        _sleeve)
+            wc(r, "closure_type#1.value",             "Pull On")
+            if _upf:
+                wc(r, "ultraviolet_protection_factor#1.value", _upf)
+            wc(r, "skip_offer",                       "No")
+            wc(r, "import_designation#1.value",       _import_desig)
+            wc(r, "compliance_earliest_shipping_date#1.value", today_str)
+            wc(r, "item_package_length#1.value",      "14")
+            wc(r, "item_package_length#1.unit",       "IN")
+            wc(r, "item_package_width#1.value",       "10")
+            wc(r, "item_package_width#1.unit",        "IN")
+            wc(r, "item_package_height#1.value",      "2")
+            wc(r, "item_package_height#1.unit",       "IN")
+            wc(r, "item_package_weight#1.value",      "0.5")
+            wc(r, "item_package_weight#1.unit",       "LB")
+            wc(r, "order_aggregate_type#1.value",     "Each")
+            wc(r, "items_per_inner_pack#1.value",     "1")
+            if _coo:
+                wc(r, "country_of_origin#1.value",   _coo)
+            wc(r, "are_batteries_required#1.value",  "No")
+            wc(r, "are_batteries_included#1.value",  "No")
+
+        # ── Parent row ────────────────────────────────────────────────────────
+        write_shared_row(cr, psku)
+        wc(cr, "parentage_level#1.value",             "Parent")
+        wc(cr, "item_name#1.value",                   content.get("title", style_name))
         if list_price:
-            try:    wc(cr, "lp", float(list_price))
-            except: wc(cr, "lp", list_price)
-        wc(cr, "import",  "Imported")
-        wc(cr, "shipdt",  today_str)
-        # Package defaults — OPERATORS should override per SKU
-        wc(cr, "pkglen",  "14");  wc(cr, "pkglenU", "IN")
-        wc(cr, "pkgwid",  "10");  wc(cr, "pkgwidU", "IN")
-        wc(cr, "pkghgt",  "2");   wc(cr, "pkghgtU", "IN")
-        wc(cr, "pkgwgt",  "0.5"); wc(cr, "pkgwgtU", "LB")
-        wc(cr, "ordagg",  "Each")
-        wc(cr, "ipack",   "1")
-        wc(cr, "coo",     coo)
-        wc(cr, "battreq", "No")
-        wc(cr, "battinc", "No")
+            try:    wc(cr, "list_price#1.value",      float(list_price))
+            except: wc(cr, "list_price#1.value",      list_price)
         cr += 1
-        
-        # ── Child rows ──────────────────────────────────────────────────
+
+        # ── Child rows ────────────────────────────────────────────────────────
         for var in style.get("variants", []):
-            color = var.get("color", "") or var.get("color_name", "")
-            size  = var.get("size", "")
-            upc   = var.get("upc", "")
+            color  = var.get("color", "") or var.get("color_name", "")
+            size   = var.get("size", "")
+            upc    = var.get("upc", "")
             v_cost = var.get("cost_price", "")
-            csku  = f"{psku}-{color}-{size}".replace(" ", "-")
+            csku   = f"{psku}-{color}-{size}".replace(" ", "-")
             color_family = COLOR_MAP.get(color.upper().strip(), normalize_color(color))
             size_norm    = normalize_size(size)
             if color:
                 ctitle = content.get("title", "").split(",")[0] + f", {color.title()}, {size_norm or size}"
             else:
                 ctitle = content.get("title", "")
-            
-            wc(cr, "vc",    vendor_code)
-            wc(cr, "vsku",  csku)
-            wc(cr, "pt",    "DRESS")
-            wc(cr, "par",   "Child")
-            wc(cr, "crel",  "Variation")
-            wc(cr, "psku",  psku)
-            wc(cr, "vt",    "COLOR/SIZE")
-            wc(cr, "iname", ctitle)
-            wc(cr, "br",    clean_brand)  # Col 9: use clean brand name
+
+            write_shared_row(cr, csku)
+            wc(cr, "parentage_level#1.value",         "Child")
+            wc(cr, "child_relationship_type#1.value", "Variation")
+            wc(cr, "parent_sku#1.value",              psku)
+            wc(cr, "item_name#1.value",               ctitle)
             if upc:
-                wc(cr, "eidt", "UPC")
-                wc(cr, "eidv", re.sub(r'\D', '', str(upc)))
-            wc(cr, "pcat",  cat_kw)
-            wc(cr, "pscat", content.get("subcategory", "casual-dresses"))
-            wc(cr, "itk",   itk)
-            wc(cr, "mnum",  sn)
-            wc(cr, "mname", style_name.title())
-            if bullets:
-                for idx, bkey in enumerate(["b1","b2","b3","b4","b5"]):
-                    if idx < len(bullets): wc(cr, bkey, bullets[idx][:500])
-            else:
-                for i in range(1, 6): wc(cr, f"b{i}", content.get(f"bullet_{i}", ""))
-            wc(cr, "kw",    content.get("backend_keywords", ""))
-            wc(cr, "style", style_name.title())
-            wc(cr, "dept",  brand_cfg.get("department", "Womens"))
-            wc(cr, "gen",   brand_cfg.get("gender", "Female"))
-            wc(cr, "age",   "Adult")
-            wc(cr, "ssys",  "US")
-            wc(cr, "scls",  "Alpha")
-            wc(cr, "sval",  size_norm or size)
-            wc(cr, "mat",   fabric)
-            wc(cr, "ftype", ftype)
-            wc(cr, "nitem", "1")
-            wc(cr, "itn",   itn)
-            wc(cr, "ssize", "Standard")
-            wc(cr, "desc",  content.get("description", ""))
-            wc(cr, "cmap",  color_family)
-            wc(cr, "cval",  color.title() if color else "")
-            wc(cr, "ilen",  ilen)
-            wc(cr, "ibookdt", today_str)
-            wc(cr, "care",  care)
-            wc(cr, "uc",    "1")
-            wc(cr, "uct",   "Count")
-            wc(cr, "neck",  neck)
-            wc(cr, "lc",    "new")
-            wc(cr, "sil",   sil)
-            wc(cr, "slvlen", slvlen)
-            wc(cr, "slvtype", sleeve)
-            wc(cr, "closure", "Pull On")
-            if upf: wc(cr, "upf", upf)
-            wc(cr, "skip",   "No")
+                wc(cr, "external_product_id#1.type",  "UPC")
+                wc(cr, "external_product_id#1.value", re.sub(r"\D", "", str(upc)))
+            wc(cr, "apparel_size#1.size_system",      "US")
+            wc(cr, "apparel_size#1.size_class",       "Alpha")
+            wc(cr, "apparel_size#1.size",             size_norm or size)
+            wc(cr, "color#1.standardized",            color_family)
+            wc(cr, "color#1.value",                   color.title() if color else "")
             v_list_price = var.get("list_price", "") or list_price
             if v_list_price:
-                try:    wc(cr, "lp", float(v_list_price))
-                except: wc(cr, "lp", v_list_price)
+                try:    wc(cr, "list_price#1.value",  float(v_list_price))
+                except: wc(cr, "list_price#1.value",  v_list_price)
             if v_cost:
-                try:    wc(cr, "cp", float(v_cost))
-                except: wc(cr, "cp", v_cost)
-            wc(cr, "import",  "Imported")
-            wc(cr, "shipdt",  today_str)
-            # Package defaults — OPERATORS should override per SKU
-            wc(cr, "pkglen",  "14");  wc(cr, "pkglenU", "IN")
-            wc(cr, "pkgwid",  "10");  wc(cr, "pkgwidU", "IN")
-            wc(cr, "pkghgt",  "2");   wc(cr, "pkghgtU", "IN")
-            wc(cr, "pkgwgt",  "0.5"); wc(cr, "pkgwgtU", "LB")
-            wc(cr, "ordagg",  "Each")
-            wc(cr, "ipack",   "1")
-            wc(cr, "coo",     coo)
-            wc(cr, "battreq", "No")
-            wc(cr, "battinc", "No")
+                try:    wc(cr, "cost#1.value",        float(v_cost))
+                except: wc(cr, "cost#1.value",        v_cost)
             cr += 1
-    
-    wb.save(output_path)
+
+    import warnings as _w2
+    with _w2.catch_warnings():
+        _w2.simplefilter("ignore")
+        wb.save(output_path)
 
 
 @app.route("/api/download-all")
