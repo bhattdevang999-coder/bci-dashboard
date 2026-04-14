@@ -2545,18 +2545,97 @@
 }
 
 /* ── All fields tab ──────────────────────────────────────────── */
-.ws-fields-group {
-  margin-bottom: 24px;
+.ws-fields-banner {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.ws-fields-group-title {
-  font-size: 11px;
+.ws-fields-approved {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid #c3e6d1;
+}
+.ws-fields-attention {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 1px solid #f5c6c0;
+}
+.ws-fields-urgent {
+  background: #fff5f5;
+  border: 1px solid #f5c6c0;
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 20px;
+}
+.ws-fields-urgent-title {
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-sec);
+  letter-spacing: 0.4px;
+  color: var(--error);
   margin-bottom: 8px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid var(--border);
+}
+.ws-fields-group {
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.ws-fields-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 10px 14px;
+  background: var(--bg);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+}
+.ws-fields-group-title::-webkit-details-marker { display: none; }
+.ws-fields-group-title::before {
+  content: '\25b6';
+  font-size: 10px;
+  margin-right: 8px;
+  transition: transform 0.15s;
+}
+details.ws-fields-group[open] > .ws-fields-group-title::before {
+  transform: rotate(90deg);
+}
+.ws-fields-group-count {
+  font-size: 11px;
+  color: var(--text-sec);
+  font-weight: 400;
+}
+.ws-field-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+.ws-field-note {
+  font-size: 11px;
+  color: var(--text-sec);
+  font-weight: 400;
+  margin-top: 2px;
+}
+.ws-field-actions {
+  white-space: nowrap;
+}
+.ws-fields-note-input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--font);
+  background: var(--surface);
+}
+.ws-fields-note-input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 .ws-fields-table {
   width: 100%;
@@ -4898,7 +4977,17 @@ function revealWorkspace() {
 // ════════════════════════════════════════════════════════════
 async function fetchQaSummaryAndUpdate() {
   try {
-    const res = await fetch('/api/nis-qa-summary');
+    // Send frontend state as fallback in case backend session was lost
+    const res = await fetch('/api/nis-qa-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand: state.brand || '',
+        vendor_code: state.vendorCode || '',
+        styles: state.styles || [],
+        content_map: state.generatedContent || {},
+      }),
+    });
     const data = await res.json();
     if (data.error) return;
     wsState.raliQaSummary = data;
@@ -5346,7 +5435,7 @@ async function wsRenderFieldsTab(styleNum) {
     return;
   }
 
-  panel.innerHTML = '<div class="ws-loading-state"><div class="spinner dark"></div> Loading fields...</div>';
+  panel.innerHTML = '<div class="ws-loading-state"><div class="spinner dark"></div> Loading all fields...</div>';
 
   // Check cache
   if (wsState.fieldsCache[styleNum]) {
@@ -5354,11 +5443,24 @@ async function wsRenderFieldsTab(styleNum) {
     return;
   }
 
+  // Build request body with fallback data from frontend state
+  const styleObj = (state.styles || []).find(s => s.style_num === styleNum);
+  const contentObj = (state.generatedContent || {})[styleNum] || {};
+  const reqBody = {
+    style_num: styleNum,
+    brand: state.brand || '',
+    vendor_code: state.vendorCode || '',
+    style: styleObj || null,
+    content: contentObj,
+    styles: state.styles || [],
+    content_map: state.generatedContent || {},
+  };
+
   try {
     const res = await fetch('/api/preview-nis', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ style_num: styleNum }),
+      body: JSON.stringify(reqBody),
     });
     const data = await res.json();
     if (data.error) {
@@ -5376,89 +5478,191 @@ async function wsRenderFieldsTab(styleNum) {
 function wsRenderFieldGroups(panel, data, styleNum) {
   const fields = data.fields || [];
 
+  // Count required-empty
+  const reqEmpty = fields.filter(f => f.req_level === 'required' && f.status === 'empty').length;
+  const defaultCount = fields.filter(f => f.status === 'default').length;
+  const filledCount = fields.filter(f => f.status === 'filled' || f.status === 'locked').length;
+  const isApproved = reqEmpty === 0;
+
   // Group fields by section
   const GROUPS = [
-    { label: 'Identity', test: f => f.col <= 20 },
-    { label: 'Content', test: f => f.col > 20 && f.col <= 60 },
-    { label: 'Attributes', test: f => f.col > 60 && f.col <= 130 },
-    { label: 'Pricing', test: f => f.col > 130 && f.col <= 150 },
-    { label: 'Shipping / Compliance', test: f => f.col > 150 },
+    { label: 'Identity & Structure', icon: '🔑', test: f => f.col <= 20 },
+    { label: 'Content', icon: '📝', test: f => f.col >= 30 && f.col <= 35 || f.col === 67 },
+    { label: 'Attributes', icon: '🏷', test: f => f.col > 40 && f.col <= 140 && f.col !== 67 },
+    { label: 'Pricing', icon: '💰', test: f => f.col >= 149 && f.col <= 155 },
+    { label: 'Shipping & Compliance', icon: '📦', test: f => f.col > 155 || (f.col >= 20 && f.col <= 29) },
   ];
 
-  // Within each group, sort required+empty to top
+  // Sort: required+empty first, then default, then filled, then locked
   function sortGroup(arr) {
-    return [...arr].sort((a, b) => {
-      const aUrgent = a.req_level === 'required' && a.status === 'empty' ? 0 : 1;
-      const bUrgent = b.req_level === 'required' && b.status === 'empty' ? 0 : 1;
-      return aUrgent - bUrgent;
-    });
+    const order = f => {
+      if (f.req_level === 'required' && f.status === 'empty') return 0;
+      if (f.status === 'empty') return 1;
+      if (f.status === 'default') return 2;
+      if (f.status === 'filled') return 3;
+      return 4;
+    };
+    return [...arr].sort((a, b) => order(a) - order(b));
   }
 
-  let html = `
-    <div style="font-size:13px; color:var(--text-sec); margin-bottom:16px;">
-      <strong style="color:var(--text);">${data.style_name || styleNum}</strong>
-      — ${data.filled || 0} filled · ${data.defaults_used || 0} defaults · ${data.needs_attention || 0} missing
-    </div>
-  `;
+  // Shared field IDs that can be "Apply to All" + "Save as Brand Default"
+  const SHARED_FIELD_IDS = new Set([
+    'item_package_dimensions#1.length.value', 'item_package_dimensions#1.width.value',
+    'item_package_dimensions#1.height.value', 'item_package_weight#1.value',
+    'country_of_origin#1.value', 'care_instructions#1.value', 'material#1.value',
+    'closure#1.type#1.value', 'item_booking_date#1.value', 'rtip_earliest_shipping_date#1.value',
+    'ultraviolet_protection_factor#1.value', 'department#1.value', 'target_gender#1.value',
+  ]);
 
+  // Top banner: approval status
+  let html = `<div class="ws-fields-banner ${isApproved ? 'ws-fields-approved' : 'ws-fields-attention'}">`;
+  if (isApproved) {
+    html += `<span style="font-size:16px;">✓</span> <strong>Ready to download</strong> — ${filledCount} filled, ${defaultCount} defaults`;
+  } else {
+    html += `<span style="font-size:16px;">⚠</span> <strong>${reqEmpty} required field${reqEmpty > 1 ? 's' : ''} empty</strong> — fix below before downloading`;
+  }
+  html += `</div>`;
+
+  // If there are required-empty fields, show them as a pinned red block at top
+  const urgentFields = fields.filter(f => f.req_level === 'required' && f.status === 'empty');
+  if (urgentFields.length) {
+    html += `<div class="ws-fields-urgent">
+      <div class="ws-fields-urgent-title">Required Fields — Empty</div>
+      <table class="ws-fields-table"><tbody>`;
+    urgentFields.forEach(f => {
+      html += wsFieldRow(f, styleNum, SHARED_FIELD_IDS);
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // Grouped sections (collapsed by default if all filled, expanded if has issues)
   GROUPS.forEach(group => {
-    const groupFields = sortGroup(fields.filter(group.test));
-    if (!groupFields.length) return;
+    const assigned = new Set();
+    const groupFields = fields.filter(f => {
+      if (assigned.has(f.col)) return false;
+      if (group.test(f)) { assigned.add(f.col); return true; }
+      return false;
+    });
+    // Don't re-include urgent fields in their group (they're already pinned)
+    const filtered = groupFields.filter(f => !(f.req_level === 'required' && f.status === 'empty'));
+    if (!filtered.length) return;
 
-    html += `<div class="ws-fields-group">
-      <div class="ws-fields-group-title">${escHtml(group.label)}</div>
+    const sorted = sortGroup(filtered);
+    const hasIssues = sorted.some(f => f.status === 'empty' || f.status === 'default');
+    const openAttr = hasIssues ? 'open' : '';
+
+    html += `<details class="ws-fields-group" ${openAttr}>
+      <summary class="ws-fields-group-title">
+        <span>${group.icon} ${escHtml(group.label)}</span>
+        <span class="ws-fields-group-count">${sorted.length} fields</span>
+      </summary>
       <table class="ws-fields-table">
         <thead><tr>
-          <th style="width:40px;">Col</th>
-          <th>Field</th>
+          <th style="width:180px;">Field</th>
           <th>Value</th>
           <th style="width:80px;">Status</th>
-          <th style="width:90px;">Req</th>
-          <th style="width:40px;"></th>
+          <th style="width:90px;">Level</th>
+          <th style="width:90px;"></th>
         </tr></thead>
-        <tbody>
-    `;
+        <tbody>`;
 
-    groupFields.forEach(f => {
-      const isEmptyReq = f.req_level === 'required' && f.status === 'empty';
-      const isDefault = f.status === 'default';
-      const rowClass = isEmptyReq ? 'ws-row-empty-req' : isDefault ? 'ws-row-default' : '';
-
-      const statusBadge = wsStatusBadge(f.status, f.overridden);
-      const reqBadge = wsReqBadge(f.req_level);
-
-      const valDisplay = f.value
-        ? (f.value.length > 70 ? escHtml(f.value.slice(0, 70)) + '&hellip;' : escHtml(f.value))
-        : '<span class="ws-field-val-empty">—</span>';
-
-      const sharedCols = [160, 162, 164, 166, 77, 153, 131];
-      const applyAllBtn = f.editable && sharedCols.includes(f.col)
-        ? `<button class="ws-apply-all-btn" onclick="wsApplyAll('${escHtml(f.field_id||'')}', document.getElementById('wsfi-${f.col}-${escHtml(styleNum)}')?.value || '${escHtml(f.value||'')}', '${escHtml(f.header)}')">All</button>`
-        : '';
-
-      const editPencil = f.editable && f.status !== 'locked'
-        ? `<button class="ws-fields-edit-btn" onclick="wsEditField('${escHtml(styleNum)}', '${escHtml(f.field_id||'')}', '${escHtml(f.header)}', ${f.col}, '${escHtml(f.value||'')}')" title="Edit">✏</button>`
-        : '';
-
-      html += `
-        <tr class="${rowClass}">
-          <td style="font-family:monospace;font-size:11px;color:var(--text-sec);">${f.col}</td>
-          <td>${escHtml(f.header)}</td>
-          <td>
-            <span id="wsfi-display-${f.col}-${escHtml(styleNum)}" class="ws-field-val">${valDisplay}</span>
-            ${applyAllBtn}
-          </td>
-          <td>${statusBadge}</td>
-          <td>${reqBadge}</td>
-          <td>${editPencil}</td>
-        </tr>
-      `;
+    sorted.forEach(f => {
+      html += wsFieldRow(f, styleNum, SHARED_FIELD_IDS);
     });
 
-    html += `</tbody></table></div>`;
+    html += `</tbody></table></details>`;
   });
 
+  // Bottom: style feedback + save
+  html += `
+    <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border); display:flex; gap:12px; align-items:center;">
+      <input type="text" class="ws-fields-note-input" placeholder="Note on this style's fields..."
+             id="ws-fields-note-${escHtml(styleNum)}" style="flex:1;"
+             onkeydown="if(event.key==='Enter'){wsSendFeedback('manual','review',{scope:'style',style_num:'${escHtml(styleNum)}'},
+               {message:this.value}); this.value=''; showToast('Note saved','success');}">
+    </div>`;
+
   panel.innerHTML = html;
+
+  // Update gate status
+  wsUpdateGateStatus(styleNum, isApproved);
+}
+
+function wsFieldRow(f, styleNum, sharedIds) {
+  const isEmptyReq = f.req_level === 'required' && f.status === 'empty';
+  const isDefault = f.status === 'default';
+  const rowClass = isEmptyReq ? 'ws-row-empty-req' : isDefault ? 'ws-row-default' : '';
+
+  const valDisplay = f.value
+    ? (f.value.length > 60 ? escHtml(f.value.slice(0, 60)) + '&hellip;' : escHtml(f.value))
+    : '<span class="ws-field-val-empty">—</span>';
+
+  const statusBadge = wsStatusBadge(f.status, f.overridden);
+  const reqBadge = wsReqBadge(f.req_level);
+  const isShared = sharedIds && sharedIds.has(f.field_id);
+
+  // Action buttons
+  let actions = '';
+  if (f.editable && f.status !== 'locked') {
+    actions += `<button class="ws-fields-edit-btn" onclick="wsEditField('${escHtml(styleNum)}','${escHtml(f.field_id||'')}','${escHtml(f.header)}',${f.col},'${escHtml(f.value||'')}')" title="Edit">✏</button>`;
+    if (isShared) {
+      actions += `<button class="ws-apply-all-btn" onclick="wsApplyAllPrompt('${escHtml(f.field_id||'')}','${escHtml(f.value||'')}','${escHtml(f.header)}')" title="Apply to all styles + optionally save as brand default">⟿ All</button>`;
+    }
+  }
+
+  return `
+    <tr class="${rowClass}">
+      <td class="ws-field-name">${escHtml(f.header)}${f.note ? `<div class="ws-field-note">${escHtml(f.note)}</div>` : ''}</td>
+      <td>
+        <span id="wsfi-display-${f.col}-${escHtml(styleNum)}" class="ws-field-val">${valDisplay}</span>
+      </td>
+      <td>${statusBadge}</td>
+      <td>${reqBadge}</td>
+      <td class="ws-field-actions">${actions}</td>
+    </tr>`;
+}
+
+// Apply to All with "Save as brand default?" prompt
+async function wsApplyAllPrompt(fieldId, currentVal, fieldName) {
+  const val = prompt(`Set "${fieldName}" for ALL styles:\n\nValue:`, currentVal);
+  if (val === null) return;
+  await wsApplyAll(fieldId, val, fieldName);
+
+  // Ask about brand default
+  const savePerm = confirm(`Save "${fieldName} = ${val}" as a permanent default for ${state.brand || 'this brand'}?\n\nThis will pre-fill it automatically next time.`);
+  if (savePerm) {
+    try {
+      await fetch('/api/save-field-as-brand-default', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand: state.brand, field_id: fieldId, value: val, field_name: fieldName }),
+      });
+      showToast(`Saved as default for ${state.brand}`, 'success');
+    } catch(e) {
+      showToast('Failed to save brand default', 'error');
+    }
+  }
+}
+
+// Approval gate tracking
+function wsUpdateGateStatus(styleNum, isApproved) {
+  if (!wsState.approvalGate) wsState.approvalGate = {};
+  wsState.approvalGate[styleNum] = isApproved;
+
+  // Update the rail dot for this style
+  const dot = document.getElementById(`ws-dot-${styleNum}`);
+  if (dot) {
+    dot.className = isApproved ? 'ws-style-dot ws-dot-ready' : 'ws-style-dot ws-dot-attention';
+  }
+
+  // Update download button state
+  const approvedCount = Object.values(wsState.approvalGate).filter(v => v).length;
+  const dlBtn = document.getElementById('ws-download-btn');
+  if (dlBtn) {
+    dlBtn.textContent = approvedCount > 0
+      ? `↓ Download ${approvedCount} Ready Style${approvedCount > 1 ? 's' : ''}`
+      : '↓ Download NIS Files';
+  }
 }
 
 function wsStatusBadge(status, overridden) {

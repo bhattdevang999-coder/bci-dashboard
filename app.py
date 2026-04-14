@@ -2486,27 +2486,44 @@ def _qa_summary_for_style(style_num, style_name, fields):
 
 @app.route("/api/preview-nis", methods=["POST"])
 def preview_nis():
-    """Return all fields for a style with their values and QA status."""
+    """Return all fields for a style with their values and QA status.
+    Accepts brand/style/content from request body as fallback when session is empty.
+    """
     data = request.get_json(force=True)
     style_num = data.get("style_num", "").strip()
     if not style_num:
         return jsonify({"error": "style_num required"}), 400
 
-    brand        = session_data.get("brand")
-    vendor_code  = session_data.get("vendor_code", "")
-    styles       = session_data.get("styles", [])
-    content_map  = session_data.get("generated_content", {})
+    # Use session data, but allow frontend to pass data directly as fallback
+    brand        = session_data.get("brand") or data.get("brand", "")
+    vendor_code  = session_data.get("vendor_code", "") or data.get("vendor_code", "")
+    styles       = session_data.get("styles", []) or data.get("styles", [])
+    content_map  = session_data.get("generated_content", {}) or data.get("content_map", {})
     overrides    = session_data.get("field_overrides", {}).get(style_num, {})
+
+    # If session was empty but frontend sent data, restore session for subsequent calls
+    if not session_data.get("brand") and brand:
+        session_data["brand"] = brand
+    if not session_data.get("vendor_code") and vendor_code:
+        session_data["vendor_code"] = vendor_code
+    if not session_data.get("styles") and styles:
+        session_data["styles"] = styles
+    if not session_data.get("generated_content") and content_map:
+        session_data["generated_content"] = content_map
 
     if not brand:
         return jsonify({"error": "No brand selected"}), 400
 
+    # Find style from session or from frontend-provided list
     style = next((s for s in styles if s["style_num"] == style_num), None)
+    # Also accept a single style object passed directly
+    if not style and data.get("style"):
+        style = data["style"]
     if not style:
         return jsonify({"error": f"Style {style_num} not found"}), 404
 
     brand_cfg = _load_brand_config_data(brand)
-    content   = content_map.get(style_num, {})
+    content   = content_map.get(style_num, {}) or data.get("content", {})
 
     fields = _build_preview_fields(brand, brand_cfg, vendor_code, style, content)
 
@@ -2629,14 +2646,77 @@ def update_field_all():
     return jsonify({"ok": True, "field_id": field_id, "value": value, "styles_updated": count})
 
 
-@app.route("/api/nis-qa-summary")
+@app.route("/api/save-field-as-brand-default", methods=["POST"])
+def save_field_as_brand_default():
+    """Save a field value as a brand default in the brand config JSON.
+    Next time this brand is loaded, this value will be pre-filled.
+    """
+    data     = request.get_json(force=True)
+    brand    = data.get("brand", "") or session_data.get("brand", "")
+    field_id = data.get("field_id", "").strip()
+    value    = data.get("value", "")
+    field_name = data.get("field_name", field_id)
+
+    if not brand or not field_id:
+        return jsonify({"error": "brand and field_id required"}), 400
+
+    # Load existing brand config
+    cfg = _load_brand_config_data(brand)
+
+    # Map known field_ids to brand config keys
+    FIELD_TO_CONFIG = {
+        "country_of_origin#1.value": "default_coo",
+        "care_instructions#1.value": "default_care",
+        "ultraviolet_protection_factor#1.value": "default_upf",
+        "material#1.value": "default_fabric",
+        "item_package_dimensions#1.length.value": "default_pkg_length",
+        "item_package_dimensions#1.width.value": "default_pkg_width",
+        "item_package_dimensions#1.height.value": "default_pkg_height",
+        "item_package_weight#1.value": "default_pkg_weight",
+        "department#1.value": "department",
+        "target_gender#1.value": "gender",
+    }
+
+    config_key = FIELD_TO_CONFIG.get(field_id)
+    if config_key:
+        cfg[config_key] = value
+    else:
+        # Store in a generic defaults dict for unmapped fields
+        if "field_defaults" not in cfg:
+            cfg["field_defaults"] = {}
+        cfg["field_defaults"][field_id] = value
+
+    # Save brand config
+    safe_brand = re.sub(r'[^\w\-]', '_', brand)
+    cfg_path = BRAND_CONFIGS_DIR / f"{safe_brand}.json"
+    with open(str(cfg_path), "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2)
+
+    return jsonify({"ok": True, "brand": brand, "field_id": field_id, "config_key": config_key or f"field_defaults.{field_id}"})
+
+
+@app.route("/api/nis-qa-summary", methods=["GET", "POST"])
 def nis_qa_summary():
-    """Return QA summary across all styles."""
-    brand       = session_data.get("brand")
-    vendor_code = session_data.get("vendor_code", "")
-    styles      = session_data.get("styles", [])
-    content_map = session_data.get("generated_content", {})
+    """Return QA summary across all styles.
+    Accepts POST with brand/styles/content_map as fallback when session is empty.
+    """
+    req_data = request.get_json(force=True) if request.method == "POST" else {}
+
+    brand       = session_data.get("brand") or req_data.get("brand", "")
+    vendor_code = session_data.get("vendor_code", "") or req_data.get("vendor_code", "")
+    styles      = session_data.get("styles", []) or req_data.get("styles", [])
+    content_map = session_data.get("generated_content", {}) or req_data.get("content_map", {})
     overrides   = session_data.get("field_overrides", {})
+
+    # Restore session if frontend sent data
+    if not session_data.get("brand") and brand:
+        session_data["brand"] = brand
+    if not session_data.get("styles") and styles:
+        session_data["styles"] = styles
+    if not session_data.get("generated_content") and content_map:
+        session_data["generated_content"] = content_map
+    if not session_data.get("vendor_code") and vendor_code:
+        session_data["vendor_code"] = vendor_code
 
     if not brand:
         return jsonify({"error": "No brand selected"}), 400
