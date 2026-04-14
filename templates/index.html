@@ -3172,7 +3172,7 @@ function renderStyleCards() {
         </div>
       </div>
       <div class="style-card-body" id="scb-${styleNum}">
-        ${buildFieldBlock(styleNum, 'title', 'Title', c.title, c.title_why, 200)}
+        ${buildFieldBlock(styleNum, 'title', 'Title', c.title, c.title_why, 120)}
         <div style="margin-top:4px; margin-bottom:16px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec);">Bullet Points</div>
         ${(c.bullets || []).map((b, i) => buildFieldBlock(styleNum, 'bullet_' + (i+1), 'Bullet ' + (i+1), b, (c.bullet_whys || [])[i] || '', 500)).join('')}
         ${buildFieldBlock(styleNum, 'description', 'Description', c.description, c.description_why, 2000)}
