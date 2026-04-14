@@ -264,14 +264,17 @@ SUBCLASS_CATEGORY_MAP = {
     "Bodycon Dress": "casual-and-day-dresses",
 }
 
+# product_subcategory values must match the Amazon template dropdown
+# (these are from the Dropdown Lists sheet, not item_type_keyword slugs)
 SUBCLASS_SUBCATEGORY_MAP = {
-    "Day Dress": "casual-dresses",
-    "Cocktail Dress": "cocktail-and-party-dresses",
-    "Maxi Dress": "maxi-dresses",
-    "Mini Dress": "mini-dresses",
-    "Active Dress": "active-dresses",
-    "Wrap Dress": "wrap-dresses",
-    "Shirt Dress": "shirt-dresses",
+    "Day Dress": "Casual and Day Dresses",
+    "Cocktail Dress": "Night Out and Cocktail Dresses",
+    "Maxi Dress": "Casual and Day Dresses",
+    "Mini Dress": "Casual and Day Dresses",
+    "Active Dress": "Casual and Day Dresses",
+    "Wrap Dress": "Casual and Day Dresses",
+    "Shirt Dress": "Casual and Day Dresses",
+    "Swimdress": "Special Occasion Dresses",
 }
 
 DESCRIPTION_OPENERS = [
@@ -1572,7 +1575,7 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
         silhouette = derive_silhouette(sub_subclass)
         color_map_val = normalize_color(first_color)
         category = SUBCLASS_CATEGORY_MAP.get(subclass, "casual-and-day-dresses")
-        subcategory = SUBCLASS_SUBCATEGORY_MAP.get(subclass, "casual-dresses")
+        subcategory = SUBCLASS_SUBCATEGORY_MAP.get(subclass, "Casual and Day Dresses")
 
         opener_idx = DESCRIPTION_OPENERS_ROTATION.get(style_num, 0)
         bullet_whys = [
@@ -2152,14 +2155,24 @@ def generate_progress():
 
 # ── Category / field derivation helpers ───────────────────────────────────────
 def _derive_amazon_product_category(sub_class):
-    """Map sub_class to Amazon category dropdown value (Col 13)."""
+    """Map sub_class to Amazon product_category dropdown value (Col 13).
+    These are the high-level category names from the template dropdown.
+    """
     _map = {
-        "Day Dress": "casual-and-day-dresses",
-        "Cocktail Dress": "cocktail-and-party-dresses",
-        "Active Dress": "active-dresses",
-        "Swimdress": "fashion-swimwear-cover-ups",
+        "Day Dress": "Women's Dresses",
+        "Cocktail Dress": "Women's Dresses",
+        "Active Dress": "Women's Active",
+        "Swimdress": "Women's Dresses",
+        "Pullover": "Women's Everyday Sportswear",
+        "Tank": "Women's Everyday Sportswear",
+        "Shirt": "Women's Everyday Sportswear",
+        "Shorts": "Women's Everyday Sportswear",
+        "Skirt": "Women's Everyday Sportswear",
+        "Skort": "Women's Everyday Sportswear",
+        "Jacket": "Women's Everyday Sportswear",
+        "Coat": "Women's Everyday Sportswear",
     }
-    return _map.get(sub_class, "casual-and-day-dresses")
+    return _map.get(sub_class, "Women's Dresses")
 
 def _derive_item_type_keyword(sub_class):
     """Map sub_class to Amazon item_type_keyword (Col 15)."""
@@ -2260,7 +2273,7 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     sleeve_type  = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
     silhouette   = content.get("silhouette", "") or derive_silhouette(sub_subclass)
     category     = content.get("category", "") or _derive_amazon_product_category(sub_class)
-    subcategory  = content.get("subcategory", "casual-dresses")
+    subcategory  = content.get("subcategory", "")
     fabric       = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
     care         = content.get("care", "") or brand_cfg.get("default_care", "")
     upf          = content.get("upf", "") or brand_cfg.get("default_upf", "")
@@ -2871,7 +2884,7 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     sleeve_type = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
     silhouette  = content.get("silhouette", "")  or derive_silhouette(sub_subclass)
     category    = content.get("category", "")    or _derive_amazon_product_category(sub_class)
-    subcategory = content.get("subcategory", "casual-dresses")
+    subcategory = content.get("subcategory", "")
     fabric      = content.get("fabric", "")      or brand_cfg.get("default_fabric", "")
     care        = content.get("care", "")        or brand_cfg.get("default_care", "")
     upf         = content.get("upf", "")         or brand_cfg.get("default_upf", "")
