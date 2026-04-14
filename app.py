@@ -14,7 +14,7 @@ import copy
 import io
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
 
@@ -49,10 +49,11 @@ UPLOAD_PRODUCTS  = BASE_DIR / "uploads" / "products"
 UPLOAD_KEYWORDS  = BASE_DIR / "uploads" / "keywords"
 UPLOAD_OUTPUT    = BASE_DIR / "uploads" / "output"
 FEEDBACK_FILE    = BASE_DIR / "feedback" / "content_feedback.jsonl"
+FEEDBACK_DIR     = BASE_DIR / "feedback"
 DEFAULT_TEMPLATE = UPLOAD_TEMPLATES / "Dresses-Training.xlsm"
 BRAND_CONFIGS_DIR = BASE_DIR / "brand_configs"
 
-for d in [UPLOAD_TEMPLATES, UPLOAD_PRODUCTS, UPLOAD_KEYWORDS, UPLOAD_OUTPUT, BRAND_CONFIGS_DIR]:
+for d in [UPLOAD_TEMPLATES, UPLOAD_PRODUCTS, UPLOAD_KEYWORDS, UPLOAD_OUTPUT, BRAND_CONFIGS_DIR, FEEDBACK_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
@@ -1677,66 +1678,283 @@ def content_results():
             "total": content_progress["total"],
         })
 
-@app.route("/api/submit-feedback", methods=["POST"])
-def submit_feedback():
-    data = request.get_json(force=True)
-    entry = {
-        "timestamp": datetime.utcnow().isoformat(),
-        "brand": session_data.get("brand"),
-        "style_num": data.get("style_num"),
-        "feedback": data.get("feedback"),
-        "field": data.get("field"),
-        "original": data.get("original"),
-        "updated": data.get("updated"),
-    }
+# ───────────────────────────────────────────────────────────────────────────────
+# STRUCTURED FEEDBACK SYSTEM
+#
+# Every feedback entry is stored in one JSONL file per brand under feedback/.
+# Schema:
+#   id            - unique (timestamp + random)
+#   timestamp     - ISO 8601 UTC
+#   operator      - who submitted (from session or explicit)
+#   brand         - brand name (always present)
+#   type          - one of:
+#                     "content_edit"    — operator changed LLM-generated content
+#                     "field_override"  — operator changed a NIS field value
+#                     "apply_all"       — operator applied a value to all styles
+#                     "manual"          — operator typed freeform feedback
+#                     "session"         — end-of-session summary
+#                     "regenerate"      — operator regenerated a field
+#   phase         - where in the flow: "upload", "generate", "review", "download"
+#   context       - what it's about (maps_to target):
+#     scope       - "brand" | "style" | "field" | "session"
+#     brand       - brand name
+#     style_num   - style number (if scope is style or field)
+#     field_id    - field_id string (if scope is field)
+#     field_name  - human-readable field name (if scope is field)
+#   data          - type-specific payload:
+#     For content_edit:  { field, original, updated }
+#     For field_override: { field_id, field_name, original, updated }
+#     For apply_all:     { field_id, field_name, value, styles_count }
+#     For manual:        { message }
+#     For session:       { rating, note, stats }
+#     For regenerate:    { field, attempt_num }
+#   maps_to       - where this feedback should route:
+#     "llm_prompt"    — feed into next LLM generation for this brand
+#     "brand_config"  — update brand defaults
+#     "derive_logic"  — improve field derivation functions
+#     "operator_note" — informational, no auto-action
+# ───────────────────────────────────────────────────────────────────────────────
+
+import uuid as _uuid
+
+def _feedback_file_for_brand(brand):
+    """Return the JSONL feedback file path for a brand."""
+    safe = re.sub(r'[^\w\-]', '_', brand or "unknown")
+    return FEEDBACK_DIR / f"{safe}_feedback.jsonl"
+
+
+def _store_feedback(entry):
+    """Append a feedback entry to the brand-specific JSONL file.
+    Also appends to the legacy content_feedback.jsonl for backward compat with LLM loading.
+    """
+    brand = entry.get("brand") or entry.get("context", {}).get("brand", "unknown")
+    fpath = _feedback_file_for_brand(brand)
     try:
-        FEEDBACK_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(str(FEEDBACK_FILE), "a", encoding="utf-8") as f:
+        with open(str(fpath), "a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
-        return jsonify({"ok": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        traceback.print_exc()
+
+    # Also write to legacy file so load_brand_feedback() still works
+    if entry.get("type") in ("content_edit", "field_override", "manual"):
+        legacy = {
+            "timestamp": entry.get("timestamp"),
+            "brand": brand,
+            "style_num": entry.get("context", {}).get("style_num", ""),
+            "field": entry.get("data", {}).get("field") or entry.get("data", {}).get("field_name", ""),
+            "feedback": entry.get("data", {}).get("message", ""),
+            "original": entry.get("data", {}).get("original", ""),
+            "updated": entry.get("data", {}).get("updated", ""),
+        }
+        try:
+            with open(str(FEEDBACK_FILE), "a", encoding="utf-8") as f:
+                f.write(json.dumps(legacy) + "\n")
+        except Exception:
+            pass
 
 
-@app.route("/api/feedback")
-def get_feedback():
-    """Return all feedback entries for a given brand."""
-    brand = request.args.get("brand", "")
+def _load_feedback(brand=None, scope=None, style_num=None, field_id=None,
+                   fb_type=None, limit=100):
+    """Load feedback entries with optional filters."""
     entries = []
-    if FEEDBACK_FILE.exists():
-        with open(str(FEEDBACK_FILE), "r", encoding="utf-8") as f:
+
+    # Determine which files to read
+    if brand:
+        files = [_feedback_file_for_brand(brand)]
+    else:
+        files = list(FEEDBACK_DIR.glob("*_feedback.jsonl"))
+
+    for fpath in files:
+        if not fpath.exists():
+            continue
+        with open(str(fpath), "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
                 try:
-                    entry = json.loads(line)
-                    if not brand or entry.get("brand") == brand:
-                        entries.append(entry)
+                    e = json.loads(line)
                 except json.JSONDecodeError:
-                    pass
-    # Sort newest first
+                    continue
+                ctx = e.get("context", {})
+                if scope and ctx.get("scope") != scope:
+                    continue
+                if style_num and ctx.get("style_num") != style_num:
+                    continue
+                if field_id and ctx.get("field_id") != field_id:
+                    continue
+                if fb_type and e.get("type") != fb_type:
+                    continue
+                entries.append(e)
+
     entries.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    return entries[:limit]
+
+
+@app.route("/api/feedback", methods=["GET", "POST"])
+def feedback_endpoint():
+    """Universal feedback endpoint.
+    POST: Submit structured feedback with context mapping.
+    GET:  Retrieve feedback entries with optional filters.
+    """
+    if request.method == "POST":
+        data = request.get_json(force=True)
+        fb_type  = data.get("type", "manual")
+        phase    = data.get("phase", "review")
+        context  = data.get("context", {})
+        payload  = data.get("data", {})
+        maps_to  = data.get("maps_to", "operator_note")
+
+        # Fill in brand from session if not provided
+        if not context.get("brand"):
+            context["brand"] = session_data.get("brand", "unknown")
+        if not context.get("scope"):
+            if context.get("field_id"):
+                context["scope"] = "field"
+            elif context.get("style_num"):
+                context["scope"] = "style"
+            else:
+                context["scope"] = "brand"
+
+        # Auto-determine maps_to if not explicit
+        if maps_to == "operator_note" and fb_type in ("content_edit", "regenerate"):
+            maps_to = "llm_prompt"
+        elif maps_to == "operator_note" and fb_type == "apply_all":
+            maps_to = "brand_config"
+        elif maps_to == "operator_note" and fb_type == "field_override":
+            maps_to = "derive_logic"
+
+        entry = {
+            "id": f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{_uuid.uuid4().hex[:8]}",
+            "timestamp": datetime.utcnow().isoformat(),
+            "operator": data.get("operator", session_data.get("operator", "")),
+            "brand": context.get("brand"),
+            "type": fb_type,
+            "phase": phase,
+            "context": context,
+            "data": payload,
+            "maps_to": maps_to,
+        }
+
+        _store_feedback(entry)
+        return jsonify({"ok": True, "id": entry["id"]})
+
+    # GET — retrieve feedback entries with optional filters
+    brand     = request.args.get("brand", "") or session_data.get("brand", "")
+    scope     = request.args.get("scope", "")
+    style_num = request.args.get("style_num", "")
+    field_id  = request.args.get("field_id", "")
+    fb_type   = request.args.get("type", "")
+    limit     = int(request.args.get("limit", "100"))
+
+    entries = _load_feedback(
+        brand=brand or None, scope=scope or None,
+        style_num=style_num or None, field_id=field_id or None,
+        fb_type=fb_type or None, limit=limit
+    )
     return jsonify({"brand": brand, "entries": entries, "total": len(entries)})
+
+
+# Legacy endpoint — backward compat for existing frontend code
+@app.route("/api/submit-feedback", methods=["POST"])
+def submit_feedback_legacy():
+    data = request.get_json(force=True)
+    entry = {
+        "id": f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{_uuid.uuid4().hex[:8]}",
+        "timestamp": datetime.utcnow().isoformat(),
+        "operator": session_data.get("operator", ""),
+        "brand": session_data.get("brand"),
+        "type": "content_edit",
+        "phase": "review",
+        "context": {
+            "brand": session_data.get("brand"),
+            "style_num": data.get("style_num", ""),
+            "field_id": "",
+            "field_name": data.get("field", ""),
+            "scope": "field" if data.get("field") else "style",
+        },
+        "data": {
+            "field": data.get("field", ""),
+            "original": data.get("original", ""),
+            "updated": data.get("updated", ""),
+            "message": data.get("feedback", ""),
+        },
+        "maps_to": "llm_prompt",
+    }
+    _store_feedback(entry)
+    return jsonify({"ok": True, "id": entry["id"]})
 
 
 @app.route("/api/feedback/summary")
 def feedback_summary():
-    """Return feedback count per brand."""
-    counts = defaultdict(int)
-    if FEEDBACK_FILE.exists():
-        with open(str(FEEDBACK_FILE), "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    entry = json.loads(line)
-                    brand = entry.get("brand") or "Unknown"
-                    counts[brand] += 1
-                except json.JSONDecodeError:
-                    pass
-    return jsonify({"counts": dict(counts), "total": sum(counts.values())})
+    """Return feedback stats: count per brand, per type, most-edited fields."""
+    brand = request.args.get("brand", "")
+    entries = _load_feedback(brand=brand or None, limit=10000)
+
+    by_brand = defaultdict(int)
+    by_type  = defaultdict(int)
+    by_field = defaultdict(int)
+    by_maps  = defaultdict(int)
+
+    for e in entries:
+        by_brand[e.get("brand", "Unknown")] += 1
+        by_type[e.get("type", "unknown")] += 1
+        by_maps[e.get("maps_to", "unknown")] += 1
+        fname = e.get("context", {}).get("field_name") or e.get("data", {}).get("field", "")
+        if fname:
+            by_field[fname] += 1
+
+    # Top edited fields
+    top_fields = sorted(by_field.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    return jsonify({
+        "total": len(entries),
+        "by_brand": dict(by_brand),
+        "by_type": dict(by_type),
+        "by_maps_to": dict(by_maps),
+        "top_edited_fields": [{"field": f, "count": c} for f, c in top_fields],
+    })
+
+
+@app.route("/api/feedback/session-summary")
+def feedback_session_summary():
+    """Compile a session summary for email digest.
+    Returns everything that happened this session: overrides, edits, manual notes.
+    """
+    brand = session_data.get("brand", "")
+    styles = session_data.get("styles", [])
+    content_map = session_data.get("generated_content", {})
+    overrides = session_data.get("field_overrides", {})
+
+    # Count overrides per style
+    override_count = sum(len(v) for v in overrides.values())
+    styles_with_overrides = sum(1 for v in overrides.values() if v)
+
+    # Load recent feedback for this brand (this session — last hour)
+    recent = _load_feedback(brand=brand or None, limit=500)
+    # Filter to recent (within last 2 hours)
+    cutoff = (datetime.utcnow() - timedelta(hours=2)).isoformat()
+    session_entries = [e for e in recent if e.get("timestamp", "") >= cutoff]
+
+    manual_notes = [e for e in session_entries if e.get("type") == "manual"]
+    content_edits = [e for e in session_entries if e.get("type") == "content_edit"]
+    field_overrides = [e for e in session_entries if e.get("type") == "field_override"]
+    apply_alls = [e for e in session_entries if e.get("type") == "apply_all"]
+
+    return jsonify({
+        "brand": brand,
+        "total_styles": len(styles),
+        "styles_with_content": len(content_map),
+        "total_overrides": override_count,
+        "styles_with_overrides": styles_with_overrides,
+        "manual_notes": [{"message": n.get("data", {}).get("message", ""),
+                          "context": n.get("context", {}),
+                          "timestamp": n.get("timestamp")} for n in manual_notes],
+        "content_edits_count": len(content_edits),
+        "field_overrides_count": len(field_overrides),
+        "apply_all_count": len(apply_alls),
+        "session_entries": len(session_entries),
+    })
 
 
 def _run_nis_generation(brand, styles, content_map, vendor_code, template_path, brand_cfg, template_map):
@@ -2321,7 +2539,31 @@ def update_field():
     if style_num not in session_data["field_overrides"]:
         session_data["field_overrides"][style_num] = {}
 
+    # Get the previous value for feedback tracking
+    prev_value = session_data["field_overrides"][style_num].get(field_id, "")
     session_data["field_overrides"][style_num][field_id] = value
+
+    # Auto-capture as implicit feedback (no extra clicks from operator)
+    field_name = data.get("field_name", field_id)  # frontend can send human name
+    _store_feedback({
+        "id": f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{_uuid.uuid4().hex[:8]}",
+        "timestamp": datetime.utcnow().isoformat(),
+        "operator": session_data.get("operator", ""),
+        "brand": session_data.get("brand", ""),
+        "type": "field_override",
+        "phase": "review",
+        "context": {
+            "scope": "field",
+            "brand": session_data.get("brand", ""),
+            "style_num": style_num,
+            "field_id": field_id,
+            "field_name": field_name,
+        },
+        "data": {"field_id": field_id, "field_name": field_name,
+                 "original": prev_value, "updated": value},
+        "maps_to": "derive_logic",
+    })
+
     return jsonify({"ok": True, "style_num": style_num, "field_id": field_id, "value": value})
 
 
@@ -2351,6 +2593,26 @@ def update_field_all():
             session_data["field_overrides"][sn] = {}
         session_data["field_overrides"][sn][field_id] = value
         count += 1
+
+    # Auto-capture as implicit feedback
+    field_name = data.get("field_name", field_id)
+    _store_feedback({
+        "id": f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{_uuid.uuid4().hex[:8]}",
+        "timestamp": datetime.utcnow().isoformat(),
+        "operator": session_data.get("operator", ""),
+        "brand": session_data.get("brand", ""),
+        "type": "apply_all",
+        "phase": "review",
+        "context": {
+            "scope": "brand",
+            "brand": session_data.get("brand", ""),
+            "field_id": field_id,
+            "field_name": field_name,
+        },
+        "data": {"field_id": field_id, "field_name": field_name,
+                 "value": value, "styles_count": count},
+        "maps_to": "brand_config",
+    })
 
     return jsonify({"ok": True, "field_id": field_id, "value": value, "styles_updated": count})
 
