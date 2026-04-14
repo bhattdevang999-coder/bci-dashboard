@@ -1153,6 +1153,18 @@
     transition: width 0.3s ease;
   }
 
+  /* ── Progress step text ────────────────────────────── */
+  .progress-step {
+    font-size: 12px;
+    color: var(--text-sec);
+    margin-top: 6px;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   /* ── Optional tag ──────────────────────────────────── */
   .optional-tag {
     display: inline-block;
@@ -1963,14 +1975,18 @@
         <div class="card-header">
           <div class="card-icon">✍️</div>
           <div>
-            <div class="card-title">Generating Content...</div>
-            <div class="card-desc">Creating titles, bullets, descriptions, and keywords for all styles</div>
+            <div class="card-title" id="content-loading-title">Generating Content...</div>
+            <div class="card-desc" id="gen-progress-status">Creating titles, bullets, descriptions, and keywords for all styles</div>
           </div>
         </div>
         <div class="progress-bar-wrap">
           <div class="progress-bar-fill" id="gen-progress" style="width: 0%"></div>
         </div>
-        <div class="text-sec" id="gen-progress-text" style="font-size:13px;">Initializing...</div>
+        <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:12px; color:var(--text-sec);">
+          <span id="gen-progress-counts"></span>
+          <span id="gen-progress-eta"></span>
+        </div>
+        <div class="progress-step" id="gen-progress-step" style="margin-top:8px;"></div>
       </div>
 
       <!-- Global feedback -->
@@ -2012,6 +2028,7 @@
             <span id="nis-gen-count"></span>
             <span id="nis-gen-eta"></span>
           </div>
+          <div class="progress-step" id="nis-gen-step"></div>
         </div>
 
         <div class="download-actions" id="download-actions" style="display:flex; flex-direction:column; gap:12px;">
@@ -3078,7 +3095,10 @@ async function generateContent() {
   const sectionContent = document.getElementById('section-content');
   const loadingEl = document.getElementById('content-loading');
   const progressEl = document.getElementById('gen-progress');
-  const progressTextEl = document.getElementById('gen-progress-text');
+  const statusEl = document.getElementById('gen-progress-status');
+  const countsEl = document.getElementById('gen-progress-counts');
+  const etaEl = document.getElementById('gen-progress-eta');
+  const stepEl = document.getElementById('gen-progress-step');
 
   sectionContent.classList.remove('hidden');
   loadingEl.classList.remove('hidden');
@@ -3086,55 +3106,90 @@ async function generateContent() {
   document.getElementById('style-cards').innerHTML = '';
   window.scrollTo(0, sectionContent.offsetTop - 100);
 
-  let progress = 0;
-  const messages = [
-    'Analyzing style names...', 'Deriving neck and sleeve types...',
-    'Building title formulas...', 'Writing bullet points...',
-    'Composing descriptions...', 'Generating backend keywords...', 'Finalizing content...',
-  ];
-  let msgIdx = 0;
-  const interval = setInterval(() => {
-    progress = Math.min(progress + Math.random() * 15, 90);
-    progressEl.style.width = progress + '%';
-    if (msgIdx < messages.length - 1) progressTextEl.textContent = messages[msgIdx++];
-  }, 400);
-
+  // Step 1: Start generation in background
   try {
-    const res = await fetch('/api/generate-content', {
+    const startRes = await fetch('/api/generate-content', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ brand: state.brand, styles: state.styles }),
     });
-    const data = await res.json();
-
-    clearInterval(interval);
-    progressEl.style.width = '100%';
-    progressTextEl.textContent = 'Complete!';
-    if (data.error) { showToast(data.error, 'error'); loadingEl.classList.add('hidden'); return; }
-
-    state.generatedContent = data.content || {};
-    await new Promise(r => setTimeout(r, 400));
-    loadingEl.classList.add('hidden');
-    document.getElementById('global-feedback-card').classList.remove('hidden');
-
-    const total = Object.keys(state.generatedContent).length;
-    document.getElementById('content-summary').textContent = `${total} styles generated. Expand any style to review, edit, or regenerate fields.`;
-
-    renderStyleCards();
-    loadCategoryButtons();
-
-    // Show xlsm button only if template loaded
-    if (state.hasTemplate) {
-      document.getElementById('btn-download-xlsm').style.display = 'inline-flex';
+    const startData = await startRes.json();
+    if (startData.error) {
+      showToast(startData.error, 'error');
+      loadingEl.classList.add('hidden');
+      return;
     }
-
-    showToast(`${total} styles generated!`, 'success');
-
   } catch(e) {
-    clearInterval(interval);
     loadingEl.classList.add('hidden');
     showToast('Content generation failed: ' + e.message, 'error');
+    return;
   }
+
+  const genStartTime = Date.now();
+
+  // Step 2: Poll progress
+  const pollInterval = setInterval(async () => {
+    try {
+      const pr = await fetch('/api/content-progress');
+      const pg = await pr.json();
+
+      if (pg.total > 0) {
+        progressEl.style.width = pg.percent + '%';
+        const styleName = pg.current_style || '';
+        statusEl.textContent = styleName ? `Generating content for ${styleName}` : 'Generating content...';
+        countsEl.textContent = `${pg.completed} of ${pg.total} styles`;
+        etaEl.textContent = pg.eta || '';
+        if (pg.current_step) {
+          // Force animation re-trigger by removing/re-adding the element
+          const newStep = document.createElement('div');
+          newStep.className = 'progress-step';
+          newStep.id = 'gen-progress-step';
+          newStep.textContent = '\u2192 ' + pg.current_step;
+          stepEl.replaceWith(newStep);
+        }
+      }
+
+      if (pg.status === 'done' || pg.percent >= 100) {
+        clearInterval(pollInterval);
+        progressEl.style.width = '100%';
+
+        // Step 3: Fetch final results
+        const resRes = await fetch('/api/content-results');
+        const data = await resRes.json();
+
+        const elapsed = Math.round((Date.now() - genStartTime) / 1000);
+        const elapsedStr = elapsed >= 60 ? `${Math.floor(elapsed/60)}m ${elapsed%60}s` : `${elapsed}s`;
+
+        if (data.error) {
+          showToast(data.error, 'error');
+          loadingEl.classList.add('hidden');
+          return;
+        }
+
+        state.generatedContent = data.content || {};
+        await new Promise(r => setTimeout(r, 400));
+        loadingEl.classList.add('hidden');
+        document.getElementById('global-feedback-card').classList.remove('hidden');
+
+        const total = Object.keys(state.generatedContent).length;
+        const qaErrors = data.qa_errors || 0;
+        const qaWarnings = data.qa_warnings || 0;
+        const qaPassed = total - qaErrors;
+
+        statusEl.textContent = `\u2713 ${total} styles generated in ${elapsedStr} \u00b7 QA: ${qaPassed} passed${qaWarnings > 0 ? ', ' + qaWarnings + ' warnings' : ''}`;
+        document.getElementById('content-summary').textContent = `${total} styles generated. Expand any style to review, edit, or regenerate fields.`;
+
+        renderStyleCards();
+        loadCategoryButtons();
+
+        if (state.hasTemplate) {
+          document.getElementById('btn-download-xlsm') && (document.getElementById('btn-download-xlsm').style.display = 'inline-flex');
+        }
+
+        showToast(`${total} styles generated!`, 'success');
+      }
+    } catch(e) { /* keep polling */ }
+  }, 1000);
 }
 
 // ═══════════════════════ RENDER STYLE CARDS ═══════════════════════
@@ -3573,6 +3628,14 @@ async function generateNIS() {
         countText.textContent = pg.completed + ' of ' + pg.total + ' styles';
         etaText.textContent = pg.eta || '';
         statusText.textContent = 'Building NIS files \u2014 ' + pg.completed + ' of ' + pg.total + ' (' + pg.percent + '%)';
+        const nisStepEl = document.getElementById('nis-gen-step');
+        if (pg.current_step && nisStepEl) {
+          const newStep = document.createElement('div');
+          newStep.className = 'progress-step';
+          newStep.id = 'nis-gen-step';
+          newStep.textContent = '\u2192 ' + pg.current_step;
+          nisStepEl.replaceWith(newStep);
+        }
       }
       
       // Check if done

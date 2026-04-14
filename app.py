@@ -12,6 +12,7 @@ import zipfile
 import shutil
 import copy
 import io
+import time
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -23,13 +24,26 @@ import openpyxl
 from openpyxl.styles import PatternFill, Font, Border, Alignment
 from openpyxl.utils import get_column_letter, column_index_from_string
 
+from anthropic import Anthropic
+
 # ── App setup ──────────────────────────────────────────────────────────────────
 import threading
+
+# Initialize Anthropic client (graceful fallback if no API key)
+try:
+    _anthropic_client = Anthropic()
+    print("[LLM] Anthropic client initialized successfully.")
+except Exception as _anthro_err:
+    _anthropic_client = None
+    print(f"[LLM] Anthropic client failed to initialize ({_anthro_err}). Will use rule-based generation.")
 
 BASE_DIR = Path(__file__).parent
 
 # Progress tracking for NIS generation
-nis_progress = {"total": 0, "completed": 0, "current_style": "", "status": "idle", "started_at": None}
+nis_progress = {"total": 0, "completed": 0, "current_style": "", "current_step": "", "status": "idle", "started_at": None}
+
+# Progress tracking for content generation
+content_progress = {"total": 0, "completed": 0, "current_style": "", "current_step": "", "status": "idle", "started_at": None}
 UPLOAD_TEMPLATES = BASE_DIR / "uploads" / "templates"
 UPLOAD_PRODUCTS  = BASE_DIR / "uploads" / "products"
 UPLOAD_KEYWORDS  = BASE_DIR / "uploads" / "keywords"
@@ -768,6 +782,146 @@ def generate_backend_keywords(brand, style_name, sub_subclass, color, fabric, up
     return joined
 
 # ── Template parsing ───────────────────────────────────────────────────────────
+# ── LLM feedback loading ───────────────────────────────────────────────────────
+def load_brand_feedback(brand):
+    """Load the 20 most recent feedback entries for a brand as a summary string."""
+    if not FEEDBACK_FILE.exists():
+        return ""
+    entries = []
+    try:
+        with open(str(FEEDBACK_FILE), "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if entry.get("brand") == brand:
+                        entries.append(entry)
+                except json.JSONDecodeError:
+                    pass
+    except Exception:
+        return ""
+    # Sort newest first, take top 20
+    entries.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    recent = entries[:20]
+    if not recent:
+        return ""
+    lines = []
+    for e in recent:
+        field = e.get("field", "")
+        feedback = e.get("feedback", "")
+        orig = e.get("original", "")
+        updated = e.get("updated", "")
+        if feedback:
+            lines.append(f"- [{field}] {feedback}")
+        elif orig and updated:
+            lines.append(f"- [{field}] Changed from: '{str(orig)[:80]}' to: '{str(updated)[:80]}'")
+    return "\n".join(lines)
+
+
+def generate_content_llm(brand_cfg, brand, style, feedback_history):
+    """
+    Use Claude to generate Amazon listing content for a style.
+    Falls back to rule-based generation if LLM is unavailable.
+    Returns a content dict with title, bullet_1-5, description, backend_keywords.
+    """
+    global _anthropic_client
+    if _anthropic_client is None:
+        return None  # Caller will fall back to rule-based
+
+    clean_brand = clean_brand_name(brand)
+    style_num = style["style_num"]
+    style_name = style["style_name"]
+    subclass = style.get("subclass", "")
+    sub_subclass = style.get("sub_subclass", "")
+    fabric = parse_fabric(style.get("fabric", "")) or brand_cfg.get("default_fabric", "")
+    care = style.get("care", "") or brand_cfg.get("default_care", "")
+    upf = style.get("upf", "") or brand_cfg.get("default_upf", "")
+    coo = style.get("coo", "") or brand_cfg.get("default_coo", "")
+
+    # Collect color/size lists
+    variants = style.get("variants", [])
+    colors = list(dict.fromkeys([v.get("color_name", "") for v in variants if v.get("color_name")]))
+    sizes = list(dict.fromkeys([v.get("size", "") for v in variants if v.get("size")]))
+    upcs = [v.get("upc", "") for v in variants[:3] if v.get("upc")]
+
+    # Brand voice description
+    bullet_1_focus = brand_cfg.get("bullet_1_focus", "Style and quality")
+    never_words = brand_cfg.get("never_words", [])
+    gender = brand_cfg.get("gender", "Female")
+    never_words_str = ", ".join(never_words) if never_words else "none"
+
+    feedback_count = len([l for l in feedback_history.splitlines() if l.strip()]) if feedback_history else 0
+    feedback_section = f"LEARNED PREFERENCES (from {feedback_count} previous edits):\n{feedback_history}" if feedback_history else "LEARNED PREFERENCES: None yet."
+
+    prompt = f"""You are an Amazon listing content expert generating Vendor Central NIS content.
+
+BRAND: {clean_brand}
+BRAND VOICE: Professional women's apparel brand targeting {gender} shoppers. {bullet_1_focus} is the key differentiator.
+HERO FEATURE: {bullet_1_focus}
+NEVER USE: {never_words_str}
+
+PRODUCT:
+- Style: {style_name}
+- Style #: {style_num}
+- Category: {subclass} / {sub_subclass}
+- Fabric: {fabric or 'not specified'}
+- UPF: {upf or 'none'}
+- COO: {coo or 'not specified'}
+- Care: {care or 'not specified'}
+- Colors: {', '.join(colors[:8]) if colors else 'not specified'}
+- Sizes: {', '.join(sizes[:10]) if sizes else 'not specified'}
+- Sample UPCs: {', '.join(upcs) if upcs else 'not provided'}
+
+{feedback_section}
+
+RULES:
+- Title: max 120 characters. Format: Brand Women's [Style Descriptor] [Product Type], [Key Feature], [Color], [Size]. Brand name is "{clean_brand}".
+- 5 bullet points, each max 500 chars. Format: LABEL — description. Each bullet must be unique. Bullet 1 focuses on {bullet_1_focus}. Bullet 2 must describe THIS specific style's unique design features.
+- Description: max 2000 chars. Plain text, no HTML. Buyer-focused, mentions brand + product name.
+- Backend keywords: max 250 bytes. Lowercase, space-separated. No brand name, no words from title.
+- No promotional language (best seller, limited time, on sale, guaranteed, free shipping).
+- No competitor brand names.
+
+Respond in this exact JSON format (no other text, no markdown, just the JSON object):
+{{"title": "...", "bullet_1": "...", "bullet_2": "...", "bullet_3": "...", "bullet_4": "...", "bullet_5": "...", "description": "...", "backend_keywords": "..."}}"""
+
+    try:
+        message = _anthropic_client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = message.content[0].text.strip()
+        # Strip any markdown code fences if present
+        raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+        raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE).strip()
+        parsed = json.loads(raw)
+
+        content = {
+            "title": str(parsed.get("title", ""))[:120],
+            "bullet_1": str(parsed.get("bullet_1", ""))[:500],
+            "bullet_2": str(parsed.get("bullet_2", ""))[:500],
+            "bullet_3": str(parsed.get("bullet_3", ""))[:500],
+            "bullet_4": str(parsed.get("bullet_4", ""))[:500],
+            "bullet_5": str(parsed.get("bullet_5", ""))[:500],
+            "description": str(parsed.get("description", ""))[:2000],
+            "backend_keywords": str(parsed.get("backend_keywords", "")),
+        }
+        # Cap backend keywords at 250 bytes
+        kw = content["backend_keywords"]
+        while len(kw.encode("utf-8")) > 250 and kw:
+            kw = kw.rsplit(" ", 1)[0]
+        content["backend_keywords"] = kw
+
+        return content
+
+    except Exception as e:
+        print(f"[LLM] generate_content_llm failed for style {style_num}: {e}")
+        return None
+
+
 def parse_template_columns(template_path):
     """Parse .xlsm template rows 3 (headers) and 4 (field IDs). Returns col_map."""
     wb = openpyxl.load_workbook(template_path, keep_vba=True, read_only=True)
@@ -1300,28 +1454,16 @@ def upload_analytics():
     except Exception as e:
         return jsonify({"error": f"Failed to parse analytics file: {str(e)}"}), 500
 
-@app.route("/api/generate-content", methods=["POST"])
-def generate_content():
-    data = request.get_json(force=True)
-    brand = data.get("brand") or session_data.get("brand")
-    if not brand:
-        return jsonify({"error": "No brand selected"}), 400
-    
-    styles = data.get("styles") or session_data.get("styles", [])
-    if not styles:
-        return jsonify({"error": "No product data loaded"}), 400
-    
-    # Load brand config from file if available, fall back to in-memory
-    brand_cfg = _load_brand_config_data(brand)
-    
-    content_map = {}
-    has_keywords = len(session_data.get("keywords", [])) > 0
-    
-    # Reset rotation for consistent results
-    global DESCRIPTION_OPENERS_ROTATION
+def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_history):
+    """Background worker for content generation."""
+    global DESCRIPTION_OPENERS_ROTATION, content_progress
     DESCRIPTION_OPENERS_ROTATION = {}
-    
-    for style in styles:
+    content_map = {}
+    total_qa_errors = 0
+    total_qa_warnings = 0
+    feedback_count = len([l for l in feedback_history.splitlines() if l.strip()]) if feedback_history else 0
+
+    for i, style in enumerate(styles):
         style_num = style["style_num"]
         style_name = style["style_name"]
         subclass = style.get("subclass", "")
@@ -1330,45 +1472,91 @@ def generate_content():
         care = style.get("care", "") or brand_cfg.get("default_care", "")
         upf = style.get("upf", "") or brand_cfg.get("default_upf", "")
         coo = style.get("coo", "") or brand_cfg.get("default_coo", "")
-        
+
+        content_progress["current_style"] = f"{style_num} — {style_name}"
+
         # Get first color for preview title
         first_variant = style["variants"][0] if style["variants"] else {}
         first_color = first_variant.get("color_name", "")
         first_size = first_variant.get("size", "")
-        
-        title = generate_title(brand_cfg, brand, style_name, "Dress", first_color, first_size, upf)
-        bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf)
-        description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf)
-        backend_kw = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf)
-        
+
+        # Dramatic progress steps
+        content_progress["current_step"] = f"Analyzing style attributes for {style_name}..."
+        time.sleep(0.3)
+        content_progress["current_step"] = f"Loading {clean_brand_name(brand)} brand preferences..."
+        time.sleep(0.2)
+        if feedback_count > 0:
+            content_progress["current_step"] = f"Reading {feedback_count} previous feedback corrections..."
+            time.sleep(0.2)
+        content_progress["current_step"] = f"Generating SEO-optimized title (max 120 chars)..."
+
+        # Try LLM generation first
+        llm_result = None
+        if _anthropic_client is not None:
+            try:
+                llm_result = generate_content_llm(brand_cfg, brand, style, feedback_history)
+            except Exception as e:
+                print(f"[LLM] Fallback for {style_num}: {e}")
+
+        if llm_result:
+            title = llm_result["title"]
+            bullets = [
+                llm_result.get("bullet_1", ""),
+                llm_result.get("bullet_2", ""),
+                llm_result.get("bullet_3", ""),
+                llm_result.get("bullet_4", ""),
+                llm_result.get("bullet_5", ""),
+            ]
+            description = llm_result["description"]
+            backend_kw = llm_result["backend_keywords"]
+        else:
+            # Rule-based fallback
+            if _anthropic_client is not None:
+                print(f"[LLM] Falling back to rule-based for style {style_num}")
+            title = generate_title(brand_cfg, brand, style_name, "Dress", first_color, first_size, upf)
+            bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf)
+            description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf)
+            backend_kw = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf)
+
+        content_progress["current_step"] = f"Crafting 5 unique bullet points..."
+        time.sleep(0.2)
+        content_progress["current_step"] = f"Writing buyer-focused description..."
+        time.sleep(0.2)
+        content_progress["current_step"] = f"Building backend keywords (250 bytes max)..."
+        time.sleep(0.1)
+        content_progress["current_step"] = f"Running QA compliance check..."
+
         # Derived attributes
         neck = derive_neck_type(style_name)
         sleeve = derive_sleeve_type(style_name)
         silhouette = derive_silhouette(sub_subclass)
         color_map_val = normalize_color(first_color)
-        
         category = SUBCLASS_CATEGORY_MAP.get(subclass, "casual-and-day-dresses")
         subcategory = SUBCLASS_SUBCATEGORY_MAP.get(subclass, "casual-dresses")
-        
-        # Generate "why" explanations for each field
+
         opener_idx = DESCRIPTION_OPENERS_ROTATION.get(style_num, 0)
         bullet_whys = [
-            generate_bullet_why(i, brand_cfg, brand, style_name, sub_subclass, upf, fabric, has_keywords)
-            for i in range(5)
+            generate_bullet_why(j, brand_cfg, brand, style_name, sub_subclass, upf, fabric, has_keywords)
+            for j in range(5)
         ]
-        
-        content_map[style_num] = {
+
+        entry = {
             "style_num": style_num,
             "style_name": style_name,
             "title": title,
             "title_why": generate_title_why(brand_cfg, brand, style_name, title, upf, has_keywords),
             "bullets": bullets,
             "bullet_whys": bullet_whys,
+            "bullet_1": bullets[0] if len(bullets) > 0 else "",
+            "bullet_2": bullets[1] if len(bullets) > 1 else "",
+            "bullet_3": bullets[2] if len(bullets) > 2 else "",
+            "bullet_4": bullets[3] if len(bullets) > 3 else "",
+            "bullet_5": bullets[4] if len(bullets) > 4 else "",
             "description": description,
             "description_why": generate_description_why(brand_cfg, style_num, opener_idx, has_keywords),
             "backend_keywords": backend_kw,
             "backend_keywords_why": generate_keywords_why(brand, session_data.get("keywords", []), backend_kw, has_keywords),
-            "qa_issues": [],  # filled below
+            "qa_issues": [],
             "neck_type": neck,
             "sleeve_type": sleeve,
             "silhouette": silhouette,
@@ -1380,24 +1568,111 @@ def generate_content():
             "care": care,
             "upf": upf,
             "coo": coo,
+            "llm_generated": llm_result is not None,
         }
-    
-    # Run QA checks on all generated content
-    total_qa_errors = 0
-    total_qa_warnings = 0
-    for style_num, c in content_map.items():
-        issues = qa_check_content(c, brand)
-        c["qa_issues"] = issues
-        total_qa_errors += sum(1 for i in issues if i["severity"] == "error")
-        total_qa_warnings += sum(1 for i in issues if i["severity"] == "warning")
-    
+
+        # QA check
+        issues = qa_check_content(entry, brand)
+        entry["qa_issues"] = issues
+        total_qa_errors += sum(1 for iss in issues if iss["severity"] == "error")
+        total_qa_warnings += sum(1 for iss in issues if iss["severity"] == "warning")
+
+        content_map[style_num] = entry
+        content_progress["completed"] = i + 1
+        content_progress["current_step"] = f"✓ {style_num} complete"
+        time.sleep(0.1)
+
     session_data["generated_content"] = content_map
-    return jsonify({
-        "content": content_map, 
+    content_progress["status"] = "done"
+    content_progress["current_style"] = ""
+    content_progress["current_step"] = ""
+    content_progress["results"] = {
+        "content": content_map,
         "total": len(content_map),
         "qa_errors": total_qa_errors,
         "qa_warnings": total_qa_warnings,
+    }
+
+
+@app.route("/api/generate-content", methods=["POST"])
+def generate_content():
+    data = request.get_json(force=True)
+    brand = data.get("brand") or session_data.get("brand")
+    if not brand:
+        return jsonify({"error": "No brand selected"}), 400
+
+    styles = data.get("styles") or session_data.get("styles", [])
+    if not styles:
+        return jsonify({"error": "No product data loaded"}), 400
+
+    # Load brand config from file if available, fall back to in-memory
+    brand_cfg = _load_brand_config_data(brand)
+    has_keywords = len(session_data.get("keywords", [])) > 0
+
+    # Load feedback history for this brand
+    feedback_history = load_brand_feedback(brand)
+
+    # Init progress
+    content_progress["total"] = len(styles)
+    content_progress["completed"] = 0
+    content_progress["status"] = "running"
+    content_progress["started_at"] = datetime.now().isoformat()
+    content_progress["current_style"] = ""
+    content_progress["current_step"] = ""
+    content_progress["results"] = None
+
+    # Run in background thread
+    t = threading.Thread(
+        target=_run_content_generation,
+        args=(brand, styles, brand_cfg, has_keywords, feedback_history)
+    )
+    t.daemon = True
+    t.start()
+
+    return jsonify({"status": "started", "total": len(styles)})
+
+
+@app.route("/api/content-progress")
+def content_progress_endpoint():
+    elapsed = ""
+    eta = ""
+    if content_progress.get("started_at") and content_progress["completed"] > 0:
+        started = datetime.fromisoformat(content_progress["started_at"])
+        elapsed_sec = (datetime.now() - started).total_seconds()
+        per_style = elapsed_sec / content_progress["completed"]
+        remaining = content_progress["total"] - content_progress["completed"]
+        eta_sec = per_style * remaining
+        elapsed = f"{int(elapsed_sec)}s"
+        if eta_sec > 60:
+            eta = f"~{int(eta_sec / 60)}m {int(eta_sec % 60)}s remaining"
+        else:
+            eta = f"~{int(eta_sec)}s remaining"
+    return jsonify({
+        "total": content_progress["total"],
+        "completed": content_progress["completed"],
+        "current_style": content_progress["current_style"],
+        "current_step": content_progress["current_step"],
+        "status": content_progress["status"],
+        "elapsed": elapsed,
+        "eta": eta,
+        "percent": round((content_progress["completed"] / max(content_progress["total"], 1)) * 100, 1),
     })
+
+
+@app.route("/api/content-results")
+def content_results():
+    """Poll this after generate-content to get results when done."""
+    if content_progress["status"] == "done":
+        return jsonify({
+            "status": "done",
+            **content_progress.get("results", {}),
+        })
+    else:
+        return jsonify({
+            "status": content_progress["status"],
+            "completed": content_progress["completed"],
+            "total": content_progress["total"],
+        })
 
 @app.route("/api/submit-feedback", methods=["POST"])
 def submit_feedback():
@@ -1465,26 +1740,33 @@ def _run_nis_generation(brand, styles, content_map, vendor_code, template_path, 
     """Background worker for NIS file generation."""
     results = []
     errors = []
-    
+
     for i, style in enumerate(styles):
         style_num = style["style_num"]
         style_name = style["style_name"]
-        content = content_map.get(style_num, {})
-        
+        style_content = content_map.get(style_num, {})
+        variants = style.get("variants", [])
+
         nis_progress["current_style"] = f"{style_num} \u2014 {style_name}"
-        
-        if not content:
+
+        if not style_content:
             errors.append(f"No content for style {style_num}")
             nis_progress["completed"] = i + 1
             continue
-        
+
         subclass = style.get("subclass", "")
         product_type_for_template = TEMPLATE_PRODUCT_TYPE_MAP.get(subclass, None)
         if product_type_for_template and product_type_for_template in template_map:
             style_template_path = template_map[product_type_for_template]
         else:
             style_template_path = template_path
-        
+
+        nis_progress["current_step"] = f"Reading preupload template for {style_name}..."
+        time.sleep(0.2)
+        nis_progress["current_step"] = f"Mapping 254 columns to NIS template..."
+        time.sleep(0.2)
+        nis_progress["current_step"] = f"Injecting data for {len(variants)} variants..."
+
         try:
             output_path = do_xlsm_surgery(
                 template_path=style_template_path,
@@ -1492,24 +1774,30 @@ def _run_nis_generation(brand, styles, content_map, vendor_code, template_path, 
                 brand_cfg=brand_cfg,
                 vendor_code=vendor_code,
                 style=style,
-                content=content,
+                content=style_content,
             )
             filename = Path(output_path).name
+            nis_progress["current_step"] = f"Writing parent row + {len(variants)} child rows..."
+            time.sleep(0.1)
+            nis_progress["current_step"] = f"QA: verifying file integrity..."
+            time.sleep(0.1)
+            nis_progress["current_step"] = f"\u2713 NIS_{brand}_{style_num}.xlsm saved"
             results.append({
                 "style_num": style_num,
                 "style_name": style_name,
-                "rows": len(style["variants"]) + 1,
+                "rows": len(variants) + 1,
                 "filename": filename,
                 "path": output_path,
             })
         except Exception as e:
             traceback.print_exc()
             errors.append(f"Failed to generate NIS for style {style_num}: {str(e)}")
-        
+
         nis_progress["completed"] = i + 1
-    
+
     nis_progress["status"] = "done"
     nis_progress["current_style"] = ""
+    nis_progress["current_step"] = ""
     nis_progress["results"] = results
     nis_progress["errors"] = errors
 
@@ -1598,6 +1886,7 @@ def generate_progress():
         "total": nis_progress["total"],
         "completed": nis_progress["completed"],
         "current_style": nis_progress["current_style"],
+        "current_step": nis_progress.get("current_step", ""),
         "status": nis_progress["status"],
         "elapsed": elapsed,
         "eta": eta,
