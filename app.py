@@ -1419,7 +1419,9 @@ def generate_nis():
     styles = data.get("styles") or session_data.get("styles", [])
     content_map = data.get("content") or session_data.get("generated_content", {})
     vendor_code = data.get("vendor_code") or session_data.get("vendor_code") or ""
-    template_path = data.get("template_path") or session_data.get("template_path") or str(DEFAULT_TEMPLATE)
+    template_path = data.get("template_path") or None
+    if not template_path or template_path == "null" or template_path == "None":
+        template_path = session_data.get("template_path") or str(DEFAULT_TEMPLATE)
     
     if not brand:
         return jsonify({"error": "No brand selected"}), 400

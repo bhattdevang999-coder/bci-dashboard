@@ -3548,9 +3548,6 @@ async function generateNIS() {
       body: JSON.stringify({
         brand: state.brand,
         vendor_code: state.vendorCode,
-        styles: state.styles,
-        content: state.generatedContent,
-        template_path: state.templatePath,
       }),
     });
     const startData = await startRes.json();
