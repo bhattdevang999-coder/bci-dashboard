@@ -2032,168 +2032,198 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     size_normalized = normalize_size(size)
     variant_cost = first_variant.get("cost_price", "") or cost_price
 
-    def f(col, header, value, status, editable=True, note=""):
-        return {"col": col, "header": header, "value": str(value) if value is not None else "", "status": status, "editable": editable, "note": note}
+    def f(col, header, value, status, editable=True, note="", field_id="", req_level="optional"):
+        return {"col": col, "header": header, "value": str(value) if value is not None else "",
+                "status": status, "editable": editable, "note": note,
+                "field_id": field_id, "req_level": req_level}
 
+    # req_level: "required" = Amazon rejects without it
+    #            "conditional" = required depending on product type / other fields
+    #            "recommended" = improves listing quality
+    #            "optional" = nice to have
     fields = [
-        # Col 1 — Vendor Code
+        # ── Identity & Structure ──
         f(1, "Vendor Code", vendor_code or brand_cfg.get("vendor_code_full", ""),
-          "filled" if (vendor_code or brand_cfg.get("vendor_code_full", "")) else "empty", False),
-        # Col 2 — Vendor SKU (parent)
-        f(2, "Vendor SKU (Parent)", parent_sku, "filled", False),
-        # Col 3 — Product Type
-        f(3, "Product Type", "DRESS", "locked", False),
-        # Col 4 — Parentage Level
-        f(4, "Parentage Level", "Parent / Child", "locked", False),
-        # Col 5 — Child Relationship Type
-        f(5, "Child Relationship Type", "Variation", "locked", False),
-        # Col 6 — Parent SKU
-        f(6, "Parent SKU", parent_sku, "locked", False),
-        # Col 7 — Variation Theme
-        f(7, "Variation Theme", "COLOR/SIZE", "locked", False),
-        # Col 8 — Item Name
-        f(8, "Item Name", title, "filled" if title and title != style_name else "default", True),
-        # Col 9 — Brand Name
-        f(9, "Brand Name", clean_brand, "filled" if clean_brand else "empty", False),
-        # Col 10 — External Product ID Type
+          "filled" if (vendor_code or brand_cfg.get("vendor_code_full", "")) else "empty", False,
+          field_id="rtip_vendor_code#1.value", req_level="required"),
+        f(2, "Vendor SKU (Parent)", parent_sku, "filled", False,
+          field_id="vendor_sku#1.value", req_level="required"),
+        f(3, "Product Type", "DRESS", "locked", False,
+          field_id="product_type#1.value", req_level="required"),
+        f(4, "Parentage Level", "Parent / Child", "locked", False,
+          field_id="parentage_level#1.value", req_level="required"),
+        f(5, "Child Relationship Type", "Variation", "locked", False,
+          field_id="child_parent_sku_relationship#1.child_relationship_type", req_level="required"),
+        f(6, "Parent SKU", parent_sku, "locked", False,
+          field_id="child_parent_sku_relationship#1.parent_sku", req_level="required"),
+        f(7, "Variation Theme", "COLOR/SIZE", "locked", False,
+          field_id="variation_theme#1.name", req_level="required"),
+
+        # ── Product Info ──
+        f(8, "Item Name", title, "filled" if title and title != style_name else "default", True,
+          field_id="item_name#1.value", req_level="required"),
+        f(9, "Brand Name", clean_brand, "filled" if clean_brand else "empty", False,
+          field_id="brand#1.value", req_level="required"),
         f(10, "External Product ID Type", "UPC" if upc else "",
-          "filled" if upc else "default", False),
-        # Col 11 — External Product ID Value
+          "filled" if upc else "default", False,
+          field_id="external_product_id#1.type", req_level="required"),
         f(11, "External Product ID Value", re.sub(r'\D', '', str(upc)) if upc else "",
-          "filled" if upc else "default", False),
-        # Col 13 — Product Category
-        f(13, "Product Category", category, "filled" if category else "default", False),
-        # Col 14 — Product Subcategory
-        f(14, "Product Subcategory", subcategory, "filled" if subcategory else "default", False),
-        # Col 15 — Item Type Keyword
-        f(15, "Item Type Keyword", itk_value, "filled" if itk_value else "default", False),
-        # Col 18 — Model Number
-        f(18, "Model Number", style_num, "filled", False),
-        # Col 19 — Model Name
-        f(19, "Model Name", (model_name_raw or style_name).title(), "filled", False),
-        # Bullets
+          "filled" if upc else "default", False,
+          field_id="external_product_id#1.value", req_level="required"),
+        f(13, "Product Category", category, "filled" if category else "default", False,
+          field_id="product_category#1.value", req_level="recommended"),
+        f(14, "Product Subcategory", subcategory, "filled" if subcategory else "default", False,
+          field_id="product_subcategory#1.value", req_level="recommended"),
+        f(15, "Item Type Keyword", itk_value, "filled" if itk_value else "default", False,
+          field_id="item_type_keyword#1.value", req_level="required"),
+        f(18, "Model Number", style_num, "filled", False,
+          field_id="model_number#1.value", req_level="required"),
+        f(19, "Model Name", (model_name_raw or style_name).title(), "filled", False,
+          field_id="model_name#1.value", req_level="required"),
+
+        # ── Content ──
         f(30, "Bullet Point 1", bullets[0][:120] + "..." if bullets and len(bullets[0]) > 120 else (bullets[0] if bullets else ""),
           "filled" if bullets else "empty", True,
-          "" if bullets else "Required for submission."),
+          "" if bullets else "Required for submission.",
+          field_id="bullet_point#1.value", req_level="required"),
         f(31, "Bullet Point 2", bullets[1][:120] + "..." if len(bullets) > 1 and len(bullets[1]) > 120 else (bullets[1] if len(bullets) > 1 else ""),
-          "filled" if len(bullets) > 1 else "empty", True),
+          "filled" if len(bullets) > 1 else "empty", True,
+          field_id="bullet_point#2.value", req_level="required"),
         f(32, "Bullet Point 3", bullets[2][:120] + "..." if len(bullets) > 2 and len(bullets[2]) > 120 else (bullets[2] if len(bullets) > 2 else ""),
-          "filled" if len(bullets) > 2 else "empty", True),
+          "filled" if len(bullets) > 2 else "empty", True,
+          field_id="bullet_point#3.value", req_level="recommended"),
         f(33, "Bullet Point 4", bullets[3][:120] + "..." if len(bullets) > 3 and len(bullets[3]) > 120 else (bullets[3] if len(bullets) > 3 else ""),
-          "filled" if len(bullets) > 3 else "empty", True),
+          "filled" if len(bullets) > 3 else "empty", True,
+          field_id="bullet_point#4.value", req_level="recommended"),
         f(34, "Bullet Point 5", bullets[4][:120] + "..." if len(bullets) > 4 and len(bullets[4]) > 120 else (bullets[4] if len(bullets) > 4 else ""),
-          "filled" if len(bullets) > 4 else "empty", True),
-        # Col 35 — Backend Keywords
+          "filled" if len(bullets) > 4 else "empty", True,
+          field_id="bullet_point#5.value", req_level="recommended"),
         f(35, "Backend Keywords", backend_kw[:100] + "..." if backend_kw and len(backend_kw) > 100 else backend_kw,
           "filled" if backend_kw else "default", True,
-          "" if backend_kw else "Using category defaults."),
-        # Col 46 — Style Name
-        f(46, "Style Name", style_name.title(), "filled", False),
-        # Col 47 — Department
-        f(47, "Department", brand_cfg.get("department", "Womens"), "filled", False),
-        # Col 48 — Target Gender
-        f(48, "Target Gender", brand_cfg.get("gender", "Female"), "filled", False),
-        # Col 49 — Age Range
-        f(49, "Age Range", "Adult", "locked", False),
-        # Col 50 — Size System
-        f(50, "Size System", "US", "locked", False),
-        # Col 51 — Size Class
-        f(51, "Size Class", "Alpha", "locked", False),
-        # Col 52 — Size (first variant)
-        f(52, "Size (first variant)", size_normalized or size, "filled" if size else "default", False),
-        # Col 56 — Material
-        f(56, "Material", fabric, "filled" if fabric else "default", True,
-          "" if fabric else "No fabric data. Will use brand default."),
-        # Col 59 — Fabric Type
-        f(59, "Fabric Type", fabric_type, "filled" if fabric else "default", False),
-        # Col 61 — Number of Items
-        f(61, "Number of Items", "1", "locked", False),
-        # Col 62 — Item Type Name
-        f(62, "Item Type Name", item_type_name, "filled", False),
-        # Col 66 — Special Size Type
-        f(66, "Special Size Type", "Standard", "locked", False),
-        # Col 67 — Product Description
+          "" if backend_kw else "Using category defaults.",
+          field_id="generic_keyword#1.value", req_level="recommended"),
         f(67, "Product Description", description[:120] + "..." if description and len(description) > 120 else description,
           "filled" if description else "empty", True,
-          "" if description else "Required for submission."),
-        # Col 68 — Color Standardized
-        f(68, "Color (Standardized)", color_family, "filled" if color_family else "default", False),
-        # Col 69 — Color Value
+          "" if description else "Required for submission.",
+          field_id="rtip_product_description#1.value", req_level="required"),
+
+        # ── Attributes ──
+        f(46, "Style Name", style_name.title(), "filled", False,
+          field_id="style#1.value", req_level="recommended"),
+        f(47, "Department", brand_cfg.get("department", "Womens"), "filled", False,
+          field_id="department#1.value", req_level="required"),
+        f(48, "Target Gender", brand_cfg.get("gender", "Female"), "filled", False,
+          field_id="target_gender#1.value", req_level="required"),
+        f(49, "Age Range", "Adult", "locked", False,
+          field_id="age_range_description#1.value", req_level="required"),
+        f(50, "Size System", "US", "locked", False,
+          field_id="apparel_size#1.size_system", req_level="required"),
+        f(51, "Size Class", "Alpha", "locked", False,
+          field_id="apparel_size#1.size_class", req_level="required"),
+        f(52, "Size (first variant)", size_normalized or size, "filled" if size else "default", False,
+          field_id="apparel_size#1.size", req_level="required"),
+        f(56, "Material", fabric, "filled" if fabric else "default", True,
+          "" if fabric else "No fabric data. Will use brand default.",
+          field_id="material#1.value", req_level="required"),
+        f(59, "Fabric Type", fabric_type, "filled" if fabric else "default", False,
+          field_id="fabric_type#1.value", req_level="recommended"),
+        f(61, "Number of Items", "1", "locked", False,
+          field_id="number_of_items#1.value", req_level="required"),
+        f(62, "Item Type Name", item_type_name, "filled", False,
+          field_id="item_type_name#1.value", req_level="required"),
+        f(66, "Special Size Type", "Standard", "locked", False,
+          field_id="special_size_type#1.value", req_level="conditional"),
+        f(68, "Color (Standardized)", color_family, "filled" if color_family else "default", False,
+          field_id="color#1.standardized_values#1", req_level="required"),
         f(69, "Color", color_name.title() if color_name else "",
-          "filled" if color_name else "default", False),
-        # Col 70 — Item Length Description
-        f(70, "Item Length Description", item_length, "filled", False),
-        # Col 77 — Item Booking Date
-        f(77, "Item Booking Date", today_str, "default", True,
-          "Using today's date. Change if different."),
-        # Col 89 — Care Instructions
+          "filled" if color_name else "default", False,
+          field_id="color#1.value", req_level="required"),
+        f(70, "Item Length Description", item_length, "filled", False,
+          field_id="item_length_description#1.value", req_level="conditional"),
+        f(83, "Fit Type", "Regular", "default", True,
+          "Default 'Regular'. Update if different.",
+          field_id="fit_type#1.value", req_level="recommended"),
         f(89, "Care Instructions", care, "filled" if care else "default", True,
-          "" if care else "No care data. Will use brand default."),
-        # Col 91 — Unit Count
-        f(91, "Unit Count", "1", "locked", False),
-        # Col 92 — Unit Count Type
-        f(92, "Unit Count Type", "Count", "locked", False),
-        # Col 118 — Collar/Neck Style
+          "" if care else "No care data. Will use brand default.",
+          field_id="care_instructions#1.value", req_level="recommended"),
         f(118, "Neck/Collar Style", neck_type, "filled" if neck_type else "default", True,
-          "" if neck_type else "Could not derive from style name."),
-        # Col 126 — Lifecycle
-        f(126, "Product Lifecycle", "new", "locked", False),
-        # Col 128 — Silhouette
-        f(128, "Silhouette", silhouette, "filled" if silhouette else "default", True),
-        # Col 129 — Sleeve Length
-        f(129, "Sleeve Length", _derive_sleeve_length(sleeve_type), "filled", False),
-        # Col 130 — Sleeve Type
-        f(130, "Sleeve Type", sleeve_type, "filled" if sleeve_type else "default", True),
-        # Col 131 — Closure Type
+          "" if neck_type else "Could not derive from style name.",
+          field_id="neck#1.neck_style#1.value", req_level="conditional"),
+        f(128, "Silhouette", silhouette, "filled" if silhouette else "default", True,
+          field_id="apparel_silhouette#1.value", req_level="conditional"),
+        f(129, "Sleeve Length", _derive_sleeve_length(sleeve_type), "filled", False,
+          field_id="sleeve#1.length_description#1.value", req_level="conditional"),
+        f(130, "Sleeve Type", sleeve_type, "filled" if sleeve_type else "default", True,
+          field_id="sleeve#1.type#1.value", req_level="conditional"),
         f(131, "Closure Type", "Pull On", "default", True,
-          "Default 'Pull On'. Update if style has zipper or buttons."),
-        # Col 138 — UPF
+          "Default 'Pull On'. Update if style has zipper or buttons.",
+          field_id="closure#1.type#1.value", req_level="recommended"),
         f(138, "UPF Protection", upf, "filled" if upf else "default", True,
-          "" if upf else "No UPF value — leave blank if not applicable."),
-        # Col 149 — Skip Offer
-        f(149, "Skip Offer", "No", "locked", False),
-        # Col 150 — List Price
-        f(150, "List Price", list_price, "filled" if list_price else "empty", True,
-          "" if list_price else "Enter retail list price."),
-        # Col 151 — Cost Price
-        f(151, "Cost Price", variant_cost, "filled" if variant_cost else "empty", True,
-          "" if variant_cost else "Required for submission. Enter cost price."),
-        # Col 152 — Import Designation
-        f(152, "Import Designation", "Imported", "locked", False),
-        # Col 153 — Earliest Shipping Date
+          "" if upf else "No UPF value — leave blank if not applicable.",
+          field_id="ultraviolet_protection_factor#1.value", req_level="conditional"),
+
+        # ── Dates & Lifecycle ──
+        f(77, "Item Booking Date", today_str, "default", True,
+          "Using today's date. Change if different.",
+          field_id="item_booking_date#1.value", req_level="required"),
+        f(126, "Product Lifecycle", "new", "locked", False,
+          field_id="lifecycle_supply_type#1.value", req_level="required"),
         f(153, "Earliest Shipping Date", today_str, "default", True,
-          "Using today's date. Update if different."),
-        # Col 160 — Package Length
+          "Using today's date. Update if different.",
+          field_id="rtip_earliest_shipping_date#1.value", req_level="required"),
+
+        # ── Counts & Units ──
+        f(91, "Unit Count", "1", "locked", False,
+          field_id="unit_count#1.value", req_level="required"),
+        f(92, "Unit Count Type", "Count", "locked", False,
+          field_id="unit_count#1.type.value", req_level="required"),
+        f(149, "Skip Offer", "No", "locked", False,
+          field_id="skip_offer#1.value", req_level="required"),
+
+        # ── Pricing ──
+        f(150, "List Price", list_price, "filled" if list_price else "empty", True,
+          "" if list_price else "Enter retail list price.",
+          field_id="list_price#1.value", req_level="required"),
+        f(151, "Cost Price", variant_cost, "filled" if variant_cost else "empty", True,
+          "" if variant_cost else "Required for submission. Enter cost price.",
+          field_id="cost_price#1.value", req_level="required"),
+
+        # ── Shipping & Compliance ──
+        f(152, "Import Designation", "Imported", "locked", False,
+          field_id="import_designation#1.value", req_level="required"),
         f(160, "Item Package Length", "14", "default", True,
-          "Default 14 inches. Update with actual measurement."),
-        # Col 161 — Package Length Unit
-        f(161, "Package Length Unit", "IN", "locked", False),
-        # Col 162 — Package Width
+          "Default 14 inches. Update with actual measurement.",
+          field_id="item_package_dimensions#1.length.value", req_level="required"),
+        f(161, "Package Length Unit", "IN", "locked", False,
+          field_id="item_package_dimensions#1.length.unit", req_level="required"),
         f(162, "Item Package Width", "10", "default", True,
-          "Default 10 inches. Update with actual measurement."),
-        # Col 163 — Package Width Unit
-        f(163, "Package Width Unit", "IN", "locked", False),
-        # Col 164 — Package Height
+          "Default 10 inches. Update with actual measurement.",
+          field_id="item_package_dimensions#1.width.value", req_level="required"),
+        f(163, "Package Width Unit", "IN", "locked", False,
+          field_id="item_package_dimensions#1.width.unit", req_level="required"),
         f(164, "Item Package Height", "2", "default", True,
-          "Default 2 inches. Update with actual measurement."),
-        # Col 165 — Package Height Unit
-        f(165, "Package Height Unit", "IN", "locked", False),
-        # Col 166 — Package Weight
+          "Default 2 inches. Update with actual measurement.",
+          field_id="item_package_dimensions#1.height.value", req_level="required"),
+        f(165, "Package Height Unit", "IN", "locked", False,
+          field_id="item_package_dimensions#1.height.unit", req_level="required"),
         f(166, "Item Package Weight", "0.5", "default", True,
-          "Default 0.5 lbs. Update with actual weight."),
-        # Col 167 — Package Weight Unit
-        f(167, "Package Weight Unit", "LB", "locked", False),
-        # Col 168 — Order Aggregate Type
-        f(168, "Order Aggregate Type", "Each", "locked", False),
-        # Col 169 — Items per Inner Pack
-        f(169, "Items per Inner Pack", "1", "locked", False),
-        # Col 170 — Country of Origin
+          "Default 0.5 lbs. Update with actual weight.",
+          field_id="item_package_weight#1.value", req_level="required"),
+        f(167, "Package Weight Unit", "LB", "locked", False,
+          field_id="item_package_weight#1.unit", req_level="required"),
+        f(168, "Order Aggregate Type", "Each", "locked", False,
+          field_id="rtip_order_aggregate_type#1.value", req_level="required"),
+        f(169, "Items per Inner Pack", "1", "locked", False,
+          field_id="rtip_items_per_inner_pack#1.value", req_level="required"),
         f(170, "Country of Origin", coo, "filled" if coo else "default", True,
-          "" if coo else "Update with actual country of origin."),
-        # Col 171 — Batteries Required
-        f(171, "Batteries Required", "No", "locked", False),
-        # Col 172 — Batteries Included
-        f(172, "Batteries Included", "No", "locked", False),
+          "" if coo else "Update with actual country of origin.",
+          field_id="country_of_origin#1.value", req_level="required"),
+        f(171, "Batteries Required", "No", "locked", False,
+          field_id="batteries_required#1.value", req_level="required"),
+        f(172, "Batteries Included", "No", "locked", False,
+          field_id="batteries_included#1.value", req_level="required"),
+        f(230, "Contains Battery or Cell", "No", "locked", False,
+          field_id="contains_battery_or_cell#1.value", req_level="required"),
     ]
 
     return fields
@@ -2204,8 +2234,9 @@ def _qa_summary_for_style(style_num, style_name, fields):
     filled  = sum(1 for f in fields if f["status"] == "filled" or f["status"] == "locked")
     defaults = sum(1 for f in fields if f["status"] == "default")
     empty   = sum(1 for f in fields if f["status"] == "empty")
+    req_empty = sum(1 for f in fields if f["status"] == "empty" and f.get("req_level") == "required")
     total   = len(fields)
-    if empty > 0:
+    if req_empty > 0:
         status = "attention"
     elif defaults > 0:
         status = "defaults"
@@ -2217,6 +2248,7 @@ def _qa_summary_for_style(style_num, style_name, fields):
         "filled": filled,
         "defaults": defaults,
         "empty": empty,
+        "req_empty": req_empty,
         "total": total,
         "status": status,
     }
@@ -2248,11 +2280,11 @@ def preview_nis():
 
     fields = _build_preview_fields(brand, brand_cfg, vendor_code, style, content)
 
-    # Apply any stored overrides — mark overridden fields as 'filled'
+    # Apply any stored overrides (keyed by field_id) — mark overridden fields as 'filled'
     for field in fields:
-        col_key = str(field["col"])
-        if col_key in overrides:
-            field["value"]  = overrides[col_key]
+        fid = field.get("field_id", "")
+        if fid and fid in overrides:
+            field["value"]  = overrides[fid]
             field["status"] = "filled"
             field["overridden"] = True
 
@@ -2273,22 +2305,54 @@ def preview_nis():
 
 @app.route("/api/update-field", methods=["POST"])
 def update_field():
-    """Store a field override for a style, picked up when generating .xlsm."""
+    """Store a field override for a style, keyed by field_id.
+    Picked up when generating .xlsm via do_xlsm_surgery / _generate_category_file.
+    """
     data      = request.get_json(force=True)
     style_num = str(data.get("style_num", "")).strip()
-    col       = str(data.get("col", "")).strip()
+    field_id  = str(data.get("field_id", "")).strip()
     value     = data.get("value", "")
 
-    if not style_num or not col:
-        return jsonify({"error": "style_num and col required"}), 400
+    if not style_num or not field_id:
+        return jsonify({"error": "style_num and field_id required"}), 400
 
     if "field_overrides" not in session_data:
         session_data["field_overrides"] = {}
     if style_num not in session_data["field_overrides"]:
         session_data["field_overrides"][style_num] = {}
 
-    session_data["field_overrides"][style_num][col] = value
-    return jsonify({"ok": True, "style_num": style_num, "col": col, "value": value})
+    session_data["field_overrides"][style_num][field_id] = value
+    return jsonify({"ok": True, "style_num": style_num, "field_id": field_id, "value": value})
+
+
+@app.route("/api/update-field-all", methods=["POST"])
+def update_field_all():
+    """Apply a field override to ALL styles at once.
+    Used for shared fields like package dims, COO, care, etc.
+    """
+    data     = request.get_json(force=True)
+    field_id = str(data.get("field_id", "")).strip()
+    value    = data.get("value", "")
+
+    if not field_id:
+        return jsonify({"error": "field_id required"}), 400
+
+    styles = session_data.get("styles", [])
+    if not styles:
+        return jsonify({"error": "No styles loaded"}), 400
+
+    if "field_overrides" not in session_data:
+        session_data["field_overrides"] = {}
+
+    count = 0
+    for style in styles:
+        sn = style["style_num"]
+        if sn not in session_data["field_overrides"]:
+            session_data["field_overrides"][sn] = {}
+        session_data["field_overrides"][sn][field_id] = value
+        count += 1
+
+    return jsonify({"ok": True, "field_id": field_id, "value": value, "styles_updated": count})
 
 
 @app.route("/api/nis-qa-summary")
@@ -2318,11 +2382,11 @@ def nis_qa_summary():
         content = content_map.get(snum, {})
         fields  = _build_preview_fields(brand, brand_cfg, vendor_code, style, content)
 
-        # Apply overrides
+        # Apply overrides (keyed by field_id)
         style_overrides = overrides.get(snum, {})
         for field in fields:
-            col_key = str(field["col"])
-            if col_key in style_overrides:
+            fid = field.get("field_id", "")
+            if fid and fid in style_overrides:
                 field["status"] = "filled"
 
         summary = _qa_summary_for_style(snum, sname, fields)
@@ -2681,9 +2745,16 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
 
     clean_brand = clean_brand_name(brand)
     today_str   = datetime.now().strftime("%Y%m%d")
+    all_overrides = session_data.get("field_overrides", {})
 
-    def wc(row_idx, field_id, value):
-        """Write value to the cell for field_id, applying row-7 styles."""
+    def wc(row_idx, field_id, value, style_num=None):
+        """Write value to the cell for field_id, applying row-7 styles.
+        Checks field_overrides first (keyed by field_id).
+        """
+        if style_num and field_id:
+            style_ov = all_overrides.get(style_num, {})
+            if field_id in style_ov:
+                value = style_ov[field_id]
         c = _col(field_id)
         if c is None or value is None:
             return
@@ -2734,86 +2805,86 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
                              _slvlen=slvlen, _bullets=bullets, _content=content,
                              _style_name=style_name, _sn=sn, _import_desig=import_desig,
                              _cat_val=cat_val, _subcat_val=subcat_val):
-            wc(r, "rtip_vendor_code#1.value",         vendor_code)
-            wc(r, "vendor_sku#1.value",               sku_val)
-            wc(r, "product_type#1.value",             detected_product_type)
-            wc(r, "variation_theme#1.name",     "COLOR/SIZE")
-            wc(r, "brand#1.value",                    clean_brand)
+            wc(r, "rtip_vendor_code#1.value",         vendor_code, style_num=_sn)
+            wc(r, "vendor_sku#1.value",               sku_val, style_num=_sn)
+            wc(r, "product_type#1.value",             detected_product_type, style_num=_sn)
+            wc(r, "variation_theme#1.name",     "COLOR/SIZE", style_num=_sn)
+            wc(r, "brand#1.value",                    clean_brand, style_num=_sn)
             if _cat_val:
-                wc(r, "product_category#1.value",     _cat_val)
+                wc(r, "product_category#1.value",     _cat_val, style_num=_sn)
             if _subcat_val:
-                wc(r, "product_subcategory#1.value",  _subcat_val)
-            wc(r, "item_type_keyword#1.value",        _itk)
-            wc(r, "model_number#1.value",             _sn)
-            wc(r, "model_name#1.value",               _style_name.title())
+                wc(r, "product_subcategory#1.value",  _subcat_val, style_num=_sn)
+            wc(r, "item_type_keyword#1.value",        _itk, style_num=_sn)
+            wc(r, "model_number#1.value",             _sn, style_num=_sn)
+            wc(r, "model_name#1.value",               _style_name.title(), style_num=_sn)
             for i, bfid in enumerate(["bullet_point#1.value", "bullet_point#2.value",
                                       "bullet_point#3.value", "bullet_point#4.value",
                                       "bullet_point#5.value"]):
                 if i < len(_bullets):
-                    wc(r, bfid, _bullets[i][:500])
+                    wc(r, bfid, _bullets[i][:500], style_num=_sn)
                 else:
                     bullet_fallback = _content.get(f"bullet_{i+1}", "")
                     if bullet_fallback:
-                        wc(r, bfid, bullet_fallback[:500])
-            wc(r, "generic_keyword#1.value",          _content.get("backend_keywords", ""))
-            wc(r, "style#1.value",                    _style_name.title())
-            wc(r, "fit_type#1.value",                 "Regular")
-            wc(r, "department#1.value",               brand_cfg.get("department", "Womens"))
-            wc(r, "target_gender#1.value",            brand_cfg.get("gender", "Female"))
-            wc(r, "age_range_description#1.value",    "Adult")
-            wc(r, "apparel_size#1.body_type",         "All Body Types")
-            wc(r, "apparel_size#1.height_type",       "All Heights")
+                        wc(r, bfid, bullet_fallback[:500], style_num=_sn)
+            wc(r, "generic_keyword#1.value",          _content.get("backend_keywords", ""), style_num=_sn)
+            wc(r, "style#1.value",                    _style_name.title(), style_num=_sn)
+            wc(r, "fit_type#1.value",                 "Regular", style_num=_sn)
+            wc(r, "department#1.value",               brand_cfg.get("department", "Womens"), style_num=_sn)
+            wc(r, "target_gender#1.value",            brand_cfg.get("gender", "Female"), style_num=_sn)
+            wc(r, "age_range_description#1.value",    "Adult", style_num=_sn)
+            wc(r, "apparel_size#1.body_type",         "All Body Types", style_num=_sn)
+            wc(r, "apparel_size#1.height_type",       "All Heights", style_num=_sn)
             if _fabric:
-                wc(r, "material#1.value",             _fabric)
-            wc(r, "fabric_type#1.value",              _ftype)
-            wc(r, "number_of_items#1.value", "1")
-            wc(r, "item_type_name#1.value",           _itn)
-            wc(r, "special_size_type#1.value",             "Standard")
-            wc(r, "rtip_product_description#1.value", _content.get("description", ""))
-            wc(r, "item_length_description#1.value",  _ilen)
-            wc(r, "item_booking_date#1.value",        today_str)
+                wc(r, "material#1.value",             _fabric, style_num=_sn)
+            wc(r, "fabric_type#1.value",              _ftype, style_num=_sn)
+            wc(r, "number_of_items#1.value", "1", style_num=_sn)
+            wc(r, "item_type_name#1.value",           _itn, style_num=_sn)
+            wc(r, "special_size_type#1.value",             "Standard", style_num=_sn)
+            wc(r, "rtip_product_description#1.value", _content.get("description", ""), style_num=_sn)
+            wc(r, "item_length_description#1.value",  _ilen, style_num=_sn)
+            wc(r, "item_booking_date#1.value",        today_str, style_num=_sn)
             if _care:
-                wc(r, "care_instructions#1.value",   _care)
-            wc(r, "unit_count#1.value",               "1")
-            wc(r, "unit_count#1.type.value",                "Count")
+                wc(r, "care_instructions#1.value",   _care, style_num=_sn)
+            wc(r, "unit_count#1.value",               "1", style_num=_sn)
+            wc(r, "unit_count#1.type.value",                "Count", style_num=_sn)
             if _neck:
-                wc(r, "neck#1.neck_style#1.value",         _neck)
-            wc(r, "lifecycle_supply_type#1.value", "new")
+                wc(r, "neck#1.neck_style#1.value",         _neck, style_num=_sn)
+            wc(r, "lifecycle_supply_type#1.value", "new", style_num=_sn)
             if _sil:
-                wc(r, "apparel_silhouette#1.value",   _sil)
-            wc(r, "sleeve#1.length_description#1.value", _slvlen)
+                wc(r, "apparel_silhouette#1.value",   _sil, style_num=_sn)
+            wc(r, "sleeve#1.length_description#1.value", _slvlen, style_num=_sn)
             if _sleeve:
-                wc(r, "sleeve#1.type#1.value",        _sleeve)
-            wc(r, "closure#1.type#1.value",             "Pull On")
+                wc(r, "sleeve#1.type#1.value",        _sleeve, style_num=_sn)
+            wc(r, "closure#1.type#1.value",             "Pull On", style_num=_sn)
             if _upf:
-                wc(r, "ultraviolet_protection_factor#1.value", _upf)
-            wc(r, "skip_offer#1.value",                       "No")
-            wc(r, "import_designation#1.value",       _import_desig)
-            wc(r, "rtip_earliest_shipping_date#1.value", today_str)
+                wc(r, "ultraviolet_protection_factor#1.value", _upf, style_num=_sn)
+            wc(r, "skip_offer#1.value",                       "No", style_num=_sn)
+            wc(r, "import_designation#1.value",       _import_desig, style_num=_sn)
+            wc(r, "rtip_earliest_shipping_date#1.value", today_str, style_num=_sn)
             # Contains battery/cell — required compliance field
-            wc(r, "contains_battery_or_cell#1.value", "No")
-            wc(r, "item_package_dimensions#1.length.value",      "14")
-            wc(r, "item_package_dimensions#1.length.unit",       "IN")
-            wc(r, "item_package_dimensions#1.width.value",       "10")
-            wc(r, "item_package_dimensions#1.width.unit",        "IN")
-            wc(r, "item_package_dimensions#1.height.value",      "2")
-            wc(r, "item_package_dimensions#1.height.unit",       "IN")
-            wc(r, "item_package_weight#1.value",      "0.5")
-            wc(r, "item_package_weight#1.unit",       "LB")
-            wc(r, "rtip_order_aggregate_type#1.value",     "Each")
-            wc(r, "rtip_items_per_inner_pack#1.value",     "1")
+            wc(r, "contains_battery_or_cell#1.value", "No", style_num=_sn)
+            wc(r, "item_package_dimensions#1.length.value",      "14", style_num=_sn)
+            wc(r, "item_package_dimensions#1.length.unit",       "IN", style_num=_sn)
+            wc(r, "item_package_dimensions#1.width.value",       "10", style_num=_sn)
+            wc(r, "item_package_dimensions#1.width.unit",        "IN", style_num=_sn)
+            wc(r, "item_package_dimensions#1.height.value",      "2", style_num=_sn)
+            wc(r, "item_package_dimensions#1.height.unit",       "IN", style_num=_sn)
+            wc(r, "item_package_weight#1.value",      "0.5", style_num=_sn)
+            wc(r, "item_package_weight#1.unit",       "LB", style_num=_sn)
+            wc(r, "rtip_order_aggregate_type#1.value",     "Each", style_num=_sn)
+            wc(r, "rtip_items_per_inner_pack#1.value",     "1", style_num=_sn)
             if _coo:
-                wc(r, "country_of_origin#1.value",   _coo)
-            wc(r, "batteries_required#1.value",  "No")
-            wc(r, "batteries_included#1.value",  "No")
+                wc(r, "country_of_origin#1.value",   _coo, style_num=_sn)
+            wc(r, "batteries_required#1.value",  "No", style_num=_sn)
+            wc(r, "batteries_included#1.value",  "No", style_num=_sn)
 
         # ── Parent row ────────────────────────────────────────────────────────
         write_shared_row(cr, psku)
-        wc(cr, "parentage_level#1.value",             "Parent")
-        wc(cr, "item_name#1.value",                   content.get("title", style_name))
+        wc(cr, "parentage_level#1.value",             "Parent", style_num=sn)
+        wc(cr, "item_name#1.value",                   content.get("title", style_name), style_num=sn)
         if list_price:
-            try:    wc(cr, "list_price#1.value",      float(list_price))
-            except: wc(cr, "list_price#1.value",      list_price)
+            try:    wc(cr, "list_price#1.value",      float(list_price), style_num=sn)
+            except: wc(cr, "list_price#1.value",      list_price, style_num=sn)
         cr += 1
 
         # ── Child rows ────────────────────────────────────────────────────────
@@ -2831,25 +2902,25 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
                 ctitle = content.get("title", "")
 
             write_shared_row(cr, csku)
-            wc(cr, "parentage_level#1.value",         "Child")
-            wc(cr, "child_parent_sku_relationship#1.child_relationship_type", "Variation")
-            wc(cr, "child_parent_sku_relationship#1.parent_sku",              psku)
-            wc(cr, "item_name#1.value",               ctitle)
+            wc(cr, "parentage_level#1.value",         "Child", style_num=sn)
+            wc(cr, "child_parent_sku_relationship#1.child_relationship_type", "Variation", style_num=sn)
+            wc(cr, "child_parent_sku_relationship#1.parent_sku",              psku, style_num=sn)
+            wc(cr, "item_name#1.value",               ctitle, style_num=sn)
             if upc:
-                wc(cr, "external_product_id#1.type",  "UPC")
-                wc(cr, "external_product_id#1.value", re.sub(r"\D", "", str(upc)))
-            wc(cr, "apparel_size#1.size_system",      "US")
-            wc(cr, "apparel_size#1.size_class",       "Alpha")
-            wc(cr, "apparel_size#1.size",             size_norm or size)
-            wc(cr, "color#1.standardized_values#1",            color_family)
-            wc(cr, "color#1.value",                   color.title() if color else "")
+                wc(cr, "external_product_id#1.type",  "UPC", style_num=sn)
+                wc(cr, "external_product_id#1.value", re.sub(r"\D", "", str(upc)), style_num=sn)
+            wc(cr, "apparel_size#1.size_system",      "US", style_num=sn)
+            wc(cr, "apparel_size#1.size_class",       "Alpha", style_num=sn)
+            wc(cr, "apparel_size#1.size",             size_norm or size, style_num=sn)
+            wc(cr, "color#1.standardized_values#1",            color_family, style_num=sn)
+            wc(cr, "color#1.value",                   color.title() if color else "", style_num=sn)
             v_list_price = var.get("list_price", "") or list_price
             if v_list_price:
-                try:    wc(cr, "list_price#1.value",  float(v_list_price))
-                except: wc(cr, "list_price#1.value",  v_list_price)
+                try:    wc(cr, "list_price#1.value",  float(v_list_price), style_num=sn)
+                except: wc(cr, "list_price#1.value",  v_list_price, style_num=sn)
             if v_cost:
-                try:    wc(cr, "cost_price#1.value",        float(v_cost))
-                except: wc(cr, "cost_price#1.value",        v_cost)
+                try:    wc(cr, "cost_price#1.value",        float(v_cost), style_num=sn)
+                except: wc(cr, "cost_price#1.value",        v_cost, style_num=sn)
             cr += 1
 
     import warnings as _w2
