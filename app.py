@@ -2474,8 +2474,12 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "rtip_vendor_code#1.value",         vendor_code or brand_cfg.get("vendor_code_full", ""))
         write_cell(row_idx, "vendor_sku#1.value",               vendor_sku_val)
         write_cell(row_idx, "product_type#1.value",             detected_product_type)
-        write_cell(row_idx, "variation_theme_name#1.value",     "COLOR/SIZE")
+        write_cell(row_idx, "variation_theme#1.name",     "COLOR/SIZE")
         write_cell(row_idx, "brand#1.value",                    clean_brand)
+        if category:
+            write_cell(row_idx, "product_category#1.value",     category)
+        if subcategory:
+            write_cell(row_idx, "product_subcategory#1.value",  subcategory)
         write_cell(row_idx, "item_type_keyword#1.value",        itk_value)
         write_cell(row_idx, "model_number#1.value",             style_num)
         write_cell(row_idx, "model_name#1.value",               (model_name_raw or style_name).title())
@@ -2496,47 +2500,49 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         if fabric:
             write_cell(row_idx, "material#1.value",             fabric)
         write_cell(row_idx, "fabric_type#1.value",              fabric_type)
-        write_cell(row_idx, "item_display_number_of_items#1.value", "1")
+        write_cell(row_idx, "number_of_items#1.value", "1")
         write_cell(row_idx, "item_type_name#1.value",           item_type_name)
-        write_cell(row_idx, "special_size#1.value",             "Standard")
+        write_cell(row_idx, "special_size_type#1.value",             "Standard")
         write_cell(row_idx, "rtip_product_description#1.value", description)
         write_cell(row_idx, "item_length_description#1.value",  item_length)
         write_cell(row_idx, "item_booking_date#1.value",        today_str)
         if care:
             write_cell(row_idx, "care_instructions#1.value",    care)
         write_cell(row_idx, "unit_count#1.value",               "1")
-        write_cell(row_idx, "unit_count#1.type",                "Count")
+        write_cell(row_idx, "unit_count#1.type.value",                "Count")
         if neck_type:
-            write_cell(row_idx, "neck#1.style#1.value",         neck_type)
-        write_cell(row_idx, "product_lifecycle_supply_type#1.value", "new")
+            write_cell(row_idx, "neck#1.neck_style#1.value",         neck_type)
+        write_cell(row_idx, "lifecycle_supply_type#1.value", "new")
         if silhouette:
             write_cell(row_idx, "apparel_silhouette#1.value",   silhouette)
-        write_cell(row_idx, "sleeve_length_description#1.value", sleeve_len)
+        write_cell(row_idx, "sleeve#1.length_description#1.value", sleeve_len)
         if sleeve_type:
             write_cell(row_idx, "sleeve#1.type#1.value",        sleeve_type)
-        write_cell(row_idx, "closure_type#1.value",             "Pull On")
+        write_cell(row_idx, "closure#1.type#1.value",             "Pull On")
         if upf:
             write_cell(row_idx, "ultraviolet_protection_factor#1.value", upf)
-        write_cell(row_idx, "skip_offer",                       "No")
+        write_cell(row_idx, "skip_offer#1.value",                       "No")
         # Import designation: "Imported" unless COO is US
         import_desig = "Imported" if coo.upper() not in ("US", "USA", "UNITED STATES") else "Domestic"
         write_cell(row_idx, "import_designation#1.value",       import_desig)
-        write_cell(row_idx, "compliance_earliest_shipping_date#1.value", today_str)
+        write_cell(row_idx, "rtip_earliest_shipping_date#1.value", today_str)
+        # Contains battery/cell — required compliance field
+        write_cell(row_idx, "contains_battery_or_cell#1.value", "No")
         # Package dimensions
-        write_cell(row_idx, "item_package_length#1.value",      "14")
-        write_cell(row_idx, "item_package_length#1.unit",       "IN")
-        write_cell(row_idx, "item_package_width#1.value",       "10")
-        write_cell(row_idx, "item_package_width#1.unit",        "IN")
-        write_cell(row_idx, "item_package_height#1.value",      "2")
-        write_cell(row_idx, "item_package_height#1.unit",       "IN")
+        write_cell(row_idx, "item_package_dimensions#1.length.value",      "14")
+        write_cell(row_idx, "item_package_dimensions#1.length.unit",       "IN")
+        write_cell(row_idx, "item_package_dimensions#1.width.value",       "10")
+        write_cell(row_idx, "item_package_dimensions#1.width.unit",        "IN")
+        write_cell(row_idx, "item_package_dimensions#1.height.value",      "2")
+        write_cell(row_idx, "item_package_dimensions#1.height.unit",       "IN")
         write_cell(row_idx, "item_package_weight#1.value",      "0.5")
         write_cell(row_idx, "item_package_weight#1.unit",       "LB")
-        write_cell(row_idx, "order_aggregate_type#1.value",     "Each")
-        write_cell(row_idx, "items_per_inner_pack#1.value",     "1")
+        write_cell(row_idx, "rtip_order_aggregate_type#1.value",     "Each")
+        write_cell(row_idx, "rtip_items_per_inner_pack#1.value",     "1")
         if coo:
             write_cell(row_idx, "country_of_origin#1.value",   coo)
-        write_cell(row_idx, "are_batteries_required#1.value",  "No")
-        write_cell(row_idx, "are_batteries_included#1.value",  "No")
+        write_cell(row_idx, "batteries_required#1.value",  "No")
+        write_cell(row_idx, "batteries_included#1.value",  "No")
         # List price on shared fields (applies to parent; child may override)
         if list_price:
             try:    write_cell(row_idx, "list_price#1.value",   float(list_price))
@@ -2568,8 +2574,8 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
 
         write_shared(current_row, sku, is_child=True)
         write_cell(current_row, "parentage_level#1.value",      "Child")
-        write_cell(current_row, "child_relationship_type#1.value", "Variation")
-        write_cell(current_row, "parent_sku#1.value",           parent_sku)
+        write_cell(current_row, "child_parent_sku_relationship#1.child_relationship_type", "Variation")
+        write_cell(current_row, "child_parent_sku_relationship#1.parent_sku",           parent_sku)
         write_cell(current_row, "item_name#1.value",            variant_title)
         if upc:
             write_cell(current_row, "external_product_id#1.type",  "UPC")
@@ -2581,13 +2587,13 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(current_row, "apparel_size#1.size_system",   "US")
         write_cell(current_row, "apparel_size#1.size_class",    "Alpha")
         write_cell(current_row, "apparel_size#1.size",          size_normalized or size)
-        write_cell(current_row, "color#1.standardized",         color_family)
+        write_cell(current_row, "color#1.standardized_values#1",         color_family)
         write_cell(current_row, "color#1.value",                color_name.title() if color_name else "")
         # Child cost price
         child_cost = v.get("cost_price") or cost_price
         if child_cost:
-            try:    write_cell(current_row, "cost#1.value",     float(child_cost))
-            except: write_cell(current_row, "cost#1.value",     child_cost)
+            try:    write_cell(current_row, "cost_price#1.value",     float(child_cost))
+            except: write_cell(current_row, "cost_price#1.value",     child_cost)
         current_row += 1
 
     # ── Save ──────────────────────────────────────────────────────────────────
@@ -2718,18 +2724,25 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         list_price = style.get("list_price", "") or content.get("list_price", "")
         bullets    = content.get("bullets", [])
         import_desig = "Imported" if coo.upper() not in ("US", "USA", "UNITED STATES") else "Domestic"
+        cat_val    = content.get("category", "") or _derive_amazon_product_category(sub_class)
+        subcat_val = content.get("subcategory", "")
 
         # ── Shared-fields helper for this style ─────────────────────────────
         def write_shared_row(r, sku_val, _fabric=fabric, _care=care, _upf=upf,
                              _coo=coo, _neck=neck, _sleeve=sleeve, _sil=sil,
                              _itk=itk, _itn=itn, _ilen=ilen, _ftype=ftype,
                              _slvlen=slvlen, _bullets=bullets, _content=content,
-                             _style_name=style_name, _sn=sn, _import_desig=import_desig):
+                             _style_name=style_name, _sn=sn, _import_desig=import_desig,
+                             _cat_val=cat_val, _subcat_val=subcat_val):
             wc(r, "rtip_vendor_code#1.value",         vendor_code)
             wc(r, "vendor_sku#1.value",               sku_val)
             wc(r, "product_type#1.value",             detected_product_type)
-            wc(r, "variation_theme_name#1.value",     "COLOR/SIZE")
+            wc(r, "variation_theme#1.name",     "COLOR/SIZE")
             wc(r, "brand#1.value",                    clean_brand)
+            if _cat_val:
+                wc(r, "product_category#1.value",     _cat_val)
+            if _subcat_val:
+                wc(r, "product_subcategory#1.value",  _subcat_val)
             wc(r, "item_type_keyword#1.value",        _itk)
             wc(r, "model_number#1.value",             _sn)
             wc(r, "model_name#1.value",               _style_name.title())
@@ -2753,44 +2766,46 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             if _fabric:
                 wc(r, "material#1.value",             _fabric)
             wc(r, "fabric_type#1.value",              _ftype)
-            wc(r, "item_display_number_of_items#1.value", "1")
+            wc(r, "number_of_items#1.value", "1")
             wc(r, "item_type_name#1.value",           _itn)
-            wc(r, "special_size#1.value",             "Standard")
+            wc(r, "special_size_type#1.value",             "Standard")
             wc(r, "rtip_product_description#1.value", _content.get("description", ""))
             wc(r, "item_length_description#1.value",  _ilen)
             wc(r, "item_booking_date#1.value",        today_str)
             if _care:
                 wc(r, "care_instructions#1.value",   _care)
             wc(r, "unit_count#1.value",               "1")
-            wc(r, "unit_count#1.type",                "Count")
+            wc(r, "unit_count#1.type.value",                "Count")
             if _neck:
-                wc(r, "neck#1.style#1.value",         _neck)
-            wc(r, "product_lifecycle_supply_type#1.value", "new")
+                wc(r, "neck#1.neck_style#1.value",         _neck)
+            wc(r, "lifecycle_supply_type#1.value", "new")
             if _sil:
                 wc(r, "apparel_silhouette#1.value",   _sil)
-            wc(r, "sleeve_length_description#1.value", _slvlen)
+            wc(r, "sleeve#1.length_description#1.value", _slvlen)
             if _sleeve:
                 wc(r, "sleeve#1.type#1.value",        _sleeve)
-            wc(r, "closure_type#1.value",             "Pull On")
+            wc(r, "closure#1.type#1.value",             "Pull On")
             if _upf:
                 wc(r, "ultraviolet_protection_factor#1.value", _upf)
-            wc(r, "skip_offer",                       "No")
+            wc(r, "skip_offer#1.value",                       "No")
             wc(r, "import_designation#1.value",       _import_desig)
-            wc(r, "compliance_earliest_shipping_date#1.value", today_str)
-            wc(r, "item_package_length#1.value",      "14")
-            wc(r, "item_package_length#1.unit",       "IN")
-            wc(r, "item_package_width#1.value",       "10")
-            wc(r, "item_package_width#1.unit",        "IN")
-            wc(r, "item_package_height#1.value",      "2")
-            wc(r, "item_package_height#1.unit",       "IN")
+            wc(r, "rtip_earliest_shipping_date#1.value", today_str)
+            # Contains battery/cell — required compliance field
+            wc(r, "contains_battery_or_cell#1.value", "No")
+            wc(r, "item_package_dimensions#1.length.value",      "14")
+            wc(r, "item_package_dimensions#1.length.unit",       "IN")
+            wc(r, "item_package_dimensions#1.width.value",       "10")
+            wc(r, "item_package_dimensions#1.width.unit",        "IN")
+            wc(r, "item_package_dimensions#1.height.value",      "2")
+            wc(r, "item_package_dimensions#1.height.unit",       "IN")
             wc(r, "item_package_weight#1.value",      "0.5")
             wc(r, "item_package_weight#1.unit",       "LB")
-            wc(r, "order_aggregate_type#1.value",     "Each")
-            wc(r, "items_per_inner_pack#1.value",     "1")
+            wc(r, "rtip_order_aggregate_type#1.value",     "Each")
+            wc(r, "rtip_items_per_inner_pack#1.value",     "1")
             if _coo:
                 wc(r, "country_of_origin#1.value",   _coo)
-            wc(r, "are_batteries_required#1.value",  "No")
-            wc(r, "are_batteries_included#1.value",  "No")
+            wc(r, "batteries_required#1.value",  "No")
+            wc(r, "batteries_included#1.value",  "No")
 
         # ── Parent row ────────────────────────────────────────────────────────
         write_shared_row(cr, psku)
@@ -2817,8 +2832,8 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
 
             write_shared_row(cr, csku)
             wc(cr, "parentage_level#1.value",         "Child")
-            wc(cr, "child_relationship_type#1.value", "Variation")
-            wc(cr, "parent_sku#1.value",              psku)
+            wc(cr, "child_parent_sku_relationship#1.child_relationship_type", "Variation")
+            wc(cr, "child_parent_sku_relationship#1.parent_sku",              psku)
             wc(cr, "item_name#1.value",               ctitle)
             if upc:
                 wc(cr, "external_product_id#1.type",  "UPC")
@@ -2826,15 +2841,15 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(cr, "apparel_size#1.size_system",      "US")
             wc(cr, "apparel_size#1.size_class",       "Alpha")
             wc(cr, "apparel_size#1.size",             size_norm or size)
-            wc(cr, "color#1.standardized",            color_family)
+            wc(cr, "color#1.standardized_values#1",            color_family)
             wc(cr, "color#1.value",                   color.title() if color else "")
             v_list_price = var.get("list_price", "") or list_price
             if v_list_price:
                 try:    wc(cr, "list_price#1.value",  float(v_list_price))
                 except: wc(cr, "list_price#1.value",  v_list_price)
             if v_cost:
-                try:    wc(cr, "cost#1.value",        float(v_cost))
-                except: wc(cr, "cost#1.value",        v_cost)
+                try:    wc(cr, "cost_price#1.value",        float(v_cost))
+                except: wc(cr, "cost_price#1.value",        v_cost)
             cr += 1
 
     import warnings as _w2
