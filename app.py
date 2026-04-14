@@ -1373,9 +1373,13 @@ def generate_nis():
     if not styles:
         return jsonify({"error": "No product data loaded"}), 400
     if not content_map:
-        return jsonify({"error": "Content not yet generated. Run Step 6 first."}), 400
+        return jsonify({"error": "Content not yet generated. Run Generate Content first."}), 400
     
-    brand_cfg = BRAND_CONFIGS.get(brand, BRAND_CONFIGS["Stella Parker"])
+    # Verify template exists
+    if not os.path.exists(template_path):
+        return jsonify({"error": f"Template file not found: {template_path}. Upload an Amazon NIS template first."}), 400
+    
+    brand_cfg = _load_brand_config_data(brand)
     
     # Clear output dir
     for f in UPLOAD_OUTPUT.glob("*.xlsm"):
