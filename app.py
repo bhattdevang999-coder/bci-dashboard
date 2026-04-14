@@ -3169,6 +3169,602 @@ def catalog_export():
     )
 
 
+
+# ═══ MERGE LISTINGS MODULE ═══════════════════════════════════════════════════
+
+# In-memory merge state
+merge_state = {
+    "plan": None,          # list of merge actions
+    "approved": {},        # action_id -> True/False
+    "generated_at": None,
+}
+merge_lock = threading.Lock()
+
+
+def _build_merge_plan(catalog_data, detected_fields):
+    """
+    Analyse catalog_data and produce a list of merge action dicts.
+    """
+    def get(row, field):
+        col = detected_fields.get(field)
+        return str(row.get(col, "")).strip() if col else ""
+
+    # Build structures
+    asin_map = {}          # asin -> row
+    parent_map = {}        # parent_asin -> [child rows]
+    real_parents = set()   # ASINs that have parentage == "parent"
+    model_to_asins = {}    # model_name -> [asin list]
+
+    for row in catalog_data:
+        asin = get(row, "asin") or get(row, "sku")
+        if not asin:
+            continue
+        asin_map[asin] = row
+        pc = get(row, "parent_child").lower()
+        if pc == "parent":
+            real_parents.add(asin)
+            if asin not in parent_map:
+                parent_map[asin] = []
+        p_asin = get(row, "parent_asin")
+        if p_asin and pc != "parent":
+            if p_asin not in parent_map:
+                parent_map[p_asin] = []
+            parent_map[p_asin].append(row)
+        # Model name grouping
+        model = get(row, "model_name") or get(row, "sku")
+        if model:
+            model_base = re.split(r"[-_](?:XS|S|M|L|XL|XXL|2XL|3XL|BLACK|WHITE|RED|BLUE|GREEN|NAVY|[A-Z]{1,2}\d{0,2})$",
+                                   model.upper())[0].strip()
+            if model_base not in model_to_asins:
+                model_to_asins[model_base] = []
+            model_to_asins[model_base].append(asin)
+
+    actions = []
+    action_id = 0
+
+    # ── 1. Split families: same model_name → multiple parent ASINs ──────────
+    for model_base, asins_in_family in model_to_asins.items():
+        if len(asins_in_family) < 2:
+            continue
+        parents_in_family = [a for a in asins_in_family if a in real_parents]
+        if len(parents_in_family) <= 1:
+            continue
+        # Primary = the one with most children
+        primary = max(parents_in_family, key=lambda p: len(parent_map.get(p, [])))
+        secondary_parents = [p for p in parents_in_family if p != primary]
+        for sec_parent in secondary_parents:
+            children_to_move = parent_map.get(sec_parent, [])
+            affected = [get(c, "asin") or get(c, "sku") for c in children_to_move] + [sec_parent]
+            affected = [a for a in affected if a]
+            primary_title = get(asin_map.get(primary, {}), "title")[:60] if asin_map.get(primary) else primary
+            sec_title = get(asin_map.get(sec_parent, {}), "title")[:60] if asin_map.get(sec_parent) else sec_parent
+            action_id += 1
+            actions.append({
+                "id": f"action_{action_id}",
+                "action_type": "reassign",
+                "affected_asins": affected,
+                "from_parent": sec_parent,
+                "to_parent": primary,
+                "reasoning": f"Model family '{model_base}' is split across {len(parents_in_family)} parent ASINs. "
+                             f"Primary parent {primary} has {len(parent_map.get(primary,[]))} children; "
+                             f"{sec_parent} has {len(children_to_move)}. Consolidating under primary.",
+                "confidence": "High" if len(children_to_move) > 0 else "Medium",
+                "from_parent_title": sec_title,
+                "to_parent_title": primary_title,
+            })
+
+    # ── 2. Orphan fix: children with no valid parent ────────────────────────
+    for asin, row in asin_map.items():
+        pc = get(row, "parent_child").lower()
+        if pc in ("child", "variation", ""):
+            p_asin = get(row, "parent_asin")
+            if not p_asin or p_asin == asin or p_asin not in asin_map:
+                # Try to find a parent by model name
+                model = get(row, "model_name") or get(row, "sku")
+                model_base = re.split(r"[-_](?:XS|S|M|L|XL|XXL|2XL|3XL|BLACK|WHITE|RED|BLUE|GREEN|NAVY|[A-Z]{1,2}\d{0,2})$",
+                                       (model or "").upper())[0].strip() if model else ""
+                suggested_parent = None
+                if model_base and model_base in model_to_asins:
+                    candidates = [a for a in model_to_asins[model_base]
+                                  if a in real_parents and a != asin]
+                    if candidates:
+                        suggested_parent = max(candidates, key=lambda p: len(parent_map.get(p, [])))
+                reason = (
+                    f"ASIN {asin} has no valid parent link (parent_asin='{p_asin or 'empty'}'). "
+                    + (f"Best match found: parent {suggested_parent} in same model family '{model_base}'."
+                       if suggested_parent else "No matching parent found — may need to be made standalone or a new parent created.")
+                )
+                action_id += 1
+                actions.append({
+                    "id": f"action_{action_id}",
+                    "action_type": "orphan_fix",
+                    "affected_asins": [asin],
+                    "from_parent": p_asin or "",
+                    "to_parent": suggested_parent or "",
+                    "reasoning": reason,
+                    "confidence": "High" if suggested_parent else "Low",
+                    "from_parent_title": "",
+                    "to_parent_title": get(asin_map.get(suggested_parent, {}), "title")[:60] if suggested_parent else "",
+                })
+
+    # ── 3. Category mismatch: child's category differs from parent's ─────────
+    for p_asin, children in parent_map.items():
+        if p_asin not in asin_map:
+            continue
+        parent_cat = get(asin_map[p_asin], "category")
+        for child_row in children:
+            child_asin = get(child_row, "asin") or get(child_row, "sku")
+            child_cat = get(child_row, "category")
+            if parent_cat and child_cat and parent_cat.lower() != child_cat.lower():
+                action_id += 1
+                actions.append({
+                    "id": f"action_{action_id}",
+                    "action_type": "category_fix",
+                    "affected_asins": [child_asin],
+                    "from_parent": p_asin,
+                    "to_parent": p_asin,
+                    "reasoning": f"Child {child_asin} has category '{child_cat}' but its parent {p_asin} has category '{parent_cat}'. Child should match parent category.",
+                    "confidence": "Medium",
+                    "from_parent_title": get(asin_map[p_asin], "title")[:60],
+                    "to_parent_title": get(asin_map[p_asin], "title")[:60],
+                })
+
+    return actions
+
+
+@app.route("/api/merge/analyze", methods=["POST"])
+def merge_analyze():
+    catalog_data = catalog_health_state.get("catalog_data")
+    detected_fields = catalog_health_state.get("detected_fields")
+    if not catalog_data or not detected_fields:
+        return jsonify({"error": "No catalog data loaded. Run Catalog Health upload first."}), 400
+    try:
+        actions = _build_merge_plan(catalog_data, detected_fields)
+        with merge_lock:
+            merge_state["plan"] = actions
+            merge_state["approved"] = {a["id"]: True for a in actions}
+            merge_state["generated_at"] = datetime.now().isoformat()
+
+        # Summary
+        split_families = sum(1 for a in actions if a["action_type"] == "reassign")
+        orphans = sum(1 for a in actions if a["action_type"] == "orphan_fix")
+        category_fixes = sum(1 for a in actions if a["action_type"] == "category_fix")
+
+        return jsonify({
+            "ok": True,
+            "plan": actions,
+            "summary": {
+                "split_families": split_families,
+                "orphaned_asins": orphans,
+                "category_mismatches": category_fixes,
+                "total_actions": len(actions),
+            },
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/merge/plan", methods=["GET"])
+def merge_plan():
+    plan = merge_state.get("plan")
+    if plan is None:
+        return jsonify({"plan": None, "summary": None})
+    approved = merge_state.get("approved", {})
+    split_families = sum(1 for a in plan if a["action_type"] == "reassign")
+    orphans = sum(1 for a in plan if a["action_type"] == "orphan_fix")
+    category_fixes = sum(1 for a in plan if a["action_type"] == "category_fix")
+    return jsonify({
+        "plan": plan,
+        "approved": approved,
+        "summary": {
+            "split_families": split_families,
+            "orphaned_asins": orphans,
+            "category_mismatches": category_fixes,
+            "total_actions": len(plan),
+        },
+        "generated_at": merge_state.get("generated_at"),
+    })
+
+
+@app.route("/api/merge/approve", methods=["POST"])
+def merge_approve():
+    data = request.get_json(force=True) or {}
+    action_id = data.get("action_id")
+    approved = data.get("approved", True)
+    if not action_id:
+        return jsonify({"error": "action_id required"}), 400
+    with merge_lock:
+        if merge_state["plan"] is None:
+            return jsonify({"error": "No plan loaded"}), 400
+        ids = {a["id"] for a in merge_state["plan"]}
+        if action_id not in ids:
+            return jsonify({"error": "Unknown action_id"}), 404
+        merge_state["approved"][action_id] = bool(approved)
+    return jsonify({"ok": True, "action_id": action_id, "approved": bool(approved)})
+
+
+@app.route("/api/merge/generate-fix", methods=["POST"])
+def merge_generate_fix():
+    plan = merge_state.get("plan")
+    approved = merge_state.get("approved", {})
+    if not plan:
+        return jsonify({"error": "No merge plan. Run analyze first."}), 400
+
+    approved_actions = [a for a in plan if approved.get(a["id"], True)]
+    if not approved_actions:
+        return jsonify({"error": "No approved actions to generate."}), 400
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ASIN", "Action", "Current Parent", "New Parent",
+                     "Variation Theme", "Parentage Level", "Notes"])
+
+    catalog_data = catalog_health_state.get("catalog_data", [])
+    detected_fields = catalog_health_state.get("detected_fields", {})
+
+    def get_field(row, field):
+        col = detected_fields.get(field)
+        return str(row.get(col, "")).strip() if col else ""
+
+    asin_row_map = {}
+    for row in catalog_data:
+        a = get_field(row, "asin") or get_field(row, "sku")
+        if a:
+            asin_row_map[a] = row
+
+    for action in approved_actions:
+        vt = ""
+        for asin in action["affected_asins"]:
+            row = asin_row_map.get(asin, {})
+            vt = get_field(row, "variation_theme") if row else ""
+            parentage = "child"
+            if action["action_type"] == "reassign":
+                notes = f"Reassign from parent {action['from_parent']} to {action['to_parent']}"
+            elif action["action_type"] == "orphan_fix":
+                notes = f"Orphan fix — assign to parent {action['to_parent'] or 'TBD'}"
+            else:
+                notes = f"Category fix under parent {action['to_parent']}"
+            writer.writerow([
+                asin,
+                action["action_type"].replace("_", " ").title(),
+                action["from_parent"],
+                action["to_parent"],
+                vt,
+                parentage,
+                notes,
+            ])
+
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode("utf-8")),
+        as_attachment=True,
+        download_name=f"Merge_Fix_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+        mimetype="text/csv",
+    )
+
+
+# ═══ INTEL MODULE ════════════════════════════════════════════════════════════
+
+intel_state = {
+    "recommendations": None,
+    "dismissed": set(),
+    "accepted": {},
+    "generated_at": None,
+}
+intel_lock = threading.Lock()
+
+
+def _build_intel_recommendations(catalog_data, detected_fields,
+                                  nis_state=None, feedback_data=None):
+    """
+    Generate ranked intelligence recommendations from all available data.
+    """
+    def get(row, field):
+        col = detected_fields.get(field) if detected_fields else None
+        return str(row.get(col, "")).strip() if col else ""
+
+    recs = []
+    rec_id = 0
+
+    def new_id():
+        nonlocal rec_id
+        rec_id += 1
+        return f"intel_{rec_id}"
+
+    if not catalog_data:
+        return recs
+
+    # Build data structures
+    asin_map = {}
+    parent_map = {}
+    real_parents = set()
+    bullet_sets = {}   # bullet_index -> list of (asin, text)
+    title_lengths = []
+
+    for row in catalog_data:
+        asin = get(row, "asin") or get(row, "sku")
+        if not asin:
+            continue
+        asin_map[asin] = row
+        pc = get(row, "parent_child").lower()
+        if pc == "parent":
+            real_parents.add(asin)
+        p_asin = get(row, "parent_asin")
+        if p_asin and pc != "parent":
+            if p_asin not in parent_map:
+                parent_map[p_asin] = []
+            parent_map[p_asin].append(asin)
+
+        # Collect bullets
+        for i in range(1, 6):
+            bullet = get(row, f"bullet_{i}")
+            if bullet:
+                if i not in bullet_sets:
+                    bullet_sets[i] = []
+                bullet_sets[i].append((asin, bullet))
+
+        # Title length
+        title = get(row, "title")
+        if title:
+            title_lengths.append((asin, len(title)))
+
+    total_asins = len(asin_map)
+
+    # ── 1. Duplicate bullets across ASINs ────────────────────────────────────
+    for bullet_idx, entries in bullet_sets.items():
+        text_to_asins = {}
+        for asin, text in entries:
+            t = text.lower().strip()
+            if t:
+                if t not in text_to_asins:
+                    text_to_asins[t] = []
+                text_to_asins[t].append(asin)
+        for text, asins in text_to_asins.items():
+            if len(asins) >= 5:
+                severity = "High" if len(asins) >= 20 else "Medium"
+                recs.append({
+                    "id": new_id(),
+                    "type": "content_duplicate",
+                    "severity": severity,
+                    "title": f"Bullet {bullet_idx} is identical across {len(asins)} ASINs",
+                    "description": f"The same bullet point text is used word-for-word on {len(asins)} listings. "
+                                   f"Amazon may suppress duplicate content and customers see no differentiation.",
+                    "why": f"Exact duplicate: \"{text[:120]}...\" appears on {len(asins)} ASINs. "
+                           f"Unique bullet copy improves relevance signals and conversion on style-differentiated products.",
+                    "affected_asins": asins[:50],
+                    "estimated_impact": "Medium — duplicate content can reduce relevance scoring",
+                    "suggested_action": f"Rewrite Bullet {bullet_idx} for each style to highlight unique attributes (color, fit, occasion).",
+                    "action_type": "change_bullet",
+                })
+
+    # ── 2. Title length optimization ─────────────────────────────────────────
+    short_titles = [(a, ln) for a, ln in title_lengths if ln < 80]
+    if short_titles:
+        severity = "High" if len(short_titles) > total_asins * 0.3 else "Medium"
+        recs.append({
+            "id": new_id(),
+            "type": "title_optimization",
+            "severity": severity,
+            "title": f"{len(short_titles)} titles are under 80 characters",
+            "description": f"{len(short_titles)} of {total_asins} titles use fewer than 80 chars of the 200-char limit. "
+                           f"Longer titles with relevant keywords improve search visibility.",
+            "why": f"Amazon allows 200 characters for titles. Short titles leave keyword space unused. "
+                   f"Adding size range, key features, or occasion keywords can meaningfully improve CTR.",
+            "affected_asins": [a for a, _ in short_titles[:50]],
+            "estimated_impact": "High — titles are the #1 ranking signal for search",
+            "suggested_action": "Expand short titles to include: key feature, target customer, or occasion. Aim for 130-180 chars.",
+            "action_type": "change_title",
+        })
+
+    very_long_titles = [(a, ln) for a, ln in title_lengths if ln > 190]
+    if very_long_titles:
+        recs.append({
+            "id": new_id(),
+            "type": "title_optimization",
+            "severity": "Medium",
+            "title": f"{len(very_long_titles)} titles exceed 190 characters (at risk of truncation)",
+            "description": f"Titles over 200 chars are truncated by Amazon, cutting off important keywords.",
+            "why": "Amazon truncates titles at 200 chars in some views. End-of-title keywords are the most likely to be cut.",
+            "affected_asins": [a for a, _ in very_long_titles[:50]],
+            "estimated_impact": "Medium — truncated titles lose keyword visibility",
+            "suggested_action": "Trim these titles to under 190 characters, keeping the most important keywords first.",
+            "action_type": "change_title",
+        })
+
+    # ── 3. Missing backend keywords (description empty) ───────────────────────
+    no_desc = [asin for asin, row in asin_map.items()
+               if len(get(row, "description")) < 100]
+    if no_desc:
+        severity = "Critical" if len(no_desc) > total_asins * 0.5 else "High"
+        recs.append({
+            "id": new_id(),
+            "type": "content_quality",
+            "severity": severity,
+            "title": f"Description under 100 chars on {len(no_desc)} ASINs",
+            "description": f"{len(no_desc)} listings have minimal or empty descriptions. "
+                           f"Descriptions provide keyword real estate and help customers make purchase decisions.",
+            "why": "Product descriptions index for search and provide backend keyword coverage. "
+                   "Empty descriptions miss out on long-tail keyword coverage and reduce Buy Box competitiveness.",
+            "affected_asins": no_desc[:50],
+            "estimated_impact": "High — descriptions contribute to A9 indexing",
+            "suggested_action": "Write 200-500 char descriptions highlighting fabric, fit, care instructions, and occasion suitability.",
+            "action_type": "add_keyword",
+        })
+
+    # ── 4. Variation gap: parents with fewer children than average ──────────
+    child_counts = [len(children) for p, children in parent_map.items() if p in real_parents]
+    if child_counts:
+        avg_children = sum(child_counts) / len(child_counts)
+        thin_parents = [(p, len(parent_map[p])) for p in real_parents
+                        if len(parent_map.get(p, [])) < max(2, avg_children * 0.4)]
+        if thin_parents:
+            recs.append({
+                "id": new_id(),
+                "type": "variation_gap",
+                "severity": "Medium",
+                "title": f"{len(thin_parents)} parent ASINs have fewer variations than catalog average",
+                "description": f"Catalog average is {avg_children:.1f} children per parent. "
+                               f"{len(thin_parents)} parents have significantly fewer. "
+                               f"Thin variation families miss size/color opportunities.",
+                "why": f"Parents with {avg_children:.0f}+ children capture more organic traffic across size and color searches. "
+                       f"Adding common sizes (S-2X) or seasonal colors can significantly expand reach.",
+                "affected_asins": [p for p, _ in thin_parents[:50]],
+                "estimated_impact": "Medium — more variants = more search coverage",
+                "suggested_action": f"Review thin families and consider adding missing sizes or colors. Catalog average is {avg_children:.1f} variants.",
+                "action_type": "add_variant",
+            })
+
+    # ── 5. Missing bullets ────────────────────────────────────────────────────
+    no_bullet_5 = [asin for asin, row in asin_map.items()
+                   if not get(row, "bullet_5")]
+    if no_bullet_5 and len(no_bullet_5) > 5:
+        recs.append({
+            "id": new_id(),
+            "type": "content_quality",
+            "severity": "Medium",
+            "title": f"{len(no_bullet_5)} ASINs missing Bullet Point 5",
+            "description": f"Amazon allows 5 bullet points. {len(no_bullet_5)} listings only use 4 or fewer, "
+                           f"leaving keyword and content opportunity on the table.",
+            "why": "Each bullet point is a separate keyword indexing opportunity. "
+                   "Bullet 5 is often used for care instructions, compatibility, or brand story — all indexable.",
+            "affected_asins": no_bullet_5[:50],
+            "estimated_impact": "Low — incremental keyword coverage",
+            "suggested_action": "Add Bullet 5 with care instructions, size guidance, or brand/warranty information.",
+            "action_type": "change_bullet",
+        })
+
+    # ── 6. A/B test suggestions for high-count duplicate bullet families ──────
+    families_with_many_dupes = []
+    for bullet_idx, entries in bullet_sets.items():
+        text_to_asins = {}
+        for asin, text in entries:
+            t = text.lower().strip()
+            if t:
+                if t not in text_to_asins:
+                    text_to_asins[t] = []
+                text_to_asins[t].append(asin)
+        most_common = max(text_to_asins.items(), key=lambda x: len(x[1]), default=(None, []))
+        if most_common[0] and len(most_common[1]) >= 10:
+            families_with_many_dupes.append((bullet_idx, most_common[0], most_common[1]))
+
+    if families_with_many_dupes:
+        bullet_idx, text, asins = families_with_many_dupes[0]
+        recs.append({
+            "id": new_id(),
+            "type": "ab_test_suggestion",
+            "severity": "Low",
+            "title": f"A/B test opportunity: Bullet {bullet_idx} variant on {len(asins)} ASINs",
+            "description": f"The most-used bullet ({len(asins)} ASINs) is a candidate for A/B testing. "
+                           f"Test a feature-focused variant against the current generic version.",
+            "why": f"Current bullet: \"{text[:100]}...\". "
+                   f"With {len(asins)} ASINs using this identical copy, a small CTR improvement "
+                   f"on a test variant could justify a full rollout.",
+            "affected_asins": asins[:20],
+            "estimated_impact": "Medium — A/B tests on high-volume bullet copy can yield 5-15% CVR lift",
+            "suggested_action": f"Draft an alternative Bullet {bullet_idx} emphasizing a specific feature or benefit. Test on 5-10 ASINs for 30 days.",
+            "action_type": "change_bullet",
+        })
+
+    # Sort by severity
+    severity_order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
+    recs.sort(key=lambda r: severity_order.get(r["severity"], 4))
+
+    return recs
+
+
+@app.route("/api/intel/analyze", methods=["POST"])
+def intel_analyze():
+    catalog_data = catalog_health_state.get("catalog_data")
+    detected_fields = catalog_health_state.get("detected_fields")
+    if not catalog_data or not detected_fields:
+        return jsonify({"error": "No catalog data loaded. Upload data in Catalog Health first."}), 400
+    try:
+        recs = _build_intel_recommendations(catalog_data, detected_fields)
+        with intel_lock:
+            intel_state["recommendations"] = recs
+            intel_state["dismissed"] = set()
+            intel_state["accepted"] = {}
+            intel_state["generated_at"] = datetime.now().isoformat()
+        critical = sum(1 for r in recs if r["severity"] == "Critical")
+        high = sum(1 for r in recs if r["severity"] == "High")
+        quick_wins = sum(1 for r in recs
+                         if r["severity"] in ("High", "Critical")
+                         and r["action_type"] in ("change_bullet", "change_title"))
+        return jsonify({
+            "ok": True,
+            "recommendations": recs,
+            "summary": {
+                "total": len(recs),
+                "critical": critical,
+                "high": high,
+                "quick_wins": quick_wins,
+            },
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/intel/recommendations", methods=["GET"])
+def intel_recommendations():
+    recs = intel_state.get("recommendations")
+    dismissed = intel_state.get("dismissed", set())
+    accepted = intel_state.get("accepted", {})
+    if recs is None:
+        return jsonify({"recommendations": None, "summary": None})
+    visible = [r for r in recs if r["id"] not in dismissed]
+    critical = sum(1 for r in visible if r["severity"] == "Critical")
+    high = sum(1 for r in visible if r["severity"] == "High")
+    quick_wins = sum(1 for r in visible
+                     if r["severity"] in ("High", "Critical")
+                     and r["action_type"] in ("change_bullet", "change_title"))
+    return jsonify({
+        "recommendations": visible,
+        "accepted": accepted,
+        "summary": {
+            "total": len(visible),
+            "critical": critical,
+            "high": high,
+            "quick_wins": quick_wins,
+        },
+        "generated_at": intel_state.get("generated_at"),
+    })
+
+
+@app.route("/api/intel/accept", methods=["POST"])
+def intel_accept():
+    data = request.get_json(force=True) or {}
+    rec_id = data.get("rec_id")
+    note = data.get("note", "")
+    if not rec_id:
+        return jsonify({"error": "rec_id required"}), 400
+    with intel_lock:
+        if intel_state["recommendations"] is None:
+            return jsonify({"error": "No recommendations loaded"}), 400
+        ids = {r["id"] for r in intel_state["recommendations"]}
+        if rec_id not in ids:
+            return jsonify({"error": "Unknown rec_id"}), 404
+        intel_state["accepted"][rec_id] = {
+            "accepted_at": datetime.now().isoformat(),
+            "note": note,
+        }
+    return jsonify({"ok": True, "rec_id": rec_id})
+
+
+@app.route("/api/intel/dismiss", methods=["POST"])
+def intel_dismiss():
+    data = request.get_json(force=True) or {}
+    rec_id = data.get("rec_id")
+    if not rec_id:
+        return jsonify({"error": "rec_id required"}), 400
+    with intel_lock:
+        if intel_state["recommendations"] is None:
+            return jsonify({"error": "No recommendations loaded"}), 400
+        intel_state["dismissed"].add(rec_id)
+    return jsonify({"ok": True, "rec_id": rec_id})
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))

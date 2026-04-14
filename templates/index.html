@@ -176,46 +176,367 @@
     flex-shrink: 0;
   }
 
-  /* Merge nav item (coming soon) */
+  /* Merge nav item — fully active */
   .nav-item-merge {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     padding: 9px 20px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
     border-left: 3px solid transparent;
     font-size: 14px;
-    color: var(--border);
+    color: var(--text-sec);
     user-select: none;
-    cursor: default;
-    opacity: 0.7;
+  }
+  .nav-item-merge:hover { background: var(--bg); color: var(--text); }
+  .nav-item-merge.active {
+    background: var(--accent-lt);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
   }
   .nav-merge-icon {
     width: 20px;
     height: 20px;
     border-radius: 4px;
-    background: var(--border);
+    background: #FEF3EC;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-sec);
+    color: #C0651B;
     font-size: 12px;
     flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
   }
-  .badge-coming-soon {
-    display: inline-block;
-    padding: 1px 6px;
-    border-radius: 10px;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    background: var(--bg);
+  .nav-item-merge.active .nav-merge-icon {
+    background: var(--accent);
+    color: #fff;
+  }
+  /* Intel nav item */
+  .nav-item-intel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
+    font-size: 14px;
     color: var(--text-sec);
+    user-select: none;
+  }
+  .nav-item-intel:hover { background: var(--bg); color: var(--text); }
+  .nav-item-intel.active {
+    background: var(--accent-lt);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .nav-intel-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: #F0E8F8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6B46C1;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+  }
+  .nav-item-intel.active .nav-intel-icon {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ── Merge + Intel shared module styles ──────────────── */
+  #merge-page  { display: none; }
+  #intel-page  { display: none; }
+
+  /* Summary stat cards */
+  .module-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .module-stat-card {
+    background: var(--surface);
     border: 1px solid var(--border);
-    margin-left: auto;
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .module-stat-card .stat-num {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .module-stat-card .stat-num.accent  { color: var(--accent); }
+  .module-stat-card .stat-num.danger  { color: var(--error); }
+  .module-stat-card .stat-num.warn    { color: var(--warn); }
+  .module-stat-card .stat-label {
+    font-size: 12px;
+    color: var(--text-sec);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  /* Module page header */
+  .module-page-header {
+    margin-bottom: 24px;
+  }
+  .module-page-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .module-page-header p {
+    font-size: 14px;
+    color: var(--text-sec);
+  }
+
+  /* Tutorial collapsible */
+  .tutorial-collapsible {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .tutorial-collapsible-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .tutorial-collapsible-header:hover { background: var(--bg); border-radius: var(--radius); }
+  .tutorial-collapsible-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tutorial-collapsible-caret {
+    font-size: 12px;
+    color: var(--text-sec);
+    transition: transform 0.2s;
+  }
+  .tutorial-collapsible-body {
+    padding: 0 20px 16px;
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+  .tutorial-collapsible.open .tutorial-collapsible-body { display: block; }
+  .tutorial-collapsible.open .tutorial-collapsible-caret { transform: rotate(180deg); }
+
+  /* Merge module-specific */
+  .merge-action-table { width: 100%; border-collapse: collapse; }
+  .merge-action-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-sec);
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border);
+    background: var(--bg);
+  }
+  .merge-action-table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .merge-action-table tr:last-child td { border-bottom: none; }
+  .merge-action-table tr:hover td { background: var(--bg); }
+  .merge-action-table .asin-toggle {
+    font-size: 11px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .merge-action-table .asin-list {
+    display: none;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-sec);
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: monospace;
+    line-height: 1.6;
+  }
+  .merge-action-table .asin-list.open { display: block; }
+
+  .badge-action-reassign  { background: #FEF3EC; color: #C0651B; }
+  .badge-action-orphan    { background: var(--error-bg); color: var(--error); }
+  .badge-action-category  { background: #EEF2FF; color: #3730A3; }
+
+  .merge-approve-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .merge-approve-toggle input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+
+  /* Step status indicator */
+  .merge-step-status {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+  }
+  .merge-step-status.step-ready { border-color: var(--accent); background: var(--accent-lt); }
+  .merge-step-status.step-warn  { border-color: var(--warn);  background: var(--warn-bg); }
+
+  /* Intel module-specific */
+  .intel-filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .intel-filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-sec);
+    transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .intel-filter-btn:hover { background: var(--bg); color: var(--text); }
+  .intel-filter-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .intel-rec-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    position: relative;
+    transition: box-shadow 0.15s;
+  }
+  .intel-rec-card:hover { box-shadow: var(--shadow-md); }
+  .intel-rec-card.dismissed { display: none; }
+  .intel-rec-card.accepted { border-color: var(--success); background: var(--success-bg); }
+
+  .intel-rec-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .intel-severity-badge {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 2px;
+  }
+  .sev-critical { background: var(--error-bg);   color: var(--error); }
+  .sev-high     { background: #FEF3EC; color: #C0651B; }
+  .sev-medium   { background: var(--warn-bg);    color: var(--warn); }
+  .sev-low      { background: #EEF2FF; color: #3730A3; }
+
+  .intel-rec-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .intel-rec-why {
+    font-size: 13px;
+    color: var(--text-sec);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .intel-rec-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .intel-rec-meta-item {
+    font-size: 12px;
+    color: var(--text-sec);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .intel-rec-meta-item strong { color: var(--text); }
+  .intel-rec-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .intel-asin-expand {
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+    user-select: none;
+  }
+  .intel-asin-list {
+    display: none;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-sec);
+    font-family: monospace;
+    line-height: 1.7;
+    max-height: 120px;
+    overflow-y: auto;
+    background: var(--bg);
+    padding: 8px;
+    border-radius: 4px;
+  }
+  .intel-asin-list.open { display: block; }
+
+  .intel-no-data {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-sec);
+  }
+  .intel-no-data h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
   }
 
   /* Merge page */
-  #merge-page { display: none; }
   .merge-hero {
     text-align: center;
     padding: 40px 0 32px;
@@ -1271,9 +1592,13 @@
     <div class="nav-section-divider"></div>
     <div class="nav-label">Merge Listings</div>
     <div class="nav-item-merge" id="nav-merge" onclick="showMergePage()">
-      <span class="nav-merge-icon">⇄</span>
-      Coming Soon
-      <span class="badge-coming-soon">SOON</span>
+      <span class="nav-merge-icon">&#9889;</span> Fix Variations
+    </div>
+
+    <div class="nav-section-divider"></div>
+    <div class="nav-label">Intel</div>
+    <div class="nav-item-intel" id="nav-intel" onclick="showIntelPage()">
+      <span class="nav-intel-icon">&#9670;</span> Recommendations
     </div>
   </nav>
 
@@ -1984,61 +2309,203 @@
   <!-- ═══════════════════════ MERGE LISTINGS PAGE ═══════════════════════ -->
   <div id="merge-page" class="content">
 
-    <div class="merge-hero">
-      <div class="merge-hero-icon">⇄</div>
-      <h1>Merge Listings</h1>
-      <p>Fix broken variations, reassign orphaned ASINs, and merge split families</p>
-      <div class="merge-status-pill">⏳ Coming Q3 2026</div>
+    <div class="module-page-header">
+      <h1>&#9889; Merge Listings</h1>
+      <p>Fix broken variations, reassign orphaned ASINs, and consolidate split families</p>
     </div>
 
-    <div class="merge-card">
-      <h3>What is Merge?</h3>
-      <p>When products are listed under the wrong parent, split across multiple parents, or orphaned with no parent at all — Merge fixes it. The system generates a corrective flat file that reassigns every child ASIN to the correct parent, fixing your variation families.</p>
-    </div>
-
-    <div class="merge-card">
-      <h3>What can Merge fix?</h3>
-      <ul>
-        <li>Split families (same style split across 2+ parent ASINs)</li>
-        <li>Orphaned children (ASINs not linked to any parent)</li>
-        <li>Wrong category assignment (shirt listed as shoes)</li>
-        <li>Inconsistent variation themes</li>
-      </ul>
-    </div>
-
-    <div class="merge-card">
-      <h3>How will it work?</h3>
-      <div class="merge-step-row">
-        <span class="merge-step-num">1</span>
-        <span class="merge-step-text">Upload your catalog data (same as Catalog Health)</span>
+    <!-- Tutorial collapsible -->
+    <div class="tutorial-collapsible" id="merge-tutorial">
+      <div class="tutorial-collapsible-header" onclick="toggleMergeTutorial()">
+        <span class="tutorial-collapsible-title">&#128218; How does Merge work?</span>
+        <span class="tutorial-collapsible-caret">&#9660;</span>
       </div>
-      <div class="merge-step-row">
-        <span class="merge-step-num">2</span>
-        <span class="merge-step-text">The system detects all merge issues</span>
-      </div>
-      <div class="merge-step-row">
-        <span class="merge-step-num">3</span>
-        <span class="merge-step-text">You review the merge plan — which parent is the “primary” for each family</span>
-      </div>
-      <div class="merge-step-row">
-        <span class="merge-step-num">4</span>
-        <span class="merge-step-text">Download a corrective flat file — upload to Vendor Central</span>
-      </div>
-      <div class="merge-step-row">
-        <span class="merge-step-num">5</span>
-        <span class="merge-step-text">Re-check next month to confirm merges were applied</span>
+      <div class="tutorial-collapsible-body">
+        <div class="merge-card" style="margin-bottom:12px; box-shadow:none; border:none; padding:8px 0;">
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;">What can Merge fix?</h3>
+          <ul style="font-size:13px;color:var(--text-sec);padding-left:18px;line-height:1.8;">
+            <li><strong>Split families</strong> — same product line split across multiple parent ASINs</li>
+            <li><strong>Orphaned ASINs</strong> — child variations with no valid parent link</li>
+            <li><strong>Category mismatches</strong> — child ASINs in a different category than their parent</li>
+          </ul>
+        </div>
+        <div style="font-size:13px;color:var(--text-sec);line-height:1.8;padding:0 0 8px;">
+          <strong style="color:var(--text);">Steps:</strong>
+          Upload your catalog via Catalog Health &rarr;
+          Click "Analyze for Merge Issues" &rarr;
+          Review the merge plan and approve/reject actions &rarr;
+          Download the CSV fix file and upload to Vendor Central.
+        </div>
       </div>
     </div>
 
-    <div class="merge-cta">
-      <span class="merge-cta-icon">📊</span>
-      <div class="merge-cta-text">
-        <strong>In the meantime:</strong> Run Catalog Health to identify issues that will need merging.
+    <!-- Step 1: Gate check -->
+    <div id="merge-gate" class="merge-step-status step-warn" style="display:none;">
+      <span style="font-size:20px;">&#9888;</span>
+      <div>
+        <strong>No catalog data loaded.</strong> Run Catalog Health first to upload your catalog,
+        then return here to analyze for merge issues.
+        <button class="btn btn-secondary btn-sm" onclick="showCatalogPage()" style="margin-left:12px;">
+          Open Catalog Health
+        </button>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="showCatalogPage()" style="margin-left:auto;">Open Catalog Health</button>
     </div>
+
+    <div id="merge-ready" class="merge-step-status step-ready" style="display:none;">
+      <span style="font-size:20px;">&#10003;</span>
+      <div style="flex:1;">
+        <strong>Catalog data loaded.</strong>
+        <span id="merge-catalog-summary" style="color:var(--text-sec);font-size:13px;margin-left:8px;"></span>
+      </div>
+      <button class="btn btn-primary btn-sm" id="merge-analyze-btn" onclick="runMergeAnalysis()">
+        &#9889; Analyze for Merge Issues
+      </button>
+    </div>
+
+    <!-- Analysis results -->
+    <div id="merge-results" style="display:none;">
+
+      <!-- Summary cards -->
+      <div class="module-summary-grid" id="merge-summary-cards">
+        <div class="module-stat-card">
+          <div class="stat-num warn" id="merge-stat-split">—</div>
+          <div class="stat-label">Split Families</div>
+        </div>
+        <div class="module-stat-card">
+          <div class="stat-num danger" id="merge-stat-orphans">—</div>
+          <div class="stat-label">Orphaned ASINs</div>
+        </div>
+        <div class="module-stat-card">
+          <div class="stat-num accent" id="merge-stat-category">—</div>
+          <div class="stat-label">Category Mismatches</div>
+        </div>
+        <div class="module-stat-card">
+          <div class="stat-num" id="merge-stat-total">—</div>
+          <div class="stat-label">Total Fix Actions</div>
+        </div>
+      </div>
+
+      <!-- Plan table card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">&#9889;</div>
+          <div>
+            <div class="card-title">Merge Plan</div>
+            <div class="card-desc">Review and approve each action before generating the fix file</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-secondary btn-sm" onclick="mergeSelectAll(true)">Approve All</button>
+            <button class="btn btn-secondary btn-sm" onclick="mergeSelectAll(false)">Reject All</button>
+            <button class="btn btn-success btn-sm" onclick="mergeGenerateFix()">
+              &#8595; Generate Fix File
+            </button>
+          </div>
+        </div>
+
+        <div id="merge-plan-empty" style="display:none;padding:24px;text-align:center;color:var(--text-sec);">
+          &#10003; No merge issues found in the loaded catalog data.
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="merge-action-table" id="merge-plan-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Affected ASINs</th>
+                <th>Current Parent</th>
+                <th>Proposed Fix</th>
+                <th>Reasoning</th>
+                <th>Confidence</th>
+                <th>Approve</th>
+              </tr>
+            </thead>
+            <tbody id="merge-plan-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /merge-results -->
 
   </div><!-- /merge-page -->
+
+  <!-- ═══════════════════════ INTEL PAGE ═══════════════════════════════ -->
+  <div id="intel-page" class="content">
+
+    <div class="module-page-header">
+      <h1>&#9670; Listing Intelligence</h1>
+      <p>Data-driven recommendations to optimize your catalog</p>
+    </div>
+
+    <!-- No data state -->
+    <div id="intel-no-data" class="intel-no-data" style="display:none;">
+      <div style="font-size:40px;margin-bottom:12px;">&#9670;</div>
+      <h3>No data loaded yet</h3>
+      <p style="margin-bottom:16px;">Upload data in <strong>NIS Creation</strong> or <strong>Catalog Health</strong> first.<br>
+      Intel analyzes everything you've uploaded to surface opportunities.</p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button class="btn btn-secondary btn-sm" onclick="showNISPage()">Go to NIS Creation</button>
+        <button class="btn btn-secondary btn-sm" onclick="showCatalogPage()">Go to Catalog Health</button>
+      </div>
+    </div>
+
+    <!-- Analyze trigger -->
+    <div id="intel-analyze-section" style="display:none;">
+      <div class="merge-step-status step-ready">
+        <span style="font-size:20px;">&#10003;</span>
+        <div style="flex:1;">
+          <strong>Catalog data available.</strong>
+          <span id="intel-data-summary" style="color:var(--text-sec);font-size:13px;margin-left:8px;"></span>
+        </div>
+        <button class="btn btn-primary btn-sm" id="intel-analyze-btn" onclick="runIntelAnalysis()">
+          &#9670; Analyze Catalog
+        </button>
+      </div>
+    </div>
+
+    <!-- Results section -->
+    <div id="intel-results" style="display:none;">
+
+      <!-- Summary cards -->
+      <div class="module-summary-grid">
+        <div class="module-stat-card">
+          <div class="stat-num accent" id="intel-stat-total">—</div>
+          <div class="stat-label">Recommendations</div>
+        </div>
+        <div class="module-stat-card">
+          <div class="stat-num danger" id="intel-stat-critical">—</div>
+          <div class="stat-label">Critical</div>
+        </div>
+        <div class="module-stat-card">
+          <div class="stat-num warn" id="intel-stat-high">—</div>
+          <div class="stat-label">High Impact</div>
+        </div>
+        <div class="module-stat-card">
+          <div class="stat-num" style="color:var(--success);" id="intel-stat-quickwins">—</div>
+          <div class="stat-label">Quick Wins</div>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="intel-filter-bar" id="intel-filter-bar">
+        <button class="intel-filter-btn active" data-filter="all" onclick="intelFilter('all',this)">All</button>
+        <button class="intel-filter-btn" data-filter="content_duplicate" onclick="intelFilter('content_duplicate',this)">Content</button>
+        <button class="intel-filter-btn" data-filter="title_optimization" onclick="intelFilter('title_optimization',this)">Titles</button>
+        <button class="intel-filter-btn" data-filter="missing_keywords,content_quality" onclick="intelFilter('missing_keywords,content_quality',this)">Keywords &amp; Quality</button>
+        <button class="intel-filter-btn" data-filter="variation_gap" onclick="intelFilter('variation_gap',this)">Variations</button>
+        <button class="intel-filter-btn" data-filter="performance_anomaly" onclick="intelFilter('performance_anomaly',this)">Performance</button>
+        <button class="intel-filter-btn" data-filter="ab_test_suggestion" onclick="intelFilter('ab_test_suggestion',this)">A/B Tests</button>
+      </div>
+
+      <!-- Recommendation cards -->
+      <div id="intel-recs-list"></div>
+
+      <div id="intel-recs-empty" style="display:none;text-align:center;padding:32px;color:var(--text-sec);">
+        No recommendations in this category.
+      </div>
+
+    </div><!-- /intel-results -->
+
+  </div><!-- /intel-page -->
 
 </div><!-- /main -->
 
@@ -2058,40 +2525,45 @@ const state = {
 };
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
-function showNISPage() {
-  document.getElementById('catalog-page').style.display = 'none';
-  document.getElementById('merge-page').style.display = 'none';
-  document.getElementById('nis-page').style.display = 'block';
-  document.getElementById('topbar-title').textContent = 'NIS Creation — Upload & Generate';
-  document.getElementById('topbar-sub').textContent = 'Upload product data to generate Amazon-ready NIS content';
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-item-catalog').forEach(el => el.classList.remove('active'));
-  document.getElementById('nav-nis').classList.add('active');
+// ── Page visibility helper ─────────────────────────────────────────────────
+const ALL_PAGES = ['nis-page', 'catalog-page', 'merge-page', 'intel-page'];
+
+function _showPage(pageId, title, subtitle) {
+  ALL_PAGES.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (id === pageId) ? 'block' : 'none';
+  });
+  document.getElementById('topbar-title').textContent = title;
+  document.getElementById('topbar-sub').textContent = subtitle;
+  document.querySelectorAll('.nav-item, .nav-item-catalog, .nav-item-merge, .nav-item-intel')
+    .forEach(el => el.classList.remove('active'));
   window.scrollTo(0, 0);
+}
+
+function showNISPage() {
+  _showPage('nis-page', 'NIS Creation — Upload & Generate',
+    'Upload product data to generate Amazon-ready NIS content');
+  document.getElementById('nav-nis').classList.add('active');
 }
 
 function showCatalogPage() {
-  document.getElementById('nis-page').style.display = 'none';
-  document.getElementById('catalog-page').style.display = 'block';
-  document.getElementById('merge-page').style.display = 'none';
-  document.getElementById('topbar-title').textContent = 'Catalog Health';
-  document.getElementById('topbar-sub').textContent = 'Structural + content analysis for any Amazon catalog';
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-item-catalog').forEach(el => el.classList.remove('active'));
+  _showPage('catalog-page', 'Catalog Health',
+    'Structural + content analysis for any Amazon catalog');
   document.getElementById('nav-catalog').classList.add('active');
-  window.scrollTo(0, 0);
 }
 
 function showMergePage() {
-  // Merge is coming soon — just show the page
-  document.getElementById('nis-page').style.display = 'none';
-  document.getElementById('catalog-page').style.display = 'none';
-  document.getElementById('merge-page').style.display = 'block';
-  document.getElementById('topbar-title').textContent = 'Merge Listings';
-  document.getElementById('topbar-sub').textContent = 'Fix broken variations and reassign orphaned ASINs';
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-item-catalog').forEach(el => el.classList.remove('active'));
-  window.scrollTo(0, 0);
+  _showPage('merge-page', 'Merge Listings',
+    'Fix broken variations and reassign orphaned ASINs');
+  document.getElementById('nav-merge').classList.add('active');
+  mergeSyncGate();
+}
+
+function showIntelPage() {
+  _showPage('intel-page', 'Intel — Recommendations',
+    'Data-driven opportunities to improve your catalog');
+  document.getElementById('nav-intel').classList.add('active');
+  intelSyncGate();
 }
 
 // ═══════════════════════ SECTION 1: PRODUCT UPLOAD ═══════════════════════
@@ -3713,6 +4185,391 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDZ('ch-sales-zone',   'ch-sales-input',   chUploadSales);
 });
 
+
+
+// ═══════════════════════ MERGE MODULE ═══════════════════════════════════
+const mergeState = {
+  plan: null,
+  approved: {},
+  summary: null,
+};
+
+function toggleMergeTutorial() {
+  const el = document.getElementById('merge-tutorial');
+  if (el) el.classList.toggle('open');
+}
+
+function mergeSyncGate() {
+  // Check if catalog data is loaded by calling /api/catalog/results
+  fetch('/api/catalog/results')
+    .then(r => r.json())
+    .then(data => {
+      const hasCatalog = data.analysis !== null && data.analysis !== undefined;
+      const gateEl = document.getElementById('merge-gate');
+      const readyEl = document.getElementById('merge-ready');
+      if (hasCatalog) {
+        if (gateEl) gateEl.style.display = 'none';
+        if (readyEl) readyEl.style.display = 'flex';
+        const summary = document.getElementById('merge-catalog-summary');
+        if (summary && data.analysis) {
+          const n = (data.analysis.scored_rows || []).length;
+          summary.textContent = n ? `${n.toLocaleString()} ASINs loaded` : '';
+        }
+      } else {
+        if (gateEl) gateEl.style.display = 'flex';
+        if (readyEl) readyEl.style.display = 'none';
+      }
+    })
+    .catch(() => {
+      const gateEl = document.getElementById('merge-gate');
+      if (gateEl) gateEl.style.display = 'flex';
+    });
+}
+
+async function runMergeAnalysis() {
+  const btn = document.getElementById('merge-analyze-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⚙ Analyzing...'; }
+  try {
+    const resp = await fetch('/api/merge/analyze', { method: 'POST' });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showToast(data.error || 'Analysis failed', 'error');
+      return;
+    }
+    mergeState.plan = data.plan;
+    mergeState.approved = {};
+    data.plan.forEach(a => { mergeState.approved[a.id] = true; });
+    mergeState.summary = data.summary;
+    renderMergePlan(data.plan, data.summary);
+    document.getElementById('merge-results').style.display = 'block';
+    showToast('Merge analysis complete', 'success');
+  } catch(e) {
+    showToast('Network error: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ Analyze for Merge Issues'; }
+  }
+}
+
+function renderMergePlan(plan, summary) {
+  // Summary cards
+  document.getElementById('merge-stat-split').textContent    = summary.split_families;
+  document.getElementById('merge-stat-orphans').textContent  = summary.orphaned_asins;
+  document.getElementById('merge-stat-category').textContent = summary.category_mismatches;
+  document.getElementById('merge-stat-total').textContent    = summary.total_actions;
+
+  const tbody = document.getElementById('merge-plan-tbody');
+  const tableEl = document.getElementById('merge-plan-table');
+  const emptyEl = document.getElementById('merge-plan-empty');
+
+  if (!plan || plan.length === 0) {
+    if (tableEl) tableEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (tableEl) tableEl.style.display = '';
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  tbody.innerHTML = '';
+  plan.forEach(action => {
+    const isApproved = mergeState.approved[action.id] !== false;
+    const badgeClass = action.action_type === 'reassign'    ? 'badge-action-reassign' :
+                       action.action_type === 'orphan_fix'  ? 'badge-action-orphan'  :
+                                                              'badge-action-category';
+    const badgeLabel = action.action_type === 'reassign'    ? 'Reassign'    :
+                       action.action_type === 'orphan_fix'  ? 'Orphan Fix'  :
+                                                              'Category Fix';
+    const confColor  = action.confidence === 'High'   ? 'chip-green' :
+                       action.confidence === 'Medium' ? 'chip-yellow': 'chip-red';
+    const asinList = action.affected_asins.slice(0, 50).join('\n');
+    const asinCount = action.affected_asins.length;
+
+    const fromLabel = action.from_parent_title
+      ? `<span style="font-family:monospace;font-size:11px;">${_esc(action.from_parent)}</span><br><span style="font-size:11px;color:var(--text-sec);">${_esc(action.from_parent_title)}</span>`
+      : `<span style="font-family:monospace;font-size:11px;">${_esc(action.from_parent || '—')}</span>`;
+    const toLabel = action.to_parent_title
+      ? `<span style="font-family:monospace;font-size:11px;">${_esc(action.to_parent)}</span><br><span style="font-size:11px;color:var(--text-sec);">${_esc(action.to_parent_title)}</span>`
+      : `<span style="font-family:monospace;font-size:11px;">${_esc(action.to_parent || 'TBD')}</span>`;
+
+    const row = document.createElement('tr');
+    row.id = `merge-row-${action.id}`;
+    row.innerHTML = `
+      <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+      <td>
+        <span class="merge-action-table asin-toggle" onclick="toggleMergeAsins('${action.id}')">${asinCount} ASINs</span>
+        <div class="asin-list" id="merge-asins-${action.id}">${_esc(asinList)}</div>
+      </td>
+      <td>${fromLabel}</td>
+      <td>${toLabel}</td>
+      <td style="max-width:260px;font-size:12px;color:var(--text-sec);">${_esc(action.reasoning)}</td>
+      <td><span class="chip ${confColor}" style="font-size:11px;padding:2px 8px;border-radius:10px;">${action.confidence}</span></td>
+      <td>
+        <label class="merge-approve-toggle">
+          <input type="checkbox" id="approve-${action.id}" ${isApproved ? 'checked' : ''}
+                 onchange="mergeToggleApprove('${action.id}', this.checked)">
+          <span id="approve-label-${action.id}" style="font-size:12px;">${isApproved ? 'Approved' : 'Rejected'}</span>
+        </label>
+      </td>`;
+    tbody.appendChild(row);
+  });
+}
+
+function _esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function toggleMergeAsins(actionId) {
+  const list = document.getElementById(`merge-asins-${actionId}`);
+  if (list) list.classList.toggle('open');
+}
+
+function mergeToggleApprove(actionId, approved) {
+  mergeState.approved[actionId] = approved;
+  const lbl = document.getElementById(`approve-label-${actionId}`);
+  if (lbl) lbl.textContent = approved ? 'Approved' : 'Rejected';
+  // sync to server
+  fetch('/api/merge/approve', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({action_id: actionId, approved}),
+  }).catch(()=>{});
+}
+
+function mergeSelectAll(approve) {
+  if (!mergeState.plan) return;
+  mergeState.plan.forEach(a => {
+    mergeState.approved[a.id] = approve;
+    const cb = document.getElementById(`approve-${a.id}`);
+    const lbl = document.getElementById(`approve-label-${a.id}`);
+    if (cb) cb.checked = approve;
+    if (lbl) lbl.textContent = approve ? 'Approved' : 'Rejected';
+    // sync to server
+    fetch('/api/merge/approve', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action_id: a.id, approved: approve}),
+    }).catch(()=>{});
+  });
+}
+
+async function mergeGenerateFix() {
+  if (!mergeState.plan || mergeState.plan.length === 0) {
+    showToast('No merge plan to generate. Run analysis first.', 'error');
+    return;
+  }
+  // Sync approvals then fetch file as blob
+  try {
+    const approvalPromises = mergeState.plan.map(a =>
+      fetch('/api/merge/approve', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action_id: a.id, approved: mergeState.approved[a.id] !== false}),
+      }).catch(()=>{})
+    );
+    await Promise.all(approvalPromises);
+
+    const resp = await fetch('/api/merge/generate-fix', { method: 'POST' });
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({error:'Download failed'}));
+      showToast(err.error || 'Download failed', 'error');
+      return;
+    }
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'Merge_Fix.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Merge fix file downloaded', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════ INTEL MODULE ════════════════════════════════════
+const intelState = {
+  recommendations: null,
+  summary: null,
+  currentFilter: 'all',
+};
+
+function intelSyncGate() {
+  fetch('/api/catalog/results')
+    .then(r => r.json())
+    .then(data => {
+      const hasCatalog = data.analysis !== null && data.analysis !== undefined;
+      const noDataEl  = document.getElementById('intel-no-data');
+      const analyzeEl = document.getElementById('intel-analyze-section');
+      if (hasCatalog) {
+        if (noDataEl)  noDataEl.style.display  = 'none';
+        if (analyzeEl) analyzeEl.style.display = 'block';
+        const summary = document.getElementById('intel-data-summary');
+        if (summary && data.analysis) {
+          const n = (data.analysis.scored_rows || []).length;
+          summary.textContent = n ? `${n.toLocaleString()} ASINs available for analysis` : '';
+        }
+      } else {
+        if (noDataEl)  noDataEl.style.display  = 'block';
+        if (analyzeEl) analyzeEl.style.display = 'none';
+      }
+    })
+    .catch(() => {
+      const noDataEl = document.getElementById('intel-no-data');
+      if (noDataEl) noDataEl.style.display = 'block';
+    });
+}
+
+async function runIntelAnalysis() {
+  const btn = document.getElementById('intel-analyze-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⚙ Analyzing...'; }
+  try {
+    const resp = await fetch('/api/intel/analyze', { method: 'POST' });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showToast(data.error || 'Analysis failed', 'error');
+      return;
+    }
+    intelState.recommendations = data.recommendations;
+    intelState.summary = data.summary;
+    renderIntelResults(data.recommendations, data.summary);
+    document.getElementById('intel-results').style.display = 'block';
+    showToast('Intelligence analysis complete', 'success');
+  } catch(e) {
+    showToast('Network error: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '◆ Analyze Catalog'; }
+  }
+}
+
+function renderIntelResults(recs, summary) {
+  document.getElementById('intel-stat-total').textContent      = summary.total;
+  document.getElementById('intel-stat-critical').textContent   = summary.critical;
+  document.getElementById('intel-stat-high').textContent       = summary.high;
+  document.getElementById('intel-stat-quickwins').textContent  = summary.quick_wins;
+
+  intelRenderCards(recs, intelState.currentFilter);
+}
+
+function intelFilter(filterVal, btn) {
+  document.querySelectorAll('.intel-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  intelState.currentFilter = filterVal;
+  if (intelState.recommendations) {
+    intelRenderCards(intelState.recommendations, filterVal);
+  }
+}
+
+function intelRenderCards(recs, filterVal) {
+  const container = document.getElementById('intel-recs-list');
+  const emptyEl   = document.getElementById('intel-recs-empty');
+  container.innerHTML = '';
+
+  const filters = filterVal === 'all' ? null : filterVal.split(',');
+  const filtered = filters
+    ? recs.filter(r => filters.includes(r.type))
+    : recs;
+
+  if (filtered.length === 0) {
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  filtered.forEach(rec => {
+    const card = document.createElement('div');
+    card.className = 'intel-rec-card';
+    card.id = `intel-card-${rec.id}`;
+
+    const sevClass = rec.severity === 'Critical' ? 'sev-critical' :
+                     rec.severity === 'High'     ? 'sev-high'     :
+                     rec.severity === 'Medium'   ? 'sev-medium'   : 'sev-low';
+
+    const asinCount = rec.affected_asins ? rec.affected_asins.length : 0;
+    const asinListHtml = rec.affected_asins && rec.affected_asins.length > 0
+      ? `<span class="intel-asin-expand" onclick="intelToggleAsins('${rec.id}')">${asinCount} ASIN${asinCount !== 1 ? 's' : ''} affected</span>
+         <div class="intel-asin-list" id="intel-asins-${rec.id}">${_esc(rec.affected_asins.slice(0,50).join('\n'))}</div>`
+      : '';
+
+    card.innerHTML = `
+      <div class="intel-rec-header">
+        <span class="intel-severity-badge ${sevClass}">${rec.severity}</span>
+        <div style="flex:1;">
+          <div class="intel-rec-title">${_esc(rec.title)}</div>
+          <div class="intel-rec-why">${_esc(rec.why)}</div>
+        </div>
+      </div>
+      <div class="intel-rec-meta">
+        <div class="intel-rec-meta-item">
+          <strong>Action:</strong> ${_esc(rec.suggested_action)}
+        </div>
+      </div>
+      <div style="margin-top:8px;">${asinListHtml}</div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-sec);">
+        <strong>Estimated Impact:</strong> ${_esc(rec.estimated_impact)}
+      </div>
+      <div class="intel-rec-actions">
+        <button class="btn btn-success btn-sm" onclick="intelAccept('${rec.id}',this)">
+          ✓ Apply Suggestion
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="intelDismiss('${rec.id}')">
+          Not relevant
+        </button>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function intelToggleAsins(recId) {
+  const list = document.getElementById(`intel-asins-${recId}`);
+  if (list) list.classList.toggle('open');
+}
+
+async function intelAccept(recId, btn) {
+  try {
+    const resp = await fetch('/api/intel/accept', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({rec_id: recId}),
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      const card = document.getElementById(`intel-card-${recId}`);
+      if (card) card.classList.add('accepted');
+      if (btn) { btn.textContent = '✓ Accepted'; btn.disabled = true; }
+      showToast('Recommendation accepted', 'success');
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function intelDismiss(recId) {
+  try {
+    const resp = await fetch('/api/intel/dismiss', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({rec_id: recId}),
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      const card = document.getElementById(`intel-card-${recId}`);
+      if (card) card.classList.add('dismissed');
+      showToast('Recommendation dismissed', 'info');
+      // Update count
+      if (intelState.recommendations) {
+        intelState.recommendations = intelState.recommendations.filter(r => r.id !== recId);
+        if (intelState.summary) {
+          intelState.summary.total = Math.max(0, intelState.summary.total - 1);
+          document.getElementById('intel-stat-total').textContent = intelState.summary.total;
+        }
+      }
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
 </script>
 </body>
 </html>
