@@ -1,6 +1,6 @@
 """
-NIS Wizard v2 — Flask Backend
-Bhatt Commerce Intelligence
+NIS Wizard v3 — Flask Backend
+The Levy Group — Amazon Intelligence
 Port: 5000
 """
 
@@ -199,6 +199,40 @@ SIZE_MAP = {
     "2X": "2X-Large", "3X": "3X-Large", "4X": "4X-Large",
     "0X": "0X-Large", "0": "0", "2": "2", "4": "4", "6": "6",
     "8": "8", "10": "10", "12": "12", "14": "14", "16": "16",
+}
+
+# ── Template-to-product-type routing ──────────────────────────────────────────
+# Maps sub_class values to template product type names
+TEMPLATE_PRODUCT_TYPE_MAP = {
+    # Dresses
+    "Day Dress": "Dresses",
+    "Cocktail Dress": "Dresses",
+    "Active Dress": "Dresses",
+    "Swimdress": "Dresses",
+    "Maxi Dress": "Dresses",
+    "Mini Dress": "Dresses",
+    "Wrap Dress": "Dresses",
+    "Shirt Dress": "Dresses",
+    "Shift Dress": "Dresses",
+    "A-Line Dress": "Dresses",
+    "Sundress": "Dresses",
+    "Bodycon Dress": "Dresses",
+    # Shirts / Other_Shirts
+    "Polo": "Other_Shirts",
+    "Tee": "Other_Shirts",
+    "Shirt": "Other_Shirts",
+    "Blouse": "Other_Shirts",
+    "Tank": "Other_Shirts",
+    # Shorts
+    "Board Short": "Shorts",
+    "Chino Short": "Shorts",
+    # Jackets and Coats
+    "Jacket": "Jackets_and_Coats",
+    "Coat": "Jackets_and_Coats",
+    "Hoodie": "Jackets_and_Coats",
+    "Pullover": "Jackets_and_Coats",
+    # Skirts
+    "Skirt": "Skirts",
 }
 
 SUBCLASS_CATEGORY_MAP = {
@@ -912,6 +946,8 @@ session_data = {
     "keywords": [],
     "analytics": [],
     "generated_content": {},
+    # Multi-template: maps product_type -> path, e.g. {"Dresses": "/path/to/Dresses.xlsm"}
+    "templates": {},
 }
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -948,6 +984,7 @@ def session_reset():
     session_data["keywords"] = []
     session_data["analytics"] = []
     session_data["generated_content"] = {}
+    session_data["templates"] = {}
     return jsonify({"ok": True})
 
 @app.route("/api/brand-config", methods=["POST"])
@@ -996,6 +1033,69 @@ def upload_template():
     except Exception as e:
         return jsonify({"error": f"Failed to parse template: {str(e)}"}), 500
 
+
+@app.route("/api/upload-category-template", methods=["POST"])
+def upload_category_template():
+    """Upload a .xlsm template for a specific product type (multi-template support)."""
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    
+    f = request.files["file"]
+    product_type = request.form.get("product_type", "").strip()
+    
+    if not f.filename.endswith(".xlsm"):
+        return jsonify({"error": "Template must be a .xlsm file"}), 400
+    if not product_type:
+        return jsonify({"error": "product_type is required"}), 400
+    
+    # Save as {product_type}.xlsm
+    safe_name = re.sub(r'[^\w]', '_', product_type)
+    save_path = UPLOAD_TEMPLATES / f"{safe_name}.xlsm"
+    f.save(str(save_path))
+    
+    try:
+        col_map = get_template_col_map(str(save_path))
+        # Register in session multi-template map
+        session_data["templates"][product_type] = str(save_path)
+        # If this is the first/only template, also set as default
+        if not session_data.get("col_map"):
+            session_data["template_path"] = str(save_path)
+            session_data["col_map"] = col_map
+        return jsonify({
+            "product_type": product_type,
+            "template": f.filename,
+            "columns_mapped": len(col_map),
+            "message": f"{product_type} template loaded — {len(col_map)} columns mapped",
+            "loaded_templates": list(session_data["templates"].keys()),
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to parse template: {str(e)}"}), 500
+
+
+@app.route("/api/templates")
+def list_templates():
+    """Return all loaded templates with their product types."""
+    templates = session_data.get("templates", {})
+    result = []
+    for pt, path in templates.items():
+        p = Path(path)
+        result.append({
+            "product_type": pt,
+            "filename": p.name,
+            "exists": p.exists(),
+        })
+    # Also include the default template if no multi-templates are registered
+    if not result and session_data.get("template_path"):
+        p = Path(session_data["template_path"])
+        result.append({
+            "product_type": "Dresses",
+            "filename": p.name,
+            "exists": p.exists(),
+            "is_default": True,
+        })
+    return jsonify({"templates": result})
+
+
 @app.route("/api/upload-product-data", methods=["POST"])
 def upload_product_data():
     if "file" not in request.files:
@@ -1016,6 +1116,21 @@ def upload_product_data():
         
         total_variants = sum(len(s["variants"]) for s in styles)
         
+        # Detect which product types are present but have no template loaded
+        present_types = set()
+        type_counts = defaultdict(int)
+        for s in styles:
+            pt = TEMPLATE_PRODUCT_TYPE_MAP.get(s.get("subclass", ""), None)
+            if pt:
+                present_types.add(pt)
+                type_counts[pt] += 1
+        loaded_templates = session_data.get("templates", {})
+        missing_templates = [
+            {"product_type": pt, "style_count": type_counts[pt]}
+            for pt in sorted(present_types)
+            if pt not in loaded_templates
+        ]
+        
         return jsonify({
             "total_styles": len(styles),
             "total_variants": total_variants,
@@ -1024,6 +1139,8 @@ def upload_product_data():
             "error_count": len(errors),
             "warning_count": len(warnings),
             "styles": styles,
+            "missing_templates": missing_templates,
+            "present_product_types": list(present_types),
         })
     except Exception as e:
         traceback.print_exc()
@@ -1169,7 +1286,7 @@ def generate_content():
             "silhouette": silhouette,
             "color_map": color_map_val,
             "category": category,
-            "sub_class": sub_class,
+            "sub_class": subclass,
             "subcategory": subcategory,
             "fabric": fabric,
             "care": care,
@@ -1199,6 +1316,48 @@ def submit_feedback():
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/feedback")
+def get_feedback():
+    """Return all feedback entries for a given brand."""
+    brand = request.args.get("brand", "")
+    entries = []
+    if FEEDBACK_FILE.exists():
+        with open(str(FEEDBACK_FILE), "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if not brand or entry.get("brand") == brand:
+                        entries.append(entry)
+                except json.JSONDecodeError:
+                    pass
+    # Sort newest first
+    entries.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    return jsonify({"brand": brand, "entries": entries, "total": len(entries)})
+
+
+@app.route("/api/feedback/summary")
+def feedback_summary():
+    """Return feedback count per brand."""
+    counts = defaultdict(int)
+    if FEEDBACK_FILE.exists():
+        with open(str(FEEDBACK_FILE), "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    brand = entry.get("brand") or "Unknown"
+                    counts[brand] += 1
+                except json.JSONDecodeError:
+                    pass
+    return jsonify({"counts": dict(counts), "total": sum(counts.values())})
+
 
 @app.route("/api/generate-nis", methods=["POST"])
 def generate_nis():
@@ -1232,6 +1391,9 @@ def generate_nis():
     nis_progress["started_at"] = datetime.now().isoformat()
     nis_progress["current_style"] = ""
     
+    # Build multi-template lookup: product_type -> template_path
+    template_map = dict(session_data.get("templates", {}))
+    
     for i, style in enumerate(styles):
         style_num = style["style_num"]
         style_name = style["style_name"]
@@ -1245,9 +1407,17 @@ def generate_nis():
             nis_progress["completed"] = i + 1
             continue
         
+        # Route to the correct template based on sub_class
+        subclass = style.get("subclass", "")
+        product_type_for_template = TEMPLATE_PRODUCT_TYPE_MAP.get(subclass, None)
+        if product_type_for_template and product_type_for_template in template_map:
+            style_template_path = template_map[product_type_for_template]
+        else:
+            style_template_path = template_path  # fall back to default
+        
         try:
             output_path = do_xlsm_surgery(
-                template_path=template_path,
+                template_path=style_template_path,
                 brand=brand,
                 brand_cfg=brand_cfg,
                 vendor_code=vendor_code,
@@ -3000,6 +3170,6 @@ def catalog_export():
 
 
 if __name__ == "__main__":
-    print("NIS Wizard v2 starting on http://localhost:5000")
+    print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)

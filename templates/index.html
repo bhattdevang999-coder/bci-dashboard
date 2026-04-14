@@ -176,6 +176,151 @@
     flex-shrink: 0;
   }
 
+  /* Merge nav item (coming soon) */
+  .nav-item-merge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    color: var(--border);
+    user-select: none;
+    cursor: default;
+    opacity: 0.7;
+  }
+  .nav-merge-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-sec);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .badge-coming-soon {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    background: var(--bg);
+    color: var(--text-sec);
+    border: 1px solid var(--border);
+    margin-left: auto;
+  }
+
+  /* Merge page */
+  #merge-page { display: none; }
+  .merge-hero {
+    text-align: center;
+    padding: 40px 0 32px;
+  }
+  .merge-hero-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: var(--border);
+  }
+  .merge-hero h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .merge-hero p {
+    font-size: 15px;
+    color: var(--text-sec);
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  .merge-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: var(--warn-bg);
+    border: 1px solid #F0D490;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--warn);
+    margin-top: 16px;
+    letter-spacing: 0.3px;
+  }
+  .merge-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .merge-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .merge-card p, .merge-card li {
+    font-size: 14px;
+    color: var(--text-sec);
+    line-height: 1.6;
+  }
+  .merge-card ul, .merge-card ol {
+    padding-left: 20px;
+  }
+  .merge-card li { margin-bottom: 4px; }
+  .merge-card ol li {
+    color: var(--text);
+  }
+  .merge-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent-lt);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .merge-step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    margin-bottom: 8px;
+  }
+  .merge-step-text {
+    font-size: 14px;
+    color: var(--text);
+    padding-top: 2px;
+  }
+  .merge-cta {
+    background: var(--accent-lt);
+    border: 1px solid #A0CDD0;
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .merge-cta-icon { font-size: 20px; }
+  .merge-cta-text {
+    font-size: 14px;
+    color: var(--accent-dk);
+  }
+  .merge-cta-text strong { color: var(--accent-dk); }
+
   /* ── Main content ──────────────────────────────────── */
   .main {
     margin-left: 240px;
@@ -891,6 +1036,186 @@
     max-width: 1200px !important;
   }
 
+  /* ── Tutorial / collapsible help ─────────────────── */
+  .tutorial-box {
+    background: var(--accent-lt);
+    border: 1px solid #A0CDD0;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .tutorial-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .tutorial-header:hover { background: rgba(1,105,111,.06); }
+  .tutorial-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-dk);
+  }
+  .tutorial-header-icon { font-size: 16px; }
+  .tutorial-chevron {
+    font-size: 12px;
+    color: var(--accent);
+    transition: transform 0.2s;
+  }
+  .tutorial-box.open .tutorial-chevron { transform: rotate(180deg); }
+  .tutorial-body {
+    display: none;
+    padding: 0 18px 18px;
+    border-top: 1px solid #A0CDD0;
+  }
+  .tutorial-box.open .tutorial-body { display: block; }
+  .tutorial-section {
+    margin-top: 14px;
+  }
+  .tutorial-section h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent-dk);
+    margin-bottom: 6px;
+  }
+  .tutorial-section p {
+    font-size: 13px;
+    color: var(--accent-dk);
+    line-height: 1.6;
+    margin-bottom: 6px;
+  }
+  .tutorial-section ul, .tutorial-section ol {
+    padding-left: 18px;
+    margin-bottom: 0;
+  }
+  .tutorial-section li {
+    font-size: 13px;
+    color: var(--accent-dk);
+    line-height: 1.6;
+    margin-bottom: 3px;
+  }
+
+  /* ── Template pills (multi-template) ───────────────── */
+  .template-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .template-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: var(--success-bg);
+    border: 1px solid #A8D5BC;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--success);
+  }
+  .missing-template-box {
+    background: var(--warn-bg);
+    border: 1px solid #F0D490;
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-top: 12px;
+  }
+  .missing-template-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--warn);
+    margin-bottom: 10px;
+  }
+  .missing-template-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid #F0D490;
+    border-radius: 6px;
+  }
+  .missing-template-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 140px;
+  }
+  .missing-template-count {
+    font-size: 12px;
+    color: var(--text-sec);
+    flex: 1;
+  }
+
+  /* ── Feedback panel ─────────────────────────────────── */
+  .feedback-summary-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .feedback-summary-row:last-child { border-bottom: none; }
+  .feedback-brand-name {
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+  }
+  .feedback-count-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: var(--accent-lt);
+    border: 1px solid #A0CDD0;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-dk);
+  }
+  .feedback-view-link {
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .feedback-history-table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  .feedback-history-table th {
+    background: var(--bg);
+    padding: 7px 10px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-sec);
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+  }
+  .feedback-history-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--bg);
+    color: var(--text);
+    vertical-align: top;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .feedback-history-table tr:last-child td { border-bottom: none; }
+
   /* ── Utilities ─────────────────────────────────────── */
   .hidden { display: none !important; }
   .text-sec { color: var(--text-sec); }
@@ -942,10 +1267,18 @@
     <div class="nav-item-catalog" id="nav-catalog" onclick="showCatalogPage()">
       <span class="nav-catalog-icon">&#10003;</span> Upload &amp; Analyze
     </div>
+
+    <div class="nav-section-divider"></div>
+    <div class="nav-label">Merge Listings</div>
+    <div class="nav-item-merge" id="nav-merge" onclick="showMergePage()">
+      <span class="nav-merge-icon">⇄</span>
+      Coming Soon
+      <span class="badge-coming-soon">SOON</span>
+    </div>
   </nav>
 
   <div class="sidebar-footer">
-    <strong>TLG Intel</strong> v2.0<br>
+    <strong>TLG Intel</strong> v3.0<br>
     Amazon Intelligence Platform
   </div>
 </aside>
@@ -964,6 +1297,45 @@
 
   <!-- ═══════════════════ NIS PAGE ═══════════════════ -->
   <div class="content" id="nis-page">
+
+    <!-- Tutorial: How does NIS Creation work? -->
+    <div class="tutorial-box" id="nis-tutorial">
+      <div class="tutorial-header" onclick="toggleTutorial('nis-tutorial')">
+        <div class="tutorial-header-left">
+          <span class="tutorial-header-icon">📖</span>
+          How does NIS Creation work?
+        </div>
+        <span class="tutorial-chevron">▾</span>
+      </div>
+      <div class="tutorial-body">
+        <div class="tutorial-section">
+          <h4>What is NIS Creation?</h4>
+          <p>NIS (New Item Setup) generates Amazon-ready listing files from your product data. Upload your pre-upload template (Excel or CSV with styles, colors, sizes, UPCs), and the system generates titles, bullet points, descriptions, and backend keywords — formatted for direct upload to Amazon Vendor Central.</p>
+        </div>
+        <div class="tutorial-section">
+          <h4>What do I need?</h4>
+          <ul>
+            <li><strong>Your product data file</strong> (the only required input)</li>
+            <li>Optionally: an Amazon NIS template (.xlsm) for direct .xlsm output</li>
+            <li>Optionally: Helium 10 keyword data for search-optimized content</li>
+            <li>Optionally: Brand Analytics data for conversion-optimized content</li>
+          </ul>
+        </div>
+        <div class="tutorial-section">
+          <h4>How it works:</h4>
+          <ol>
+            <li>Upload your product data → system auto-detects brand, product types, sizes, colors</li>
+            <li>Review generated content → each field has a “Why” explanation</li>
+            <li>Edit, regenerate, or accept each field</li>
+            <li>Download as CSV or .xlsm files — per style, per category, or all combined</li>
+          </ol>
+        </div>
+        <div class="tutorial-section">
+          <h4>What makes the content smarter over time?</h4>
+          <p>Every edit you make is saved as feedback. After 20+ edits for a brand, the system learns your preferences and generates content that needs fewer corrections.</p>
+        </div>
+      </div>
+    </div>
 
     <!-- ════════════════ SECTION 1: UPLOAD ════════════════ -->
     <div class="card" id="section-upload">
@@ -994,6 +1366,11 @@
         <div class="stats-grid mt-16" id="product-stats"></div>
         <div id="product-alerts"></div>
         <div id="product-table-wrap"></div>
+        <!-- Missing templates notice -->
+        <div id="missing-templates-box" class="missing-template-box hidden">
+          <div class="missing-template-title">⚠️ Templates needed for some product types</div>
+          <div id="missing-templates-rows"></div>
+        </div>
       </div>
     </div>
 
@@ -1089,6 +1466,29 @@
             </label>
             <button class="btn btn-primary btn-sm" onclick="saveBrandConfig()">Save Config</button>
           </div>
+          <!-- Feedback count for this brand -->
+          <div id="brand-feedback-info" class="hidden" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <span id="brand-feedback-count-msg" style="font-size:13px; color:var(--text-sec);"></span>
+              <span class="feedback-view-link" onclick="toggleFeedbackHistory()" id="feedback-history-toggle">View feedback history</span>
+            </div>
+            <div id="feedback-history-panel" class="hidden">
+              <div class="table-wrap" style="max-height:280px; overflow-y:auto;">
+                <table class="feedback-history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Style</th>
+                      <th>Field</th>
+                      <th>Before</th>
+                      <th>After</th>
+                    </tr>
+                  </thead>
+                  <tbody id="feedback-history-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1129,6 +1529,11 @@
           <div class="alert alert-info mt-16" id="template-hint" style="margin-bottom:0;">
             <span class="alert-icon">ℹ</span>
             <div id="template-hint-text">Using pre-loaded Dresses template. Output will include .xlsm files.</div>
+          </div>
+          <!-- Loaded templates pills -->
+          <div id="loaded-templates-section" class="hidden" style="margin-top:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;">Loaded Templates</div>
+            <div class="template-pills" id="loaded-templates-pills"></div>
           </div>
         </div>
       </div>
@@ -1327,6 +1732,42 @@
 
   <!-- ═══════════════════════ CATALOG HEALTH PAGE ═══════════════════════ -->
   <div id="catalog-page" class="content content-wide">
+
+    <!-- Tutorial: How does Catalog Health work? -->
+    <div class="tutorial-box" id="catalog-tutorial">
+      <div class="tutorial-header" onclick="toggleTutorial('catalog-tutorial')">
+        <div class="tutorial-header-left">
+          <span class="tutorial-header-icon">📖</span>
+          How does Catalog Health work?
+        </div>
+        <span class="tutorial-chevron">▾</span>
+      </div>
+      <div class="tutorial-body">
+        <div class="tutorial-section">
+          <h4>What is Catalog Health?</h4>
+          <p>Catalog Health checks your Amazon catalog for structural issues that silently kill revenue — orphaned ASINs, broken variation families, missing content, and data gaps.</p>
+        </div>
+        <div class="tutorial-section">
+          <h4>What do I need?</h4>
+          <ul>
+            <li><strong>A catalog export from Vendor Central</strong> (required)</li>
+            <li>A Sales Diagnostic export (optional — adds revenue impact analysis)</li>
+          </ul>
+        </div>
+        <div class="tutorial-section">
+          <h4>What it checks:</h4>
+          <ul>
+            <li><strong>Variation integrity:</strong> are all children grouped under the correct parent?</li>
+            <li><strong>Content completeness:</strong> does every ASIN have a title, 5 bullets, description, images, keywords?</li>
+            <li><strong>Revenue cross-reference:</strong> which broken ASINs are costing you money?</li>
+          </ul>
+        </div>
+        <div class="tutorial-section">
+          <h4>What do I do with the results?</h4>
+          <p>Download the Fix File — a CSV with only the broken ASINs and instructions on what to fix. Upload corrections to Vendor Central.</p>
+        </div>
+      </div>
+    </div>
 
     <!-- Section 1: Upload Zones -->
     <div class="card">
@@ -1540,6 +1981,65 @@
 
   </div><!-- /catalog-page -->
 
+  <!-- ═══════════════════════ MERGE LISTINGS PAGE ═══════════════════════ -->
+  <div id="merge-page" class="content">
+
+    <div class="merge-hero">
+      <div class="merge-hero-icon">⇄</div>
+      <h1>Merge Listings</h1>
+      <p>Fix broken variations, reassign orphaned ASINs, and merge split families</p>
+      <div class="merge-status-pill">⏳ Coming Q3 2026</div>
+    </div>
+
+    <div class="merge-card">
+      <h3>What is Merge?</h3>
+      <p>When products are listed under the wrong parent, split across multiple parents, or orphaned with no parent at all — Merge fixes it. The system generates a corrective flat file that reassigns every child ASIN to the correct parent, fixing your variation families.</p>
+    </div>
+
+    <div class="merge-card">
+      <h3>What can Merge fix?</h3>
+      <ul>
+        <li>Split families (same style split across 2+ parent ASINs)</li>
+        <li>Orphaned children (ASINs not linked to any parent)</li>
+        <li>Wrong category assignment (shirt listed as shoes)</li>
+        <li>Inconsistent variation themes</li>
+      </ul>
+    </div>
+
+    <div class="merge-card">
+      <h3>How will it work?</h3>
+      <div class="merge-step-row">
+        <span class="merge-step-num">1</span>
+        <span class="merge-step-text">Upload your catalog data (same as Catalog Health)</span>
+      </div>
+      <div class="merge-step-row">
+        <span class="merge-step-num">2</span>
+        <span class="merge-step-text">The system detects all merge issues</span>
+      </div>
+      <div class="merge-step-row">
+        <span class="merge-step-num">3</span>
+        <span class="merge-step-text">You review the merge plan — which parent is the “primary” for each family</span>
+      </div>
+      <div class="merge-step-row">
+        <span class="merge-step-num">4</span>
+        <span class="merge-step-text">Download a corrective flat file — upload to Vendor Central</span>
+      </div>
+      <div class="merge-step-row">
+        <span class="merge-step-num">5</span>
+        <span class="merge-step-text">Re-check next month to confirm merges were applied</span>
+      </div>
+    </div>
+
+    <div class="merge-cta">
+      <span class="merge-cta-icon">📊</span>
+      <div class="merge-cta-text">
+        <strong>In the meantime:</strong> Run Catalog Health to identify issues that will need merging.
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="showCatalogPage()" style="margin-left:auto;">Open Catalog Health</button>
+    </div>
+
+  </div><!-- /merge-page -->
+
 </div><!-- /main -->
 
 <script>
@@ -1560,6 +2060,7 @@ const state = {
 // ═══════════════════════ NAVIGATION ═══════════════════════
 function showNISPage() {
   document.getElementById('catalog-page').style.display = 'none';
+  document.getElementById('merge-page').style.display = 'none';
   document.getElementById('nis-page').style.display = 'block';
   document.getElementById('topbar-title').textContent = 'NIS Creation — Upload & Generate';
   document.getElementById('topbar-sub').textContent = 'Upload product data to generate Amazon-ready NIS content';
@@ -1572,10 +2073,24 @@ function showNISPage() {
 function showCatalogPage() {
   document.getElementById('nis-page').style.display = 'none';
   document.getElementById('catalog-page').style.display = 'block';
+  document.getElementById('merge-page').style.display = 'none';
   document.getElementById('topbar-title').textContent = 'Catalog Health';
   document.getElementById('topbar-sub').textContent = 'Structural + content analysis for any Amazon catalog';
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item-catalog').forEach(el => el.classList.remove('active'));
   document.getElementById('nav-catalog').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showMergePage() {
+  // Merge is coming soon — just show the page
+  document.getElementById('nis-page').style.display = 'none';
+  document.getElementById('catalog-page').style.display = 'none';
+  document.getElementById('merge-page').style.display = 'block';
+  document.getElementById('topbar-title').textContent = 'Merge Listings';
+  document.getElementById('topbar-sub').textContent = 'Fix broken variations and reassign orphaned ASINs';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item-catalog').forEach(el => el.classList.remove('active'));
   window.scrollTo(0, 0);
 }
 
@@ -1703,6 +2218,26 @@ async function handleProductUpload(files) {
 
     showToast(`Loaded ${data.total_styles} styles, ${totalVariants} variants`, 'success');
 
+    // Missing templates notice
+    const missingBox = document.getElementById('missing-templates-box');
+    const missingRows = document.getElementById('missing-templates-rows');
+    const missing = data.missing_templates || [];
+    if (missing.length > 0) {
+      missingRows.innerHTML = missing.map(m => `
+        <div class="missing-template-row">
+          <span class="missing-template-label">${m.product_type}</span>
+          <span class="missing-template-count">Your data includes ${m.product_type} (${m.style_count} style${m.style_count !== 1 ? 's' : ''}). Upload the ${m.product_type} template from Vendor Central to generate .xlsm files for these styles.</span>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer; position:relative; overflow:hidden;">
+            <input type="file" accept=".xlsm" style="position:absolute;inset:0;opacity:0;cursor:pointer;" onchange="uploadCategoryTemplate('${m.product_type}', this)">
+            Upload Template
+          </label>
+        </div>
+      `).join('');
+      missingBox.classList.remove('hidden');
+    } else {
+      missingBox.classList.add('hidden');
+    }
+
   } catch(e) {
     loadingEl.classList.add('hidden');
     showToast('Upload failed: ' + e.message, 'error');
@@ -1759,6 +2294,8 @@ async function loadBrandConfigForBrand(brand) {
     }
 
     document.getElementById('acc-brand-meta').textContent = `${brand} — config loaded`;
+    // Load feedback count
+    loadBrandFeedbackCount(brand);
 
   } catch(e) {
     console.error('Brand config load error', e);
@@ -1807,6 +2344,120 @@ async function saveBrandConfig() {
     showToast(`${brand} config applied (not saved)`, 'info');
   }
   document.getElementById('acc-brand-meta').textContent = `${brand} — config saved`;
+  // Load feedback count after saving brand
+  loadBrandFeedbackCount(brand);
+}
+
+// ═══════════════════════ TUTORIALS ═══════════════════════
+function toggleTutorial(id) {
+  const box = document.getElementById(id);
+  box.classList.toggle('open');
+}
+
+// ═══════════════════════ FEEDBACK ═══════════════════════
+async function loadBrandFeedbackCount(brand) {
+  if (!brand) return;
+  try {
+    const res = await fetch('/api/feedback?brand=' + encodeURIComponent(brand));
+    const data = await res.json();
+    const count = data.total || 0;
+    const infoDiv = document.getElementById('brand-feedback-info');
+    const msgSpan = document.getElementById('brand-feedback-count-msg');
+    if (count > 0) {
+      msgSpan.textContent = `${count} feedback entr${count === 1 ? 'y' : 'ies'} saved for ${brand}`;
+      infoDiv.classList.remove('hidden');
+      // Store entries for later display
+      infoDiv.dataset.entries = JSON.stringify(data.entries || []);
+    } else {
+      msgSpan.textContent = `No feedback saved for ${brand} yet`;
+      infoDiv.classList.remove('hidden');
+    }
+  } catch(e) {
+    console.error('Feedback load error', e);
+  }
+}
+
+function toggleFeedbackHistory() {
+  const panel = document.getElementById('feedback-history-panel');
+  const toggle = document.getElementById('feedback-history-toggle');
+  const infoDiv = document.getElementById('brand-feedback-info');
+  const isHidden = panel.classList.contains('hidden');
+
+  if (isHidden) {
+    // Build history table
+    try {
+      const entries = JSON.parse(infoDiv.dataset.entries || '[]');
+      const tbody = document.getElementById('feedback-history-tbody');
+      if (entries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-sec);">No feedback entries yet</td></tr>';
+      } else {
+        tbody.innerHTML = entries.slice(0, 100).map(e => {
+          const date = e.timestamp ? e.timestamp.split('T')[0] : '';
+          const field = e.field || '';
+          const style = e.style_num || '';
+          const before = (e.original || '').substring(0, 60) + ((e.original || '').length > 60 ? '...' : '');
+          const after = (e.updated || '').substring(0, 60) + ((e.updated || '').length > 60 ? '...' : '');
+          return `<tr>
+            <td>${date}</td>
+            <td>${style}</td>
+            <td>${field}</td>
+            <td title="${(e.original||'').replace(/"/g,'&quot;')}">${before}</td>
+            <td title="${(e.updated||'').replace(/"/g,'&quot;')}">${after}</td>
+          </tr>`;
+        }).join('');
+      }
+    } catch(err) {
+      console.error('Failed to render feedback history', err);
+    }
+    panel.classList.remove('hidden');
+    toggle.textContent = 'Hide feedback history';
+  } else {
+    panel.classList.add('hidden');
+    toggle.textContent = 'View feedback history';
+  }
+}
+
+// ═══════════════════════ MULTI-TEMPLATE UPLOAD ═══════════════════════
+async function uploadCategoryTemplate(productType, inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('product_type', productType);
+  showToast(`Uploading ${productType} template...`, 'info');
+  try {
+    const res = await fetch('/api/upload-category-template', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+    showToast(`${productType} template loaded — ${data.columns_mapped} columns`, 'success');
+    // Hide the row for this product type
+    const row = inputEl.closest('.missing-template-row');
+    if (row) row.style.display = 'none';
+    // Update loaded templates pills
+    refreshLoadedTemplates(data.loaded_templates || [productType]);
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+async function refreshLoadedTemplates(loadedList) {
+  try {
+    const res = await fetch('/api/templates');
+    const data = await res.json();
+    const templates = data.templates || [];
+    const pillsEl = document.getElementById('loaded-templates-pills');
+    const section = document.getElementById('loaded-templates-section');
+    if (templates.length > 0) {
+      pillsEl.innerHTML = templates.map(t =>
+        `<span class="template-pill">✓ ${t.product_type}</span>`
+      ).join('');
+      section.classList.remove('hidden');
+    } else {
+      section.classList.add('hidden');
+    }
+  } catch(e) {
+    console.error('Failed to refresh templates', e);
+  }
 }
 
 // ═══════════════════════ SECTION 2b: TEMPLATE ═══════════════════════
