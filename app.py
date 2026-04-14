@@ -1805,23 +1805,189 @@ def download_file(filename):
         mimetype="application/vnd.ms-excel.sheet.macroEnabled.12",
     )
 
+def _generate_category_file(cat_styles, content_map, template_path, brand, brand_cfg, vendor_code, output_path):
+    """Generate a single .xlsm with all styles of one category."""
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        wb = openpyxl.load_workbook(template_path, keep_vba=True)
+    
+    ws = None
+    for name in wb.sheetnames:
+        if "template" in name.lower() or "dress" in name.lower():
+            ws = wb[name]
+            break
+    if ws is None:
+        ws = wb.active
+    
+    col_map = {}
+    max_col = ws.max_column or 254
+    for col in range(1, max_col + 1):
+        h = _safe(ws.cell(row=3, column=col).value)
+        fid = _safe(ws.cell(row=4, column=col).value)
+        col_map[col] = {"header": h, "field_id": fid}
+    
+    def fc(fid_sub):
+        for c, info in col_map.items():
+            if fid_sub.lower() in info["field_id"].lower(): return c
+        return None
+    def fce(fid_exact):
+        for c, info in col_map.items():
+            if info["field_id"].lower() == fid_exact.lower(): return c
+        return None
+    
+    COL = {
+        "vc": fc("rtip_vendor_code"), "vsku": fc("vendor_sku"), "pt": fc("product_type"),
+        "par": fc("parentage_level"), "crel": fc("child_relationship_type"),
+        "psku": fc("parent_sku"), "vt": fc("variation_theme"), "iname": fc("item_name"),
+        "br": fc("brand#1"), "eidt": fc("external_product_id#1.type"),
+        "eidv": fc("external_product_id#1.value"), "itk": fc("item_type_keyword"),
+        "mnum": fc("model_number"), "mname": fc("model_name"),
+        "b1": fce("bullet_point#1.value"), "b2": fce("bullet_point#2.value"),
+        "b3": fce("bullet_point#3.value"), "b4": fce("bullet_point#4.value"),
+        "b5": fce("bullet_point#5.value"), "kw": fce("generic_keyword#1.value"),
+        "dept": fc("department#1"), "gen": fc("target_gender"),
+        "ssys": fce("apparel_size#1.size_system"), "scls": fce("apparel_size#1.size_class"),
+        "sval": fce("apparel_size#1.size"), "mat": fce("material#1.value"),
+        "desc": fc("rtip_product_description"), "cmap": fc("color#1.standardized"),
+        "cval": fce("color#1.value"), "care": fc("care_instructions"),
+        "upf": fc("ultraviolet_protection"), "coo": fc("country_of_origin"),
+        "lp": fc("list_price") or fc("standard_price"),
+    }
+    
+    cell_styles = {}
+    for col in range(1, max_col + 1):
+        cell = ws.cell(row=7, column=col)
+        cell_styles[col] = {
+            "font": copy(cell.font), "fill": copy(cell.fill),
+            "border": copy(cell.border), "alignment": copy(cell.alignment),
+            "number_format": cell.number_format,
+        }
+    
+    for row in range(7, ws.max_row + 1):
+        for col in range(1, max_col + 1):
+            ws.cell(row=row, column=col).value = None
+    
+    def wc(row, key, value):
+        c = COL.get(key)
+        if c and value:
+            cell = ws.cell(row=row, column=c)
+            cell.value = str(value)
+            for prop, sval in cell_styles.get(c, {}).items():
+                if prop == "number_format": cell.number_format = sval
+                else: setattr(cell, prop, sval)
+    
+    cr = 7
+    for style in cat_styles:
+        sn = style["style_num"]
+        content = content_map.get(sn, {})
+        if not content: continue
+        
+        psku = f"{brand_cfg.get('vendor_code_prefix', '')}-{sn}".strip("-")
+        cat_kw = content.get("category", "casual-and-day-dresses")
+        
+        # Parent row
+        wc(cr, "vc", vendor_code); wc(cr, "vsku", psku); wc(cr, "pt", "DRESS")
+        wc(cr, "par", "Parent"); wc(cr, "vt", "ColorSize")
+        wc(cr, "iname", content.get("title", "")); wc(cr, "br", brand)
+        wc(cr, "itk", cat_kw); wc(cr, "mnum", sn)
+        wc(cr, "mname", style.get("style_name", "").title())
+        for i in range(1, 6): wc(cr, f"b{i}", content.get(f"bullet_{i}", ""))
+        wc(cr, "kw", content.get("backend_keywords", ""))
+        wc(cr, "desc", content.get("description", ""))
+        wc(cr, "dept", brand_cfg.get("department", "Womens"))
+        wc(cr, "gen", brand_cfg.get("gender", "Female"))
+        cr += 1
+        
+        # Child rows
+        for var in style.get("variants", []):
+            color = var.get("color", "")
+            size = var.get("size", "")
+            upc = var.get("upc", "")
+            csku = f"{psku}-{color}-{size}".replace(" ", "_")
+            ctitle = content.get("title", "").split(",")[0] + f", {color.title()}, {SIZE_MAP.get(size, size)}" if color else content.get("title", "")
+            
+            wc(cr, "vc", vendor_code); wc(cr, "vsku", csku); wc(cr, "pt", "DRESS")
+            wc(cr, "par", "Child"); wc(cr, "crel", "Variation")
+            wc(cr, "psku", psku); wc(cr, "vt", "ColorSize")
+            wc(cr, "iname", ctitle); wc(cr, "br", brand)
+            if upc: wc(cr, "eidt", "UPC"); wc(cr, "eidv", upc)
+            wc(cr, "itk", cat_kw); wc(cr, "mnum", sn)
+            for i in range(1, 6): wc(cr, f"b{i}", content.get(f"bullet_{i}", ""))
+            wc(cr, "kw", content.get("backend_keywords", ""))
+            wc(cr, "desc", content.get("description", ""))
+            wc(cr, "cmap", COLOR_MAP_LOOKUP.get(color.upper(), "Multicolour"))
+            wc(cr, "cval", color.title())
+            wc(cr, "ssys", "US"); wc(cr, "scls", "Alpha")
+            wc(cr, "sval", SIZE_MAP.get(size, size))
+            wc(cr, "mat", brand_cfg.get("default_fabric", ""))
+            wc(cr, "care", brand_cfg.get("default_care", "Machine Wash"))
+            wc(cr, "coo", brand_cfg.get("default_coo", ""))
+            wc(cr, "dept", brand_cfg.get("department", "Womens"))
+            wc(cr, "gen", brand_cfg.get("gender", "Female"))
+            if brand_cfg.get("default_upf"): wc(cr, "upf", f"UPF {brand_cfg['default_upf']}")
+            wc(cr, "lp", var.get("list_price", ""))
+            cr += 1
+    
+    wb.save(output_path)
+
+
 @app.route("/api/download-all")
 def download_all():
-    xlsm_files = list(UPLOAD_OUTPUT.glob("*.xlsm"))
-    if not xlsm_files:
-        return jsonify({"error": "No generated files found"}), 404
+    """Generate per-category .xlsm files and ZIP them together."""
+    brand = session_data.get("brand", "Brand")
+    styles = session_data.get("styles", [])
+    content_map = session_data.get("generated_content", {})
     
-    zip_path = UPLOAD_OUTPUT / "NIS_All_Files.zip"
+    if not styles or not content_map:
+        return jsonify({"error": "No generated content"}), 400
+    
+    date_str = datetime.now().strftime("%m%d%y")
+    safe_brand = brand.replace(" ", "_")
+    
+    # Group styles by category
+    cat_groups = {}
+    for s in styles:
+        cat = s.get("sub_class", "Uncategorized") or "Uncategorized"
+        if cat not in cat_groups:
+            cat_groups[cat] = []
+        cat_groups[cat].append(s)
+    
+    # Generate one .xlsm per category
+    cat_files = []
+    template_path = session_data.get("template_path") or str(DEFAULT_TEMPLATE)
+    brand_cfg = _load_brand_config_data(brand)
+    vendor_code = session_data.get("vendor_code") or brand_cfg.get("vendor_code_full", "")
+    
+    for cat, cat_styles in cat_groups.items():
+        safe_cat = cat.replace(" ", "_").replace("/", "_")
+        fname = f"NIS_{safe_brand}_{safe_cat}_{date_str}.xlsm"
+        fpath = UPLOAD_OUTPUT / fname
+        
+        try:
+            _generate_category_file(cat_styles, content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
+            cat_files.append((fname, str(fpath)))
+        except Exception as e:
+            traceback.print_exc()
+    
+    if not cat_files:
+        # Fallback: zip individual files
+        xlsm_files = list(UPLOAD_OUTPUT.glob("NIS_*.xlsm"))
+        zip_name = f"NIS_{safe_brand}_{date_str}.zip"
+        zip_path = UPLOAD_OUTPUT / zip_name
+        with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
+            for f in xlsm_files:
+                zf.write(str(f), f.name)
+        return send_file(str(zip_path), as_attachment=True, download_name=zip_name, mimetype="application/zip")
+    
+    # ZIP the category files
+    zip_name = f"NIS_{safe_brand}_{date_str}.zip"
+    zip_path = UPLOAD_OUTPUT / zip_name
     with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
-        for f in xlsm_files:
-            zf.write(str(f), f.name)
+        for fname, fpath in cat_files:
+            zf.write(fpath, fname)
     
-    return send_file(
-        str(zip_path),
-        as_attachment=True,
-        download_name="NIS_All_Files.zip",
-        mimetype="application/zip",
-    )
+    return send_file(str(zip_path), as_attachment=True, download_name=zip_name, mimetype="application/zip")
 
 @app.route("/api/download-combined")
 def download_combined():

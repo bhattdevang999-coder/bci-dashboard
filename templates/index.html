@@ -2015,13 +2015,16 @@
         </div>
 
         <div class="download-actions" id="download-actions" style="display:flex; flex-direction:column; gap:12px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text-sec); margin-bottom:4px;">GENERATE & DOWNLOAD</div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-success" id="btn-download-xlsm" onclick="generateNIS()">↓ Generate & Download All as .xlsm (ZIP)</button>
-            <button class="btn" id="btn-download-combined" onclick="downloadCombined()" style="background:#28251D; color:#fff;">↓ Download All in One File (.xlsm)</button>
+            <button class="btn btn-success" id="btn-generate-nis" onclick="generateNIS()">↓ Generate .xlsm Files</button>
           </div>
-          <div id="category-downloads" style="display:none;">
+          <div id="category-downloads" style="display:none; margin-top:8px;">
             <div style="font-size:12px; font-weight:600; color:var(--text-sec); margin-bottom:6px;">DOWNLOAD BY CATEGORY</div>
             <div id="category-buttons" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+            <div style="margin-top:8px;">
+              <button class="btn" onclick="window.location.href='/api/download-all'" style="background:#28251D; color:#fff; font-size:12px;">↓ Download All Categories as ZIP</button>
+            </div>
           </div>
         </div>
 
@@ -3449,7 +3452,7 @@ async function loadCategoryButtons() {
   try {
     const res = await fetch('/api/categories');
     const cats = await res.json();
-    if (cats.length > 1) {
+    if (cats.length >= 1) {
       // Show category filter buttons
       const filterDiv = document.getElementById('category-filter');
       const filterBtns = document.getElementById('category-filter-buttons');
@@ -3459,17 +3462,19 @@ async function loadCategoryButtons() {
         filterBtns.innerHTML += `<button class="btn btn-sm" style="font-size:11px; padding:4px 10px;" onclick="filterStyles('${c.name}')">${c.name} (${c.count})</button>`;
       });
       
-      // Show category download buttons
+      // Show category download buttons (after NIS generation)
       const catDownloads = document.getElementById('category-downloads');
       const catBtns = document.getElementById('category-buttons');
       catDownloads.style.display = 'block';
+      const brand = state.brand ? state.brand.replace(/ /g, '_') : 'Brand';
+      const today = new Date();
+      const dateStr = String(today.getMonth()+1).padStart(2,'0') + String(today.getDate()).padStart(2,'0') + String(today.getFullYear()).slice(-2);
       catBtns.innerHTML = '';
       cats.forEach(c => {
+        const safeCat = c.name.replace(/ /g, '_').replace(/\//g, '_');
+        const fileName = `NIS_${brand}_${safeCat}_${dateStr}.xlsm`;
         catBtns.innerHTML += `<button class="btn" style="font-size:11px; padding:6px 12px; background:var(--accent); color:#fff;" onclick="downloadCategory('${c.name}')">↓ ${c.name} (${c.count} styles, ${c.variants} rows)</button>`;
       });
-      
-      // Show combined download button
-      document.getElementById('btn-download-combined').style.display = 'inline-block';
     }
   } catch(e) { console.error('Failed to load categories', e); }
 }
