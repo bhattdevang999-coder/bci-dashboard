@@ -1190,8 +1190,9 @@ session_data = {
     "generated_content": {},
     # Multi-template: maps product_type -> path, e.g. {"Dresses": "/path/to/Dresses.xlsm"}
     "templates": {},
-    # Field overrides from QA review: { style_num: { str(col_num): value } }
+    # Field overrides from QA review: { style_num: { field_id: value } }
     "field_overrides": {},
+    "operator": "",
 }
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -1230,7 +1231,18 @@ def session_reset():
     session_data["generated_content"] = {}
     session_data["templates"] = {}
     session_data["field_overrides"] = {}
+    session_data["operator"] = ""
     return jsonify({"ok": True})
+
+
+@app.route("/api/set-operator", methods=["POST"])
+def set_operator():
+    """Set the current operator name for session tracking."""
+    data = request.get_json(force=True)
+    name = str(data.get("operator", "")).strip()
+    session_data["operator"] = name
+    return jsonify({"ok": True, "operator": name})
+
 
 @app.route("/api/brand-config", methods=["POST"])
 def brand_config():
