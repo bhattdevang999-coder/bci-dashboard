@@ -4163,6 +4163,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       document.getElementById('reset-btn').style.display = 'inline-flex';
       showToast('Session restored — ' + session.brand + ', ' + session.styles_count + ' styles.', 'success');
+
+      // If content was generated, show the workspace
+      if (session.content_generated && Object.keys(state.generatedContent || {}).length > 0) {
+        try {
+          wsPopulateRail();
+          fetchQaSummaryAndUpdate();
+          const ws = document.getElementById('nis-workspace');
+          if (ws) ws.style.display = 'flex';
+          if (state.styles.length > 0) wsSelectStyle(state.styles[0].style_num);
+        } catch(e2) { console.warn('Workspace restore failed:', e2); }
+      }
     }
   } catch(e) { /* fresh session */ }
 });
@@ -5081,7 +5092,8 @@ function wsRenderContentTab(styleNum) {
 
   const c = state.generatedContent[styleNum];
   if (!c) {
-    panel.innerHTML = '<div class="ws-empty-state">No content generated for this style.</div>';
+    const keys = Object.keys(state.generatedContent || {}).slice(0, 5).join(', ');
+    panel.innerHTML = `<div class="ws-empty-state">No content found for style ${escHtml(styleNum)}.<br><span style="font-size:11px;color:var(--text-sec);">Available: ${escHtml(keys) || 'none'}</span></div>`;
     return;
   }
 
@@ -5853,16 +5865,21 @@ function wsShowDownloadPanel() {
   }
 
   // Hide other tab panels, show download panel
-  document.querySelectorAll('.ws-tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.ws-tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ws-tab').forEach(b => b.classList.remove('active'));
+
   let dlPanel = document.getElementById('ws-tab-download');
   if (!dlPanel) {
     dlPanel = document.createElement('div');
     dlPanel.id = 'ws-tab-download';
     dlPanel.className = 'ws-tab-panel';
-    const body = document.querySelector('.ws-main-body');
-    if (body) body.appendChild(dlPanel);
+    // Append after the last tab panel inside ws-main
+    const lastPanel = document.getElementById('ws-tab-variants');
+    if (lastPanel && lastPanel.parentElement) {
+      lastPanel.parentElement.insertBefore(dlPanel, lastPanel.nextSibling);
+    }
   }
-  dlPanel.style.display = 'block';
+  dlPanel.classList.add('active');
 
   let html = '<div style="padding:4px 0;">';
   html += '<div style="font-size:16px; font-weight:700; margin-bottom:4px;">Generate & Download</div>';
@@ -5884,7 +5901,7 @@ function wsShowDownloadPanel() {
     html += '<td style="font-family:monospace;font-size:12px;">' + escHtml(s.style_num) + '</td>';
     html += '<td>' + escHtml(s.style_name) + '</td>';
     html += '<td>' + vc + '</td>';
-    html += '<td><button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 10px;" onclick="window.location.href=\'/api/download-style/' + encodeURIComponent(s.style_num) + '\'">\u2193 Download</button></td>';
+    html += "<td><button class=\"btn btn-secondary btn-sm\" style=\"font-size:11px;padding:3px 10px;\" onclick=\"window.location.href='/api/download-style/" + encodeURIComponent(s.style_num) + "'\">\u2193 Download</button></td>";
     html += '</tr>';
   });
 
@@ -5892,11 +5909,10 @@ function wsShowDownloadPanel() {
   html += '<div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border);">';
   html += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Session Feedback</div>';
   html += '<textarea id="ws-dl-session-note" class="nis-feedback-textarea" rows="2" placeholder="Any notes? (optional)" style="width:100%;max-width:500px;"></textarea>';
-  html += '<button class="btn btn-secondary btn-sm" style="margin-top:6px;font-size:11px;" onclick="var n=document.getElementById(\'ws-dl-session-note\');if(n&&n.value.trim()){wsSendFeedback(\'session\',\'download\',{scope:\'brand\'},{note:n.value.trim()});n.value=\'\';showToast(\'Saved\',\'success\');}">Save Note</button>';
+  html += "<button class=\"btn btn-secondary btn-sm\" style=\"margin-top:6px;font-size:11px;\" onclick=\"var n=document.getElementById('ws-dl-session-note');if(n&&n.value.trim()){wsSendFeedback('session','download',{scope:'brand'},{note:n.value.trim()});n.value='';showToast('Saved','success');}\">Save Note</button>";
   html += '</div></div>';
 
   dlPanel.innerHTML = html;
-  document.querySelectorAll('.ws-tab-btn').forEach(b => b.classList.remove('active'));
 }
 
 function wsDownloadAllZip() {
