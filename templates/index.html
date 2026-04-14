@@ -2786,6 +2786,31 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .ws-variants-table tr:hover td { background: #faf9f6; }
 .ws-upc-missing { color: var(--warn); font-weight: 600; }
 .ws-cost-missing { color: var(--error); font-weight: 600; }
+.ws-variant-meta {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.ws-variant-meta-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-sec);
+  margin-bottom: 4px;
+}
+.ws-variant-meta-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ws-variant-missing {
+  color: var(--warn);
+  font-weight: 400;
+  font-size: 12px;
+  font-style: italic;
+}
 
 /* ════════════════════════════════════════════════════════════
    DOWNLOAD MODAL
@@ -5752,42 +5777,84 @@ function wsRenderVariantsTab(styleNum) {
 
   const style = state.styles.find(s => s.style_num === styleNum);
   const variants = style ? (style.variants || []) : [];
+  const content = (state.generatedContent || {})[styleNum] || {};
+  const overrides = (wsState.fieldOverrides || {})[styleNum] || {};
 
   if (!variants.length) {
     panel.innerHTML = '<div class="ws-empty-state">No variant data for this style.</div>';
     return;
   }
 
+  // Resolve values: override > style-level > variant-level > blank
+  const styleCost = overrides['cost_price#1.value'] || style.cost_price || '';
+  const styleList = overrides['list_price#1.value'] || style.list_price || '';
+  const modelName = overrides['model_name#1.value'] || content.style_name || style.style_name || '';
+  const bookingDate = overrides['item_booking_date#1.value'] || '';
+  const shipDate = overrides['rtip_earliest_shipping_date#1.value'] || '';
+
+  // Style-level fields (same across all variants)
+  let html = `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:8px;">Style-Level Fields</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+        <div class="ws-variant-meta">
+          <div class="ws-variant-meta-label">Model Name</div>
+          <div class="ws-variant-meta-val">${escHtml(modelName) || '<span style="color:var(--text-sec);">—</span>'}</div>
+        </div>
+        <div class="ws-variant-meta">
+          <div class="ws-variant-meta-label">Cost Price</div>
+          <div class="ws-variant-meta-val ${styleCost ? '' : 'ws-variant-missing'}">${styleCost ? '$' + escHtml(String(styleCost)) : 'Not set — edit in All Fields'}</div>
+        </div>
+        <div class="ws-variant-meta">
+          <div class="ws-variant-meta-label">List Price</div>
+          <div class="ws-variant-meta-val ${styleList ? '' : 'ws-variant-missing'}">${styleList ? '$' + escHtml(String(styleList)) : 'Not set — edit in All Fields'}</div>
+        </div>
+        <div class="ws-variant-meta">
+          <div class="ws-variant-meta-label">Booking Date</div>
+          <div class="ws-variant-meta-val">${escHtml(bookingDate) || 'Auto (today)'}</div>
+        </div>
+        <div class="ws-variant-meta">
+          <div class="ws-variant-meta-label">Shipping Date</div>
+          <div class="ws-variant-meta-val">${escHtml(shipDate) || 'Auto (today)'}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:8px;">Variants (${variants.length})</div>
+  `;
+
   const rows = variants.map(v => {
-    const upcClass = !v.upc ? 'ws-upc-missing' : '';
-    const costClass = !v.cost_price ? 'ws-cost-missing' : '';
+    // Per-variant: use variant cost/list if set, else fall back to style-level
+    const vCost = v.cost_price || styleCost;
+    const vList = v.list_price || styleList;
+    const costDisplay = vCost ? '$' + escHtml(String(vCost)) : '<span class="ws-variant-missing">—</span>';
+    const listDisplay = vList ? '$' + escHtml(String(vList)) : '<span class="ws-variant-missing">—</span>';
+    const upcDisplay = v.upc ? escHtml(String(v.upc)) : '<span class="ws-variant-missing">—</span>';
+
     return `<tr>
-      <td style="font-family:monospace;font-size:12px;">${escHtml(v.sku || '')}</td>
+      <td style="font-family:monospace;font-size:12px;">${escHtml(v.sku || v.color_name + '-' + v.size)}</td>
       <td>${escHtml(v.color_name || '')}</td>
       <td>${escHtml(v.size || '')}</td>
-      <td class="${upcClass}">${v.upc ? escHtml(v.upc) : '— missing'}</td>
-      <td class="${costClass}">${v.cost_price ? '$' + escHtml(String(v.cost_price)) : '— missing'}</td>
-      <td>${v.list_price ? '$' + escHtml(String(v.list_price)) : '—'}</td>
+      <td>${upcDisplay}</td>
+      <td>${costDisplay}</td>
+      <td>${listDisplay}</td>
     </tr>`;
   }).join('');
 
-  panel.innerHTML = `
-    <div style="font-size:13px; color:var(--text-sec); margin-bottom:12px;">
-      ${variants.length} variants
-      ${variants.some(v => !v.upc) ? ' · <span style="color:var(--warn);">⚠ Missing UPCs</span>' : ''}
-      ${variants.some(v => !v.cost_price) ? ' · <span style="color:var(--error);">⚠ Missing costs</span>' : ''}
-    </div>
+  html += `
     <div style="overflow-x:auto;">
       <table class="ws-variants-table">
         <thead>
           <tr>
-            <th>SKU</th><th>Color</th><th>Size</th><th>UPC</th><th>Cost Price</th><th>List Price</th>
+            <th>SKU</th><th>Color</th><th>Size</th><th>UPC</th><th>Cost</th><th>List</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
   `;
+
+  panel.innerHTML = html;
 }
 
 // ════════════════════════════════════════════════════════════
