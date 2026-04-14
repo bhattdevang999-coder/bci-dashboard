@@ -356,23 +356,48 @@ def derive_sleeve_type(style_name):
             return sleeve
     return "Sleeveless"
 
+def clean_brand_name(raw_brand):
+    """Strip vendor labels from brand name. 'Stella Parker PL Ladies SPTW' -> 'Stella Parker'"""
+    if not raw_brand:
+        return raw_brand
+    b = str(raw_brand).strip()
+    # Remove common vendor suffixes
+    for suffix in [' PL Ladies SPTW', ' PL Ladies', ' PL Mens', ' SPTW', ' Sportswear',
+                   ' us_apparel', ' Women\'s Swimwear', ', us_apparel']:
+        b = b.replace(suffix, '')
+    # Remove anything after the last known brand word
+    # Known brands: keep only the first 1-3 proper words
+    known = {'Stella Parker', 'Volcom', 'Roxy', 'Novelle Fashion', 'Nautica', 
+             'Ben Sherman', 'Spyder', 'Tahari', 'Sage'}
+    for k in known:
+        if b.startswith(k):
+            return k
+    return b.strip()
+
 def derive_silhouette(sub_subclass):
-    """Derive silhouette from sub_subclass."""
+    """Derive silhouette from sub_subclass. Never returns #N/A or empty junk."""
     if not sub_subclass:
-        return ""
+        return "flattering"
     s = str(sub_subclass).strip()
+    # Catch #N/A, N/A, NA, None, nan, empty
+    if s.upper() in ('', '#N/A', 'N/A', 'NA', 'NONE', 'NAN', 'NA (CONVERSION)', '#N/A (CONVERSION)'):
+        return "flattering"
     mapping = {
         "Shift Dress": "Shift",
         "A-Line Dress": "A-Line",
         "Fit & Flare Dress": "Fit & Flare",
-        "Dress with Shorts": "Romper/Shortall",
+        "Dress with Shorts": "Romper",
         "Wrap Dress": "Wrap",
         "Sheath Dress": "Sheath",
         "Maxi Dress": "Maxi",
         "Mini Dress": "Mini",
         "Bodycon Dress": "Bodycon",
     }
-    return mapping.get(s, s.replace(" Dress", ""))
+    result = mapping.get(s, s.replace(" Dress", "").strip())
+    # Final safety check
+    if not result or '#' in result or result.upper() in ('N/A', 'NA', 'NAN'):
+        return "flattering"
+    return result
 
 def style_descriptor_from_name(style_name):
     """Extract a clean style descriptor for use in titles."""
@@ -395,12 +420,14 @@ def style_descriptor_from_name(style_name):
     return result.title().strip()
 
 def generate_title(brand_cfg, brand, style_name, product_type, color, size, upf=""):
-    """Generate Amazon-compliant title per brand formula. Max 200 chars."""
-    formula = brand_cfg.get("title_formula", "{brand} {style_descriptor} {product_type}, {color}, {size}")
+    """Generate Amazon-compliant title. Max 120 chars for Vendor Central apparel."""
+    # Always clean the brand name
+    clean_brand = clean_brand_name(brand)
+    formula = brand_cfg.get("title_formula", "{brand} Women's {style_descriptor} {product_type}, {color}, {size}")
     descriptor = style_descriptor_from_name(style_name)
     
     title = formula.format(
-        brand=brand,
+        brand=clean_brand,
         style_descriptor=descriptor,
         style_name=style_name.title(),
         product_type=product_type.title() if product_type else "Dress",
@@ -413,13 +440,17 @@ def generate_title(brand_cfg, brand, style_name, product_type, color, size, upf=
     title = re.sub(r'\s+', ' ', title).strip()
     title = re.sub(r',\s*,', ',', title)
     title = re.sub(r',\s*$', '', title)
-    return title[:200]
+    # Enforce 120 char limit — truncate at last complete word before limit
+    if len(title) > 120:
+        title = title[:120].rsplit(' ', 1)[0].rstrip(',')
+    return title
 
 def generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, color, upf=""):
     """Generate 5 bullet points per brand + style context."""
     silhouette = derive_silhouette(sub_subclass)
     sleeve = derive_sleeve_type(style_name)
     neck = derive_neck_type(style_name)
+    brand = clean_brand_name(brand)
     focus = brand_cfg.get("bullet_1_focus", "Style and quality")
     actual_fabric = fabric or brand_cfg.get("default_fabric", "")
     actual_care = care or brand_cfg.get("default_care", "Machine Wash")
@@ -504,6 +535,7 @@ def generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, 
     """Generate product description. Max 2000 chars, uses rotating openers."""
     global DESCRIPTION_OPENERS_ROTATION
     
+    brand = clean_brand_name(brand)
     silhouette = derive_silhouette(sub_subclass)
     sleeve = derive_sleeve_type(style_name)
     neck = derive_neck_type(style_name)
@@ -547,6 +579,61 @@ def generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, 
 
     desc = " ".join(parts)
     return desc[:2000]
+
+def qa_check_content(content, brand):
+    """Run QA checks on generated content. Returns list of issues."""
+    issues = []
+    clean_brand = clean_brand_name(brand)
+    title = content.get("title", "")
+    
+    # Title checks
+    if len(title) > 120:
+        issues.append({"field": "title", "severity": "error", "msg": f"Title exceeds 120 chars ({len(title)})."})
+    if len(title) < 40:
+        issues.append({"field": "title", "severity": "warning", "msg": f"Title is very short ({len(title)} chars). Add more keywords."})
+    if '#N/A' in title or '#n/a' in title.lower():
+        issues.append({"field": "title", "severity": "error", "msg": "Title contains #N/A — data parsing error."})
+    if brand and clean_brand not in title:
+        issues.append({"field": "title", "severity": "warning", "msg": f"Brand name '{clean_brand}' not in title."})
+    
+    # Bullet checks
+    for i in range(1, 6):
+        b = content.get(f"bullet_{i}", "")
+        if not b:
+            issues.append({"field": f"bullet_{i}", "severity": "error", "msg": f"Bullet {i} is empty."})
+        elif len(b) < 50:
+            issues.append({"field": f"bullet_{i}", "severity": "warning", "msg": f"Bullet {i} is very short ({len(b)} chars)."})
+        if len(b) > 500:
+            issues.append({"field": f"bullet_{i}", "severity": "error", "msg": f"Bullet {i} exceeds 500 chars ({len(b)})."})
+        if '#N/A' in b or '#n/a' in b.lower():
+            issues.append({"field": f"bullet_{i}", "severity": "error", "msg": f"Bullet {i} contains #N/A."})
+        # Check for prohibited language
+        for word in ['best seller', 'best-seller', 'limited time', 'on sale', 'free shipping', 'guaranteed']:
+            if word.lower() in b.lower():
+                issues.append({"field": f"bullet_{i}", "severity": "error", "msg": f"Bullet {i} contains prohibited phrase: '{word}'."})
+    
+    # Description checks
+    desc = content.get("description", "")
+    if not desc:
+        issues.append({"field": "description", "severity": "error", "msg": "Description is empty."})
+    elif len(desc) < 200:
+        issues.append({"field": "description", "severity": "warning", "msg": f"Description is short ({len(desc)} chars). Aim for 500+."})
+    if len(desc) > 2000:
+        issues.append({"field": "description", "severity": "error", "msg": f"Description exceeds 2000 chars ({len(desc)})."})
+    if '#N/A' in desc:
+        issues.append({"field": "description", "severity": "error", "msg": "Description contains #N/A."})
+    
+    # Backend keywords checks
+    kw = content.get("backend_keywords", "")
+    if not kw:
+        issues.append({"field": "backend_keywords", "severity": "warning", "msg": "Backend keywords empty."})
+    elif len(kw.encode('utf-8')) > 250:
+        issues.append({"field": "backend_keywords", "severity": "error", "msg": f"Backend keywords exceed 250 bytes ({len(kw.encode('utf-8'))})."})
+    if clean_brand and clean_brand.lower() in (kw or '').lower():
+        issues.append({"field": "backend_keywords", "severity": "warning", "msg": "Backend keywords contain brand name (Amazon indexes it automatically)."})
+    
+    return issues
+
 
 def generate_title_why(brand_cfg, brand, style_name, title, upf, has_keywords):
     """Generate 'why' explanation for the title."""
@@ -1281,6 +1368,7 @@ def generate_content():
             "description_why": generate_description_why(brand_cfg, style_num, opener_idx, has_keywords),
             "backend_keywords": backend_kw,
             "backend_keywords_why": generate_keywords_why(brand, session_data.get("keywords", []), backend_kw, has_keywords),
+            "qa_issues": [],  # filled below
             "neck_type": neck,
             "sleeve_type": sleeve,
             "silhouette": silhouette,
@@ -1294,8 +1382,22 @@ def generate_content():
             "coo": coo,
         }
     
+    # Run QA checks on all generated content
+    total_qa_errors = 0
+    total_qa_warnings = 0
+    for style_num, c in content_map.items():
+        issues = qa_check_content(c, brand)
+        c["qa_issues"] = issues
+        total_qa_errors += sum(1 for i in issues if i["severity"] == "error")
+        total_qa_warnings += sum(1 for i in issues if i["severity"] == "warning")
+    
     session_data["generated_content"] = content_map
-    return jsonify({"content": content_map, "total": len(content_map)})
+    return jsonify({
+        "content": content_map, 
+        "total": len(content_map),
+        "qa_errors": total_qa_errors,
+        "qa_warnings": total_qa_warnings,
+    })
 
 @app.route("/api/submit-feedback", methods=["POST"])
 def submit_feedback():
