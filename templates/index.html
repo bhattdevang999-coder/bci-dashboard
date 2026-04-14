@@ -1204,6 +1204,303 @@
   }
   .detection-card strong { font-weight: 700; }
 
+  /* ── QA Review Section ─────────────────────────────── */
+  .qa-review-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 24px;
+    box-shadow: var(--shadow);
+  }
+  .qa-review-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .qa-review-sub {
+    font-size: 12px;
+    color: var(--text-sec);
+    margin-bottom: 16px;
+  }
+  .qa-summary-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .qa-summary-label {
+    font-size: 13px;
+    color: var(--text-sec);
+    flex: 1;
+    min-width: 200px;
+  }
+  .qa-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .qa-badge-green  { background: var(--success-bg); color: var(--success); }
+  .qa-badge-yellow { background: var(--warn-bg);    color: var(--warn); }
+  .qa-badge-red    { background: var(--error-bg);   color: var(--error); }
+  .qa-badge-gray   { background: #f0ede8;            color: var(--text-sec); }
+
+  /* QA style table */
+  .qa-style-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .qa-style-table th {
+    text-align: left;
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-sec);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+  }
+  .qa-style-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #ebe8e1;
+    vertical-align: middle;
+    color: var(--text);
+  }
+  .qa-style-table tr:last-child td { border-bottom: none; }
+  .qa-style-table tr:hover td { background: #faf9f6; }
+  .qa-table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  /* QA status badge in table */
+  .qa-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .qa-status-ready    { background: var(--success-bg); color: var(--success); }
+  .qa-status-defaults { background: var(--warn-bg);    color: var(--warn); }
+  .qa-status-attention{ background: var(--error-bg);   color: var(--error); }
+
+  /* Preview panel (slide-in) */
+  .qa-panel-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(40,37,29,.35);
+    z-index: 900;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  .qa-panel-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .qa-panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: min(640px, 95vw);
+    background: var(--surface);
+    box-shadow: -4px 0 24px rgba(0,0,0,.14);
+    z-index: 901;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  .qa-panel.open {
+    transform: translateX(0);
+  }
+  .qa-panel-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .qa-panel-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .qa-panel-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text-sec);
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background .15s;
+  }
+  .qa-panel-close:hover { background: var(--bg); }
+  .qa-panel-stats {
+    display: flex;
+    gap: 8px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .qa-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  /* Fields table in panel */
+  .qa-fields-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  .qa-fields-table th {
+    position: sticky;
+    top: 0;
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-sec);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    z-index: 2;
+  }
+  .qa-fields-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+  .qa-fields-table tr.row-default td { background: #fffbef; }
+  .qa-fields-table tr.row-empty   td { background: #fff5f5; }
+  .qa-fields-table tr.row-filled  td { background: transparent; }
+  .qa-fields-table tr.row-locked  td { background: transparent; opacity: .7; }
+  .qa-fields-table tr.row-overridden td { background: #f0fff4; }
+
+  /* Inline edit button */
+  .qa-edit-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--text-sec);
+    font-size: 12px;
+    padding: 1px 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+    transition: all .12s;
+  }
+  .qa-edit-btn:hover {
+    background: var(--accent-lt);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .qa-edit-input {
+    border: 1.5px solid var(--accent);
+    border-radius: 4px;
+    padding: 3px 7px;
+    font-size: 12.5px;
+    font-family: var(--font);
+    width: 100%;
+    outline: none;
+    background: #fff;
+  }
+  .qa-note {
+    font-size: 11px;
+    color: var(--text-sec);
+    font-style: italic;
+    margin-top: 2px;
+  }
+  .qa-col-num {
+    color: var(--text-sec);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  /* Fix-defaults quick panel at bottom of preview */
+  .qa-quick-fix {
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+  .qa-quick-fix-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-sec);
+    margin-bottom: 10px;
+  }
+  .qa-quick-fix-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .qa-quick-fix-label {
+    font-size: 12px;
+    color: var(--text);
+    min-width: 140px;
+  }
+  .qa-quick-fix-input {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12.5px;
+    font-family: var(--font);
+    width: 72px;
+    transition: border-color .15s;
+  }
+  .qa-quick-fix-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .qa-quick-fix-unit {
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+
+  /* Download section QA status bar */
+  .qa-download-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .qa-download-ready    { background: var(--success-bg); color: var(--success); }
+  .qa-download-warn     { background: var(--warn-bg);    color: var(--warn); }
+
   /* ── Download section ──────────────────────────────── */
   .download-section {
     background: var(--surface);
@@ -2011,9 +2308,76 @@
       <!-- Style cards container -->
       <div id="style-cards"></div>
 
+      <!-- ════════════ QA REVIEW SECTION ════════════ -->
+      <div class="qa-review-section" id="qa-review-section" style="display:none;">
+        <div class="qa-review-title">Pre-Download Review</div>
+        <div class="qa-review-sub">Review all fields before generating .xlsm files. Fix missing or default values inline.</div>
+
+        <!-- Summary bar -->
+        <div class="qa-summary-bar" id="qa-summary-bar">
+          <div class="qa-summary-label" id="qa-summary-label">Loading...</div>
+          <span class="qa-badge qa-badge-green" id="qa-badge-ready" style="display:none;"></span>
+          <span class="qa-badge qa-badge-yellow" id="qa-badge-defaults" style="display:none;"></span>
+          <span class="qa-badge qa-badge-red" id="qa-badge-attention" style="display:none;"></span>
+          <button class="btn btn-secondary btn-sm" onclick="qaRefreshSummary()" title="Refresh QA summary" style="margin-left:auto;">&#8635; Refresh</button>
+        </div>
+
+        <!-- Styles table -->
+        <div class="qa-table-wrap">
+          <table class="qa-style-table">
+            <thead>
+              <tr>
+                <th>Style #</th>
+                <th>Style Name</th>
+                <th>Filled</th>
+                <th>Defaults</th>
+                <th>Missing</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="qa-styles-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ════════════ QA PREVIEW PANEL ════════════ -->
+      <div class="qa-panel-overlay" id="qa-panel-overlay" onclick="qaClosePanel()"></div>
+      <div class="qa-panel" id="qa-panel">
+        <div class="qa-panel-header">
+          <div>
+            <div class="qa-panel-title" id="qa-panel-style-name">Field Preview</div>
+            <div style="font-size:12px; color:var(--text-sec);" id="qa-panel-style-num"></div>
+          </div>
+          <button class="qa-panel-close" onclick="qaClosePanel()">&times;</button>
+        </div>
+        <div class="qa-panel-stats" id="qa-panel-stats"></div>
+        <div class="qa-panel-body" id="qa-panel-body">
+          <table class="qa-fields-table">
+            <thead>
+              <tr>
+                <th style="width:46px;">Col</th>
+                <th>Field</th>
+                <th>Value</th>
+                <th style="width:80px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="qa-fields-tbody"></tbody>
+          </table>
+        </div>
+        <!-- Quick-fix panel for defaults -->
+        <div class="qa-quick-fix" id="qa-quick-fix" style="display:none;">
+          <div class="qa-quick-fix-title">Fix Defaults Quickly</div>
+          <div id="qa-quick-fix-rows"></div>
+          <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="qaSaveQuickFix()">Save All Defaults</button>
+        </div>
+      </div>
+
       <!-- Download / Output Section -->
       <div class="download-section" id="download-section">
         <div class="download-section-title">Generate Output Files</div>
+        <!-- QA status bar in download section -->
+        <div id="qa-download-status-bar" style="display:none;"></div>
 
         <!-- NIS progress -->
         <div id="nis-gen-loading" class="hidden mb-8">
@@ -3182,6 +3546,9 @@ async function generateContent() {
         renderStyleCards();
         loadCategoryButtons();
 
+        // Show QA review section after content generation
+        qaRefreshSummary();
+
         if (state.hasTemplate) {
           document.getElementById('btn-download-xlsm') && (document.getElementById('btn-download-xlsm').style.display = 'inline-flex');
         }
@@ -3190,6 +3557,399 @@ async function generateContent() {
       }
     } catch(e) { /* keep polling */ }
   }, 1000);
+}
+
+// ═══════════════════════ QA REVIEW SYSTEM ═══════════════════════
+
+// State for the QA panel
+const qaState = {
+  currentStyleNum: null,
+  currentFields: [],
+  quickFixEdits: {}, // col -> value for the quick-fix panel
+};
+
+// Refresh the QA summary section
+async function qaRefreshSummary() {
+  const section = document.getElementById('qa-review-section');
+  if (!section) return;
+
+  try {
+    const res = await fetch('/api/nis-qa-summary');
+    const data = await res.json();
+
+    if (data.error) {
+      // Not ready yet (no brand/styles), keep hidden
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+
+    // Summary label
+    const total = data.total_styles;
+    const ready = data.ready;
+    const label = document.getElementById('qa-summary-label');
+    if (label) {
+      label.innerHTML = `<strong>${ready} of ${total} styles ready to download</strong>`
+        + (data.needs_attention > 0 ? ` &nbsp;&middot;&nbsp; <span style="color:var(--error);">${data.needs_attention} missing required fields</span>` : '')
+        + (data.has_defaults > 0 ? ` &nbsp;&middot;&nbsp; <span style="color:var(--warn);">${data.has_defaults} have defaults to review</span>` : '');
+    }
+
+    // Badges
+    const bReady = document.getElementById('qa-badge-ready');
+    const bDef   = document.getElementById('qa-badge-defaults');
+    const bAttn  = document.getElementById('qa-badge-attention');
+    if (bReady) { bReady.textContent = `✓ ${data.ready} Ready`; bReady.style.display = data.ready > 0 ? '' : 'none'; }
+    if (bDef)   { bDef.textContent   = `⚡ ${data.has_defaults} Has Defaults`; bDef.style.display = data.has_defaults > 0 ? '' : 'none'; }
+    if (bAttn)  { bAttn.textContent  = `✗ ${data.needs_attention} Missing Fields`; bAttn.style.display = data.needs_attention > 0 ? '' : 'none'; }
+
+    // Render styles table
+    qaRenderStylesTable(data.styles);
+
+    // Update download section status bar
+    qaUpdateDownloadBar(data);
+
+  } catch(e) {
+    console.warn('[QA] Summary fetch failed:', e);
+  }
+}
+
+function qaRenderStylesTable(styles) {
+  const tbody = document.getElementById('qa-styles-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  styles.forEach(s => {
+    const statusChip = s.status === 'ready'
+      ? `<span class="qa-status-chip qa-status-ready">✓ Ready</span>`
+      : s.status === 'attention'
+        ? `<span class="qa-status-chip qa-status-attention">✗ Missing</span>`
+        : `<span class="qa-status-chip qa-status-defaults">⚡ Defaults</span>`;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-family:monospace; font-size:12px;">${escHtml(s.style_num)}</td>
+      <td>${escHtml(s.style_name)}</td>
+      <td style="color:var(--success); font-weight:600;">${s.filled}/${s.total}</td>
+      <td style="color:${s.defaults > 0 ? 'var(--warn)' : 'var(--text-sec)'}; font-weight:${s.defaults > 0 ? '600' : '400'}">${s.defaults}</td>
+      <td style="color:${s.empty > 0 ? 'var(--error)' : 'var(--text-sec)'}; font-weight:${s.empty > 0 ? '600' : '400'}">${s.empty}</td>
+      <td>${statusChip}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" style="font-size:11px; padding:3px 10px;" onclick="qaOpenPanel('${escHtml(s.style_num)}')">Preview</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function qaUpdateDownloadBar(data) {
+  const bar = document.getElementById('qa-download-status-bar');
+  if (!bar) return;
+  const allReady = data.needs_attention === 0;
+  const total = data.total_styles;
+  const ready = data.ready;
+
+  if (allReady && data.has_defaults === 0) {
+    bar.className = 'qa-download-status qa-download-ready';
+    bar.innerHTML = `✓ All ${total} styles ready &mdash; Generate &amp; Download`;
+  } else if (allReady) {
+    bar.className = 'qa-download-status qa-download-warn';
+    bar.innerHTML = `⚡ ${data.has_defaults} styles have defaults to review &mdash; fix above or download with defaults`;
+  } else {
+    bar.className = 'qa-download-status qa-download-warn';
+    bar.innerHTML = `⚠ ${data.needs_attention} styles missing required fields &mdash; fix above or download with defaults`;
+  }
+  bar.style.display = 'flex';
+}
+
+// Open the slide-in preview panel for a style
+async function qaOpenPanel(styleNum) {
+  qaState.currentStyleNum = styleNum;
+  qaState.quickFixEdits = {};
+
+  // Show loading state
+  document.getElementById('qa-panel-style-name').textContent = styleNum;
+  document.getElementById('qa-panel-style-num').textContent = 'Loading...';
+  document.getElementById('qa-fields-tbody').innerHTML = '<tr><td colspan="4" style="padding:20px; text-align:center; color:var(--text-sec);">Loading fields...</td></tr>';
+  document.getElementById('qa-panel-stats').innerHTML = '';
+  document.getElementById('qa-quick-fix').style.display = 'none';
+
+  // Open panel
+  document.getElementById('qa-panel-overlay').classList.add('open');
+  document.getElementById('qa-panel').classList.add('open');
+
+  try {
+    const res = await fetch('/api/preview-nis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style_num: styleNum }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      document.getElementById('qa-fields-tbody').innerHTML =
+        `<tr><td colspan="4" style="padding:20px; color:var(--error);">${escHtml(data.error)}</td></tr>`;
+      return;
+    }
+
+    qaState.currentFields = data.fields || [];
+    qaRenderPanel(data);
+  } catch(e) {
+    document.getElementById('qa-fields-tbody').innerHTML =
+      '<tr><td colspan="4" style="padding:20px; color:var(--error);">Failed to load fields.</td></tr>';
+  }
+}
+
+function qaRenderPanel(data) {
+  document.getElementById('qa-panel-style-name').textContent = data.style_name;
+  document.getElementById('qa-panel-style-num').textContent = `Style # ${data.style_num}`;
+
+  // Stats row
+  const stats = document.getElementById('qa-panel-stats');
+  stats.innerHTML = `
+    <span class="qa-badge qa-badge-green">✓ ${data.filled} Filled</span>
+    <span class="qa-badge qa-badge-yellow">⚡ ${data.defaults_used} Defaults</span>
+    <span class="qa-badge ${data.needs_attention > 0 ? 'qa-badge-red' : 'qa-badge-gray'}">✗ ${data.needs_attention} Missing</span>
+    <span class="qa-badge qa-badge-gray">${data.total_fields} Total Fields</span>
+  `;
+
+  // Fields table
+  const tbody = document.getElementById('qa-fields-tbody');
+  tbody.innerHTML = '';
+  const fields = data.fields || [];
+
+  fields.forEach(field => {
+    const rowClass = field.overridden ? 'row-overridden' : `row-${field.status}`;
+    const tr = document.createElement('tr');
+    tr.className = rowClass;
+    tr.dataset.col = field.col;
+
+    const statusLabel = qaStatusLabel(field.status, field.overridden);
+    const valueCell = qaValueCell(field, data.style_num);
+
+    tr.innerHTML = `
+      <td class="qa-col-num">${field.col}</td>
+      <td>${escHtml(field.header)}</td>
+      <td>${valueCell}</td>
+      <td>${statusLabel}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Quick-fix panel — show if there are defaults
+  const defaultFields = fields.filter(f => f.status === 'default' && f.editable && !f.overridden);
+  qaRenderQuickFix(defaultFields, data.style_num);
+}
+
+function qaStatusLabel(status, overridden) {
+  if (overridden) return '<span class="qa-status-chip qa-status-ready" title="Overridden by you">✓ Saved</span>';
+  switch(status) {
+    case 'filled':  return '<span class="qa-status-chip qa-status-ready">✓ Filled</span>';
+    case 'default': return '<span class="qa-status-chip qa-status-defaults">⚡ Default</span>';
+    case 'empty':   return '<span class="qa-status-chip qa-status-attention">✗ Empty</span>';
+    case 'locked':  return '<span style="font-size:11px; color:var(--text-sec);">&#128274; Auto</span>';
+    default:        return status;
+  }
+}
+
+function qaValueCell(field, styleNum) {
+  const valStr = field.value || '';
+  const note   = field.note ? `<div class="qa-note">${escHtml(field.note)}</div>` : '';
+  const escapedVal = escHtml(valStr);
+  const displayVal = escapedVal.length > 80 ? escapedVal.slice(0, 80) + '&hellip;' : escapedVal;
+
+  if (!field.editable || field.status === 'locked') {
+    return `<span style="color:var(--text-sec);">${displayVal || '<em style="color:#bbb;">—</em>'}</span>${note}`;
+  }
+
+  const colNum = field.col;
+  const editId = `qa-val-${colNum}`;
+
+  return `
+    <span id="${editId}-display" style="word-break:break-word;">${displayVal || '<em style="color:#bbb;">empty</em>'}</span>
+    <button class="qa-edit-btn" onclick="qaStartEdit('${editId}', '${styleNum}', ${colNum}, ${JSON.stringify(valStr).replace(/'/g, "\\'")})" title="Edit">&#9998;</button>
+    ${note}
+  `;
+}
+
+function qaStartEdit(editId, styleNum, col, currentVal) {
+  const displayEl = document.getElementById(editId + '-display');
+  if (!displayEl) return;
+  const wrapper = displayEl.parentElement;
+
+  // Replace display + edit button with input
+  wrapper.innerHTML = `
+    <input class="qa-edit-input" id="${editId}-input" value="${escHtml(currentVal)}"
+      onkeydown="if(event.key==='Enter'){qaCommitEdit('${editId}','${styleNum}',${col});}if(event.key==='Escape'){qaRefreshField('${editId}',event.target.closest('tr').dataset.col);}" />
+    <button class="qa-edit-btn" style="color:var(--success);" onclick="qaCommitEdit('${editId}','${styleNum}',${col})" title="Save">✓</button>
+    <button class="qa-edit-btn" style="color:var(--error);" onclick="qaAbortEdit()" title="Cancel">&#215;</button>
+  `;
+  const inp = document.getElementById(editId + '-input');
+  if (inp) { inp.focus(); inp.select(); }
+}
+
+async function qaCommitEdit(editId, styleNum, col) {
+  const inp = document.getElementById(editId + '-input');
+  if (!inp) return;
+  const value = inp.value.trim();
+
+  try {
+    const res = await fetch('/api/update-field', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style_num: styleNum, col: col, value }),
+    });
+    const d = await res.json();
+    if (d.ok) {
+      showToast('Field saved', 'success');
+      // Refresh the panel to reflect the change
+      await qaOpenPanel(styleNum);
+      // Also refresh summary table row
+      qaRefreshSummary();
+    }
+  } catch(e) {
+    showToast('Save failed', 'error');
+  }
+}
+
+function qaAbortEdit() {
+  if (qaState.currentStyleNum) qaOpenPanel(qaState.currentStyleNum);
+}
+
+function qaClosePanel() {
+  document.getElementById('qa-panel-overlay').classList.remove('open');
+  document.getElementById('qa-panel').classList.remove('open');
+  qaState.currentStyleNum = null;
+}
+
+// Quick-fix panel rendering
+function qaRenderQuickFix(defaultFields, styleNum) {
+  const panel = document.getElementById('qa-quick-fix');
+  const rowsEl = document.getElementById('qa-quick-fix-rows');
+  if (!panel || !rowsEl) return;
+
+  // Group the common defaults
+  const knownGroups = {
+    'Package Dimensions': [160, 162, 164, 166],
+    'Dates': [77, 153],
+    'Closure Type': [131],
+  };
+
+  const fieldByCol = {};
+  defaultFields.forEach(f => { fieldByCol[f.col] = f; });
+
+  // Build rows
+  let rowsHtml = '';
+  let hasAny = false;
+
+  // Package dimensions row
+  if (fieldByCol[160] || fieldByCol[162] || fieldByCol[164] || fieldByCol[166]) {
+    hasAny = true;
+    const len  = (fieldByCol[160] || {}).value || '14';
+    const wid  = (fieldByCol[162] || {}).value || '10';
+    const hgt  = (fieldByCol[164] || {}).value || '2';
+    const wgt  = (fieldByCol[166] || {}).value || '0.5';
+    rowsHtml += `
+      <div class="qa-quick-fix-row">
+        <span class="qa-quick-fix-label">Package Dimensions</span>
+        <input class="qa-quick-fix-input" id="qf-160" value="${escHtml(len)}" title="Length (in)" placeholder="L"> <span class="qa-quick-fix-unit">&times;</span>
+        <input class="qa-quick-fix-input" id="qf-162" value="${escHtml(wid)}" title="Width (in)" placeholder="W"> <span class="qa-quick-fix-unit">&times;</span>
+        <input class="qa-quick-fix-input" id="qf-164" value="${escHtml(hgt)}" title="Height (in)" placeholder="H"> <span class="qa-quick-fix-unit">IN &nbsp; Weight:</span>
+        <input class="qa-quick-fix-input" id="qf-166" value="${escHtml(wgt)}" title="Weight (lbs)" placeholder="W"> <span class="qa-quick-fix-unit">LB</span>
+      </div>
+    `;
+  }
+
+  // Dates row
+  if (fieldByCol[77]) {
+    hasAny = true;
+    rowsHtml += `
+      <div class="qa-quick-fix-row">
+        <span class="qa-quick-fix-label">Item Booking Date</span>
+        <input class="qa-quick-fix-input" id="qf-77" value="${escHtml(fieldByCol[77].value)}" style="width:100px;" title="YYYYMMDD">
+        <span class="qa-quick-fix-unit">YYYYMMDD</span>
+      </div>
+    `;
+  }
+  if (fieldByCol[153]) {
+    hasAny = true;
+    rowsHtml += `
+      <div class="qa-quick-fix-row">
+        <span class="qa-quick-fix-label">Earliest Ship Date</span>
+        <input class="qa-quick-fix-input" id="qf-153" value="${escHtml(fieldByCol[153].value)}" style="width:100px;" title="YYYYMMDD">
+        <span class="qa-quick-fix-unit">YYYYMMDD</span>
+      </div>
+    `;
+  }
+
+  // Closure type
+  if (fieldByCol[131]) {
+    hasAny = true;
+    rowsHtml += `
+      <div class="qa-quick-fix-row">
+        <span class="qa-quick-fix-label">Closure Type</span>
+        <select class="qa-quick-fix-input" id="qf-131" style="width:120px;">
+          <option ${fieldByCol[131].value==='Pull On'?'selected':''}>Pull On</option>
+          <option ${fieldByCol[131].value==='Zip'?'selected':''}>Zip</option>
+          <option ${fieldByCol[131].value==='Button'?'selected':''}>Button</option>
+          <option ${fieldByCol[131].value==='Hook &amp; Eye'?'selected':''}>Hook &amp; Eye</option>
+        </select>
+      </div>
+    `;
+  }
+
+  // Other default fields not in known groups
+  defaultFields.forEach(f => {
+    if (![160, 162, 164, 166, 77, 153, 131].includes(f.col)) {
+      hasAny = true;
+      rowsHtml += `
+        <div class="qa-quick-fix-row">
+          <span class="qa-quick-fix-label" title="Col ${f.col}">${escHtml(f.header)}</span>
+          <input class="qa-quick-fix-input" id="qf-${f.col}" value="${escHtml(f.value)}" style="width:160px;">
+        </div>
+      `;
+    }
+  });
+
+  if (hasAny) {
+    rowsEl.innerHTML = rowsHtml;
+    panel.style.display = 'block';
+    // Store the cols that have quick-fix inputs
+    panel.dataset.styleNum = styleNum;
+    panel.dataset.cols = defaultFields.map(f => f.col).join(',');
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+async function qaSaveQuickFix() {
+  const panel = document.getElementById('qa-quick-fix');
+  if (!panel) return;
+  const styleNum = panel.dataset.styleNum;
+  const cols = (panel.dataset.cols || '').split(',').filter(Boolean);
+
+  const saves = [];
+  cols.forEach(col => {
+    const inp = document.getElementById(`qf-${col}`);
+    if (inp) {
+      const value = inp.value.trim();
+      saves.push(
+        fetch('/api/update-field', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ style_num: styleNum, col: parseInt(col), value }),
+        })
+      );
+    }
+  });
+
+  try {
+    await Promise.all(saves);
+    showToast('All defaults saved', 'success');
+    await qaOpenPanel(styleNum);
+    qaRefreshSummary();
+  } catch(e) {
+    showToast('Save failed', 'error');
+  }
 }
 
 // ═══════════════════════ RENDER STYLE CARDS ═══════════════════════
@@ -3718,12 +4478,13 @@ async function resetSession() {
 
 // ═══════════════════════ UTILITIES ═══════════════════════
 function escHtml(str) {
-  if (!str) return '';
+  if (str === undefined || str === null) return '';
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function toggleAccordion(id) {

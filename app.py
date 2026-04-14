@@ -1189,6 +1189,8 @@ session_data = {
     "generated_content": {},
     # Multi-template: maps product_type -> path, e.g. {"Dresses": "/path/to/Dresses.xlsm"}
     "templates": {},
+    # Field overrides from QA review: { style_num: { str(col_num): value } }
+    "field_overrides": {},
 }
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -1226,6 +1228,7 @@ def session_reset():
     session_data["analytics"] = []
     session_data["generated_content"] = {}
     session_data["templates"] = {}
+    session_data["field_overrides"] = {}
     return jsonify({"ok": True})
 
 @app.route("/api/brand-config", methods=["POST"])
@@ -1980,6 +1983,368 @@ def _derive_sleeve_length(sleeve_type):
     return "Sleeveless"
 
 
+# ── QA Preview helpers ─────────────────────────────────────────────────────────
+def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
+    """
+    Build the list of all fields that would go into the .xlsm for a given style,
+    with status: 'filled', 'default', 'empty', or 'locked'.
+    Returns a list of field dicts.
+    """
+    style_num     = style["style_num"]
+    style_name    = style["style_name"]
+    variants      = style["variants"]
+    list_price    = style.get("list_price", "")
+    cost_price    = style.get("cost_price", "")
+    sub_class     = style.get("sub_class", "Day Dress")
+    sub_subclass  = style.get("sub_subclass", "")
+    model_name_raw = style.get("model_name", "") or style_name
+
+    bullets      = content.get("bullets", [])
+    description  = content.get("description", "")
+    backend_kw   = content.get("backend_keywords", "")
+    neck_type    = content.get("neck_type", "") or derive_neck_type(style_name)
+    sleeve_type  = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
+    silhouette   = content.get("silhouette", "") or derive_silhouette(sub_subclass)
+    category     = content.get("category", "") or _derive_amazon_product_category(sub_class)
+    subcategory  = content.get("subcategory", "casual-dresses")
+    fabric       = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
+    care         = content.get("care", "") or brand_cfg.get("default_care", "")
+    upf          = content.get("upf", "") or brand_cfg.get("default_upf", "")
+    coo          = content.get("coo", "") or brand_cfg.get("default_coo", "") or "Imported"
+    clean_brand  = clean_brand_name(brand)
+    item_type_name = _derive_item_type_name(sub_class)
+    item_length    = _derive_item_length(sub_subclass, style_name)
+    fabric_type    = _derive_fabric_type(fabric)
+    itk_value      = _derive_item_type_keyword(sub_class)
+    today_str      = datetime.now().strftime("%Y%m%d")
+    parent_sku     = style_num
+
+    # Sample title (parent)
+    title = content.get("title", style_name)
+
+    # Determine first variant for example child fields
+    first_variant = variants[0] if variants else {}
+    color_name = first_variant.get("color_name", "")
+    size       = first_variant.get("size", "")
+    upc        = first_variant.get("upc", "")
+    sku        = first_variant.get("sku", "") or f"{style_num}-{color_name}-{size}".replace(" ", "-")
+    color_family = COLOR_MAP.get(color_name.upper().strip(), normalize_color(color_name))
+    size_normalized = normalize_size(size)
+    variant_cost = first_variant.get("cost_price", "") or cost_price
+
+    def f(col, header, value, status, editable=True, note=""):
+        return {"col": col, "header": header, "value": str(value) if value is not None else "", "status": status, "editable": editable, "note": note}
+
+    fields = [
+        # Col 1 — Vendor Code
+        f(1, "Vendor Code", vendor_code or brand_cfg.get("vendor_code_full", ""),
+          "filled" if (vendor_code or brand_cfg.get("vendor_code_full", "")) else "empty", False),
+        # Col 2 — Vendor SKU (parent)
+        f(2, "Vendor SKU (Parent)", parent_sku, "filled", False),
+        # Col 3 — Product Type
+        f(3, "Product Type", "DRESS", "locked", False),
+        # Col 4 — Parentage Level
+        f(4, "Parentage Level", "Parent / Child", "locked", False),
+        # Col 5 — Child Relationship Type
+        f(5, "Child Relationship Type", "Variation", "locked", False),
+        # Col 6 — Parent SKU
+        f(6, "Parent SKU", parent_sku, "locked", False),
+        # Col 7 — Variation Theme
+        f(7, "Variation Theme", "COLOR/SIZE", "locked", False),
+        # Col 8 — Item Name
+        f(8, "Item Name", title, "filled" if title and title != style_name else "default", True),
+        # Col 9 — Brand Name
+        f(9, "Brand Name", clean_brand, "filled" if clean_brand else "empty", False),
+        # Col 10 — External Product ID Type
+        f(10, "External Product ID Type", "UPC" if upc else "",
+          "filled" if upc else "default", False),
+        # Col 11 — External Product ID Value
+        f(11, "External Product ID Value", re.sub(r'\D', '', str(upc)) if upc else "",
+          "filled" if upc else "default", False),
+        # Col 13 — Product Category
+        f(13, "Product Category", category, "filled" if category else "default", False),
+        # Col 14 — Product Subcategory
+        f(14, "Product Subcategory", subcategory, "filled" if subcategory else "default", False),
+        # Col 15 — Item Type Keyword
+        f(15, "Item Type Keyword", itk_value, "filled" if itk_value else "default", False),
+        # Col 18 — Model Number
+        f(18, "Model Number", style_num, "filled", False),
+        # Col 19 — Model Name
+        f(19, "Model Name", (model_name_raw or style_name).title(), "filled", False),
+        # Bullets
+        f(30, "Bullet Point 1", bullets[0][:120] + "..." if bullets and len(bullets[0]) > 120 else (bullets[0] if bullets else ""),
+          "filled" if bullets else "empty", True,
+          "" if bullets else "Required for submission."),
+        f(31, "Bullet Point 2", bullets[1][:120] + "..." if len(bullets) > 1 and len(bullets[1]) > 120 else (bullets[1] if len(bullets) > 1 else ""),
+          "filled" if len(bullets) > 1 else "empty", True),
+        f(32, "Bullet Point 3", bullets[2][:120] + "..." if len(bullets) > 2 and len(bullets[2]) > 120 else (bullets[2] if len(bullets) > 2 else ""),
+          "filled" if len(bullets) > 2 else "empty", True),
+        f(33, "Bullet Point 4", bullets[3][:120] + "..." if len(bullets) > 3 and len(bullets[3]) > 120 else (bullets[3] if len(bullets) > 3 else ""),
+          "filled" if len(bullets) > 3 else "empty", True),
+        f(34, "Bullet Point 5", bullets[4][:120] + "..." if len(bullets) > 4 and len(bullets[4]) > 120 else (bullets[4] if len(bullets) > 4 else ""),
+          "filled" if len(bullets) > 4 else "empty", True),
+        # Col 35 — Backend Keywords
+        f(35, "Backend Keywords", backend_kw[:100] + "..." if backend_kw and len(backend_kw) > 100 else backend_kw,
+          "filled" if backend_kw else "default", True,
+          "" if backend_kw else "Using category defaults."),
+        # Col 46 — Style Name
+        f(46, "Style Name", style_name.title(), "filled", False),
+        # Col 47 — Department
+        f(47, "Department", brand_cfg.get("department", "Womens"), "filled", False),
+        # Col 48 — Target Gender
+        f(48, "Target Gender", brand_cfg.get("gender", "Female"), "filled", False),
+        # Col 49 — Age Range
+        f(49, "Age Range", "Adult", "locked", False),
+        # Col 50 — Size System
+        f(50, "Size System", "US", "locked", False),
+        # Col 51 — Size Class
+        f(51, "Size Class", "Alpha", "locked", False),
+        # Col 52 — Size (first variant)
+        f(52, "Size (first variant)", size_normalized or size, "filled" if size else "default", False),
+        # Col 56 — Material
+        f(56, "Material", fabric, "filled" if fabric else "default", True,
+          "" if fabric else "No fabric data. Will use brand default."),
+        # Col 59 — Fabric Type
+        f(59, "Fabric Type", fabric_type, "filled" if fabric else "default", False),
+        # Col 61 — Number of Items
+        f(61, "Number of Items", "1", "locked", False),
+        # Col 62 — Item Type Name
+        f(62, "Item Type Name", item_type_name, "filled", False),
+        # Col 66 — Special Size Type
+        f(66, "Special Size Type", "Standard", "locked", False),
+        # Col 67 — Product Description
+        f(67, "Product Description", description[:120] + "..." if description and len(description) > 120 else description,
+          "filled" if description else "empty", True,
+          "" if description else "Required for submission."),
+        # Col 68 — Color Standardized
+        f(68, "Color (Standardized)", color_family, "filled" if color_family else "default", False),
+        # Col 69 — Color Value
+        f(69, "Color", color_name.title() if color_name else "",
+          "filled" if color_name else "default", False),
+        # Col 70 — Item Length Description
+        f(70, "Item Length Description", item_length, "filled", False),
+        # Col 77 — Item Booking Date
+        f(77, "Item Booking Date", today_str, "default", True,
+          "Using today's date. Change if different."),
+        # Col 89 — Care Instructions
+        f(89, "Care Instructions", care, "filled" if care else "default", True,
+          "" if care else "No care data. Will use brand default."),
+        # Col 91 — Unit Count
+        f(91, "Unit Count", "1", "locked", False),
+        # Col 92 — Unit Count Type
+        f(92, "Unit Count Type", "Count", "locked", False),
+        # Col 118 — Collar/Neck Style
+        f(118, "Neck/Collar Style", neck_type, "filled" if neck_type else "default", True,
+          "" if neck_type else "Could not derive from style name."),
+        # Col 126 — Lifecycle
+        f(126, "Product Lifecycle", "new", "locked", False),
+        # Col 128 — Silhouette
+        f(128, "Silhouette", silhouette, "filled" if silhouette else "default", True),
+        # Col 129 — Sleeve Length
+        f(129, "Sleeve Length", _derive_sleeve_length(sleeve_type), "filled", False),
+        # Col 130 — Sleeve Type
+        f(130, "Sleeve Type", sleeve_type, "filled" if sleeve_type else "default", True),
+        # Col 131 — Closure Type
+        f(131, "Closure Type", "Pull On", "default", True,
+          "Default 'Pull On'. Update if style has zipper or buttons."),
+        # Col 138 — UPF
+        f(138, "UPF Protection", upf, "filled" if upf else "default", True,
+          "" if upf else "No UPF value — leave blank if not applicable."),
+        # Col 149 — Skip Offer
+        f(149, "Skip Offer", "No", "locked", False),
+        # Col 150 — List Price
+        f(150, "List Price", list_price, "filled" if list_price else "empty", True,
+          "" if list_price else "Enter retail list price."),
+        # Col 151 — Cost Price
+        f(151, "Cost Price", variant_cost, "filled" if variant_cost else "empty", True,
+          "" if variant_cost else "Required for submission. Enter cost price."),
+        # Col 152 — Import Designation
+        f(152, "Import Designation", "Imported", "locked", False),
+        # Col 153 — Earliest Shipping Date
+        f(153, "Earliest Shipping Date", today_str, "default", True,
+          "Using today's date. Update if different."),
+        # Col 160 — Package Length
+        f(160, "Item Package Length", "14", "default", True,
+          "Default 14 inches. Update with actual measurement."),
+        # Col 161 — Package Length Unit
+        f(161, "Package Length Unit", "IN", "locked", False),
+        # Col 162 — Package Width
+        f(162, "Item Package Width", "10", "default", True,
+          "Default 10 inches. Update with actual measurement."),
+        # Col 163 — Package Width Unit
+        f(163, "Package Width Unit", "IN", "locked", False),
+        # Col 164 — Package Height
+        f(164, "Item Package Height", "2", "default", True,
+          "Default 2 inches. Update with actual measurement."),
+        # Col 165 — Package Height Unit
+        f(165, "Package Height Unit", "IN", "locked", False),
+        # Col 166 — Package Weight
+        f(166, "Item Package Weight", "0.5", "default", True,
+          "Default 0.5 lbs. Update with actual weight."),
+        # Col 167 — Package Weight Unit
+        f(167, "Package Weight Unit", "LB", "locked", False),
+        # Col 168 — Order Aggregate Type
+        f(168, "Order Aggregate Type", "Each", "locked", False),
+        # Col 169 — Items per Inner Pack
+        f(169, "Items per Inner Pack", "1", "locked", False),
+        # Col 170 — Country of Origin
+        f(170, "Country of Origin", coo, "filled" if coo else "default", True,
+          "" if coo else "Update with actual country of origin."),
+        # Col 171 — Batteries Required
+        f(171, "Batteries Required", "No", "locked", False),
+        # Col 172 — Batteries Included
+        f(172, "Batteries Included", "No", "locked", False),
+    ]
+
+    return fields
+
+
+def _qa_summary_for_style(style_num, style_name, fields):
+    """Given a list of field dicts, return summary counts and status."""
+    filled  = sum(1 for f in fields if f["status"] == "filled" or f["status"] == "locked")
+    defaults = sum(1 for f in fields if f["status"] == "default")
+    empty   = sum(1 for f in fields if f["status"] == "empty")
+    total   = len(fields)
+    if empty > 0:
+        status = "attention"
+    elif defaults > 0:
+        status = "defaults"
+    else:
+        status = "ready"
+    return {
+        "style_num": style_num,
+        "style_name": style_name,
+        "filled": filled,
+        "defaults": defaults,
+        "empty": empty,
+        "total": total,
+        "status": status,
+    }
+
+
+@app.route("/api/preview-nis", methods=["POST"])
+def preview_nis():
+    """Return all fields for a style with their values and QA status."""
+    data = request.get_json(force=True)
+    style_num = data.get("style_num", "").strip()
+    if not style_num:
+        return jsonify({"error": "style_num required"}), 400
+
+    brand        = session_data.get("brand")
+    vendor_code  = session_data.get("vendor_code", "")
+    styles       = session_data.get("styles", [])
+    content_map  = session_data.get("generated_content", {})
+    overrides    = session_data.get("field_overrides", {}).get(style_num, {})
+
+    if not brand:
+        return jsonify({"error": "No brand selected"}), 400
+
+    style = next((s for s in styles if s["style_num"] == style_num), None)
+    if not style:
+        return jsonify({"error": f"Style {style_num} not found"}), 404
+
+    brand_cfg = _load_brand_config_data(brand)
+    content   = content_map.get(style_num, {})
+
+    fields = _build_preview_fields(brand, brand_cfg, vendor_code, style, content)
+
+    # Apply any stored overrides — mark overridden fields as 'filled'
+    for field in fields:
+        col_key = str(field["col"])
+        if col_key in overrides:
+            field["value"]  = overrides[col_key]
+            field["status"] = "filled"
+            field["overridden"] = True
+
+    filled_count   = sum(1 for f in fields if f["status"] in ("filled", "locked"))
+    defaults_count = sum(1 for f in fields if f["status"] == "default")
+    empty_count    = sum(1 for f in fields if f["status"] == "empty")
+
+    return jsonify({
+        "style_num":       style_num,
+        "style_name":      style["style_name"],
+        "total_fields":    len(fields),
+        "filled":          filled_count,
+        "defaults_used":   defaults_count,
+        "needs_attention": empty_count,
+        "fields":          fields,
+    })
+
+
+@app.route("/api/update-field", methods=["POST"])
+def update_field():
+    """Store a field override for a style, picked up when generating .xlsm."""
+    data      = request.get_json(force=True)
+    style_num = str(data.get("style_num", "")).strip()
+    col       = str(data.get("col", "")).strip()
+    value     = data.get("value", "")
+
+    if not style_num or not col:
+        return jsonify({"error": "style_num and col required"}), 400
+
+    if "field_overrides" not in session_data:
+        session_data["field_overrides"] = {}
+    if style_num not in session_data["field_overrides"]:
+        session_data["field_overrides"][style_num] = {}
+
+    session_data["field_overrides"][style_num][col] = value
+    return jsonify({"ok": True, "style_num": style_num, "col": col, "value": value})
+
+
+@app.route("/api/nis-qa-summary")
+def nis_qa_summary():
+    """Return QA summary across all styles."""
+    brand       = session_data.get("brand")
+    vendor_code = session_data.get("vendor_code", "")
+    styles      = session_data.get("styles", [])
+    content_map = session_data.get("generated_content", {})
+    overrides   = session_data.get("field_overrides", {})
+
+    if not brand:
+        return jsonify({"error": "No brand selected"}), 400
+    if not styles:
+        return jsonify({"error": "No styles loaded"}), 400
+
+    brand_cfg = _load_brand_config_data(brand)
+
+    style_summaries = []
+    total_ready = 0
+    total_attention = 0
+    total_defaults = 0
+
+    for style in styles:
+        snum    = style["style_num"]
+        sname   = style["style_name"]
+        content = content_map.get(snum, {})
+        fields  = _build_preview_fields(brand, brand_cfg, vendor_code, style, content)
+
+        # Apply overrides
+        style_overrides = overrides.get(snum, {})
+        for field in fields:
+            col_key = str(field["col"])
+            if col_key in style_overrides:
+                field["status"] = "filled"
+
+        summary = _qa_summary_for_style(snum, sname, fields)
+        style_summaries.append(summary)
+
+        if summary["status"] == "ready":
+            total_ready += 1
+        elif summary["status"] == "attention":
+            total_attention += 1
+        else:  # defaults
+            total_defaults += 1
+
+    return jsonify({
+        "total_styles":    len(styles),
+        "ready":           total_ready,
+        "has_defaults":    total_defaults,
+        "needs_attention": total_attention,
+        "content_generated": len(content_map) > 0,
+        "styles":          style_summaries,
+    })
+
+
 def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content):
     """
     .xlsm surgery:
@@ -2147,6 +2512,9 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     # Parent SKU for NIS = style_num (vendor-side SKU, not ASIN)
     parent_sku = style_num
     
+    # Load any QA field overrides for this style
+    _field_overrides = session_data.get("field_overrides", {}).get(style_num, {})
+    
     # Group variants by color (retained for future use)
     color_groups = defaultdict(list)
     for v in variants:
@@ -2157,6 +2525,10 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         for col_num, value in values_dict.items():
             if col_num is None:
                 continue
+            # Check if operator has overridden this column via QA review
+            override_key = str(col_num)
+            if override_key in _field_overrides:
+                value = _field_overrides[override_key]
             cell = ws.cell(row=row_idx, column=col_num)
             cell.value = value
             # Apply style from row 7
