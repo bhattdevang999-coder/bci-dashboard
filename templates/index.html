@@ -1652,7 +1652,7 @@
             <li>Upload your product data → system auto-detects brand, product types, sizes, colors</li>
             <li>Review generated content → each field has a “Why” explanation</li>
             <li>Edit, regenerate, or accept each field</li>
-            <li>Download as CSV or .xlsm files — per style, per category, or all combined</li>
+            <li>Download as .xlsm files — per style, per category, or all combined</li>
           </ol>
         </div>
         <div class="tutorial-section">
@@ -1824,7 +1824,7 @@
             <span style="font-size:18px;">📋</span>
             <div>
               <div class="accordion-title">Amazon NIS Template <span class="optional-tag">Optional</span></div>
-              <div class="accordion-meta" id="acc-template-meta">Upload to get .xlsm output — otherwise CSV only</div>
+              <div class="accordion-meta" id="acc-template-meta">Required for .xlsm output. Dresses template pre-loaded.</div>
             </div>
           </div>
           <span class="accordion-chevron">▼</span>
@@ -2016,9 +2016,8 @@
 
         <div class="download-actions" id="download-actions" style="display:flex; flex-direction:column; gap:12px;">
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-primary" id="btn-download-csv" onclick="downloadCSV()">↓ Download All as CSV</button>
-            <button class="btn btn-success" id="btn-download-xlsm" onclick="generateNIS()" style="display:none;">↓ Download All as .xlsm (ZIP)</button>
-            <button class="btn" id="btn-download-combined" onclick="downloadCombined()" style="display:none; background:#28251D; color:#fff;">↓ Download All in One File (.xlsm)</button>
+            <button class="btn btn-success" id="btn-download-xlsm" onclick="generateNIS()">↓ Generate & Download All as .xlsm (ZIP)</button>
+            <button class="btn" id="btn-download-combined" onclick="downloadCombined()" style="background:#28251D; color:#fff;">↓ Download All in One File (.xlsm)</button>
           </div>
           <div id="category-downloads" style="display:none;">
             <div style="font-size:12px; font-weight:600; color:var(--text-sec); margin-bottom:6px;">DOWNLOAD BY CATEGORY</div>
