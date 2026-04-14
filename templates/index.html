@@ -3010,7 +3010,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
 <!-- ── Operator identity ─────────────────────────────────────── -->
 <div class="nis-operator-row">
-  <label class="nis-operator-label" for="operator-input">Who's working today?</label>
+  <label class="nis-operator-label" for="operator-input">Name:</label>
   <input type="text" id="operator-input" class="nis-operator-input"
          placeholder="Your name" autocomplete="off"
          oninput="setOperator(this.value)">
@@ -3378,7 +3378,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         <button class="ws-tab" data-tab="variants" onclick="wsSwitchTab('variants')">Variants</button>
       </div>
       <button class="btn btn-primary btn-sm ws-download-btn" onclick="wsShowDownloadModal()">
-        ↓ Download NIS Files
+        ↓ Generate & Download
       </button>
     </div>
 
@@ -3412,41 +3412,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   </div>
 </div>
 
-<!-- ════════════════ DOWNLOAD MODAL ════════════════ -->
-<div class="ws-modal-overlay" id="dl-modal-overlay" onclick="wsCloseDownloadModal()"></div>
-<div class="ws-modal" id="dl-modal">
-  <div class="ws-modal-header">
-    <div class="ws-modal-title">Download NIS Files</div>
-    <button class="ws-modal-close" onclick="wsCloseDownloadModal()">&times;</button>
-  </div>
-  <div class="ws-modal-body">
-    <div class="ws-modal-summary" id="dl-modal-summary">Loading...</div>
-    <div class="ws-modal-options">
-      <label class="ws-modal-check">
-        <input type="checkbox" id="dl-include-defaults" checked>
-        Include styles with default values
-      </label>
-      <label class="ws-modal-check">
-        <input type="checkbox" id="dl-include-missing">
-        Include styles with missing required fields
-      </label>
-    </div>
-    <div class="ws-modal-feedback-section">
-      <div class="ws-modal-label">Session rating</div>
-      <div class="ws-rating-row">
-        <label class="ws-rating-opt"><input type="radio" name="dl-rating" value="good"> Good</label>
-        <label class="ws-rating-opt"><input type="radio" name="dl-rating" value="issues"> Had Issues</label>
-        <label class="ws-rating-opt"><input type="radio" name="dl-rating" value="bad"> Bad</label>
-      </div>
-      <textarea id="dl-notes" class="nis-feedback-textarea" rows="2"
-                placeholder="Any notes on this session?" style="margin-top:8px;"></textarea>
-    </div>
-  </div>
-  <div class="ws-modal-footer">
-    <button class="btn btn-secondary" onclick="wsCloseDownloadModal()">Cancel</button>
-    <button class="btn btn-primary" onclick="wsDownload()">Generate &amp; Download</button>
-  </div>
-</div>
+<!-- ════════════════ NIS GENERATION INLINE ════════════════ -->
+<!-- No modal. Download button triggers NIS generation directly.
+     Session feedback is collected inline during the build progress. -->
 
 <!-- Legacy: keep section-content stub so old JS references don't throw -->
 <div id="section-content" class="hidden">
@@ -3511,7 +3479,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
     <div id="download-actions">
       <button class="btn btn-success" id="btn-generate-nis" onclick="generateNIS()">↓ Generate .xlsm Files</button>
-      <button class="btn btn-secondary" id="btn-download-xlsm" style="display:none;" onclick="wsShowDownloadModal()">↓ Download NIS Files</button>
+      <button class="btn btn-secondary" id="btn-download-xlsm" style="display:none;" onclick="wsShowDownloadModal()">↓ Generate & Download</button>
     </div>
     <div id="category-downloads" style="display:none;">
       <div id="category-buttons" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
@@ -5661,7 +5629,7 @@ function wsUpdateGateStatus(styleNum, isApproved) {
   if (dlBtn) {
     dlBtn.textContent = approvedCount > 0
       ? `↓ Download ${approvedCount} Ready Style${approvedCount > 1 ? 's' : ''}`
-      : '↓ Download NIS Files';
+      : '↓ Generate & Download';
   }
 }
 
@@ -5873,43 +5841,62 @@ async function wsApplySharedFields() {
 //  DOWNLOAD MODAL
 // ════════════════════════════════════════════════════════════
 async function wsShowDownloadModal() {
-  // Update summary in modal
-  const summEl = document.getElementById('dl-modal-summary');
-  if (wsState.raliQaSummary && summEl) {
-    const d = wsState.raliQaSummary;
-    summEl.innerHTML = `
-      ✓ ${d.ready} ready &nbsp;·&nbsp;
-      ⚡ ${d.has_defaults} with defaults &nbsp;·&nbsp;
-      ✗ ${d.needs_attention} missing required
-    `;
+  // No modal — just generate and download directly
+  wsGenerateAndDownload();
+}
+function wsCloseDownloadModal() { /* no-op, modal removed */ }
+
+async function wsGenerateAndDownload() {
+  // Show inline progress in the action bar
+  const bar = document.getElementById('ws-action-bar-stats');
+  if (bar) bar.innerHTML = '<div class="spinner dark" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></div> Generating .xlsm files...';
+
+  // Trigger NIS file generation
+  try {
+    await fetch('/api/generate-nis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand: state.brand,
+        styles: state.styles,
+        content_map: state.generatedContent || {},
+        vendor_code: state.vendorCode || '',
+      }),
+    });
+  } catch(e) {
+    if (bar) bar.textContent = 'Generation failed: ' + e.message;
+    return;
   }
 
-  document.getElementById('dl-modal-overlay').classList.add('open');
-  document.getElementById('dl-modal').classList.add('open');
+  // Poll NIS generation progress
+  const poll = setInterval(async () => {
+    try {
+      const r = await fetch('/api/generate-progress');
+      const pg = await r.json();
+      if (bar) {
+        bar.innerHTML = `<div class="spinner dark" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></div> Building .xlsm: ${pg.current_style || ''} (${pg.completed || 0}/${pg.total || 0})`;
+      }
+      if (pg.status === 'done' || (pg.total > 0 && pg.completed >= pg.total)) {
+        clearInterval(poll);
+        if (bar) bar.textContent = '\u2713 Files ready — downloading...';
+
+        // Ask for quick session feedback inline (non-blocking)
+        const note = prompt('Quick session note (optional — helps improve the system):');
+        if (note) {
+          wsSendFeedback('session', 'download', { scope: 'brand' }, { note });
+        }
+
+        // Download
+        window.location.href = '/api/download-all';
+        setTimeout(() => {
+          if (bar) bar.textContent = '\u2713 Downloaded';
+        }, 2000);
+      }
+    } catch(e) { /* keep polling */ }
+  }, 1000);
 }
 
-function wsCloseDownloadModal() {
-  document.getElementById('dl-modal-overlay').classList.remove('open');
-  document.getElementById('dl-modal').classList.remove('open');
-}
-
-async function wsDownload() {
-  const includeDefaults = document.getElementById('dl-include-defaults')?.checked;
-  const includeMissing = document.getElementById('dl-include-missing')?.checked;
-  const rating = document.querySelector('input[name="dl-rating"]:checked')?.value || '';
-  const notes = document.getElementById('dl-notes')?.value.trim() || '';
-
-  // Send session feedback
-  await wsSendFeedback('session', 'download', { scope: 'brand' }, {
-    rating,
-    note: notes,
-    include_defaults: includeDefaults,
-    include_missing: includeMissing,
-  });
-
-  wsCloseDownloadModal();
-  window.location.href = '/api/download-all';
-}
+async function wsDownload() { wsGenerateAndDownload(); }
 
 // ════════════════════════════════════════════════════════════
 //  SESSION RESET

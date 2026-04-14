@@ -2424,22 +2424,22 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
         f(160, "Item Package Length", "14", "default", True,
           "Default 14 inches. Update with actual measurement.",
           field_id="item_package_dimensions#1.length.value", req_level="required"),
-        f(161, "Package Length Unit", "IN", "locked", False,
+        f(161, "Package Length Unit", "Inches", "locked", False,
           field_id="item_package_dimensions#1.length.unit", req_level="required"),
         f(162, "Item Package Width", "10", "default", True,
           "Default 10 inches. Update with actual measurement.",
           field_id="item_package_dimensions#1.width.value", req_level="required"),
-        f(163, "Package Width Unit", "IN", "locked", False,
+        f(163, "Package Width Unit", "Inches", "locked", False,
           field_id="item_package_dimensions#1.width.unit", req_level="required"),
         f(164, "Item Package Height", "2", "default", True,
           "Default 2 inches. Update with actual measurement.",
           field_id="item_package_dimensions#1.height.value", req_level="required"),
-        f(165, "Package Height Unit", "IN", "locked", False,
+        f(165, "Package Height Unit", "Inches", "locked", False,
           field_id="item_package_dimensions#1.height.unit", req_level="required"),
         f(166, "Item Package Weight", "0.5", "default", True,
           "Default 0.5 lbs. Update with actual weight.",
           field_id="item_package_weight#1.value", req_level="required"),
-        f(167, "Package Weight Unit", "LB", "locked", False,
+        f(167, "Package Weight Unit", "Pounds", "locked", False,
           field_id="item_package_weight#1.unit", req_level="required"),
         f(168, "Order Aggregate Type", "Each", "locked", False,
           field_id="rtip_order_aggregate_type#1.value", req_level="required"),
@@ -2948,13 +2948,13 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "contains_battery_or_cell#1.value", "No")
         # Package dimensions
         write_cell(row_idx, "item_package_dimensions#1.length.value",      "14")
-        write_cell(row_idx, "item_package_dimensions#1.length.unit",       "IN")
+        write_cell(row_idx, "item_package_dimensions#1.length.unit",       "Inches")
         write_cell(row_idx, "item_package_dimensions#1.width.value",       "10")
-        write_cell(row_idx, "item_package_dimensions#1.width.unit",        "IN")
+        write_cell(row_idx, "item_package_dimensions#1.width.unit",        "Inches")
         write_cell(row_idx, "item_package_dimensions#1.height.value",      "2")
-        write_cell(row_idx, "item_package_dimensions#1.height.unit",       "IN")
+        write_cell(row_idx, "item_package_dimensions#1.height.unit",       "Inches")
         write_cell(row_idx, "item_package_weight#1.value",      "0.5")
-        write_cell(row_idx, "item_package_weight#1.unit",       "LB")
+        write_cell(row_idx, "item_package_weight#1.unit",       "Pounds")
         write_cell(row_idx, "rtip_order_aggregate_type#1.value",     "Each")
         write_cell(row_idx, "rtip_items_per_inner_pack#1.value",     "1")
         if coo:
@@ -2969,11 +2969,7 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     current_row = 7
 
     # ── Parent row ────────────────────────────────────────────────────────────
-    write_shared(current_row, parent_sku, is_child=False)
-    write_cell(current_row, "parentage_level#1.value",          "Parent")
-    write_cell(current_row, "item_name#1.value",                content.get("title", style_name))
-    current_row += 1
-
+    # NOTE: No parent row — all ASINs are children (merged to parent later)
     # ── Child rows (one per variant) ──────────────────────────────────────────
     for v in variants:
         color_name = v.get("color_name", "")
@@ -3218,13 +3214,13 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             # Contains battery/cell — required compliance field
             wc(r, "contains_battery_or_cell#1.value", "No", style_num=_sn)
             wc(r, "item_package_dimensions#1.length.value",      "14", style_num=_sn)
-            wc(r, "item_package_dimensions#1.length.unit",       "IN", style_num=_sn)
+            wc(r, "item_package_dimensions#1.length.unit",       "Inches", style_num=_sn)
             wc(r, "item_package_dimensions#1.width.value",       "10", style_num=_sn)
-            wc(r, "item_package_dimensions#1.width.unit",        "IN", style_num=_sn)
+            wc(r, "item_package_dimensions#1.width.unit",        "Inches", style_num=_sn)
             wc(r, "item_package_dimensions#1.height.value",      "2", style_num=_sn)
-            wc(r, "item_package_dimensions#1.height.unit",       "IN", style_num=_sn)
+            wc(r, "item_package_dimensions#1.height.unit",       "Inches", style_num=_sn)
             wc(r, "item_package_weight#1.value",      "0.5", style_num=_sn)
-            wc(r, "item_package_weight#1.unit",       "LB", style_num=_sn)
+            wc(r, "item_package_weight#1.unit",       "Pounds", style_num=_sn)
             wc(r, "rtip_order_aggregate_type#1.value",     "Each", style_num=_sn)
             wc(r, "rtip_items_per_inner_pack#1.value",     "1", style_num=_sn)
             if _coo:
@@ -3233,14 +3229,7 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(r, "batteries_included#1.value",  "No", style_num=_sn)
 
         # ── Parent row ────────────────────────────────────────────────────────
-        write_shared_row(cr, psku)
-        wc(cr, "parentage_level#1.value",             "Parent", style_num=sn)
-        wc(cr, "item_name#1.value",                   content.get("title", style_name), style_num=sn)
-        if list_price:
-            try:    wc(cr, "list_price#1.value",      float(list_price), style_num=sn)
-            except: wc(cr, "list_price#1.value",      list_price, style_num=sn)
-        cr += 1
-
+        # NOTE: No parent row — all ASINs are children (merged to parent later)
         # ── Child rows ────────────────────────────────────────────────────────
         for var in style.get("variants", []):
             color  = var.get("color", "") or var.get("color_name", "")
