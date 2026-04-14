@@ -2531,8 +2531,9 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     neck_type    = content.get("neck_type", "") or derive_neck_type(style_name)
     sleeve_type  = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
     silhouette   = content.get("silhouette", "") or derive_silhouette(sub_subclass)
-    category     = content.get("category", "") or _derive_amazon_product_category(sub_class)
-    subcategory  = content.get("subcategory", "")
+    # Always derive from dropdown-validated function, not stale content values
+    category     = _derive_amazon_product_category(sub_class)
+    subcategory  = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
     fabric       = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
     care         = content.get("care", "") or brand_cfg.get("default_care", "")
     upf          = content.get("upf", "") or brand_cfg.get("default_upf", "")
@@ -2657,7 +2658,7 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="number_of_items#1.value", req_level="required"),
         f(62, "Item Type Name", item_type_name, "filled", False,
           field_id="item_type_name#1.value", req_level="required"),
-        f(66, "Special Size Type", "Standard", "locked", True,
+        f(66, "Special Size Type", "", "default", True,
           field_id="special_size_type#1.value", req_level="conditional"),
         f(68, "Color (Standardized)", color_family, "filled" if color_family else "default", False,
           field_id="color#1.standardized_values#1", req_level="required"),
@@ -2666,8 +2667,8 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="color#1.value", req_level="required"),
         f(70, "Item Length Description", item_length, "filled", False,
           field_id="item_length_description#1.value", req_level="conditional"),
-        f(83, "Fit Type", "Regular", "default", True,
-          "Default 'Regular'. Update if different.",
+        f(83, "Fit Type", "", "empty", True,
+          "Not auto-filled. Set if known.",
           field_id="fit_type#1.value", req_level="recommended"),
         f(89, "Care Instructions", care, "filled" if care else "default", True,
           "" if care else "No care data. Will use brand default.",
@@ -2681,8 +2682,8 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="sleeve#1.length_description#1.value", req_level="conditional"),
         f(130, "Sleeve Type", sleeve_type, "filled" if sleeve_type else "default", True,
           field_id="sleeve#1.type#1.value", req_level="conditional"),
-        f(131, "Closure Type", "Pull On", "default", True,
-          "Default 'Pull On'. Update if style has zipper or buttons.",
+        f(131, "Closure Type", "", "empty", True,
+          "Not auto-filled. Set if known (Pull On, Button, Zipper, etc.).",
           field_id="closure#1.type#1.value", req_level="recommended"),
         f(138, "UPF Protection", upf, "filled" if upf else "default", True,
           "" if upf else "No UPF value — leave blank if not applicable.",
@@ -2717,23 +2718,23 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
         # ── Shipping & Compliance ──
         f(152, "Import Designation", "Imported", "locked", True,
           field_id="import_designation#1.value", req_level="required"),
-        f(160, "Item Package Length", "14", "default", True,
-          "Default 14 inches. Update with actual measurement.",
+        f(160, "Item Package Length", brand_cfg.get("default_pkg_length", ""), "filled" if brand_cfg.get("default_pkg_length") else "empty", True,
+          "" if brand_cfg.get("default_pkg_length") else "Set package length or use Apply All.",
           field_id="item_package_dimensions#1.length.value", req_level="required"),
         f(161, "Package Length Unit", "Inches", "locked", True,
           field_id="item_package_dimensions#1.length.unit", req_level="required"),
-        f(162, "Item Package Width", "10", "default", True,
-          "Default 10 inches. Update with actual measurement.",
+        f(162, "Item Package Width", brand_cfg.get("default_pkg_width", ""), "filled" if brand_cfg.get("default_pkg_width") else "empty", True,
+          "" if brand_cfg.get("default_pkg_width") else "Set package width or use Apply All.",
           field_id="item_package_dimensions#1.width.value", req_level="required"),
         f(163, "Package Width Unit", "Inches", "locked", True,
           field_id="item_package_dimensions#1.width.unit", req_level="required"),
-        f(164, "Item Package Height", "2", "default", True,
-          "Default 2 inches. Update with actual measurement.",
+        f(164, "Item Package Height", brand_cfg.get("default_pkg_height", ""), "filled" if brand_cfg.get("default_pkg_height") else "empty", True,
+          "" if brand_cfg.get("default_pkg_height") else "Set package height or use Apply All.",
           field_id="item_package_dimensions#1.height.value", req_level="required"),
         f(165, "Package Height Unit", "Inches", "locked", True,
           field_id="item_package_dimensions#1.height.unit", req_level="required"),
-        f(166, "Item Package Weight", "0.5", "default", True,
-          "Default 0.5 lbs. Update with actual weight.",
+        f(166, "Item Package Weight", brand_cfg.get("default_pkg_weight", ""), "filled" if brand_cfg.get("default_pkg_weight") else "empty", True,
+          "" if brand_cfg.get("default_pkg_weight") else "Set package weight or use Apply All.",
           field_id="item_package_weight#1.value", req_level="required"),
         f(167, "Package Weight Unit", "Pounds", "locked", True,
           field_id="item_package_weight#1.unit", req_level="required"),
@@ -3142,8 +3143,8 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     neck_type   = content.get("neck_type", "")  or derive_neck_type(style_name)
     sleeve_type = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
     silhouette  = content.get("silhouette", "")  or derive_silhouette(sub_subclass)
-    category    = content.get("category", "")    or _derive_amazon_product_category(sub_class)
-    subcategory = content.get("subcategory", "")
+    category    = _derive_amazon_product_category(sub_class)
+    subcategory = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
     fabric      = content.get("fabric", "")      or brand_cfg.get("default_fabric", "")
     care        = content.get("care", "")        or brand_cfg.get("default_care", "")
     upf         = content.get("upf", "")         or brand_cfg.get("default_upf", "")
@@ -3216,18 +3217,19 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
                 write_cell(row_idx, bkey, bullets[i][:500])
         write_cell(row_idx, "generic_keyword#1.value",          backend_kw)
         write_cell(row_idx, "style#1.value",                    style_name.title())
-        write_cell(row_idx, "fit_type#1.value",                 "Regular")
+        # fit_type — left blank unless from data/override
+        write_cell(row_idx, "fit_type#1.value",                 content.get("fit_type", "") or brand_cfg.get("default_fit_type", ""))
         write_cell(row_idx, "department#1.value",               brand_cfg.get("department", "Womens"))
         write_cell(row_idx, "target_gender#1.value",            brand_cfg.get("gender", "Female"))
         write_cell(row_idx, "age_range_description#1.value",    "Adult")
-        write_cell(row_idx, "apparel_size#1.body_type",         "All Body Types")
-        write_cell(row_idx, "apparel_size#1.height_type",       "All Heights")
+        write_cell(row_idx, "apparel_size#1.body_type",         "")
+        write_cell(row_idx, "apparel_size#1.height_type",       "")
         if fabric:
             write_cell(row_idx, "material#1.value",             fabric)
         write_cell(row_idx, "fabric_type#1.value",              fabric_type)
         write_cell(row_idx, "number_of_items#1.value", "1")
         write_cell(row_idx, "item_type_name#1.value",           item_type_name)
-        write_cell(row_idx, "special_size_type#1.value",             "Standard")
+        write_cell(row_idx, "special_size_type#1.value",             "")
         write_cell(row_idx, "rtip_product_description#1.value", description)
         write_cell(row_idx, "item_length_description#1.value",  item_length)
         write_cell(row_idx, "item_booking_date#1.value",        booking_date)
@@ -3243,7 +3245,8 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "sleeve#1.length_description#1.value", sleeve_len)
         if sleeve_type:
             write_cell(row_idx, "sleeve#1.type#1.value",        sleeve_type)
-        write_cell(row_idx, "closure#1.type#1.value",             "Pull On")
+        # closure — left blank unless from data/override
+        write_cell(row_idx, "closure#1.type#1.value",             content.get("closure_type", "") or brand_cfg.get("default_closure", ""))
         if upf:
             write_cell(row_idx, "ultraviolet_protection_factor#1.value", upf)
         write_cell(row_idx, "skip_offer#1.value",                       "No")
@@ -3254,13 +3257,14 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         # Contains battery/cell — required compliance field
         write_cell(row_idx, "contains_battery_or_cell#1.value", "No")
         # Package dimensions
-        write_cell(row_idx, "item_package_dimensions#1.length.value",      "14")
+        # Package dims — left blank unless from data/override/brand config
+        write_cell(row_idx, "item_package_dimensions#1.length.value",      brand_cfg.get("default_pkg_length", ""))
         write_cell(row_idx, "item_package_dimensions#1.length.unit",       "Inches")
-        write_cell(row_idx, "item_package_dimensions#1.width.value",       "10")
+        write_cell(row_idx, "item_package_dimensions#1.width.value",       brand_cfg.get("default_pkg_width", ""))
         write_cell(row_idx, "item_package_dimensions#1.width.unit",        "Inches")
-        write_cell(row_idx, "item_package_dimensions#1.height.value",      "2")
+        write_cell(row_idx, "item_package_dimensions#1.height.value",      brand_cfg.get("default_pkg_height", ""))
         write_cell(row_idx, "item_package_dimensions#1.height.unit",       "Inches")
-        write_cell(row_idx, "item_package_weight#1.value",      "0.5")
+        write_cell(row_idx, "item_package_weight#1.value",      brand_cfg.get("default_pkg_weight", ""))
         write_cell(row_idx, "item_package_weight#1.unit",       "Pounds")
         write_cell(row_idx, "rtip_order_aggregate_type#1.value",     "Each")
         write_cell(row_idx, "rtip_items_per_inner_pack#1.value",     "1")
@@ -3476,8 +3480,8 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         list_price = style.get("list_price", "") or content.get("list_price", "")
         bullets    = content.get("bullets", [])
         import_desig = "Imported" if coo.upper() not in ("US", "USA", "UNITED STATES") else "Domestic"
-        cat_val    = content.get("category", "") or _derive_amazon_product_category(sub_class)
-        subcat_val = content.get("subcategory", "")
+        cat_val    = _derive_amazon_product_category(sub_class)
+        subcat_val = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, "")
 
         # ── Shared-fields helper for this style ─────────────────────────────
         def write_shared_row(r, sku_val, _fabric=fabric, _care=care, _upf=upf,
@@ -3509,18 +3513,19 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
                         wc(r, bfid, bullet_fallback[:500], style_num=_sn)
             wc(r, "generic_keyword#1.value",          _content.get("backend_keywords", ""), style_num=_sn)
             wc(r, "style#1.value",                    _style_name.title(), style_num=_sn)
-            wc(r, "fit_type#1.value",                 "Regular", style_num=_sn)
+            # fit_type — from data/override only
+            wc(r, "fit_type#1.value",                 _content.get("fit_type", ""), style_num=_sn)
             wc(r, "department#1.value",               brand_cfg.get("department", "Womens"), style_num=_sn)
             wc(r, "target_gender#1.value",            brand_cfg.get("gender", "Female"), style_num=_sn)
             wc(r, "age_range_description#1.value",    "Adult", style_num=_sn)
-            wc(r, "apparel_size#1.body_type",         "All Body Types", style_num=_sn)
-            wc(r, "apparel_size#1.height_type",       "All Heights", style_num=_sn)
+            wc(r, "apparel_size#1.body_type",         "", style_num=_sn)
+            wc(r, "apparel_size#1.height_type",       "", style_num=_sn)
             if _fabric:
                 wc(r, "material#1.value",             _fabric, style_num=_sn)
             wc(r, "fabric_type#1.value",              _ftype, style_num=_sn)
             wc(r, "number_of_items#1.value", "1", style_num=_sn)
             wc(r, "item_type_name#1.value",           _itn, style_num=_sn)
-            wc(r, "special_size_type#1.value",             "Standard", style_num=_sn)
+            wc(r, "special_size_type#1.value",             "", style_num=_sn)
             wc(r, "rtip_product_description#1.value", _content.get("description", ""), style_num=_sn)
             wc(r, "item_length_description#1.value",  _ilen, style_num=_sn)
             wc(r, "item_booking_date#1.value",        booking_date, style_num=_sn)
@@ -3536,7 +3541,8 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(r, "sleeve#1.length_description#1.value", _slvlen, style_num=_sn)
             if _sleeve:
                 wc(r, "sleeve#1.type#1.value",        _sleeve, style_num=_sn)
-            wc(r, "closure#1.type#1.value",             "Pull On", style_num=_sn)
+            # closure — from data/override only
+            wc(r, "closure#1.type#1.value",             _content.get("closure_type", ""), style_num=_sn)
             if _upf:
                 wc(r, "ultraviolet_protection_factor#1.value", _upf, style_num=_sn)
             wc(r, "skip_offer#1.value",                       "No", style_num=_sn)
@@ -3544,13 +3550,13 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(r, "rtip_earliest_shipping_date#1.value", today_str, style_num=_sn)
             # Contains battery/cell — required compliance field
             wc(r, "contains_battery_or_cell#1.value", "No", style_num=_sn)
-            wc(r, "item_package_dimensions#1.length.value",      "14", style_num=_sn)
+            wc(r, "item_package_dimensions#1.length.value",      brand_cfg.get("default_pkg_length", ""), style_num=_sn)
             wc(r, "item_package_dimensions#1.length.unit",       "Inches", style_num=_sn)
-            wc(r, "item_package_dimensions#1.width.value",       "10", style_num=_sn)
+            wc(r, "item_package_dimensions#1.width.value",       brand_cfg.get("default_pkg_width", ""), style_num=_sn)
             wc(r, "item_package_dimensions#1.width.unit",        "Inches", style_num=_sn)
-            wc(r, "item_package_dimensions#1.height.value",      "2", style_num=_sn)
+            wc(r, "item_package_dimensions#1.height.value",      brand_cfg.get("default_pkg_height", ""), style_num=_sn)
             wc(r, "item_package_dimensions#1.height.unit",       "Inches", style_num=_sn)
-            wc(r, "item_package_weight#1.value",      "0.5", style_num=_sn)
+            wc(r, "item_package_weight#1.value",      brand_cfg.get("default_pkg_weight", ""), style_num=_sn)
             wc(r, "item_package_weight#1.unit",       "Pounds", style_num=_sn)
             wc(r, "rtip_order_aggregate_type#1.value",     "Each", style_num=_sn)
             wc(r, "rtip_items_per_inner_pack#1.value",     "1", style_num=_sn)
@@ -3662,7 +3668,7 @@ def validate_before_build():
         fabric = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
 
         field_values = {
-            "product_category#1.value": content.get("category", "") or _derive_amazon_product_category(style.get("sub_class", "")),
+            "product_category#1.value": _derive_amazon_product_category(style.get("sub_class", "")),
             "lifecycle_supply_type#1.value": "Perennial",
             "department#1.value": brand_cfg.get("department", "womens"),
             "target_gender#1.value": brand_cfg.get("gender", "Female"),
