@@ -5864,66 +5864,57 @@ function wsCloseDownloadModal() { /* no-op */ }
 
 function wsShowDownloadPanel() {
   const stylesList = (state.styles || []).filter(s => (state.generatedContent || {})[s.style_num]);
-  if (!stylesList.length) {
-    showToast('No generated content to download', 'error');
-    return;
-  }
+  if (!stylesList.length) { showToast('No generated content', 'error'); return; }
 
-  // Hide other tab panels, show download panel
+  // Hide other tabs, show download panel
   document.querySelectorAll('.ws-tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.ws-tab').forEach(b => b.classList.remove('active'));
-
   let dlPanel = document.getElementById('ws-tab-download');
   if (!dlPanel) {
     dlPanel = document.createElement('div');
     dlPanel.id = 'ws-tab-download';
     dlPanel.className = 'ws-tab-panel';
-    // Append after the last tab panel inside ws-main
     const lastPanel = document.getElementById('ws-tab-variants');
-    if (lastPanel && lastPanel.parentElement) {
-      lastPanel.parentElement.insertBefore(dlPanel, lastPanel.nextSibling);
-    }
+    if (lastPanel && lastPanel.parentElement) lastPanel.parentElement.insertBefore(dlPanel, lastPanel.nextSibling);
   }
   dlPanel.classList.add('active');
 
-  let html = '<div style="padding:4px 0;">';
-  html += '<div style="font-size:16px; font-weight:700; margin-bottom:4px;">Generate & Download</div>';
-  html += '<div style="font-size:13px; color:var(--text-sec); margin-bottom:16px;">';
-  html += stylesList.length + ' style' + (stylesList.length > 1 ? 's' : '') + ' with generated content. Download individually or all at once.';
-  html += '</div>';
+  // Phase 1: Show "Validating..." with dramatic QA stream
+  dlPanel.innerHTML = `
+    <div style="padding:4px 0;">
+      <div style="font-size:16px; font-weight:700; margin-bottom:4px;">Validating NIS Fields</div>
+      <div style="font-size:13px; color:var(--text-sec); margin-bottom:16px;">
+        Checking ${stylesList.length} style${stylesList.length > 1 ? 's' : ''} against Amazon template dropdown validation...
+      </div>
+      <div id="ws-qa-stream" style="background:#28251D; color:#e0ddd6; border-radius:8px; padding:16px; font-family:monospace; font-size:12px; line-height:1.8; max-height:400px; overflow-y:auto;">
+        <div style="color:var(--accent);">Reading template dropdowns...</div>
+      </div>
+      <div id="ws-qa-summary" style="margin-top:16px; display:none;"></div>
+      <div id="ws-qa-downloads" style="margin-top:16px; display:none;"></div>
+    </div>`;
 
-  html += '<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">';
-  html += '<button class="btn btn-primary" onclick="wsDownloadAllZip()" style="font-size:13px;">\u2193 Download All (ZIP)</button>';
-  html += '<button class="btn btn-secondary" onclick="wsDownloadCombined()" style="font-size:12px;">\u2193 All in One .xlsm</button>';
-  html += '</div>';
-
-  html += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Individual Styles</div>';
-  html += '<table class="ws-fields-table"><thead><tr><th>Style #</th><th>Style Name</th><th>Variants</th><th style="width:110px;"></th></tr></thead><tbody>';
-
-  stylesList.forEach(s => {
-    const vc = (s.variants || []).length;
-    html += '<tr>';
-    html += '<td style="font-family:monospace;font-size:12px;">' + escHtml(s.style_num) + '</td>';
-    html += '<td>' + escHtml(s.style_name) + '</td>';
-    html += '<td>' + vc + '</td>';
-    html += "<td><button class=\"btn btn-secondary btn-sm\" style=\"font-size:11px;padding:3px 10px;\" onclick=\"wsDownloadStyle('" + encodeURIComponent(s.style_num) + "')\">\u2193 Download</button></td>";
-    html += '</tr>';
-  });
-
-  html += '</tbody></table>';
-  html += '<div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border);">';
-  html += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Session Feedback</div>';
-  html += '<textarea id="ws-dl-session-note" class="nis-feedback-textarea" rows="2" placeholder="Any notes? (optional)" style="width:100%;max-width:500px;"></textarea>';
-  html += "<button class=\"btn btn-secondary btn-sm\" style=\"margin-top:6px;font-size:11px;\" onclick=\"var n=document.getElementById('ws-dl-session-note');if(n&&n.value.trim()){wsSendFeedback('session','download',{scope:'brand'},{note:n.value.trim()});n.value='';showToast('Saved','success');}\">Save Note</button>";
-  html += '</div></div>';
-
-  dlPanel.innerHTML = html;
+  // Run validation
+  wsRunValidation(stylesList);
 }
 
-async function wsSyncAndDownload(url) {
-  // Sync all frontend state to server before download
-  // This ensures overrides, content, and styles survive Render restarts
-  showToast('Preparing files...', 'info');
+async function wsRunValidation(stylesList) {
+  const stream = document.getElementById('ws-qa-stream');
+  const summaryEl = document.getElementById('ws-qa-summary');
+  const downloadsEl = document.getElementById('ws-qa-downloads');
+
+  function addLine(text, color) {
+    const div = document.createElement('div');
+    div.style.color = color || '#e0ddd6';
+    div.style.opacity = '0';
+    div.style.transition = 'opacity 0.3s';
+    div.textContent = text;
+    stream.appendChild(div);
+    stream.scrollTop = stream.scrollHeight;
+    requestAnimationFrame(() => div.style.opacity = '1');
+  }
+
+  // Sync state first
+  addLine('Syncing field overrides...', '#7A7974');
   try {
     await fetch('/api/sync-before-download', {
       method: 'POST',
@@ -5936,10 +5927,110 @@ async function wsSyncAndDownload(url) {
         field_overrides: wsState.fieldOverrides || {},
       }),
     });
+  } catch(e) {}
+
+  await new Promise(r => setTimeout(r, 300));
+  addLine('Synced. Running dropdown validation...', '#7A7974');
+  await new Promise(r => setTimeout(r, 200));
+
+  // Call validate endpoint
+  let valData;
+  try {
+    const res = await fetch('/api/validate-before-build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand: state.brand,
+        styles: state.styles,
+        content_map: state.generatedContent || {},
+        field_overrides: wsState.fieldOverrides || {},
+      }),
+    });
+    valData = await res.json();
   } catch(e) {
-    console.warn('Sync failed, downloading anyway:', e);
+    addLine('Validation failed: ' + e.message, '#C0392B');
+    return;
   }
-  window.location.href = url;
+
+  addLine(valData.dropdown_fields_loaded + ' dropdown validations loaded for ' + valData.product_type, 'var(--accent)');
+  await new Promise(r => setTimeout(r, 200));
+
+  // Stream results per style
+  for (const styleResult of (valData.styles || [])) {
+    addLine('', '');
+    addLine('\u2500\u2500 ' + styleResult.style_num + ' \u2014 ' + styleResult.style_name + ' \u2500\u2500', '#fff');
+    await new Promise(r => setTimeout(r, 100));
+
+    for (const v of (styleResult.validations || [])) {
+      await new Promise(r => setTimeout(r, 60));
+      const fid_short = v.field_id.split('#')[0].replace(/_/g, ' ');
+      if (v.status === 'valid') {
+        addLine('  \u2713 ' + fid_short + ': ' + v.original, '#1A7A50');
+      } else if (v.status === 'corrected') {
+        addLine('  \u2192 ' + fid_short + ': ' + v.original + ' \u2192 ' + v.corrected + ' (auto-corrected)', '#D68910');
+      } else if (v.status === 'invalid') {
+        addLine('  \u2717 ' + fid_short + ': ' + v.original + ' \u2014 NOT in dropdown', '#C0392B');
+        if (v.valid_values) {
+          addLine('    Valid: ' + v.valid_values.slice(0, 5).join(', ') + '...', '#7A7974');
+        }
+      }
+    }
+  }
+
+  await new Promise(r => setTimeout(r, 300));
+  addLine('', '');
+  addLine('\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', '#7A7974');
+  const total = (valData.total_valid || 0) + (valData.total_corrected || 0) + (valData.total_invalid || 0);
+  addLine('VALIDATION COMPLETE: ' + total + ' fields checked', '#fff');
+  addLine('  \u2713 ' + valData.total_valid + ' valid', '#1A7A50');
+  if (valData.total_corrected > 0) addLine('  \u2192 ' + valData.total_corrected + ' auto-corrected', '#D68910');
+  if (valData.total_invalid > 0) addLine('  \u2717 ' + valData.total_invalid + ' invalid (need manual fix)', '#C0392B');
+
+  // Show summary
+  summaryEl.style.display = 'block';
+  const allGood = valData.total_invalid === 0;
+  summaryEl.innerHTML = `
+    <div style="padding:12px 16px; border-radius:8px; font-size:14px; display:flex; align-items:center; gap:8px;
+         background:${allGood ? 'var(--success-bg)' : 'var(--warn-bg)'}; color:${allGood ? 'var(--success)' : 'var(--warn)'}; border:1px solid ${allGood ? '#c3e6d1' : '#f0d49b'};">
+      <strong>${allGood ? '\u2713 All fields valid' : '\u26a0 ' + valData.total_invalid + ' field(s) need attention'}</strong>
+      \u2014 ${valData.total_valid} passed, ${valData.total_corrected} corrected${valData.total_invalid > 0 ? ', ' + valData.total_invalid + ' invalid' : ''}
+    </div>`;
+
+  // Show download options
+  downloadsEl.style.display = 'block';
+  let dlHtml = '<div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">';
+  dlHtml += '<button class="btn btn-primary" onclick="wsDownloadAllZip()" style="font-size:13px;">\u2193 Download All (ZIP \u2014 1 file per style)</button>';
+  dlHtml += '<button class="btn btn-secondary" onclick="wsDownloadCombined()" style="font-size:12px;">\u2193 All in One .xlsm</button>';
+  dlHtml += '</div>';
+
+  dlHtml += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Individual Styles</div>';
+  dlHtml += '<table class="ws-fields-table"><thead><tr><th>Style #</th><th>Name</th><th>Validation</th><th style="width:100px;"></th></tr></thead><tbody>';
+  
+  (valData.styles || []).forEach(s => {
+    const vCount = (s.validations || []).length;
+    const vInvalid = (s.validations || []).filter(v => v.status === 'invalid').length;
+    const vCorrected = (s.validations || []).filter(v => v.status === 'corrected').length;
+    const statusHtml = vInvalid > 0
+      ? '<span style="color:var(--error); font-weight:600;">' + vInvalid + ' invalid</span>'
+      : vCorrected > 0
+        ? '<span style="color:var(--warn); font-weight:600;">' + vCorrected + ' corrected</span>'
+        : '<span style="color:var(--success);">\u2713 All valid</span>';
+    
+    dlHtml += '<tr>';
+    dlHtml += '<td style="font-family:monospace;font-size:12px;">' + escHtml(s.style_num) + '</td>';
+    dlHtml += '<td>' + escHtml(s.style_name) + '</td>';
+    dlHtml += '<td>' + statusHtml + '</td>';
+    dlHtml += "<td><button class=\"btn btn-secondary btn-sm\" style=\"font-size:11px;padding:3px 10px;\" onclick=\"wsDownloadStyle('" + encodeURIComponent(s.style_num) + "')\">\u2193 Download</button></td>";
+    dlHtml += '</tr>';
+  });
+  dlHtml += '</tbody></table>';
+
+  dlHtml += '<div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">';
+  dlHtml += '<textarea id="ws-dl-session-note" class="nis-feedback-textarea" rows="2" placeholder="Session notes (optional)" style="width:100%;max-width:500px;"></textarea>';
+  dlHtml += "<button class=\"btn btn-secondary btn-sm\" style=\"margin-top:6px;font-size:11px;\" onclick=\"var n=document.getElementById('ws-dl-session-note');if(n&&n.value.trim()){wsSendFeedback('session','download',{scope:'brand'},{note:n.value.trim()});n.value='';showToast('Saved','success');}\">Save Note</button>";
+  dlHtml += '</div>';
+
+  downloadsEl.innerHTML = dlHtml;
 }
 
 function wsDownloadAllZip() {

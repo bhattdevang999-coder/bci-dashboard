@@ -52,13 +52,190 @@ FEEDBACK_FILE    = BASE_DIR / "feedback" / "content_feedback.jsonl"
 FEEDBACK_DIR     = BASE_DIR / "feedback"
 DEFAULT_TEMPLATE = UPLOAD_TEMPLATES / "Dresses-Training.xlsm"
 BRAND_CONFIGS_DIR = BASE_DIR / "brand_configs"
+DROPDOWN_CACHE_DIR = BASE_DIR / "dropdown_cache"
 
-for d in [UPLOAD_TEMPLATES, UPLOAD_PRODUCTS, UPLOAD_KEYWORDS, UPLOAD_OUTPUT, BRAND_CONFIGS_DIR, FEEDBACK_DIR]:
+for d in [UPLOAD_TEMPLATES, UPLOAD_PRODUCTS, UPLOAD_KEYWORDS, UPLOAD_OUTPUT, BRAND_CONFIGS_DIR, FEEDBACK_DIR, DROPDOWN_CACHE_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
 CORS(app)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TEMPLATE DROPDOWN VALIDATION ENGINE (permanent infrastructure)
+#
+# Every Amazon .xlsm template has dropdown validations as named ranges.
+# This engine:
+# 1. Extracts valid dropdown values when a template is uploaded
+# 2. Caches per product type (DRESS, SWIMWEAR, SHIRT, etc.)
+# 3. Validates every field value before writing to .xlsm
+# 4. Auto-corrects fuzzy matches (e.g., "30+" → "UPF 30")
+# 5. Flags values that can't be matched
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_dropdown_cache = {}  # product_type → { field_id: [valid_values] }
+
+
+def extract_template_dropdowns(template_path):
+    """Extract all dropdown valid values from an Amazon .xlsm template.
+    Called automatically on template upload and at server startup.
+    """
+    from openpyxl.utils import range_boundaries
+    import warnings as _w
+    with _w.catch_warnings():
+        _w.simplefilter("ignore")
+        wb = openpyxl.load_workbook(template_path, keep_vba=True)
+
+    product_type = "UNKNOWN"
+    ws = None
+    for name in wb.sheetnames:
+        if name.upper().startswith("TEMPLATE"):
+            ws = wb[name]
+            parts = name.split("-", 1)
+            if len(parts) == 2 and parts[1].strip():
+                product_type = parts[1].strip().upper()
+            break
+    if not ws:
+        wb.close()
+        return None
+
+    # Build field_id normalized lookup
+    max_col = ws.max_column or 254
+    fid_norm_map = {}
+    for col in range(1, max_col + 1):
+        raw = ws.cell(row=4, column=col).value
+        if raw:
+            fid = str(raw).strip()
+            norm = fid.replace("#", "").replace(".", "")
+            fid_norm_map[norm] = fid
+
+    # Extract dropdown values from defined names
+    field_dropdowns = {}
+    for name in wb.defined_names:
+        if not name.startswith(product_type):
+            continue
+        field_ref = name[len(product_type):]
+        ref_norm = field_ref.replace(".", "")
+        actual_fid = fid_norm_map.get(ref_norm)
+        if not actual_fid:
+            continue
+
+        dn = wb.defined_names[name]
+        try:
+            for title, coord in dn.destinations:
+                sheet = wb[title]
+                mc, mr, xc, xr = range_boundaries(coord)
+                vals = []
+                for r in range(mr, xr + 1):
+                    v = sheet.cell(row=r, column=mc).value
+                    if v is not None:
+                        vals.append(str(v))
+                if vals:
+                    field_dropdowns[actual_fid] = vals
+        except Exception:
+            pass
+
+    wb.close()
+
+    _dropdown_cache[product_type] = field_dropdowns
+    cache_path = DROPDOWN_CACHE_DIR / f"{product_type}.json"
+    with open(str(cache_path), "w", encoding="utf-8") as f:
+        json.dump(field_dropdowns, f, indent=2)
+
+    print(f"[Dropdown] Extracted {len(field_dropdowns)} dropdown fields for {product_type}")
+    return {"product_type": product_type, "dropdown_fields": len(field_dropdowns)}
+
+
+def load_dropdown_cache(product_type):
+    """Load dropdown values for a product type. Memory first, then disk."""
+    if product_type in _dropdown_cache:
+        return _dropdown_cache[product_type]
+    cache_path = DROPDOWN_CACHE_DIR / f"{product_type}.json"
+    if cache_path.exists():
+        with open(str(cache_path), "r", encoding="utf-8") as f:
+            data = json.load(f)
+        _dropdown_cache[product_type] = data
+        return data
+    return {}
+
+
+def _fuzzy_match_dropdown(value, valid_values):
+    """Find closest matching dropdown value. Returns (match, confidence) or (None, 0)."""
+    if not value or not valid_values:
+        return None, 0
+    val_str = str(value).strip()
+    val_lower = val_str.lower()
+
+    for v in valid_values:
+        if v == val_str:
+            return v, 1.0
+    for v in valid_values:
+        if v.lower() == val_lower:
+            return v, 0.95
+    for v in valid_values:
+        if val_lower in v.lower() or v.lower() in val_lower:
+            return v, 0.8
+    for v in valid_values:
+        if v.lower().startswith(val_lower[:3]) and len(val_lower) >= 3:
+            return v, 0.6
+
+    val_words = set(val_lower.split())
+    best_score, best_match = 0, None
+    for v in valid_values:
+        v_words = set(v.lower().split())
+        if val_words and v_words:
+            overlap = len(val_words & v_words) / max(len(val_words), len(v_words))
+            if overlap > best_score:
+                best_score, best_match = overlap, v
+    if best_score >= 0.5:
+        return best_match, best_score * 0.7
+
+    return None, 0
+
+
+def validate_field_value(field_id, value, product_type):
+    """Validate a single field against its dropdown. Returns result dict."""
+    dropdowns = load_dropdown_cache(product_type)
+    if field_id not in dropdowns:
+        return {"field_id": field_id, "original": value, "status": "no_dropdown"}
+    valid = dropdowns[field_id]
+    val_str = str(value).strip() if value else ""
+    if not val_str:
+        return {"field_id": field_id, "original": value, "status": "empty"}
+    if val_str in valid:
+        return {"field_id": field_id, "original": value, "status": "valid"}
+    match, confidence = _fuzzy_match_dropdown(val_str, valid)
+    if match and confidence >= 0.6:
+        return {"field_id": field_id, "original": value, "status": "corrected",
+                "corrected": match, "confidence": round(confidence, 2)}
+    return {"field_id": field_id, "original": value, "status": "invalid",
+            "valid_values": valid[:10]}
+
+
+def validate_and_correct_for_build(field_values, product_type):
+    """Validate all fields and auto-correct before writing to .xlsm.
+    Modifies field_values in-place. Returns list of all validation results.
+    """
+    dropdowns = load_dropdown_cache(product_type)
+    results = []
+    for field_id, value in list(field_values.items()):
+        if not value or field_id not in dropdowns:
+            continue
+        r = validate_field_value(field_id, value, product_type)
+        if r["status"] == "corrected":
+            field_values[field_id] = r["corrected"]
+        results.append(r)
+    return results
+
+
+# Auto-extract dropdowns from templates on disk at startup
+for _tpl_file in UPLOAD_TEMPLATES.glob("*.xlsm"):
+    try:
+        extract_template_dropdowns(str(_tpl_file))
+    except Exception as _e:
+        print(f"[Dropdown] Startup extract failed for {_tpl_file.name}: {_e}")
+
 
 # ── Brand configs ──────────────────────────────────────────────────────────────
 BRAND_CONFIGS = {
@@ -1308,10 +1485,14 @@ def upload_template():
         col_map = get_template_col_map(str(save_path))
         session_data["template_path"] = str(save_path)
         session_data["col_map"] = col_map
+        # Auto-extract dropdown values for validation
+        dd_result = extract_template_dropdowns(str(save_path))
+        dd_count = dd_result["dropdown_fields"] if dd_result else 0
         return jsonify({
             "template": f.filename,
             "columns_mapped": len(col_map),
-            "message": f"{f.filename} — {len(col_map)} columns mapped",
+            "dropdown_fields": dd_count,
+            "message": f"{f.filename} — {len(col_map)} columns, {dd_count} dropdown validations loaded",
             "template_path": str(save_path),
         })
     except Exception as e:
@@ -1345,11 +1526,15 @@ def upload_category_template():
         if not session_data.get("col_map"):
             session_data["template_path"] = str(save_path)
             session_data["col_map"] = col_map
+        # Auto-extract dropdown values
+        dd_result = extract_template_dropdowns(str(save_path))
+        dd_count = dd_result["dropdown_fields"] if dd_result else 0
         return jsonify({
             "product_type": product_type,
             "template": f.filename,
             "columns_mapped": len(col_map),
-            "message": f"{product_type} template loaded — {len(col_map)} columns mapped",
+            "dropdown_fields": dd_count,
+            "message": f"{product_type} template loaded — {len(col_map)} columns, {dd_count} dropdowns",
             "loaded_templates": list(session_data["templates"].keys()),
         })
     except Exception as e:
@@ -3159,6 +3344,16 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         c = _col(field_id)
         if c is None or value is None:
             return
+        # Auto-correct against template dropdown (if available)
+        if isinstance(value, str) and value and field_id:
+            dropdowns = load_dropdown_cache(detected_product_type)
+            if field_id in dropdowns:
+                valid = dropdowns[field_id]
+                if value not in valid:
+                    match, conf = _fuzzy_match_dropdown(value, valid)
+                    if match and conf >= 0.6:
+                        value = match
+
         # Skip truly empty values (don't write blank cells)
         if value == "":
             return
@@ -3336,6 +3531,111 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
     with _w2.catch_warnings():
         _w2.simplefilter("ignore")
         wb.save(output_path)
+
+
+@app.route("/api/validate-before-build", methods=["POST"])
+def validate_before_build():
+    """Validate all field values against template dropdowns before building .xlsm.
+    Returns per-style validation results with auto-corrections.
+    Used by the dramatic QA UI.
+    """
+    data = request.get_json(force=True)
+    brand = data.get("brand") or session_data.get("brand", "")
+    styles = data.get("styles") or session_data.get("styles", [])
+    content_map = data.get("content_map") or session_data.get("generated_content", {})
+    overrides = data.get("field_overrides") or session_data.get("field_overrides", {})
+    template_path = session_data.get("template_path") or str(DEFAULT_TEMPLATE)
+
+    if not brand or not styles:
+        return jsonify({"error": "No brand or styles"}), 400
+
+    brand_cfg = _load_brand_config_data(brand)
+
+    # Detect product type from template
+    import warnings as _vw
+    with _vw.catch_warnings():
+        _vw.simplefilter("ignore")
+        _vwb = openpyxl.load_workbook(template_path, keep_vba=True)
+    product_type = "DRESS"
+    for name in _vwb.sheetnames:
+        if name.upper().startswith("TEMPLATE"):
+            parts = name.split("-", 1)
+            if len(parts) == 2 and parts[1].strip():
+                product_type = parts[1].strip().upper()
+            break
+    _vwb.close()
+
+    dropdowns = load_dropdown_cache(product_type)
+    if not dropdowns:
+        # Try extracting
+        extract_template_dropdowns(template_path)
+        dropdowns = load_dropdown_cache(product_type)
+
+    all_results = []
+    total_valid = 0
+    total_corrected = 0
+    total_invalid = 0
+
+    for style in styles:
+        sn = style["style_num"]
+        content = content_map.get(sn, {})
+        style_overrides = overrides.get(sn, {})
+
+        # Build the field values that would be written
+        coo = normalize_coo(content.get("coo", "") or brand_cfg.get("default_coo", "")) or "Imported"
+        upf = content.get("upf", "") or brand_cfg.get("default_upf", "")
+        care = content.get("care", "") or brand_cfg.get("default_care", "")
+        fabric = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
+
+        field_values = {
+            "product_category#1.value": content.get("category", "") or _derive_amazon_product_category(style.get("sub_class", "")),
+            "lifecycle_supply_type#1.value": "Perennial",
+            "department#1.value": brand_cfg.get("department", "womens"),
+            "target_gender#1.value": brand_cfg.get("gender", "Female"),
+            "country_of_origin#1.value": coo,
+            "care_instructions#1.value": care,
+            "material#1.value": fabric,
+            "closure#1.type#1.value": "Pull On",
+            "import_designation#1.value": "Imported" if coo != "United States" else "Made in the USA",
+            "item_package_dimensions#1.length.unit": "Inches",
+            "item_package_weight#1.unit": "Pounds",
+            "batteries_required#1.value": "No",
+            "batteries_included#1.value": "No",
+            "skip_offer#1.value": "No",
+            "ultraviolet_protection_factor#1.value": upf,
+            "fit_type#1.value": "Regular",
+        }
+
+        # Apply overrides
+        field_values.update(style_overrides)
+
+        style_results = []
+        for fid, val in field_values.items():
+            if not val or fid not in dropdowns:
+                continue
+            r = validate_field_value(fid, val, product_type)
+            style_results.append(r)
+            if r["status"] == "valid":
+                total_valid += 1
+            elif r["status"] == "corrected":
+                total_corrected += 1
+            elif r["status"] == "invalid":
+                total_invalid += 1
+
+        all_results.append({
+            "style_num": sn,
+            "style_name": style.get("style_name", sn),
+            "validations": style_results,
+        })
+
+    return jsonify({
+        "product_type": product_type,
+        "dropdown_fields_loaded": len(dropdowns),
+        "total_valid": total_valid,
+        "total_corrected": total_corrected,
+        "total_invalid": total_invalid,
+        "styles": all_results,
+    })
 
 
 @app.route("/api/sync-before-download", methods=["POST"])
