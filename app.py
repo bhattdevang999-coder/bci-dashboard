@@ -67,7 +67,7 @@ BRAND_CONFIGS = {
         "vendor_code_full": "Stella Parker Sportswear, us_apparel, FC0C0",
         "default_upf": "30+",
         "default_fabric": "95% Polyester, 5% Spandex",
-        "default_coo": "MX",
+        "default_coo": "Mexico",
         "default_care": "Machine Wash",
         "gender": "Female",
         "department": "Womens",
@@ -80,7 +80,7 @@ BRAND_CONFIGS = {
         "vendor_code_full": "",
         "default_upf": "",
         "default_fabric": "79% Nylon, 21% Spandex",
-        "default_coo": "BD",
+        "default_coo": "Bangladesh",
         "default_care": "Machine Wash",
         "gender": "Female",
         "department": "Womens",
@@ -370,6 +370,30 @@ def derive_sleeve_type(style_name):
         if pattern in name:
             return sleeve
     return "Sleeveless"
+
+# Common ISO country codes → full names (Amazon template dropdowns use full names)
+COUNTRY_CODE_MAP = {
+    "MX": "Mexico", "BD": "Bangladesh", "CN": "China", "US": "United States",
+    "IN": "India", "VN": "Vietnam", "KH": "Cambodia", "PK": "Pakistan",
+    "ID": "Indonesia", "TW": "Taiwan", "KR": "South Korea", "JP": "Japan",
+    "TH": "Thailand", "TR": "Turkey", "IT": "Italy", "PT": "Portugal",
+    "PE": "Peru", "GT": "Guatemala", "HN": "Honduras", "SV": "El Salvador",
+    "NI": "Nicaragua", "HT": "Haiti", "DO": "Dominican Republic",
+    "LK": "Sri Lanka", "MM": "Myanmar", "PH": "Philippines",
+    "ET": "Ethiopia", "MG": "Madagascar", "MA": "Morocco", "EG": "Egypt",
+}
+
+def normalize_coo(raw):
+    """Convert ISO country code to full name. Pass through if already a full name."""
+    if not raw:
+        return raw
+    s = str(raw).strip()
+    upper = s.upper()
+    if upper in COUNTRY_CODE_MAP:
+        return COUNTRY_CODE_MAP[upper]
+    # Already a full name
+    return s
+
 
 def clean_brand_name(raw_brand):
     """Strip vendor labels from brand name. 'Stella Parker PL Ladies SPTW' -> 'Stella Parker'"""
@@ -2240,7 +2264,7 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     fabric       = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
     care         = content.get("care", "") or brand_cfg.get("default_care", "")
     upf          = content.get("upf", "") or brand_cfg.get("default_upf", "")
-    coo          = content.get("coo", "") or brand_cfg.get("default_coo", "") or "Imported"
+    coo          = normalize_coo(content.get("coo", "") or brand_cfg.get("default_coo", "")) or "Imported"
     clean_brand  = clean_brand_name(brand)
     item_type_name = _derive_item_type_name(sub_class)
     item_length    = _derive_item_length(sub_subclass, style_name)
@@ -2393,7 +2417,7 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="ultraviolet_protection_factor#1.value", req_level="conditional"),
 
         # ── Dates & Lifecycle ──
-        f(77, "Item Booking Date", today_str, "default", True,
+        f(77, "Item Booking Date", datetime.now().strftime("%Y-%m-%dT00:00:00Z"), "default", True,
           "Using today's date. Change if different.",
           field_id="item_booking_date#1.value", req_level="required"),
         f(126, "Product Lifecycle", "new", "locked", False,
@@ -2851,7 +2875,7 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     fabric      = content.get("fabric", "")      or brand_cfg.get("default_fabric", "")
     care        = content.get("care", "")        or brand_cfg.get("default_care", "")
     upf         = content.get("upf", "")         or brand_cfg.get("default_upf", "")
-    coo         = content.get("coo", "")         or brand_cfg.get("default_coo", "") or "Imported"
+    coo         = normalize_coo(content.get("coo", "")         or brand_cfg.get("default_coo", "")) or "Imported"
 
     clean_brand    = clean_brand_name(brand)
     item_type_name = _derive_item_type_name(sub_class)
@@ -2860,6 +2884,7 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     itk_value      = _derive_item_type_keyword(sub_class)
     sleeve_len     = _derive_sleeve_length(sleeve_type)
     today_str      = datetime.now().strftime("%Y%m%d")
+    booking_date  = datetime.now().strftime("%Y-%m-%dT00:00:00Z")
 
     parent_sku = style_num
 
@@ -2933,7 +2958,7 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "special_size_type#1.value",             "Standard")
         write_cell(row_idx, "rtip_product_description#1.value", description)
         write_cell(row_idx, "item_length_description#1.value",  item_length)
-        write_cell(row_idx, "item_booking_date#1.value",        today_str)
+        write_cell(row_idx, "item_booking_date#1.value",        booking_date)
         if care:
             write_cell(row_idx, "care_instructions#1.value",    care)
         write_cell(row_idx, "unit_count#1.value",               "1")
@@ -3107,6 +3132,7 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
 
     clean_brand = clean_brand_name(brand)
     today_str   = datetime.now().strftime("%Y%m%d")
+    booking_date = datetime.now().strftime("%Y-%m-%dT00:00:00Z")
     all_overrides = session_data.get("field_overrides", {})
 
     def wc(row_idx, field_id, value, style_num=None):
@@ -3156,7 +3182,7 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         fabric     = content.get("fabric", "")     or brand_cfg.get("default_fabric", "")
         care       = content.get("care", "")       or brand_cfg.get("default_care", "")
         upf        = content.get("upf", "")        or brand_cfg.get("default_upf", "")
-        coo        = content.get("coo", "")        or brand_cfg.get("default_coo", "") or "Imported"
+        coo        = normalize_coo(content.get("coo", "")        or brand_cfg.get("default_coo", "")) or "Imported"
         neck       = content.get("neck_type", "") or derive_neck_type(style_name)
         sleeve     = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
         sil        = content.get("silhouette", "") or derive_silhouette(sub_subclass)
@@ -3215,7 +3241,7 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(r, "special_size_type#1.value",             "Standard", style_num=_sn)
             wc(r, "rtip_product_description#1.value", _content.get("description", ""), style_num=_sn)
             wc(r, "item_length_description#1.value",  _ilen, style_num=_sn)
-            wc(r, "item_booking_date#1.value",        today_str, style_num=_sn)
+            wc(r, "item_booking_date#1.value",        booking_date, style_num=_sn)
             if _care:
                 wc(r, "care_instructions#1.value",   _care, style_num=_sn)
             wc(r, "unit_count#1.value",               "1", style_num=_sn)
@@ -3297,6 +3323,29 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
     with _w2.catch_warnings():
         _w2.simplefilter("ignore")
         wb.save(output_path)
+
+
+@app.route("/api/sync-before-download", methods=["POST"])
+def sync_before_download():
+    """Sync frontend state to server before download.
+    Ensures overrides, styles, content survive Render worker restarts.
+    """
+    data = request.get_json(force=True)
+    if data.get("brand"):
+        session_data["brand"] = data["brand"]
+    if data.get("vendor_code"):
+        session_data["vendor_code"] = data["vendor_code"]
+    if data.get("styles"):
+        session_data["styles"] = data["styles"]
+    if data.get("content_map"):
+        session_data["generated_content"] = data["content_map"]
+    if data.get("field_overrides"):
+        # Merge (don't replace) — frontend might have partial overrides
+        for sn, ov in data["field_overrides"].items():
+            if sn not in session_data.get("field_overrides", {}):
+                session_data.setdefault("field_overrides", {})[sn] = {}
+            session_data["field_overrides"][sn].update(ov)
+    return jsonify({"ok": True})
 
 
 @app.route("/api/download-all")

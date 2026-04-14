@@ -4194,7 +4194,9 @@ const wsState = {
   selectedStyleNum: null,
   activeTab: 'content',       // 'content' | 'fields' | 'variants'
   fieldsCache: {},             // styleNum -> fields array
+  fieldOverrides: {},          // styleNum -> { field_id: value } — mirrors server overrides
   raliQaSummary: null,        // last /api/nis-qa-summary response
+  approvalGate: {},            // styleNum -> boolean
 };
 
 // ════════════════════════════════════════════════════════════
@@ -5695,6 +5697,9 @@ async function wsSaveField(styleNum, fieldId, fieldName, col, value) {
     const d = await res.json();
     if (d.ok) {
       showToast('Field saved', 'success');
+      // Track override locally (for sync-before-download)
+      if (!wsState.fieldOverrides[styleNum]) wsState.fieldOverrides[styleNum] = {};
+      wsState.fieldOverrides[styleNum][fieldId] = value.trim();
       // Invalidate cache and re-render
       delete wsState.fieldsCache[styleNum];
       wsRenderFieldsTab(styleNum);
@@ -5889,7 +5894,7 @@ function wsShowDownloadPanel() {
 
   html += '<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">';
   html += '<button class="btn btn-primary" onclick="wsDownloadAllZip()" style="font-size:13px;">\u2193 Download All (ZIP)</button>';
-  html += '<button class="btn btn-secondary" onclick="window.location.href=\'/api/download-combined\'" style="font-size:12px;">\u2193 All in One .xlsm</button>';
+  html += '<button class="btn btn-secondary" onclick="wsDownloadCombined()" style="font-size:12px;">\u2193 All in One .xlsm</button>';
   html += '</div>';
 
   html += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Individual Styles</div>';
@@ -5901,7 +5906,7 @@ function wsShowDownloadPanel() {
     html += '<td style="font-family:monospace;font-size:12px;">' + escHtml(s.style_num) + '</td>';
     html += '<td>' + escHtml(s.style_name) + '</td>';
     html += '<td>' + vc + '</td>';
-    html += "<td><button class=\"btn btn-secondary btn-sm\" style=\"font-size:11px;padding:3px 10px;\" onclick=\"window.location.href='/api/download-style/" + encodeURIComponent(s.style_num) + "'\">\u2193 Download</button></td>";
+    html += "<td><button class=\"btn btn-secondary btn-sm\" style=\"font-size:11px;padding:3px 10px;\" onclick=\"wsDownloadStyle('" + encodeURIComponent(s.style_num) + "')\">\u2193 Download</button></td>";
     html += '</tr>';
   });
 
@@ -5915,9 +5920,38 @@ function wsShowDownloadPanel() {
   dlPanel.innerHTML = html;
 }
 
+async function wsSyncAndDownload(url) {
+  // Sync all frontend state to server before download
+  // This ensures overrides, content, and styles survive Render restarts
+  showToast('Preparing files...', 'info');
+  try {
+    await fetch('/api/sync-before-download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand: state.brand || '',
+        vendor_code: state.vendorCode || '',
+        styles: state.styles || [],
+        content_map: state.generatedContent || {},
+        field_overrides: wsState.fieldOverrides || {},
+      }),
+    });
+  } catch(e) {
+    console.warn('Sync failed, downloading anyway:', e);
+  }
+  window.location.href = url;
+}
+
 function wsDownloadAllZip() {
-  showToast('Generating files...', 'info');
-  window.location.href = '/api/download-all';
+  wsSyncAndDownload('/api/download-all');
+}
+
+function wsDownloadStyle(styleNum) {
+  wsSyncAndDownload('/api/download-style/' + encodeURIComponent(styleNum));
+}
+
+function wsDownloadCombined() {
+  wsSyncAndDownload('/api/download-combined');
 }
 
 async function wsDownload() { wsShowDownloadPanel(); }
