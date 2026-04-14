@@ -1359,6 +1359,59 @@ def feedback_summary():
     return jsonify({"counts": dict(counts), "total": sum(counts.values())})
 
 
+def _run_nis_generation(brand, styles, content_map, vendor_code, template_path, brand_cfg, template_map):
+    """Background worker for NIS file generation."""
+    results = []
+    errors = []
+    
+    for i, style in enumerate(styles):
+        style_num = style["style_num"]
+        style_name = style["style_name"]
+        content = content_map.get(style_num, {})
+        
+        nis_progress["current_style"] = f"{style_num} \u2014 {style_name}"
+        
+        if not content:
+            errors.append(f"No content for style {style_num}")
+            nis_progress["completed"] = i + 1
+            continue
+        
+        subclass = style.get("subclass", "")
+        product_type_for_template = TEMPLATE_PRODUCT_TYPE_MAP.get(subclass, None)
+        if product_type_for_template and product_type_for_template in template_map:
+            style_template_path = template_map[product_type_for_template]
+        else:
+            style_template_path = template_path
+        
+        try:
+            output_path = do_xlsm_surgery(
+                template_path=style_template_path,
+                brand=brand,
+                brand_cfg=brand_cfg,
+                vendor_code=vendor_code,
+                style=style,
+                content=content,
+            )
+            filename = Path(output_path).name
+            results.append({
+                "style_num": style_num,
+                "style_name": style_name,
+                "rows": len(style["variants"]) + 1,
+                "filename": filename,
+                "path": output_path,
+            })
+        except Exception as e:
+            traceback.print_exc()
+            errors.append(f"Failed to generate NIS for style {style_num}: {str(e)}")
+        
+        nis_progress["completed"] = i + 1
+    
+    nis_progress["status"] = "done"
+    nis_progress["current_style"] = ""
+    nis_progress["results"] = results
+    nis_progress["errors"] = errors
+
+
 @app.route("/api/generate-nis", methods=["POST"])
 def generate_nis():
     data = request.get_json(force=True)
@@ -1374,8 +1427,6 @@ def generate_nis():
         return jsonify({"error": "No product data loaded"}), 400
     if not content_map:
         return jsonify({"error": "Content not yet generated. Run Generate Content first."}), 400
-    
-    # Verify template exists
     if not os.path.exists(template_path):
         return jsonify({"error": f"Template file not found: {template_path}. Upload an Amazon NIS template first."}), 400
     
@@ -1385,71 +1436,44 @@ def generate_nis():
     for f in UPLOAD_OUTPUT.glob("*.xlsm"):
         f.unlink()
     
-    results = []
-    errors = []
-    
-    # Update progress tracker
+    # Init progress
     nis_progress["total"] = len(styles)
     nis_progress["completed"] = 0
     nis_progress["status"] = "running"
     nis_progress["started_at"] = datetime.now().isoformat()
     nis_progress["current_style"] = ""
+    nis_progress["results"] = []
+    nis_progress["errors"] = []
     
-    # Build multi-template lookup: product_type -> template_path
     template_map = dict(session_data.get("templates", {}))
     
-    for i, style in enumerate(styles):
-        style_num = style["style_num"]
-        style_name = style["style_name"]
-        content = content_map.get(style_num, {})
-        
-        # Update progress
-        nis_progress["current_style"] = f"{style_num} — {style_name}"
-        
-        if not content:
-            errors.append(f"No content for style {style_num}")
-            nis_progress["completed"] = i + 1
-            continue
-        
-        # Route to the correct template based on sub_class
-        subclass = style.get("subclass", "")
-        product_type_for_template = TEMPLATE_PRODUCT_TYPE_MAP.get(subclass, None)
-        if product_type_for_template and product_type_for_template in template_map:
-            style_template_path = template_map[product_type_for_template]
-        else:
-            style_template_path = template_path  # fall back to default
-        
-        try:
-            output_path = do_xlsm_surgery(
-                template_path=style_template_path,
-                brand=brand,
-                brand_cfg=brand_cfg,
-                vendor_code=vendor_code,
-                style=style,
-                content=content,
-            )
-            filename = Path(output_path).name
-            results.append({
-                "style_num": style_num,
-                "style_name": style_name,
-                "rows": len(style["variants"]) + 1,  # +1 parent
-                "filename": filename,
-                "path": output_path,
-            })
-        except Exception as e:
-            traceback.print_exc()
-            errors.append(f"Failed to generate NIS for style {style_num}: {str(e)}")
-        
-        nis_progress["completed"] = i + 1
+    # Run in background thread to avoid Render's 30-sec request timeout
+    t = threading.Thread(target=_run_nis_generation, args=(
+        brand, styles, content_map, vendor_code, template_path, brand_cfg, template_map
+    ))
+    t.daemon = True
+    t.start()
     
-    nis_progress["status"] = "done"
-    nis_progress["current_style"] = ""
-    
-    return jsonify({
-        "results": results,
-        "errors": errors,
-        "total": len(results),
-    })
+    # Return immediately
+    return jsonify({"status": "started", "total": len(styles)})
+
+
+@app.route("/api/generate-nis-results")
+def generate_nis_results():
+    """Poll this after generate-nis to get results when done."""
+    if nis_progress["status"] == "done":
+        return jsonify({
+            "status": "done",
+            "results": nis_progress.get("results", []),
+            "errors": nis_progress.get("errors", []),
+            "total": len(nis_progress.get("results", [])),
+        })
+    else:
+        return jsonify({
+            "status": nis_progress["status"],
+            "completed": nis_progress["completed"],
+            "total": nis_progress["total"],
+        })
 
 @app.route("/api/generate-progress")
 def generate_progress():

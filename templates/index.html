@@ -3540,21 +3540,9 @@ async function generateNIS() {
   const countText = document.getElementById('nis-gen-count');
   const etaText = document.getElementById('nis-gen-eta');
 
-  const progressPoll = setInterval(async () => {
-    try {
-      const pr = await fetch('/api/generate-progress');
-      const pg = await pr.json();
-      if (pg.total > 0) {
-        progressEl.style.width = pg.percent + '%';
-        countText.textContent = pg.completed + ' of ' + pg.total + ' styles';
-        etaText.textContent = pg.eta || '';
-        statusText.textContent = 'Building NIS files — ' + pg.completed + ' of ' + pg.total + ' (' + pg.percent + '%)';
-      }
-    } catch(e) {}
-  }, 1000);
-
+  // Step 1: Start generation (returns immediately, runs in background)
   try {
-    const res = await fetch('/api/generate-nis', {
+    const startRes = await fetch('/api/generate-nis', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3565,51 +3553,66 @@ async function generateNIS() {
         template_path: state.templatePath,
       }),
     });
-    const data = await res.json();
-    clearInterval(progressPoll);
-    progressEl.style.width = '100%';
-    loadingEl.classList.add('hidden');
-    resultsEl.classList.remove('hidden');
-
-    if (data.error) { showToast(data.error, 'error'); return; }
-
-    state.nisResults = data.results || [];
-    const successCount = (data.results || []).length;
-    const errorCount = (data.errors || []).length;
-
-    document.getElementById('nis-result-summary').innerHTML = `<strong>${successCount}</strong> NIS files generated${errorCount > 0 ? `, <span style="color:var(--error)">${errorCount} failed</span>` : ''}`;
-
-    const tbody = document.getElementById('nis-results-tbody');
-    tbody.innerHTML = (data.results || []).map(r => `
-      <tr>
-        <td><strong>${r.style_num}</strong></td>
-        <td>${r.style_name}</td>
-        <td>${r.rows} rows</td>
-        <td style="font-size:12px; color:var(--text-sec);">${r.filename}</td>
-        <td><a href="/api/download/${encodeURIComponent(r.filename)}" class="btn btn-secondary btn-sm" download>↓ Download</a></td>
-      </tr>
-    `).join('');
-
-    if (data.errors && data.errors.length) {
-      const errEl = document.getElementById('nis-errors');
-      errEl.innerHTML = `<div class="alert alert-error"><span class="alert-icon">✗</span><div>${data.errors.map(e => `<div>${e}</div>`).join('')}</div></div>`;
-      errEl.classList.remove('hidden');
-    }
-
-    // Show zip download button
-    const zipBtn = document.createElement('button');
-    zipBtn.className = 'btn btn-success';
-    zipBtn.textContent = '↓ Download All as ZIP';
-    zipBtn.onclick = () => { window.location.href = '/api/download-all'; };
-    document.getElementById('download-actions').appendChild(zipBtn);
-
-    showToast(`${successCount} NIS files generated!`, 'success');
-
+    const startData = await startRes.json();
+    if (startData.error) { showToast(startData.error, 'error'); loadingEl.classList.add('hidden'); return; }
   } catch(e) {
-    clearInterval(progressPoll);
     loadingEl.classList.add('hidden');
-    showToast('Generation failed: ' + e.message, 'error');
+    showToast('Failed to start generation: ' + e.message, 'error');
+    return;
   }
+
+  // Step 2: Poll progress until done
+  const pollInterval = setInterval(async () => {
+    try {
+      const pr = await fetch('/api/generate-progress');
+      const pg = await pr.json();
+      if (pg.total > 0) {
+        progressEl.style.width = pg.percent + '%';
+        countText.textContent = pg.completed + ' of ' + pg.total + ' styles';
+        etaText.textContent = pg.eta || '';
+        statusText.textContent = 'Building NIS files \u2014 ' + pg.completed + ' of ' + pg.total + ' (' + pg.percent + '%)';
+      }
+      
+      // Check if done
+      if (pg.status === 'done' || pg.percent >= 100) {
+        clearInterval(pollInterval);
+        progressEl.style.width = '100%';
+        statusText.textContent = 'Complete! Fetching results...';
+        
+        // Step 3: Fetch final results
+        const resRes = await fetch('/api/generate-nis-results');
+        const data = await resRes.json();
+        
+        loadingEl.classList.add('hidden');
+        resultsEl.classList.remove('hidden');
+        
+        state.nisResults = data.results || [];
+        const successCount = (data.results || []).length;
+        const errorCount = (data.errors || []).length;
+        
+        document.getElementById('nis-result-summary').innerHTML = `<strong>${successCount}</strong> NIS files generated${errorCount > 0 ? `, <span style="color:var(--error)">${errorCount} failed</span>` : ''}`;
+        
+        const tbody = document.getElementById('nis-results-tbody');
+        tbody.innerHTML = (data.results || []).map(r => `
+          <tr>
+            <td><strong>${r.style_num}</strong></td>
+            <td>${r.style_name}</td>
+            <td>${r.rows} rows</td>
+            <td style="font-size:12px; color:var(--text-sec);">${r.filename}</td>
+            <td><a href="/api/download/${encodeURIComponent(r.filename)}" class="btn btn-secondary btn-sm" download>\u2193 Download</a></td>
+          </tr>
+        `).join('');
+        
+        if (data.errors && data.errors.length) {
+          const errEl = document.getElementById('nis-errors');
+          errEl.innerHTML = `<div class="alert alert-error"><span class="alert-icon">\u2717</span><div>${data.errors.map(e => `<div>${e}</div>`).join('')}</div></div>`;
+          errEl.classList.remove('hidden');
+        }
+        
+        showToast(`${successCount} NIS files generated!`, 'success');
+      }
+    } catch(e) { /* keep polling */ }
+  }, 1500);
 }
 
 // ═══════════════════════ SESSION RESET ═══════════════════════
