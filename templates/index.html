@@ -6100,6 +6100,26 @@ async function wsRunValidation(stylesList) {
   downloadsEl.innerHTML = dlHtml;
 }
 
+async function wsSyncAndDownload(url) {
+  showToast('Preparing file...', 'info');
+  try {
+    await fetch('/api/sync-before-download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand: state.brand || '',
+        vendor_code: state.vendorCode || '',
+        styles: state.styles || [],
+        content_map: state.generatedContent || {},
+        field_overrides: wsState.fieldOverrides || {},
+      }),
+    });
+  } catch(e) {
+    console.warn('Sync failed, downloading anyway:', e);
+  }
+  window.location.href = url;
+}
+
 function wsDownloadAllZip() {
   wsSyncAndDownload('/api/download-all');
 }
