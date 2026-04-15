@@ -4473,40 +4473,64 @@ function showStyleSummary(data) {
   const fbWrap = document.getElementById('summary-feedback-wrap');
   if (!card) return;
 
-  const totalStyles = data.total_styles || (data.styles || []).length;
+  const totalStyles = data.total_styles || 0;
   const totalVariants = data.total_variants || 0;
-  const categories = data.categories || {};
-  const catNames = Object.keys(categories);
-  const uniqueColors = data.unique_colors || 0;
-  const sizeRange = data.size_range || '';
+  const breakdown = data.category_breakdown || [];
+  const trainedCount = data.trained_count || 0;
+  const totalCats = data.total_categories || breakdown.length;
 
-  const catPills = catNames.map(c =>
-    `<span class="nis-summary-pill">${escHtml(c)} (${categories[c]})</span>`
-  ).join(' ');
+  let html = '<div style="font-size:15px; font-weight:700; margin-bottom:12px;">Upload Summary</div>';
+  html += '<div style="font-size:13px; margin-bottom:14px;">This file contains <strong>' + totalStyles + ' styles</strong> and <strong>' + totalVariants + ' variants</strong> across <strong>' + totalCats + ' product categor' + (totalCats === 1 ? 'y' : 'ies') + '</strong>.</div>';
 
-  const catLine = catNames.length
-    ? `<br><span style="color:var(--success);">${catPills}</span>`
-    : '';
+  if (breakdown.length) {
+    breakdown.forEach(cat => {
+      const isTrained = cat.trained;
+      const statusHtml = isTrained
+        ? '<span style="background:var(--success-bg); color:var(--success); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">\u2713 Trained (' + cat.dropdown_fields + ' dropdowns)</span>'
+        : '<span style="background:var(--error-bg); color:var(--error); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">\u2717 Not Trained</span>';
 
-  const colorLine = uniqueColors
-    ? `Colors: <strong>${uniqueColors} unique</strong>` + (sizeRange ? ` · Sizes: <strong>${escHtml(sizeRange)}</strong>` : '')
-    : (sizeRange ? `Sizes: <strong>${escHtml(sizeRange)}</strong>` : '');
+      const subPills = (cat.sub_classes || []).map(sc =>
+        '<span style="background:var(--bg); padding:2px 8px; border-radius:4px; font-size:11px; margin-right:4px;">' + escHtml(sc.name) + ' (' + sc.count + ')</span>'
+      ).join(' ');
 
-  card.innerHTML = `
-    <div>✓ <strong>${totalStyles} styles detected</strong> · <strong>${totalVariants} variants</strong>${catNames.length ? ' · ' + catNames.length + ' categories' : ''}
-    ${catLine}
-    ${colorLine ? `<br><span style="font-size:12px; color:var(--success);">${colorLine}</span>` : ''}
-    </div>
-    <div id="pt-confirm-section" style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
-      <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; color:var(--text-sec); margin-bottom:8px;">Product Type Confirmation</div>
-      <div id="pt-confirm-list" style="font-size:13px;">Loading product types...</div>
-    </div>
-  `;
+      html += '<div style="padding:10px 12px; margin-bottom:8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);">';
+      html += '<div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">';
+      html += '<strong style="font-size:14px;">' + escHtml(cat.label) + '</strong>';
+      html += '<span style="font-size:12px; color:var(--text-sec);">' + cat.total_styles + ' style' + (cat.total_styles !== 1 ? 's' : '') + '</span>';
+      html += '<span style="margin-left:auto;">' + statusHtml + '</span>';
+      html += '</div>';
+      html += '<div>' + subPills + '</div>';
+
+      if (!isTrained) {
+        html += '<div style="margin-top:8px; font-size:12px; color:var(--error);">';
+        html += 'No Amazon template for ' + escHtml(cat.label) + '. ';
+        html += "<a href=\"mailto:bhatt.devang999@gmail.com?subject=NIS%20Template%20Request%20-%20" + encodeURIComponent(cat.product_type) + "&body=Need%20the%20Amazon%20.xlsm%20template%20for%20" + encodeURIComponent(cat.label) + "%20to%20enable%20NIS%20generation.\" style=\"color:var(--accent); font-weight:600;\">Email Devang for template</a>";
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+
+    if (trainedCount === totalCats) {
+      html += '<div style="font-size:13px; color:var(--success); margin-top:8px;">\u2713 All categories trained. Ready to generate.</div>';
+    } else {
+      const untrained = totalCats - trainedCount;
+      html += '<div style="font-size:13px; color:var(--error); margin-top:8px;">\u26a0 ' + untrained + ' of ' + totalCats + ' categor' + (untrained === 1 ? 'y is' : 'ies are') + ' untrained. Generation will be blocked until templates are provided.</div>';
+    }
+  }
+
+  if (data.brand) {
+    const brandLine = data.brand_known
+      ? '<span style="color:var(--success);">\u2713 ' + escHtml(data.brand) + '</span> (config loaded)'
+      : '<span style="color:var(--warn);">\u26a0 ' + escHtml(data.brand) + '</span> (new brand \u2014 configure below)';
+    html += '<div style="margin-top:10px; font-size:13px;">Brand: ' + brandLine + '</div>';
+  }
+  if (data.detected_gender) {
+    html += '<div style="font-size:12px; color:var(--text-sec);">Detected: ' + escHtml(data.detected_gender) + (data.division_names && data.division_names[0] ? ' (' + escHtml(data.division_names[0]) + ')' : '') + '</div>';
+  }
+
+  card.innerHTML = html;
   card.classList.remove('hidden');
   if (fbWrap) fbWrap.classList.remove('hidden');
-
-  // Load product types and build the confirmation UI
-  wsLoadProductTypeConfirmation();
 }
 
 async function wsLoadProductTypeConfirmation() {

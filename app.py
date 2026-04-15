@@ -1878,11 +1878,53 @@ def upload_product_data():
         # Check brand config existence
         brand_known = brand and (brand in BRAND_CONFIGS or (_load_brand_config_data(brand) != {}))
 
+        # ── Category breakdown ────────────────────────────────────────
+        category_breakdown = []
+        styles_by_pt = defaultdict(lambda: defaultdict(list))
+        for s in styles:
+            sub_class = s.get("subclass", "") or "Unknown"
+            pt_id = None
+            for pt_def in ALL_PRODUCT_TYPES:
+                if sub_class in pt_def.get("sub_classes", []):
+                    pt_id = pt_def["id"]
+                    break
+            # Fallback to division_name
+            if not pt_id and s.get("division_name"):
+                dn = s["division_name"].upper()
+                if "SWIM" in dn: pt_id = "SWIMWEAR"
+                elif "DRESS" in dn: pt_id = "DRESS"
+                elif "SHIRT" in dn or "TOP" in dn: pt_id = "SHIRT"
+            if not pt_id:
+                pt_id = "UNKNOWN"
+            styles_by_pt[pt_id][sub_class].append(s["style_num"])
+
+        for pt_id, sub_classes in styles_by_pt.items():
+            pt_def = next((p for p in ALL_PRODUCT_TYPES if p["id"] == pt_id), None)
+            pt_label = pt_def["label"] if pt_def else pt_id
+            dd = load_dropdown_cache(pt_id)
+            is_trained = len(dd) > 0
+            total_in_pt = sum(len(v) for v in sub_classes.values())
+            sub_list = [{"name": sc, "count": len(snums)} for sc, snums in sub_classes.items()]
+            category_breakdown.append({
+                "product_type": pt_id,
+                "label": pt_label,
+                "trained": is_trained,
+                "dropdown_fields": len(dd),
+                "total_styles": total_in_pt,
+                "sub_classes": sub_list,
+            })
+
+        trained_count = sum(1 for c in category_breakdown if c["trained"])
+        total_categories = len(category_breakdown)
+
         return jsonify({
             "total_styles": len(styles),
             "total_variants": total_variants,
             "brand": brand,
             "brand_known": brand_known,
+            "category_breakdown": category_breakdown,
+            "trained_count": trained_count,
+            "total_categories": total_categories,
             "vendor_code": session_data.get("vendor_code", ""),
             "detected_gender": detected_gender,
             "detected_category": detected_category,
