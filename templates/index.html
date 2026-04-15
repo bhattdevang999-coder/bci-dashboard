@@ -4530,14 +4530,22 @@ async function wsLoadProductTypeConfirmation() {
   // Group styles by detected product type
   const stylesByPT = {};
   styles.forEach(s => {
-    const subClass = s.sub_class || s.sub_subclass || '';
-    let detected = 'DRESS'; // default
+    const subClass = s.subclass || s.sub_class || '';  // parser stores as 'subclass' (no underscore)
+    let detected = null;
     for (const pt of types) {
       if ((pt.sub_classes || []).some(sc => sc.toLowerCase() === subClass.toLowerCase())) {
         detected = pt.id;
         break;
       }
     }
+    // If subclass didn't match, try detecting from division_name
+    if (!detected && s.division_name) {
+      const dn = s.division_name.toUpperCase();
+      if (dn.includes('SWIM')) detected = 'SWIMWEAR';
+      else if (dn.includes('DRESS')) detected = 'DRESS';
+      else if (dn.includes('SHIRT') || dn.includes('TOP')) detected = 'SHIRT';
+    }
+    if (!detected) detected = 'UNKNOWN';
     if (!stylesByPT[detected]) stylesByPT[detected] = [];
     stylesByPT[detected].push(s);
     // Store on the style object for later use
@@ -4546,7 +4554,7 @@ async function wsLoadProductTypeConfirmation() {
 
   let html = '';
   for (const [ptId, ptStyles] of Object.entries(stylesByPT)) {
-    const ptInfo = types.find(t => t.id === ptId) || { id: ptId, label: ptId, trained: false };
+    const ptInfo = types.find(t => t.id === ptId) || { id: ptId, label: ptId === 'UNKNOWN' ? 'Unknown Product Type' : ptId, trained: false };
     const isTrained = ptInfo.trained;
     const ddCount = ptInfo.dropdown_fields || 0;
 
