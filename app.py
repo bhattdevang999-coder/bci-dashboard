@@ -415,9 +415,21 @@ TEMPLATE_PRODUCT_TYPE_MAP = {
     "Shirt": "Other_Shirts",
     "Blouse": "Other_Shirts",
     "Tank": "Other_Shirts",
-    # Shorts
+    # Swimwear (from TLG pre-upload templates)
+    "Rashguard": "Swimwear",
+    "One Piece Swim": "Swimwear",
+    "Bikini Top": "Swimwear",
+    "Swim Bottom": "Swimwear",
+    "Bikini Bottom": "Swimwear",
+    "Tankini": "Swimwear",
+    "Swim Set 2 pcs": "Swimwear",
+    "Trunk": "Swimwear",
+    "Cover Up": "Swimwear",
+    # Shorts / Boardshorts
+    "Short": "Shorts",
     "Board Short": "Shorts",
     "Chino Short": "Shorts",
+    "Boardshorts": "Shorts",
     # Jackets and Coats
     "Jacket": "Jackets_and_Coats",
     "Coat": "Jackets_and_Coats",
@@ -1654,7 +1666,7 @@ def list_templates():
 # All product types we know about (from master_nis_reference + common Amazon categories)
 ALL_PRODUCT_TYPES = [
     {"id": "DRESS", "label": "Dresses", "sub_classes": ["Day Dress", "Cocktail Dress", "Active Dress", "Swimdress", "Maxi Dress", "Mini Dress", "Wrap Dress", "Shirt Dress"]},
-    {"id": "SWIMWEAR", "label": "Swimwear (1PC, 2PC, Tops, Bottoms)", "sub_classes": ["One Piece", "Bikini Top", "Bikini Bottom", "Tankini", "Cover Up", "Boardshorts"]},
+    {"id": "SWIMWEAR", "label": "Swimwear (1PC, 2PC, Tops, Bottoms, Rashguards)", "sub_classes": ["One Piece", "One Piece Swim", "Bikini Top", "Bikini Bottom", "Swim Bottom", "Tankini", "Cover Up", "Boardshorts", "Rashguard", "Swim Set 2 pcs", "Trunk", "Short"]},
     {"id": "SHIRT", "label": "Shirts / Tops (Pullovers, Tanks, Tees, Blouses)", "sub_classes": ["Pullover", "Tank", "Tee", "Blouse", "Shirt"]},
     {"id": "SHORTS", "label": "Shorts / Skorts", "sub_classes": ["Shorts", "Skort"]},
     {"id": "PANTS", "label": "Pants / Leggings", "sub_classes": ["Pants", "Leggings", "Joggers"]},
