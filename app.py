@@ -426,7 +426,7 @@ TEMPLATE_PRODUCT_TYPE_MAP = {
     "Trunk": "Swimwear",
     "Cover Up": "Swimwear",
     # Shorts / Boardshorts
-    "Short": "Shorts",
+    "Short": "Swimwear",  # swim shorts/trunks — use Swimwear template
     "Board Short": "Shorts",
     "Chino Short": "Shorts",
     "Boardshorts": "Shorts",
@@ -1255,6 +1255,7 @@ PRODUCT_HEADER_ALIASES = {
     "sleeve type": "sleeve_type",
     "sleeve": "sleeve_type",
     "fit type": "fit_type",
+    "fit type (regular, relaxed, oversized, slim , fitted, etc.)": "fit_type",
     "pockets": "pockets",
     "pockets?": "pockets",
     # Bullets from pre-upload
