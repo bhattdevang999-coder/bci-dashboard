@@ -53,6 +53,80 @@ FEEDBACK_DIR     = BASE_DIR / "feedback"
 DEFAULT_TEMPLATE = UPLOAD_TEMPLATES / "Dresses-Training.xlsm"
 BRAND_CONFIGS_DIR = BASE_DIR / "brand_configs"
 DROPDOWN_CACHE_DIR = BASE_DIR / "dropdown_cache"
+SUBCLASS_MAP_FILE = BASE_DIR / "subclass_product_type_map.json"
+
+def _load_subclass_map():
+    """Load the learned sub-class → product type mapping."""
+    if SUBCLASS_MAP_FILE.exists():
+        with open(str(SUBCLASS_MAP_FILE), "r") as f:
+            return json.load(f)
+    return {}
+
+def _save_subclass_map(mapping):
+    """Save the sub-class → product type mapping."""
+    with open(str(SUBCLASS_MAP_FILE), "w") as f:
+        json.dump(mapping, f, indent=2)
+
+def resolve_product_type(sub_class, division_name=""):
+    """Resolve a sub-class to a product type using all available sources.
+    Priority: 1. Learned map, 2. ALL_PRODUCT_TYPES, 3. TEMPLATE_PRODUCT_TYPE_MAP, 4. division_name heuristic
+    Returns (product_type_id, confidence) where confidence is 'known'|'detected'|'unknown'
+    """
+    if not sub_class:
+        # Try division_name only
+        if division_name:
+            dn = division_name.upper()
+            if "SWIM" in dn: return "SWIMWEAR", "detected"
+            if "DRESS" in dn: return "DRESS", "detected"
+            if "SHIRT" in dn or "TOP" in dn: return "SHIRT", "detected"
+        return "UNKNOWN", "unknown"
+    
+    # 1. Check learned map (highest priority — operator-confirmed)
+    learned = _load_subclass_map()
+    if sub_class in learned:
+        return learned[sub_class], "known"
+    
+    # 2. Check ALL_PRODUCT_TYPES
+    for pt in ALL_PRODUCT_TYPES:
+        if sub_class in pt.get("sub_classes", []):
+            return pt["id"], "known"
+    
+    # 3. Check TEMPLATE_PRODUCT_TYPE_MAP
+    if sub_class in TEMPLATE_PRODUCT_TYPE_MAP:
+        tpl = TEMPLATE_PRODUCT_TYPE_MAP[sub_class]
+        # Map template name to product type ID
+        tpl_to_id = {"Dresses": "DRESS", "Swimwear": "SWIMWEAR", "Other_Shirts": "SHIRT",
+                      "Shorts": "SHORTS", "Jackets_and_Coats": "COAT", "Skirts": "SKIRT"}
+        return tpl_to_id.get(tpl, tpl.upper()), "known"
+    
+    # 4. Division name heuristic
+    if division_name:
+        dn = division_name.upper()
+        if "SWIM" in dn: return "SWIMWEAR", "detected"
+        if "DRESS" in dn: return "DRESS", "detected"
+        if "SHIRT" in dn or "TOP" in dn: return "SHIRT", "detected"
+        if "SHORT" in dn: return "SHORTS", "detected"
+        if "JACKET" in dn or "COAT" in dn: return "COAT", "detected"
+    
+    # 5. Fuzzy sub_class name matching
+    sc_lower = sub_class.lower()
+    if any(w in sc_lower for w in ["swim", "bikini", "rashguard", "trunk", "tankini"]):
+        return "SWIMWEAR", "detected"
+    if any(w in sc_lower for w in ["dress", "gown", "romper"]):
+        return "DRESS", "detected"
+    if any(w in sc_lower for w in ["shirt", "blouse", "top", "tee", "polo", "tank"]):
+        return "SHIRT", "detected"
+    if any(w in sc_lower for w in ["short", "board"]):
+        return "SHORTS", "detected"
+    if any(w in sc_lower for w in ["jacket", "coat", "hoodie", "pullover", "fleece"]):
+        return "COAT", "detected"
+    if any(w in sc_lower for w in ["pant", "legging", "jogger"]):
+        return "PANTS", "detected"
+    if any(w in sc_lower for w in ["skirt", "skort"]):
+        return "SKIRT", "detected"
+    
+    return "UNKNOWN", "unknown"
+
 
 for d in [UPLOAD_TEMPLATES, UPLOAD_PRODUCTS, UPLOAD_KEYWORDS, UPLOAD_OUTPUT, BRAND_CONFIGS_DIR, FEEDBACK_DIR, DROPDOWN_CACHE_DIR]:
     d.mkdir(parents=True, exist_ok=True)
@@ -1749,6 +1823,35 @@ def download_sample_template():
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
+
+
+@app.route("/api/save-subclass-mapping", methods=["POST"])
+def save_subclass_mapping():
+    """Permanently save a sub-class → product type mapping.
+    Called when the operator assigns a product type to an unknown sub-class.
+    This mapping persists and is used for all future uploads.
+    """
+    data = request.get_json(force=True)
+    sub_class = data.get("sub_class", "").strip()
+    product_type = data.get("product_type", "").strip()
+    
+    if not sub_class or not product_type:
+        return jsonify({"error": "sub_class and product_type required"}), 400
+    
+    mapping = _load_subclass_map()
+    mapping[sub_class] = product_type
+    _save_subclass_map(mapping)
+    
+    return jsonify({"ok": True, "sub_class": sub_class, "product_type": product_type,
+                     "total_mappings": len(mapping)})
+
+
+@app.route("/api/subclass-mappings")
+def get_subclass_mappings():
+    """Return all learned sub-class → product type mappings."""
+    return jsonify({"mappings": _load_subclass_map()})
+
+
 @app.route("/api/upload-product-data", methods=["POST"])
 def upload_product_data():
     if "file" not in request.files:
@@ -1882,21 +1985,14 @@ def upload_product_data():
         # ── Category breakdown ────────────────────────────────────────
         category_breakdown = []
         styles_by_pt = defaultdict(lambda: defaultdict(list))
+        unknown_subclasses = set()
         for s in styles:
             sub_class = s.get("subclass", "") or "Unknown"
-            pt_id = None
-            for pt_def in ALL_PRODUCT_TYPES:
-                if sub_class in pt_def.get("sub_classes", []):
-                    pt_id = pt_def["id"]
-                    break
-            # Fallback to division_name
-            if not pt_id and s.get("division_name"):
-                dn = s["division_name"].upper()
-                if "SWIM" in dn: pt_id = "SWIMWEAR"
-                elif "DRESS" in dn: pt_id = "DRESS"
-                elif "SHIRT" in dn or "TOP" in dn: pt_id = "SHIRT"
-            if not pt_id:
-                pt_id = "UNKNOWN"
+            pt_id, confidence = resolve_product_type(sub_class, s.get("division_name", ""))
+            s["_resolved_pt"] = pt_id
+            s["_pt_confidence"] = confidence
+            if confidence == "unknown":
+                unknown_subclasses.add(sub_class)
             styles_by_pt[pt_id][sub_class].append(s["style_num"])
 
         for pt_id, sub_classes in styles_by_pt.items():
@@ -1941,6 +2037,7 @@ def upload_product_data():
             "action_items": action_items,
             "categories": dict(type_counts),
             "unique_colors": len(set(v.get("color_name", "") for s in styles for v in s.get("variants", []) if v.get("color_name"))),
+            "unknown_subclasses": list(unknown_subclasses),
             "size_range": ", ".join(sorted(set(v.get("size", "") for s in styles for v in s.get("variants", []) if v.get("size")),
                                           key=lambda x: ["XXS","XS","S","M","L","XL","XXL","2XL","3XL"].index(x) if x in ["XXS","XS","S","M","L","XL","XXL","2XL","3XL"] else 99)),
         })
