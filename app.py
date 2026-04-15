@@ -1174,34 +1174,96 @@ def find_col_exact(col_map, field_id):
 
 # ── Product data parsing ───────────────────────────────────────────────────────
 PRODUCT_HEADER_ALIASES = {
-    "season code": "season_code",
-    "season added to amzn": "season_added",
+    # Brand
     "brand": "brand",
+    "brand code": "brand",
+    "brand name": "brand",
+    # Division / product type
     "division": "division",
+    "tlgdiv name": "division_name",
+    "inline/value": "inline_value",
+    # Category
     "sub-class name": "subclass",
+    "sub class name": "subclass",
+    "sub class": "subclass",
+    "subclass": "subclass",
     "sub sub-class name": "sub_subclass",
+    "sub sub class name": "sub_subclass",
+    "sub-subclass": "sub_subclass",
+    # Style
     "style #": "style_num",
+    "style#": "style_num",
+    "style number": "style_num",
     "style name": "style_name",
     "style description": "style_desc",
+    "tlg style desc": "style_desc",
+    "season code": "season_code",
+    "season added to amzn": "season_added",
+    # Color
     "color code": "color_code",
-    "list price": "list_price",
-    "cost price": "cost_price",
     "color name": "color_name",
+    "color": "color_name",
+    # Size
     "product - size": "size",
     "size": "size",
+    # IDs
     "upc": "upc",
+    "upc code": "upc",
     "casin": "casin",
     "child asin": "child_asin",
     "parent asin": "parent_asin",
+    "model": "model_code",
     "model name": "model_name",
+    "sku": "sku",
+    # Pricing
+    "list price": "list_price",
+    "amzn retail": "list_price",
+    "retail": "list_price",
+    "retail price": "list_price",
+    "cost price": "cost_price",
+    "amzn wholesale": "cost_price",
+    "wholesale": "cost_price",
+    "wholesale price": "cost_price",
     "case pack": "case_pack",
+    # Product attributes
     "country of origin": "coo",
+    "coo": "coo",
     "fabric": "fabric",
     "material": "fabric",
+    "fabric content percentage": "fabric",
+    "fabric content": "fabric",
     "care": "care",
     "care instructions": "care",
     "upf": "upf",
-    "sku": "sku",
+    "upf rating": "upf",
+    "neck type": "neck_type",
+    "collar type": "neck_type",
+    "closure type": "closure_type",
+    "closure": "closure_type",
+    "sleeve type": "sleeve_type",
+    "sleeve": "sleeve_type",
+    "fit type": "fit_type",
+    "pockets": "pockets",
+    "pockets?": "pockets",
+    # Bullets from pre-upload
+    "key features (bullet 1)": "bullet_1",
+    "key features (bullet 2)": "bullet_2",
+    "key features (bullet 3)": "bullet_3",
+    "key features (bullet 4)": "bullet_4",
+    "key features (bullet 5)": "bullet_5",
+    "bullet 1": "bullet_1",
+    "bullet 2": "bullet_2",
+    "bullet 3": "bullet_3",
+    "bullet 4": "bullet_4",
+    "bullet 5": "bullet_5",
+    # Dates
+    "due date": "ship_date",
+    "due date (earliest ship date)": "ship_date",
+    "earliest ship date": "ship_date",
+    "ship date": "ship_date",
+    # Extra
+    "additional details": "additional_details",
+    "additional details, standouts, call outs, features": "additional_details",
 }
 
 def fuzzy_match_headers(headers):
@@ -1277,6 +1339,7 @@ def parse_product_file(file_path):
         brand = get("brand")
         subclass = get("subclass")
         sub_subclass = get("sub_subclass")
+        division_name = get("division_name")
         color_name = get("color_name")
         color_code = get("color_code")
         size = get("size")
@@ -1292,6 +1355,18 @@ def parse_product_file(file_path):
         upf = get("upf")
         coo = get("coo")
         sku = get("sku")
+        # New fields from pre-upload
+        neck_type = get("neck_type")
+        closure_type = get("closure_type")
+        sleeve_type = get("sleeve_type")
+        fit_type = get("fit_type")
+        ship_date = get("ship_date")
+        bullet_1 = get("bullet_1")
+        bullet_2 = get("bullet_2")
+        bullet_3 = get("bullet_3")
+        bullet_4 = get("bullet_4")
+        bullet_5 = get("bullet_5")
+        additional_details = get("additional_details")
         
         if not style_num:
             continue
@@ -1306,8 +1381,10 @@ def parse_product_file(file_path):
         # UPC validation
         if upc:
             upc_clean = re.sub(r'\D', '', str(upc))
-            if len(upc_clean) != 12:
-                row_errors.append(f"Row {row_idx}: UPC '{upc}' is not 12 digits (style {style_num}, color {color_name}, size {size})")
+            if len(upc_clean) not in (12, 13, 14):
+                row_errors.append(f"Row {row_idx}: UPC/EAN '{upc}' is not valid (expected 12, 13, or 14 digits, got {len(upc_clean)}) — style {style_num}, {color_name} {size}")
+            elif len(upc_clean) == 13:
+                row_warnings.append(f"Row {row_idx}: EAN-13 detected for {style_num} {color_name} {size} — will be used as-is")
         else:
             row_warnings.append(f"Row {row_idx}: Missing UPC for style {style_num}, color {color_name}, size {size}")
         
@@ -1336,6 +1413,7 @@ def parse_product_file(file_path):
                 "brand": brand,
                 "subclass": subclass,
                 "sub_subclass": sub_subclass,
+                "division_name": division_name,
                 "list_price": list_price,
                 "cost_price": cost_price,
                 "parent_asin": parent_asin,
@@ -1345,6 +1423,14 @@ def parse_product_file(file_path):
                 "care": care,
                 "upf": upf,
                 "coo": coo,
+                # Fields from pre-upload that take priority
+                "neck_type": neck_type,
+                "closure_type": closure_type,
+                "sleeve_type": sleeve_type,
+                "fit_type": fit_type,
+                "ship_date": ship_date,
+                "bullets_from_upload": [b for b in [bullet_1, bullet_2, bullet_3, bullet_4, bullet_5] if b],
+                "additional_details": additional_details,
                 "variants": [],
                 "errors": [],
                 "warnings": [],
@@ -1656,10 +1742,19 @@ def upload_product_data():
     try:
         styles, errors, warnings = parse_product_file(str(save_path))
         session_data["styles"] = styles
-        
+
         total_variants = sum(len(s["variants"]) for s in styles)
-        
-        # Detect which product types are present but have no template loaded
+
+        # ── Detect brand ──────────────────────────────────────────────
+        brands_found = set(s.get("brand", "") for s in styles if s.get("brand"))
+        brand = list(brands_found)[0] if len(brands_found) == 1 else ""
+        if brand:
+            session_data["brand"] = brand
+            brand_cfg = _load_brand_config_data(brand)
+            session_data["vendor_code"] = brand_cfg.get("vendor_code_full", "")
+            session_data["brandConfig"] = brand_cfg
+
+        # ── Detect product types ──────────────────────────────────────
         present_types = set()
         type_counts = defaultdict(int)
         for s in styles:
@@ -1673,10 +1768,102 @@ def upload_product_data():
             for pt in sorted(present_types)
             if pt not in loaded_templates
         ]
-        
+
+        # Also try to detect product type from division_name (e.g., "VOLCOM MENS SWIM")
+        division_names = set(s.get("division_name", "") for s in styles if s.get("division_name"))
+        detected_gender = ""
+        detected_category = ""
+        for dn in division_names:
+            dn_upper = dn.upper()
+            if "MENS" in dn_upper or "MEN" in dn_upper:
+                detected_gender = "Male"
+            elif "WOMENS" in dn_upper or "WOMEN" in dn_upper:
+                detected_gender = "Female"
+            if "SWIM" in dn_upper:
+                detected_category = "SWIMWEAR"
+            elif "DRESS" in dn_upper:
+                detected_category = "DRESS"
+            elif "SHIRT" in dn_upper or "TOP" in dn_upper:
+                detected_category = "SHIRT"
+
+        # ── Data quality audit ────────────────────────────────────────
+        # Check every field across all styles — what's present, what's missing
+        REQUIRED_FIELDS = {
+            "style_num": "Style Number",
+            "style_name": "Style Name",
+            "brand": "Brand",
+        }
+        IMPORTANT_FIELDS = {
+            "cost_price": "Cost Price (Wholesale)",
+            "list_price": "List Price (Retail)",
+            "coo": "Country of Origin",
+            "fabric": "Fabric / Material",
+            "care": "Care Instructions",
+            "subclass": "Product Sub-Class",
+        }
+        NICE_TO_HAVE = {
+            "upf": "UPF Rating",
+            "neck_type": "Neck Type",
+            "closure_type": "Closure Type",
+            "sleeve_type": "Sleeve Type",
+            "fit_type": "Fit Type",
+            "ship_date": "Ship Date",
+            "bullets_from_upload": "Key Features / Bullets",
+            "model_name": "Model Name",
+        }
+        VARIANT_REQUIRED = {
+            "upc": "UPC Code",
+            "color_name": "Color Name",
+            "size": "Size",
+        }
+
+        field_status = {}  # field_key -> {present: N, missing: N, label: str, level: str}
+
+        for field_key, label in {**REQUIRED_FIELDS, **IMPORTANT_FIELDS, **NICE_TO_HAVE}.items():
+            present = sum(1 for s in styles if s.get(field_key))
+            level = "required" if field_key in REQUIRED_FIELDS else "important" if field_key in IMPORTANT_FIELDS else "optional"
+            field_status[field_key] = {
+                "label": label, "present": present, "missing": len(styles) - present,
+                "total": len(styles), "level": level,
+            }
+
+        # Variant-level checks
+        all_variants = [v for s in styles for v in s.get("variants", [])]
+        for field_key, label in VARIANT_REQUIRED.items():
+            present = sum(1 for v in all_variants if v.get(field_key))
+            field_status[f"variant_{field_key}"] = {
+                "label": f"{label} (per variant)", "present": present, "missing": len(all_variants) - present,
+                "total": len(all_variants), "level": "required",
+            }
+
+        # Build action items
+        action_items = []
+        for key, info in field_status.items():
+            if info["missing"] > 0 and info["level"] in ("required", "important"):
+                pct = round(100 * info["present"] / info["total"]) if info["total"] else 0
+                action_items.append({
+                    "field": info["label"],
+                    "level": info["level"],
+                    "present": info["present"],
+                    "missing": info["missing"],
+                    "total": info["total"],
+                    "pct": pct,
+                    "message": f"{info['label']}: {info['missing']} of {info['total']} missing" + 
+                               (" — required for NIS" if info["level"] == "required" else " — add in pre-upload or set on dashboard"),
+                })
+
+        # Check brand config existence
+        brand_known = brand and (brand in BRAND_CONFIGS or (_load_brand_config_data(brand) != {}))
+
         return jsonify({
             "total_styles": len(styles),
             "total_variants": total_variants,
+            "brand": brand,
+            "brand_known": brand_known,
+            "vendor_code": session_data.get("vendor_code", ""),
+            "detected_gender": detected_gender,
+            "detected_category": detected_category,
+            "division_names": list(division_names),
             "errors": errors,
             "warnings": warnings,
             "error_count": len(errors),
@@ -1684,6 +1871,12 @@ def upload_product_data():
             "styles": styles,
             "missing_templates": missing_templates,
             "present_product_types": list(present_types),
+            "field_status": field_status,
+            "action_items": action_items,
+            "categories": dict(type_counts),
+            "unique_colors": len(set(v.get("color_name", "") for s in styles for v in s.get("variants", []) if v.get("color_name"))),
+            "size_range": ", ".join(sorted(set(v.get("size", "") for s in styles for v in s.get("variants", []) if v.get("size")),
+                                          key=lambda x: ["XXS","XS","S","M","L","XL","XXL","2XL","3XL"].index(x) if x in ["XXS","XS","S","M","L","XL","XXL","2XL","3XL"] else 99)),
         })
     except Exception as e:
         traceback.print_exc()
@@ -2252,6 +2445,74 @@ def feedback_session_summary():
         "field_overrides_count": len(field_overrides),
         "apply_all_count": len(apply_alls),
         "session_entries": len(session_entries),
+    })
+
+
+@app.route("/api/feedback/digest")
+def feedback_digest():
+    """Full feedback digest across all brands — for Devang to review.
+    Shows: recent feedback, patterns, most-edited fields, template requests,
+    operator activity, and learning recommendations.
+    """
+    all_entries = _load_feedback(limit=500)
+
+    # Categorize
+    by_type = defaultdict(list)
+    by_brand = defaultdict(list)
+    by_field = defaultdict(int)
+    template_requests = []
+    manual_notes = []
+
+    for e in all_entries:
+        by_type[e.get("type", "unknown")].append(e)
+        by_brand[e.get("brand", "unknown")].append(e)
+        fname = e.get("context", {}).get("field_name") or e.get("data", {}).get("field", "")
+        if fname:
+            by_field[fname] += 1
+        if e.get("type") == "template_request":
+            template_requests.append(e)
+        if e.get("type") == "manual":
+            manual_notes.append(e)
+
+    # Build learning recommendations
+    learning = []
+    top_fields = sorted(by_field.items(), key=lambda x: x[1], reverse=True)[:5]
+    for field, count in top_fields:
+        if count >= 3:
+            learning.append({
+                "field": field, "edit_count": count,
+                "recommendation": f"'{field}' has been corrected {count} times. Consider updating the derivation logic or brand config default."
+            })
+
+    # Field overrides that could become brand defaults
+    brand_default_candidates = []
+    for e in by_type.get("apply_all", []):
+        brand_default_candidates.append({
+            "brand": e.get("brand"),
+            "field": e.get("data", {}).get("field_name", ""),
+            "value": e.get("data", {}).get("value", ""),
+            "timestamp": e.get("timestamp"),
+        })
+
+    return jsonify({
+        "total_feedback": len(all_entries),
+        "by_type": {k: len(v) for k, v in by_type.items()},
+        "by_brand": {k: len(v) for k, v in by_brand.items()},
+        "top_edited_fields": [{"field": f, "count": c} for f, c in top_fields],
+        "template_requests": [{
+            "product_type": e.get("data", {}).get("product_type", ""),
+            "brand": e.get("brand"),
+            "note": e.get("data", {}).get("note", ""),
+            "timestamp": e.get("timestamp"),
+        } for e in template_requests],
+        "manual_notes": [{
+            "message": e.get("data", {}).get("message", ""),
+            "brand": e.get("brand"),
+            "context": e.get("context", {}),
+            "timestamp": e.get("timestamp"),
+        } for e in manual_notes[:20]],
+        "learning_recommendations": learning,
+        "brand_default_candidates": brand_default_candidates[:10],
     })
 
 

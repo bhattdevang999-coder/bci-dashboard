@@ -4328,6 +4328,61 @@ async function handleProductUpload(files) {
       alertsEl.innerHTML = '<div class="alert alert-success"><span class="alert-icon">✓</span><div>All validation checks passed — no errors or warnings!</div></div>';
     }
 
+    // ── Data Quality Report ──────────────────────────────────────
+    const actionItems = data.action_items || [];
+    const fieldStatus = data.field_status || {};
+    if (actionItems.length > 0 || Object.keys(fieldStatus).length > 0) {
+      let dqHtml = '<div style="margin-top:16px; padding:16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);">';
+      dqHtml += '<div style="font-size:14px; font-weight:700; margin-bottom:12px;">Data Quality Report</div>';
+
+      // Action items (missing required/important fields)
+      if (actionItems.length > 0) {
+        dqHtml += '<div style="margin-bottom:12px;">';
+        dqHtml += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--error); margin-bottom:6px;">Action Needed</div>';
+        actionItems.forEach(a => {
+          const icon = a.level === 'required' ? '\u2717' : '\u26a0';
+          const color = a.level === 'required' ? 'var(--error)' : 'var(--warn)';
+          const bg = a.level === 'required' ? 'var(--error-bg)' : 'var(--warn-bg)';
+          dqHtml += `<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:4px; border-radius:6px; background:${bg}; font-size:13px;">`;
+          dqHtml += `<span style="color:${color}; font-weight:700;">${icon}</span>`;
+          dqHtml += `<span>${escHtml(a.message)}</span>`;
+          dqHtml += `<span style="margin-left:auto; font-size:11px; color:var(--text-sec);">${a.present}/${a.total} present</span>`;
+          dqHtml += '</div>';
+        });
+        dqHtml += '</div>';
+        dqHtml += '<div style="font-size:12px; color:var(--text-sec); margin-bottom:12px;">Add missing data to the pre-upload file and re-upload, or fill in on the dashboard after generating content.</div>';
+      }
+
+      // Field coverage summary
+      const allFields = Object.values(fieldStatus);
+      const fullCoverage = allFields.filter(f => f.missing === 0).length;
+      const partialCoverage = allFields.filter(f => f.missing > 0 && f.present > 0).length;
+      const noCoverage = allFields.filter(f => f.present === 0).length;
+      dqHtml += '<div style="display:flex; gap:12px; flex-wrap:wrap;">';
+      dqHtml += `<div style="font-size:12px;"><span style="color:var(--success); font-weight:700;">${fullCoverage}</span> fields complete</div>`;
+      if (partialCoverage) dqHtml += `<div style="font-size:12px;"><span style="color:var(--warn); font-weight:700;">${partialCoverage}</span> partially filled</div>`;
+      if (noCoverage) dqHtml += `<div style="font-size:12px;"><span style="color:var(--error); font-weight:700;">${noCoverage}</span> empty</div>`;
+      dqHtml += '</div>';
+
+      // Brand detection
+      if (data.brand) {
+        const brandLine = data.brand_known
+          ? `<span style="color:var(--success);">\u2713 ${escHtml(data.brand)}</span> (config loaded)`
+          : `<span style="color:var(--warn);">\u26a0 ${escHtml(data.brand)}</span> (new brand \u2014 configure below)`;
+        dqHtml += `<div style="margin-top:10px; font-size:13px;">Brand: ${brandLine}</div>`;
+      }
+      if (data.detected_gender || data.detected_category) {
+        dqHtml += `<div style="margin-top:4px; font-size:13px; color:var(--text-sec);">Detected: ${escHtml(data.detected_gender || '')} ${escHtml(data.detected_category || '')} ${data.division_names && data.division_names.length ? '(' + escHtml(data.division_names[0]) + ')' : ''}</div>`;
+      }
+
+      dqHtml += '</div>';
+      alertsEl.innerHTML += dqHtml;
+    }
+
+    // Also store brand/gender/category from upload response
+    if (data.brand) state.brand = data.brand;
+    if (data.vendor_code) state.vendorCode = data.vendor_code;
+
     // Styles table
     const tableWrap = document.getElementById('product-table-wrap');
     if (data.styles && data.styles.length > 0) {
