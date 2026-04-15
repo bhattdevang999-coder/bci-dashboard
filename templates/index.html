@@ -4476,85 +4476,154 @@ function showStyleSummary(data) {
   const totalStyles = data.total_styles || 0;
   const totalVariants = data.total_variants || 0;
   const breakdown = data.category_breakdown || [];
-  const trainedCount = data.trained_count || 0;
-  const totalCats = data.total_categories || breakdown.length;
 
-  // Store breakdown for later use
+  // Store for later
   wsState.categoryBreakdown = breakdown;
-  wsState.confirmedTypes = {};
+  wsState.styleProductTypes = {};  // style_num -> confirmed product type
+
+  // Get trained types for the dropdown
+  const trainedTypes = breakdown.filter(c => c.trained).map(c => ({ id: c.product_type, label: c.label }));
+  const allTypes = breakdown.map(c => ({ id: c.product_type, label: c.label, trained: c.trained }));
 
   let html = '<div style="font-size:15px; font-weight:700; margin-bottom:4px;">Upload Summary</div>';
-  html += '<div style="font-size:13px; color:var(--text-sec); margin-bottom:14px;">' + totalStyles + ' styles, ' + totalVariants + ' variants, ' + totalCats + ' product categor' + (totalCats === 1 ? 'y' : 'ies') + '</div>';
-
-  // Category cards with confirmation
-  if (breakdown.length) {
-    breakdown.forEach(cat => {
-      const isTrained = cat.trained;
-      const statusHtml = isTrained
-        ? '<span style="background:var(--success-bg); color:var(--success); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Trained (' + cat.dropdown_fields + ' validations)</span>'
-        : '<span style="background:var(--warn-bg); color:var(--warn); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Not Trained</span>';
-
-      const subPills = (cat.sub_classes || []).map(sc =>
-        '<span style="background:var(--bg); padding:2px 6px; border-radius:4px; font-size:11px; margin:2px;">' + escHtml(sc.name) + '\u00a0(' + sc.count + ')</span>'
-      ).join('');
-
-      html += '<div style="padding:10px 12px; margin-bottom:6px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);">';
-      
-      // Header row with confirm checkbox
-      html += '<div style="display:flex; align-items:center; gap:8px;">';
-      if (isTrained) {
-        html += '<label style="display:flex; align-items:center; gap:6px; cursor:pointer;">';
-        html += '<input type="checkbox" id="pt-confirm-' + cat.product_type + '" onchange="wsConfirmProductType(\'' + cat.product_type + '\', this.checked)" style="width:16px; height:16px;">';
-        html += '<strong>' + escHtml(cat.label) + '</strong></label>';
-      } else {
-        html += '<span style="opacity:0.5;"><strong>' + escHtml(cat.label) + '</strong></span>';
-      }
-      html += '<span style="font-size:12px; color:var(--text-sec);">' + cat.total_styles + ' styles</span>';
-      html += '<span style="margin-left:auto;">' + statusHtml + '</span>';
-      html += '</div>';
-
-      // Sub-class pills
-      html += '<div style="margin-top:6px;">' + subPills + '</div>';
-
-      if (!isTrained) {
-        html += '<div style="margin-top:6px; font-size:12px; color:var(--warn);">Template needed. These styles will be skipped during generation.</div>';
-      }
-
-      html += '</div>';
-    });
-
-    // Summary + Generate gate
-    html += '<div id="pt-confirm-status" style="margin-top:10px; font-size:13px;">';
-    if (trainedCount === 0) {
-      html += '<span style="color:var(--error);">No trained categories. Upload Amazon templates to enable NIS generation.</span>';
-    } else if (trainedCount < totalCats) {
-      html += '<span style="color:var(--warn);">Only ' + trainedCount + ' of ' + totalCats + ' categories are trained. Untrained styles will be skipped.</span>';
-    }
-    html += '</div>';
-
-    // Confirm instruction
-    if (trainedCount > 0) {
-      html += '<div style="margin-top:8px; font-size:12px; color:var(--text-sec);">Check the boxes above to confirm which product types to generate. Only confirmed types will proceed.</div>';
-    }
-  }
+  html += '<div style="font-size:13px; color:var(--text-sec); margin-bottom:14px;">' + totalStyles + ' styles, ' + totalVariants + ' variants</div>';
 
   // Brand
   if (data.brand) {
     const brandLine = data.brand_known
       ? '<span style="color:var(--success);">\u2713 ' + escHtml(data.brand) + '</span> (config loaded)'
-      : '<span style="color:var(--warn);">\u26a0 ' + escHtml(data.brand) + '</span> (new brand)';
-    html += '<div style="margin-top:10px; font-size:13px;">Brand: ' + brandLine + '</div>';
+      : '<span style="color:var(--warn);">\u26a0 ' + escHtml(data.brand) + '</span> (new brand \u2014 configure below)';
+    html += '<div style="font-size:13px; margin-bottom:12px;">Brand: ' + brandLine + '</div>';
   }
-  if (data.detected_gender) {
-    html += '<div style="font-size:12px; color:var(--text-sec);">Detected: ' + escHtml(data.detected_gender) + (data.division_names && data.division_names[0] ? ' (' + escHtml(data.division_names[0]) + ')' : '') + '</div>';
+
+  // Per-style product type table
+  html += '<div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Confirm Product Type per Style</div>';
+  html += '<div style="font-size:12px; color:var(--text-sec); margin-bottom:8px;">Review the detected product type for each style. Change if incorrect. Only trained types will generate NIS files.</div>';
+
+  html += '<table class="ws-fields-table" style="font-size:13px;"><thead><tr>';
+  html += '<th style="width:110px;">Style #</th>';
+  html += '<th>Style Name</th>';
+  html += '<th style="width:130px;">Sub-Class</th>';
+  html += '<th style="width:200px;">Product Type</th>';
+  html += '<th style="width:80px;">Status</th>';
+  html += '</tr></thead><tbody>';
+
+  const styles = state.styles || [];
+  styles.forEach(s => {
+    const sn = s.style_num;
+    const subClass = s.subclass || s.sub_class || '';
+    
+    // Auto-detect product type
+    let detected = '';
+    for (const cat of breakdown) {
+      if ((cat.sub_classes || []).some(sc => sc.name === subClass)) {
+        detected = cat.product_type;
+        break;
+      }
+    }
+    // Fallback to division_name
+    if (!detected && s.division_name) {
+      const dn = s.division_name.toUpperCase();
+      if (dn.includes('SWIM')) detected = 'SWIMWEAR';
+      else if (dn.includes('DRESS')) detected = 'DRESS';
+      else if (dn.includes('SHIRT') || dn.includes('TOP')) detected = 'SHIRT';
+    }
+    if (!detected) detected = 'UNKNOWN';
+
+    // Store default
+    wsState.styleProductTypes[sn] = detected;
+
+    // Build dropdown
+    let selectHtml = '<select id="pt-select-' + escHtml(sn) + '" onchange="wsStylePTChanged(\'' + escHtml(sn) + '\', this.value)" style="width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:4px; font-size:12px; font-family:var(--font);">';
+    
+    allTypes.forEach(t => {
+      const selected = t.id === detected ? ' selected' : '';
+      const suffix = t.trained ? '' : ' (not trained)';
+      selectHtml += '<option value="' + escHtml(t.id) + '"' + selected + '>' + escHtml(t.label) + suffix + '</option>';
+    });
+    if (!allTypes.some(t => t.id === detected)) {
+      selectHtml += '<option value="UNKNOWN" selected>Unknown</option>';
+    }
+    selectHtml += '</select>';
+
+    // Status badge
+    const isTrained = breakdown.some(c => c.product_type === detected && c.trained);
+    const statusHtml = isTrained
+      ? '<span style="color:var(--success); font-weight:600; font-size:11px;">\u2713 Ready</span>'
+      : '<span style="color:var(--warn); font-weight:600; font-size:11px;">\u26a0 Skip</span>';
+
+    html += '<tr id="pt-row-' + escHtml(sn) + '">';
+    html += '<td style="font-family:monospace; font-size:11px;">' + escHtml(sn) + '</td>';
+    html += '<td>' + escHtml(s.style_name || sn) + '</td>';
+    html += '<td style="font-size:12px; color:var(--text-sec);">' + escHtml(subClass) + '</td>';
+    html += '<td>' + selectHtml + '</td>';
+    html += '<td id="pt-status-' + escHtml(sn) + '">' + statusHtml + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+
+  // Summary counts
+  const trainedCount = styles.filter(s => {
+    const pt = wsState.styleProductTypes[s.style_num];
+    return breakdown.some(c => c.product_type === pt && c.trained);
+  }).length;
+  const skipCount = styles.length - trainedCount;
+
+  html += '<div id="pt-summary" style="margin-top:10px; font-size:13px;">';
+  if (trainedCount === styles.length) {
+    html += '<span style="color:var(--success);">\u2713 All ' + trainedCount + ' styles ready to generate.</span>';
+  } else if (trainedCount > 0) {
+    html += '<span style="color:var(--warn);">' + trainedCount + ' styles ready, ' + skipCount + ' will be skipped (untrained product type).</span>';
+  } else {
+    html += '<span style="color:var(--error);">No trained product types. Upload Amazon templates to enable NIS generation.</span>';
   }
+  html += '</div>';
 
   card.innerHTML = html;
   card.classList.remove('hidden');
   if (fbWrap) fbWrap.classList.remove('hidden');
 }
 
-// Track which product types the operator has confirmed
+function wsStylePTChanged(styleNum, newPT) {
+  wsState.styleProductTypes[styleNum] = newPT;
+  const breakdown = wsState.categoryBreakdown || [];
+  const isTrained = breakdown.some(c => c.product_type === newPT && c.trained);
+  
+  // Update status badge
+  const statusEl = document.getElementById('pt-status-' + styleNum);
+  if (statusEl) {
+    statusEl.innerHTML = isTrained
+      ? '<span style="color:var(--success); font-weight:600; font-size:11px;">\u2713 Ready</span>'
+      : '<span style="color:var(--warn); font-weight:600; font-size:11px;">\u26a0 Skip</span>';
+  }
+
+  // Update summary
+  const styles = state.styles || [];
+  const trainedCount = styles.filter(s => {
+    const pt = wsState.styleProductTypes[s.style_num];
+    return breakdown.some(c => c.product_type === pt && c.trained);
+  }).length;
+  const skipCount = styles.length - trainedCount;
+
+  const summaryEl = document.getElementById('pt-summary');
+  if (summaryEl) {
+    if (trainedCount === styles.length) {
+      summaryEl.innerHTML = '<span style="color:var(--success);">\u2713 All ' + trainedCount + ' styles ready to generate.</span>';
+    } else if (trainedCount > 0) {
+      summaryEl.innerHTML = '<span style="color:var(--warn);">' + trainedCount + ' styles ready, ' + skipCount + ' will be skipped (untrained product type).</span>';
+    } else {
+      summaryEl.innerHTML = '<span style="color:var(--error);">No trained product types.</span>';
+    }
+  }
+
+  // Update generate button
+  const genBtn = document.getElementById('generate-btn');
+  if (genBtn && trainedCount > 0) {
+    genBtn.textContent = '\u2726 Generate Content (' + trainedCount + ' styles)';
+  }
+}
+
 function wsConfirmProductType(ptId, checked) {
   wsState.confirmedTypes = wsState.confirmedTypes || {};
   wsState.confirmedTypes[ptId] = checked;
@@ -4901,38 +4970,26 @@ async function startGeneration() {
     return;
   }
 
-  // Filter to only confirmed product types
-  const confirmed = wsState.confirmedTypes || {};
-  const confirmedPTs = Object.keys(confirmed).filter(k => confirmed[k]);
-  if (confirmedPTs.length === 0) {
-    showToast('Please confirm at least one product type above before generating.', 'error');
-    return;
-  }
-
-  // Filter styles to only confirmed types
+  // Filter to only styles with trained product types (per-style selection)
+  const ptSelections = wsState.styleProductTypes || {};
+  const breakdown = wsState.categoryBreakdown || [];
   const allStyles = state.styles;
+  
   const filteredStyles = allStyles.filter(s => {
-    const subClass = s.subclass || '';
-    const breakdown = wsState.categoryBreakdown || [];
-    for (const cat of breakdown) {
-      if (confirmedPTs.includes(cat.product_type)) {
-        if ((cat.sub_classes || []).some(sc => sc.name === subClass)) return true;
-      }
-    }
-    return false;
+    const pt = ptSelections[s.style_num] || '';
+    return breakdown.some(c => c.product_type === pt && c.trained);
   });
 
   if (filteredStyles.length === 0) {
-    showToast('No styles match confirmed product types.', 'error');
+    showToast('No styles have a trained product type. Check the product type assignments above.', 'error');
     return;
   }
 
-  // Use filtered styles for generation
   const skippedCount = allStyles.length - filteredStyles.length;
   if (skippedCount > 0) {
-    showToast(filteredStyles.length + ' styles will be generated. ' + skippedCount + ' skipped (untrained product type).', 'info');
+    showToast(filteredStyles.length + ' styles will generate. ' + skippedCount + ' skipped (untrained type).', 'info');
   }
-  state.styles = filteredStyles;  // temporarily filter
+  state.styles = filteredStyles;
 
   // Auto-save brand config
   if (state.brand) {
