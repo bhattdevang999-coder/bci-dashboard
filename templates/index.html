@@ -4479,49 +4479,70 @@ function showStyleSummary(data) {
   const trainedCount = data.trained_count || 0;
   const totalCats = data.total_categories || breakdown.length;
 
-  let html = '<div style="font-size:15px; font-weight:700; margin-bottom:12px;">Upload Summary</div>';
-  html += '<div style="font-size:13px; margin-bottom:14px;">This file contains <strong>' + totalStyles + ' styles</strong> and <strong>' + totalVariants + ' variants</strong> across <strong>' + totalCats + ' product categor' + (totalCats === 1 ? 'y' : 'ies') + '</strong>.</div>';
+  // Store breakdown for later use
+  wsState.categoryBreakdown = breakdown;
+  wsState.confirmedTypes = {};
 
+  let html = '<div style="font-size:15px; font-weight:700; margin-bottom:4px;">Upload Summary</div>';
+  html += '<div style="font-size:13px; color:var(--text-sec); margin-bottom:14px;">' + totalStyles + ' styles, ' + totalVariants + ' variants, ' + totalCats + ' product categor' + (totalCats === 1 ? 'y' : 'ies') + '</div>';
+
+  // Category cards with confirmation
   if (breakdown.length) {
     breakdown.forEach(cat => {
       const isTrained = cat.trained;
       const statusHtml = isTrained
-        ? '<span style="background:var(--success-bg); color:var(--success); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">\u2713 Trained (' + cat.dropdown_fields + ' dropdowns)</span>'
-        : '<span style="background:var(--error-bg); color:var(--error); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">\u2717 Not Trained</span>';
+        ? '<span style="background:var(--success-bg); color:var(--success); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Trained (' + cat.dropdown_fields + ' validations)</span>'
+        : '<span style="background:var(--warn-bg); color:var(--warn); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Not Trained</span>';
 
       const subPills = (cat.sub_classes || []).map(sc =>
-        '<span style="background:var(--bg); padding:2px 8px; border-radius:4px; font-size:11px; margin-right:4px;">' + escHtml(sc.name) + ' (' + sc.count + ')</span>'
-      ).join(' ');
+        '<span style="background:var(--bg); padding:2px 6px; border-radius:4px; font-size:11px; margin:2px;">' + escHtml(sc.name) + '\u00a0(' + sc.count + ')</span>'
+      ).join('');
 
-      html += '<div style="padding:10px 12px; margin-bottom:8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);">';
-      html += '<div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">';
-      html += '<strong style="font-size:14px;">' + escHtml(cat.label) + '</strong>';
-      html += '<span style="font-size:12px; color:var(--text-sec);">' + cat.total_styles + ' style' + (cat.total_styles !== 1 ? 's' : '') + '</span>';
+      html += '<div style="padding:10px 12px; margin-bottom:6px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);">';
+      
+      // Header row with confirm checkbox
+      html += '<div style="display:flex; align-items:center; gap:8px;">';
+      if (isTrained) {
+        html += '<label style="display:flex; align-items:center; gap:6px; cursor:pointer;">';
+        html += '<input type="checkbox" id="pt-confirm-' + cat.product_type + '" onchange="wsConfirmProductType(\'' + cat.product_type + '\', this.checked)" style="width:16px; height:16px;">';
+        html += '<strong>' + escHtml(cat.label) + '</strong></label>';
+      } else {
+        html += '<span style="opacity:0.5;"><strong>' + escHtml(cat.label) + '</strong></span>';
+      }
+      html += '<span style="font-size:12px; color:var(--text-sec);">' + cat.total_styles + ' styles</span>';
       html += '<span style="margin-left:auto;">' + statusHtml + '</span>';
       html += '</div>';
-      html += '<div>' + subPills + '</div>';
+
+      // Sub-class pills
+      html += '<div style="margin-top:6px;">' + subPills + '</div>';
 
       if (!isTrained) {
-        html += '<div style="margin-top:8px; font-size:12px; color:var(--error);">';
-        html += 'No Amazon template for ' + escHtml(cat.label) + '. ';
-        html += "<a href=\"mailto:bhatt.devang999@gmail.com?subject=NIS%20Template%20Request%20-%20" + encodeURIComponent(cat.product_type) + "&body=Need%20the%20Amazon%20.xlsm%20template%20for%20" + encodeURIComponent(cat.label) + "%20to%20enable%20NIS%20generation.\" style=\"color:var(--accent); font-weight:600;\">Email Devang for template</a>";
-        html += '</div>';
+        html += '<div style="margin-top:6px; font-size:12px; color:var(--warn);">Template needed. These styles will be skipped during generation.</div>';
       }
+
       html += '</div>';
     });
 
-    if (trainedCount === totalCats) {
-      html += '<div style="font-size:13px; color:var(--success); margin-top:8px;">\u2713 All categories trained. Ready to generate.</div>';
-    } else {
-      const untrained = totalCats - trainedCount;
-      html += '<div style="font-size:13px; color:var(--error); margin-top:8px;">\u26a0 ' + untrained + ' of ' + totalCats + ' categor' + (untrained === 1 ? 'y is' : 'ies are') + ' untrained. Generation will be blocked until templates are provided.</div>';
+    // Summary + Generate gate
+    html += '<div id="pt-confirm-status" style="margin-top:10px; font-size:13px;">';
+    if (trainedCount === 0) {
+      html += '<span style="color:var(--error);">No trained categories. Upload Amazon templates to enable NIS generation.</span>';
+    } else if (trainedCount < totalCats) {
+      html += '<span style="color:var(--warn);">Only ' + trainedCount + ' of ' + totalCats + ' categories are trained. Untrained styles will be skipped.</span>';
+    }
+    html += '</div>';
+
+    // Confirm instruction
+    if (trainedCount > 0) {
+      html += '<div style="margin-top:8px; font-size:12px; color:var(--text-sec);">Check the boxes above to confirm which product types to generate. Only confirmed types will proceed.</div>';
     }
   }
 
+  // Brand
   if (data.brand) {
     const brandLine = data.brand_known
       ? '<span style="color:var(--success);">\u2713 ' + escHtml(data.brand) + '</span> (config loaded)'
-      : '<span style="color:var(--warn);">\u26a0 ' + escHtml(data.brand) + '</span> (new brand \u2014 configure below)';
+      : '<span style="color:var(--warn);">\u26a0 ' + escHtml(data.brand) + '</span> (new brand)';
     html += '<div style="margin-top:10px; font-size:13px;">Brand: ' + brandLine + '</div>';
   }
   if (data.detected_gender) {
@@ -4533,154 +4554,24 @@ function showStyleSummary(data) {
   if (fbWrap) fbWrap.classList.remove('hidden');
 }
 
-async function wsLoadProductTypeConfirmation() {
-  const container = document.getElementById('pt-confirm-list');
-  if (!container) return;
-
-  // Fetch product types with training status
-  let ptData;
-  try {
-    const res = await fetch('/api/product-types');
-    ptData = await res.json();
-  } catch(e) {
-    container.textContent = 'Failed to load product types';
-    return;
-  }
-
-  const types = ptData.product_types || [];
-
-  // Auto-detect product type per style based on sub_class
-  const styles = state.styles || [];
-  // Group styles by detected product type
-  const stylesByPT = {};
-  styles.forEach(s => {
-    const subClass = s.subclass || s.sub_class || '';  // parser stores as 'subclass' (no underscore)
-    let detected = null;
-    for (const pt of types) {
-      if ((pt.sub_classes || []).some(sc => sc.toLowerCase() === subClass.toLowerCase())) {
-        detected = pt.id;
-        break;
-      }
-    }
-    // If subclass didn't match, try detecting from division_name
-    if (!detected && s.division_name) {
-      const dn = s.division_name.toUpperCase();
-      if (dn.includes('SWIM')) detected = 'SWIMWEAR';
-      else if (dn.includes('DRESS')) detected = 'DRESS';
-      else if (dn.includes('SHIRT') || dn.includes('TOP')) detected = 'SHIRT';
-    }
-    if (!detected) detected = 'UNKNOWN';
-    if (!stylesByPT[detected]) stylesByPT[detected] = [];
-    stylesByPT[detected].push(s);
-    // Store on the style object for later use
-    s._detected_product_type = detected;
-  });
-
-  let html = '';
-  for (const [ptId, ptStyles] of Object.entries(stylesByPT)) {
-    const ptInfo = types.find(t => t.id === ptId) || { id: ptId, label: ptId === 'UNKNOWN' ? 'Unknown Product Type' : ptId, trained: false };
-    const isTrained = ptInfo.trained;
-    const ddCount = ptInfo.dropdown_fields || 0;
-
-    const statusBadge = isTrained
-      ? `<span style="background:var(--success-bg); color:var(--success); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">✓ Trained (${ddCount} dropdowns)</span>`
-      : `<span style="background:var(--warn-bg); color:var(--warn); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">⚠ Not Trained Yet</span>`;
-
-    const styleNames = ptStyles.map(s => s.style_name || s.style_num).slice(0, 3).join(', ');
-    const moreCount = ptStyles.length > 3 ? ` +${ptStyles.length - 3} more` : '';
-
-    html += `<div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);">`;
-    html += `<div style="flex:1;"><strong>${escHtml(ptInfo.label)}</strong> <span style="color:var(--text-sec); font-size:12px;">(${ptStyles.length} style${ptStyles.length > 1 ? 's' : ''}: ${escHtml(styleNames)}${moreCount})</span></div>`;
-    html += statusBadge;
-
-    if (!isTrained) {
-      html += ` <button class="btn btn-secondary btn-sm" style="font-size:11px; padding:3px 10px;" onclick="wsRequestTemplate('${escHtml(ptId)}','${escHtml(ptInfo.label)}')">Request Template</button>`;
-    }
-    html += `</div>`;
-  }
-
-  // Check if any untrained
-  const hasUntrained = Object.keys(stylesByPT).some(ptId => {
-    const pt = types.find(t => t.id === ptId);
-    return pt && !pt.trained;
-  });
-
-  if (hasUntrained) {
-    html += `<div style="margin-top:8px; font-size:12px; color:var(--warn);">⚠ Untrained product types will generate files without dropdown validation. Send the Amazon template to Devang to enable full validation.</div>`;
-  }
-
-  container.innerHTML = html;
-}
-
-async function wsRequestTemplate(ptId, ptLabel) {
-  const note = prompt(`Request training for ${ptLabel}:\n\nAdd a note (optional):`);
-  if (note === null) return; // cancelled
-
-  try {
-    const res = await fetch('/api/request-template-training', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_type: ptId, note: note || '' }),
-    });
-    const d = await res.json();
-    showToast(d.message || 'Request sent', 'success');
-  } catch(e) {
-    showToast('Request failed', 'error');
-  }
-}
-
-// ════════════════════════════════════════════════════════════
-//  BRAND CONFIG
-// ════════════════════════════════════════════════════════════
-async function loadBrandConfigForBrand(brand) {
-  if (!brand) return;
-  try {
-    const res = await fetch('/api/load-brand-config?brand=' + encodeURIComponent(brand));
-    const data = await res.json();
-    if (data.error) return;
-
-    const cfg = data.config || {};
-    state.brand = brand;
-    state.brandConfig = cfg;
-
-    document.getElementById('cfg-vendor-code').value = cfg.vendor_code_full || '';
-    document.getElementById('cfg-coo').value = cfg.default_coo || '';
-
-    const upfSel = document.getElementById('cfg-upf');
-    const upfVal = cfg.default_upf || '';
-    if (['', '30+', '50+'].includes(upfVal)) {
-      upfSel.value = upfVal;
+// Track which product types the operator has confirmed
+function wsConfirmProductType(ptId, checked) {
+  wsState.confirmedTypes = wsState.confirmedTypes || {};
+  wsState.confirmedTypes[ptId] = checked;
+  
+  // Update the Generate button text
+  const confirmed = Object.values(wsState.confirmedTypes).filter(Boolean).length;
+  const genBtn = document.getElementById('generate-btn');
+  if (genBtn) {
+    if (confirmed > 0) {
+      const totalConfirmedStyles = (wsState.categoryBreakdown || [])
+        .filter(c => wsState.confirmedTypes[c.product_type])
+        .reduce((sum, c) => sum + c.total_styles, 0);
+      genBtn.textContent = '\u2726 Generate Content (' + totalConfirmedStyles + ' styles)';
+      genBtn.disabled = false;
     } else {
-      upfSel.value = 'custom';
+      genBtn.textContent = '\u2726 Generate Content';
     }
-
-    const careSel = document.getElementById('cfg-care');
-    if (cfg.default_care) careSel.value = cfg.default_care;
-
-    const genderSel = document.getElementById('cfg-gender');
-    if (cfg.gender) genderSel.value = cfg.gender;
-
-    const leadSel = document.getElementById('cfg-lead-feature');
-    const focusVal = cfg.bullet_1_focus || '';
-    let matched = false;
-    for (let opt of leadSel.options) {
-      if (opt.value === focusVal) { leadSel.value = focusVal; matched = true; break; }
-    }
-    if (!matched && focusVal) leadSel.value = 'custom';
-
-    document.getElementById('cfg-never-words').value = (cfg.never_words || []).join(', ');
-
-    if (data.has_saved_config) {
-      const notice = document.getElementById('brand-saved-notice');
-      document.getElementById('brand-saved-notice-text').textContent = `Using saved ${brand} config. Edit below to update.`;
-      notice.classList.remove('hidden');
-    }
-
-    document.getElementById('acc-brand-meta').textContent = `${brand} — config loaded`;
-    loadBrandFeedbackCount(brand);
-
-  } catch(e) {
-    console.error('Brand config load error', e);
   }
 }
 
@@ -5010,6 +4901,39 @@ async function startGeneration() {
     return;
   }
 
+  // Filter to only confirmed product types
+  const confirmed = wsState.confirmedTypes || {};
+  const confirmedPTs = Object.keys(confirmed).filter(k => confirmed[k]);
+  if (confirmedPTs.length === 0) {
+    showToast('Please confirm at least one product type above before generating.', 'error');
+    return;
+  }
+
+  // Filter styles to only confirmed types
+  const allStyles = state.styles;
+  const filteredStyles = allStyles.filter(s => {
+    const subClass = s.subclass || '';
+    const breakdown = wsState.categoryBreakdown || [];
+    for (const cat of breakdown) {
+      if (confirmedPTs.includes(cat.product_type)) {
+        if ((cat.sub_classes || []).some(sc => sc.name === subClass)) return true;
+      }
+    }
+    return false;
+  });
+
+  if (filteredStyles.length === 0) {
+    showToast('No styles match confirmed product types.', 'error');
+    return;
+  }
+
+  // Use filtered styles for generation
+  const skippedCount = allStyles.length - filteredStyles.length;
+  if (skippedCount > 0) {
+    showToast(filteredStyles.length + ' styles will be generated. ' + skippedCount + ' skipped (untrained product type).', 'info');
+  }
+  state.styles = filteredStyles;  // temporarily filter
+
   // Auto-save brand config
   if (state.brand) {
     const cfg = {
@@ -5063,7 +4987,7 @@ async function startGeneration() {
             });
           }
           gateHtml += '<div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">';
-          gateHtml += '<a href="mailto:' + escHtml(startData.email || '') + '?subject=NIS%20Template%20Request%20-%20' + encodeURIComponent((startData.untrained_types||[]).join(', ')) + '&body=Please%20provide%20the%20Amazon%20.xlsm%20template(s)%20for%20' + encodeURIComponent((startData.untrained_types||[]).join(', ')) + '%20so%20the%20dashboard%20can%20be%20trained." class="btn btn-primary btn-sm" style="font-size:12px;">Email Devang for Template</a>';
+          gateHtml += '<a href="mailto:' + escHtml(startData.email || '') + '?subject=NIS%20Template%20Request%20-%20' + encodeURIComponent((startData.untrained_types||[]).join(', ')) + '&body=Please%20provide%20the%20Amazon%20.xlsm%20template(s)%20for%20' + encodeURIComponent((startData.untrained_types||[]).join(', ')) + '%20so%20the%20dashboard%20can%20be%20trained." class="btn btn-primary btn-sm" style="font-size:12px;"></a>';
           gateHtml += '</div>';
           gateHtml += '</div>';
           alertsEl.innerHTML += gateHtml;
@@ -6273,7 +6197,44 @@ async function wsRunValidation(stylesList) {
 
   // Show download options
   downloadsEl.style.display = 'block';
-  let dlHtml = '<div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">';
+
+  // Session Summary
+  let sessHtml = '<div style="margin-bottom:20px; padding:16px; background:var(--bg); border-radius:var(--radius); border:1px solid var(--border);">';
+  sessHtml += '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Session Summary</div>';
+  
+  // What was uploaded
+  const totalUploaded = (state.styles || []).length;
+  const brand = state.brand || 'Unknown';
+  sessHtml += '<div style="font-size:13px; margin-bottom:4px;"><strong>Uploaded:</strong> ' + totalUploaded + ' styles for ' + escHtml(brand) + '</div>';
+  
+  // What was generated
+  const generated = Object.keys(state.generatedContent || {}).length;
+  sessHtml += '<div style="font-size:13px; margin-bottom:4px;"><strong>Generated:</strong> ' + generated + ' styles with NIS content</div>';
+  
+  // Validation results  
+  sessHtml += '<div style="font-size:13px; margin-bottom:4px;"><strong>Validation:</strong> ' + (valData.total_valid || 0) + ' fields valid';
+  if (valData.total_corrected > 0) sessHtml += ', ' + valData.total_corrected + ' auto-corrected';
+  if (valData.total_invalid > 0) sessHtml += ', <span style="color:var(--error);">' + valData.total_invalid + ' need attention</span>';
+  sessHtml += '</div>';
+  
+  // What's still untrained
+  const breakdown = wsState.categoryBreakdown || [];
+  const untrained = breakdown.filter(c => !c.trained);
+  if (untrained.length > 0) {
+    sessHtml += '<div style="font-size:13px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);">';
+    sessHtml += '<strong>Still needs training:</strong>';
+    untrained.forEach(c => {
+      sessHtml += '<div style="margin-top:4px; padding:4px 8px; background:var(--warn-bg); border-radius:4px; font-size:12px;">';
+      sessHtml += escHtml(c.label) + ' (' + c.total_styles + ' styles) — template needed';
+      sessHtml += '</div>';
+    });
+    sessHtml += '</div>';
+  }
+  
+  sessHtml += '</div>';
+  
+  let dlHtml = sessHtml;
+  dlHtml += '<div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">';
   dlHtml += '<button class="btn btn-primary" onclick="wsDownloadAllZip()" style="font-size:13px;">\u2193 Download All (ZIP \u2014 1 file per style)</button>';
   dlHtml += '<button class="btn btn-secondary" onclick="wsDownloadCombined()" style="font-size:12px;">\u2193 All in One .xlsm</button>';
   dlHtml += '</div>';

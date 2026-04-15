@@ -1732,7 +1732,7 @@ def request_template_training():
     return jsonify({
         "ok": True,
         "message": f"Template request logged for {product_type}. Send the Amazon .xlsm template to Devang to enable this product type.",
-        "email_to": "devang",
+        
         "product_type": product_type,
     })
 
@@ -2196,9 +2196,9 @@ def generate_content():
             "error": "Cannot generate — untrained product types detected",
             "untrained_types": untrained_types,
             "message": f"The following product types are not trained yet: {', '.join(untrained_types)}. "
-                       f"Email the Amazon .xlsm template(s) to Devang (bhatt.devang999@gmail.com) to enable generation.",
-            "action": "email_template",
-            "email": "bhatt.devang999@gmail.com",
+                       f"Contact admin to upload the Amazon .xlsm template(s) for these product types.",
+            "action": "request_template",
+            
         }), 400
 
     # Load brand config from file if available, fall back to in-memory
