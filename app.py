@@ -1725,6 +1725,17 @@ def request_template_training():
     })
 
 
+@app.route("/api/download-sample-template")
+def download_sample_template():
+    """Download the sample pre-upload template with all expected columns."""
+    path = BASE_DIR / "uploads" / "sample_preupload_template.xlsx"
+    if not path.exists():
+        return jsonify({"error": "Sample template not found"}), 404
+    return send_file(str(path), as_attachment=True,
+                     download_name="TLG_PreUpload_Template.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
 @app.route("/api/upload-product-data", methods=["POST"])
 def upload_product_data():
     if "file" not in request.files:
@@ -2099,6 +2110,42 @@ def generate_content():
     styles = data.get("styles") or session_data.get("styles", [])
     if not styles:
         return jsonify({"error": "No product data loaded"}), 400
+
+    # ── GATE: Check if all product types are trained ───────────────────
+    untrained_types = []
+    for s in styles:
+        sub_class = s.get("subclass", "")
+        pt = None
+        for pt_def in ALL_PRODUCT_TYPES:
+            if sub_class in pt_def.get("sub_classes", []):
+                pt = pt_def["id"]
+                break
+        if pt:
+            dropdowns = load_dropdown_cache(pt)
+            if not dropdowns:
+                untrained_types.append(pt)
+        # If we can't even map the subclass, check division_name
+        elif s.get("division_name"):
+            dn = s["division_name"].upper()
+            if "SWIM" in dn:
+                dd = load_dropdown_cache("SWIMWEAR")
+                if not dd:
+                    untrained_types.append("SWIMWEAR")
+            elif "DRESS" in dn:
+                dd = load_dropdown_cache("DRESS")
+                if not dd:
+                    untrained_types.append("DRESS")
+
+    untrained_types = list(set(untrained_types))
+    if untrained_types:
+        return jsonify({
+            "error": "Cannot generate — untrained product types detected",
+            "untrained_types": untrained_types,
+            "message": f"The following product types are not trained yet: {', '.join(untrained_types)}. "
+                       f"Email the Amazon .xlsm template(s) to Devang (bhatt.devang999@gmail.com) to enable generation.",
+            "action": "email_template",
+            "email": "bhatt.devang999@gmail.com",
+        }), 400
 
     # Load brand config from file if available, fall back to in-memory
     brand_cfg = _load_brand_config_data(brand)

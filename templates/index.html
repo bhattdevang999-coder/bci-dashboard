@@ -3064,6 +3064,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="upload-zone-icon">📊</div>
     <div class="upload-zone-text"><strong>Click to upload</strong> or drag and drop</div>
     <div class="upload-zone-hint">Excel (.xlsx, .xls, .xlsm) or CSV/TSV — max 50MB</div>
+    <div style="margin-top:8px;"><a href="/api/download-sample-template" style="font-size:12px; color:var(--accent);">Download sample pre-upload template</a></div>
   </div>
 
   <!-- Loading state -->
@@ -5014,7 +5015,31 @@ async function startGeneration() {
     const startData = await startRes.json();
     if (startData.error) {
       overlay.classList.remove('active');
-      showToast(startData.error, 'error');
+      // Check if it's an untrained product type gate
+      if (startData.action === 'email_template') {
+        const alertsEl = document.getElementById('product-alerts');
+        if (alertsEl) {
+          let gateHtml = '<div style="margin-top:16px; padding:16px; background:var(--error-bg); border:1px solid #f5c6c0; border-radius:var(--radius);">';
+          gateHtml += '<div style="font-size:14px; font-weight:700; color:var(--error); margin-bottom:8px;">Cannot Generate — Untrained Product Types</div>';
+          gateHtml += '<div style="font-size:13px; margin-bottom:12px;">' + escHtml(startData.message) + '</div>';
+          if (startData.untrained_types) {
+            startData.untrained_types.forEach(pt => {
+              gateHtml += '<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:4px; background:#fff; border-radius:6px; font-size:13px;">';
+              gateHtml += '<span style="color:var(--error); font-weight:700;">\u2717</span>';
+              gateHtml += '<span>' + escHtml(pt) + ' — no template uploaded</span>';
+              gateHtml += '</div>';
+            });
+          }
+          gateHtml += '<div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">';
+          gateHtml += '<a href="mailto:' + escHtml(startData.email || '') + '?subject=NIS%20Template%20Request%20-%20' + encodeURIComponent((startData.untrained_types||[]).join(', ')) + '&body=Please%20provide%20the%20Amazon%20.xlsm%20template(s)%20for%20' + encodeURIComponent((startData.untrained_types||[]).join(', ')) + '%20so%20the%20dashboard%20can%20be%20trained." class="btn btn-primary btn-sm" style="font-size:12px;">Email Devang for Template</a>';
+          gateHtml += '</div>';
+          gateHtml += '</div>';
+          alertsEl.innerHTML += gateHtml;
+        }
+        showToast('Generation blocked — untrained product types. See details above.', 'error');
+      } else {
+        showToast(startData.error, 'error');
+      }
       return;
     }
   } catch(e) {
