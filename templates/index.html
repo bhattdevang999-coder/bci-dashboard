@@ -4468,7 +4468,7 @@ async function handleProductUpload(files) {
 setupDropzoneOnce('product-dropzone', 'product-file-input', handleProductUpload);
 
 // ── Style summary card ──────────────────────────────────────
-function showStyleSummary(data) {
+async function showStyleSummary(data) {
   const card = document.getElementById('style-summary-card');
   const fbWrap = document.getElementById('summary-feedback-wrap');
   if (!card) return;
@@ -4482,8 +4482,27 @@ function showStyleSummary(data) {
   wsState.styleProductTypes = {};  // style_num -> confirmed product type
 
   // Get trained types for the dropdown
-  const trainedTypes = breakdown.filter(c => c.trained).map(c => ({ id: c.product_type, label: c.label }));
-  const allTypes = breakdown.map(c => ({ id: c.product_type, label: c.label, trained: c.trained }));
+  // Build dropdown options from ALL trained product types (not just what's in this file)
+  // If not loaded yet, fetch synchronously-ish (it's a small request)
+  if (!ALL_PRODUCT_TYPES_FE || !ALL_PRODUCT_TYPES_FE.length) {
+    try {
+      const ptRes = await fetch('/api/product-types');
+      const ptData = await ptRes.json();
+      ALL_PRODUCT_TYPES_FE = ptData.product_types || [];
+    } catch(e) {}
+  }
+  const allTypes = (ALL_PRODUCT_TYPES_FE || []).map(pt => {
+    const inFile = breakdown.find(c => c.product_type === pt.id);
+    return {
+      id: pt.id,
+      label: pt.label || pt.id,
+      trained: pt.trained || (inFile && inFile.trained) || false,
+    };
+  });
+  // If ALL_PRODUCT_TYPES_FE isn't loaded yet, fall back to breakdown
+  if (!allTypes.length) {
+    breakdown.forEach(c => allTypes.push({ id: c.product_type, label: c.label, trained: c.trained }));
+  }
 
   let html = '<div style="font-size:15px; font-weight:700; margin-bottom:4px;">Upload Summary</div>';
   html += '<div style="font-size:13px; color:var(--text-sec); margin-bottom:14px;">' + totalStyles + ' styles, ' + totalVariants + ' variants</div>';
