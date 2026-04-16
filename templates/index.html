@@ -4524,7 +4524,7 @@ async function showStyleSummary(data) {
   html += '<th>Style Name</th>';
   html += '<th style="width:130px;">Sub-Class</th>';
   html += '<th style="width:200px;">Product Type</th>';
-  html += '<th style="width:80px;">Status</th>';
+  html += '<th style="width:70px;">Status</th>';
   html += '</tr></thead><tbody>';
 
   const styles = state.styles || [];
@@ -4577,6 +4577,13 @@ async function showStyleSummary(data) {
     html += '<td style="font-size:12px; color:var(--text-sec);">' + escHtml(subClass) + '</td>';
     html += '<td>' + selectHtml + '</td>';
     html += '<td id="pt-status-' + escHtml(sn) + '">' + statusHtml + '</td>';
+    const reason = s._pt_reason || '';
+    const confBadge = s._pt_confidence === 'known'
+      ? '<span style="color:var(--success);font-size:11px;">known</span>'
+      : s._pt_confidence === 'detected'
+        ? '<span style="color:var(--warn);font-size:11px;">auto-detected</span>'
+        : '<span style="color:var(--error);font-size:11px;">unknown</span>';
+    html += '<td style="font-size:11px;color:var(--text-sec);">' + confBadge + ' ' + escHtml(reason) + '</td>';
     html += '</tr>';
   });
 

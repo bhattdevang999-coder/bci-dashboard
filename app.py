@@ -69,63 +69,63 @@ def _save_subclass_map(mapping):
 
 def resolve_product_type(sub_class, division_name=""):
     """Resolve a sub-class to a product type using all available sources.
-    Priority: 1. Learned map, 2. ALL_PRODUCT_TYPES, 3. TEMPLATE_PRODUCT_TYPE_MAP, 4. division_name heuristic
-    Returns (product_type_id, confidence) where confidence is 'known'|'detected'|'unknown'
+    Returns (product_type_id, confidence, reason)
+    confidence: 'known'|'detected'|'unknown'
+    reason: human-readable explanation of why this mapping was chosen
     """
     if not sub_class:
-        # Try division_name only
         if division_name:
             dn = division_name.upper()
-            if "SWIM" in dn: return "SWIMWEAR", "detected"
-            if "DRESS" in dn: return "DRESS", "detected"
-            if "SHIRT" in dn or "TOP" in dn: return "SHIRT", "detected"
-        return "UNKNOWN", "unknown"
+            if "SWIM" in dn: return "SWIMWEAR", "detected", f"Division '{division_name}' contains SWIM"
+            if "DRESS" in dn: return "DRESS", "detected", f"Division '{division_name}' contains DRESS"
+            if "SHIRT" in dn or "TOP" in dn: return "SHIRT", "detected", f"Division '{division_name}' contains SHIRT/TOP"
+        return "UNKNOWN", "unknown", "No sub-class or division name provided"
     
-    # 1. Check learned map (highest priority — operator-confirmed)
+    # 1. Learned map (operator-confirmed)
     learned = _load_subclass_map()
     if sub_class in learned:
-        return learned[sub_class], "known"
+        return learned[sub_class], "known", f"Previously confirmed by operator: {sub_class} = {learned[sub_class]}"
     
-    # 2. Check ALL_PRODUCT_TYPES
+    # 2. ALL_PRODUCT_TYPES
     for pt in ALL_PRODUCT_TYPES:
         if sub_class in pt.get("sub_classes", []):
-            return pt["id"], "known"
+            return pt["id"], "known", f"Sub-class '{sub_class}' is a known {pt['label']} type"
     
-    # 3. Check TEMPLATE_PRODUCT_TYPE_MAP
+    # 3. TEMPLATE_PRODUCT_TYPE_MAP
     if sub_class in TEMPLATE_PRODUCT_TYPE_MAP:
         tpl = TEMPLATE_PRODUCT_TYPE_MAP[sub_class]
-        # Map template name to product type ID
         tpl_to_id = {"Dresses": "DRESS", "Swimwear": "SWIMWEAR", "Other_Shirts": "SHIRT",
                       "Shorts": "SHORTS", "Jackets_and_Coats": "COAT", "Skirts": "SKIRT"}
-        return tpl_to_id.get(tpl, tpl.upper()), "known"
+        pt_id = tpl_to_id.get(tpl, tpl.upper())
+        return pt_id, "known", f"Sub-class '{sub_class}' maps to {tpl} template"
     
     # 4. Division name heuristic
     if division_name:
         dn = division_name.upper()
-        if "SWIM" in dn: return "SWIMWEAR", "detected"
-        if "DRESS" in dn: return "DRESS", "detected"
-        if "SHIRT" in dn or "TOP" in dn: return "SHIRT", "detected"
-        if "SHORT" in dn: return "SHORTS", "detected"
-        if "JACKET" in dn or "COAT" in dn: return "COAT", "detected"
+        if "SWIM" in dn: return "SWIMWEAR", "detected", f"Division '{division_name}' suggests swimwear"
+        if "DRESS" in dn: return "DRESS", "detected", f"Division '{division_name}' suggests dresses"
+        if "SHIRT" in dn or "TOP" in dn: return "SHIRT", "detected", f"Division '{division_name}' suggests tops"
+        if "SHORT" in dn: return "SHORTS", "detected", f"Division '{division_name}' suggests shorts"
+        if "JACKET" in dn or "COAT" in dn: return "COAT", "detected", f"Division '{division_name}' suggests outerwear"
     
     # 5. Fuzzy sub_class name matching
     sc_lower = sub_class.lower()
     if any(w in sc_lower for w in ["swim", "bikini", "rashguard", "trunk", "tankini"]):
-        return "SWIMWEAR", "detected"
+        return "SWIMWEAR", "detected", f"Sub-class '{sub_class}' contains swim-related keyword"
     if any(w in sc_lower for w in ["dress", "gown", "romper"]):
-        return "DRESS", "detected"
+        return "DRESS", "detected", f"Sub-class '{sub_class}' contains dress-related keyword"
     if any(w in sc_lower for w in ["shirt", "blouse", "top", "tee", "polo", "tank"]):
-        return "SHIRT", "detected"
+        return "SHIRT", "detected", f"Sub-class '{sub_class}' contains top/shirt keyword"
     if any(w in sc_lower for w in ["short", "board"]):
-        return "SHORTS", "detected"
+        return "SHORTS", "detected", f"Sub-class '{sub_class}' contains shorts keyword"
     if any(w in sc_lower for w in ["jacket", "coat", "hoodie", "pullover", "fleece"]):
-        return "COAT", "detected"
+        return "COAT", "detected", f"Sub-class '{sub_class}' contains outerwear keyword"
     if any(w in sc_lower for w in ["pant", "legging", "jogger"]):
-        return "PANTS", "detected"
+        return "PANTS", "detected", f"Sub-class '{sub_class}' contains pants keyword"
     if any(w in sc_lower for w in ["skirt", "skort"]):
-        return "SKIRT", "detected"
+        return "SKIRT", "detected", f"Sub-class '{sub_class}' contains skirt keyword"
     
-    return "UNKNOWN", "unknown"
+    return "UNKNOWN", "unknown", f"Cannot determine product type for sub-class '{sub_class}'"
 
 
 for d in [UPLOAD_TEMPLATES, UPLOAD_PRODUCTS, UPLOAD_KEYWORDS, UPLOAD_OUTPUT, BRAND_CONFIGS_DIR, FEEDBACK_DIR, DROPDOWN_CACHE_DIR]:
@@ -731,11 +731,15 @@ def generate_title(brand_cfg, brand, style_name, product_type, color, size, upf=
     formula = brand_cfg.get("title_formula", "{brand} Women's {style_descriptor} {product_type}, {color}, {size}")
     descriptor = style_descriptor_from_name(style_name)
     
+    # If style name already contains the product type, don't append it again
+    pt_title = product_type.title() if product_type else ""
+    if pt_title and pt_title.lower() in style_name.lower():
+        pt_title = ""  # avoid "Swim Trunk Trunk"
     title = formula.format(
         brand=clean_brand,
         style_descriptor=descriptor,
         style_name=style_name.title(),
-        product_type=product_type.title() if product_type else "Dress",
+        product_type=pt_title,
         color=color.title() if color else "",
         size=normalize_size(size),
         upf=upf or brand_cfg.get("default_upf", ""),
@@ -2003,9 +2007,10 @@ def upload_product_data():
         unknown_subclasses = set()
         for s in styles:
             sub_class = s.get("subclass", "") or "Unknown"
-            pt_id, confidence = resolve_product_type(sub_class, s.get("division_name", ""))
+            pt_id, confidence, reason = resolve_product_type(sub_class, s.get("division_name", ""))
             s["_resolved_pt"] = pt_id
             s["_pt_confidence"] = confidence
+            s["_pt_reason"] = reason
             if confidence == "unknown":
                 unknown_subclasses.add(sub_class)
             styles_by_pt[pt_id][sub_class].append(s["style_num"])
@@ -2186,7 +2191,9 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
             # Rule-based fallback
             if _anthropic_client is not None:
                 print(f"[LLM] Falling back to rule-based for style {style_num}")
-            title = generate_title(brand_cfg, brand, style_name, "Dress", first_color, first_size, upf)
+            # Use actual subclass as product type descriptor (not hardcoded "Dress")
+            pt_label = subclass or sub_subclass or _resolve_style_product_type(style).replace("_", " ").title() or "Dress"
+            title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf)
             bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf)
             description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf)
             backend_kw = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf)
@@ -2204,8 +2211,8 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
         sleeve = derive_sleeve_type(style_name)
         silhouette = derive_silhouette(sub_subclass)
         color_map_val = normalize_color(first_color)
-        category = SUBCLASS_CATEGORY_MAP.get(subclass, "casual-and-day-dresses")
-        subcategory = SUBCLASS_SUBCATEGORY_MAP.get(subclass, "Casual and Day Dresses")
+        category = SUBCLASS_CATEGORY_MAP.get(subclass, "")
+        subcategory = SUBCLASS_SUBCATEGORY_MAP.get(subclass, "")
 
         opener_idx = DESCRIPTION_OPENERS_ROTATION.get(style_num, 0)
         bullet_whys = [
@@ -2906,7 +2913,7 @@ def _derive_amazon_product_category(sub_class):
         "Jacket": "Women's Everyday Sportswear",
         "Coat": "Women's Everyday Sportswear",
     }
-    return _map.get(sub_class, "Women's Dresses")
+    return _map.get(sub_class, "")  # leave blank if unknown — operator sets on dashboard
 
 def _derive_item_type_keyword(sub_class):
     """Map sub_class to Amazon item_type_keyword (Col 15)."""
@@ -2916,7 +2923,7 @@ def _derive_item_type_keyword(sub_class):
         "Active Dress": "active-dresses",
         "Swimdress": "fashion-swimwear-cover-ups",
     }
-    return _map.get(sub_class, "casual-and-day-dresses")
+    return _map.get(sub_class, "")  # leave blank if unknown
 
 def _derive_item_type_name(sub_class):
     """Human-readable item type name (Col 62)."""
@@ -2926,7 +2933,7 @@ def _derive_item_type_name(sub_class):
         "Active Dress": "Active Dress",
         "Swimdress": "Swimwear Cover Up",
     }
-    return _map.get(sub_class, "Dress")
+    return _map.get(sub_class, "")  # leave blank if unknown
 
 def _derive_item_length(sub_subclass, style_name):
     """Derive item length description from sub_subclass / style name (Col 70)."""
@@ -2996,23 +3003,23 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     variants      = style["variants"]
     list_price    = style.get("list_price", "")
     cost_price    = style.get("cost_price", "")
-    sub_class     = style.get("sub_class", "Day Dress")
+    sub_class     = style.get("subclass", "") or style.get("sub_class", "")
     sub_subclass  = style.get("sub_subclass", "")
     model_name_raw = style.get("model_name", "") or style_name
 
     bullets      = content.get("bullets", [])
     description  = content.get("description", "")
     backend_kw   = content.get("backend_keywords", "")
-    neck_type    = content.get("neck_type", "") or derive_neck_type(style_name)
-    sleeve_type  = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
+    neck_type    = content.get("neck_type", "") or style.get("neck_type", "") or derive_neck_type(style_name)
+    sleeve_type  = content.get("sleeve_type", "") or style.get("sleeve_type", "") or derive_sleeve_type(style_name)
     silhouette   = content.get("silhouette", "") or derive_silhouette(sub_subclass)
     # Always derive from dropdown-validated function, not stale content values
     category     = _derive_amazon_product_category(sub_class)
     subcategory  = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
-    fabric       = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
-    care         = content.get("care", "") or brand_cfg.get("default_care", "")
-    upf          = content.get("upf", "") or brand_cfg.get("default_upf", "")
-    coo          = normalize_coo(content.get("coo", "") or brand_cfg.get("default_coo", "")) or "Imported"
+    fabric       = content.get("fabric", "") or style.get("fabric", "") or brand_cfg.get("default_fabric", "")
+    care         = content.get("care", "") or style.get("care", "") or brand_cfg.get("default_care", "")
+    upf          = content.get("upf", "") or style.get("upf", "") or brand_cfg.get("default_upf", "")
+    coo          = normalize_coo(content.get("coo", "") or style.get("coo", "") or brand_cfg.get("default_coo", "")) or ""
     clean_brand  = clean_brand_name(brand)
     item_type_name = _derive_item_type_name(sub_class)
     item_length    = _derive_item_length(sub_subclass, style_name)
@@ -3020,6 +3027,8 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     itk_value      = _derive_item_type_keyword(sub_class)
     today_str      = datetime.now().strftime("%Y%m%d")
     parent_sku     = style_num
+    # Resolve actual product type for this style (not hardcoded DRESS)
+    resolved_pt    = _resolve_style_product_type(style) or "DRESS"
 
     # Sample title (parent)
     title = content.get("title", style_name)
@@ -3050,7 +3059,7 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="rtip_vendor_code#1.value", req_level="required"),
         f(2, "Vendor SKU (Parent)", parent_sku, "filled", False,
           field_id="vendor_sku#1.value", req_level="required"),
-        f(3, "Product Type", "DRESS", "locked", True,
+        f(3, "Product Type", resolved_pt, "locked", True,
           field_id="product_type#1.value", req_level="required"),
         f(4, "Parentage Level", "Parent / Child", "locked", True,
           field_id="parentage_level#1.value", req_level="required"),
@@ -3119,11 +3128,11 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
         f(49, "Age Range", "Adult", "locked", True,
           field_id="age_range_description#1.value", req_level="required"),
         f(50, "Size System", "US", "locked", True,
-          field_id="apparel_size#1.size_system", req_level="required"),
+          field_id=_size_field(resolved_pt, "size_system"), req_level="required"),
         f(51, "Size Class", "Alpha", "locked", True,
-          field_id="apparel_size#1.size_class", req_level="required"),
+          field_id=_size_field(resolved_pt, "size_class"), req_level="required"),
         f(52, "Size (first variant)", size_normalized or size, "filled" if size else "default", False,
-          field_id="apparel_size#1.size", req_level="required"),
+          field_id=_size_field(resolved_pt, "size"), req_level="required"),
         f(56, "Material", fabric, "filled" if fabric else "default", True,
           "" if fabric else "No fabric data. Will use brand default.",
           field_id="material#1.value", req_level="required"),
@@ -3609,14 +3618,14 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     list_price     = style.get("list_price", "")
     cost_price     = style.get("cost_price", "")
     model_name_raw = style.get("model_name", "") or style_name
-    sub_class      = style.get("sub_class", "Day Dress")
+    sub_class      = style.get("subclass", "") or style.get("sub_class", "")
     sub_subclass   = style.get("sub_subclass", "")
 
     bullets     = content.get("bullets", [])
     description = content.get("description", "")
     backend_kw  = content.get("backend_keywords", "")
-    neck_type   = content.get("neck_type", "")  or derive_neck_type(style_name)
-    sleeve_type = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
+    neck_type   = content.get("neck_type", "")  or style.get("neck_type", "") or derive_neck_type(style_name)
+    sleeve_type = content.get("sleeve_type", "") or style.get("sleeve_type", "") or derive_sleeve_type(style_name)
     silhouette  = content.get("silhouette", "")  or derive_silhouette(sub_subclass)
     category    = _derive_amazon_product_category(sub_class)
     subcategory = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
@@ -3693,12 +3702,12 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "generic_keyword#1.value",          backend_kw)
         write_cell(row_idx, "style#1.value",                    style_name.title())
         # fit_type — left blank unless from data/override
-        write_cell(row_idx, "fit_type#1.value",                 content.get("fit_type", "") or brand_cfg.get("default_fit_type", ""))
+        write_cell(row_idx, "fit_type#1.value",                 content.get("fit_type", "") or style.get("fit_type", "") or brand_cfg.get("default_fit_type", ""))
         write_cell(row_idx, "department#1.value",               brand_cfg.get("department", "Womens"))
         write_cell(row_idx, "target_gender#1.value",            brand_cfg.get("gender", "Female"))
         write_cell(row_idx, "age_range_description#1.value",    "Adult")
-        write_cell(row_idx, "apparel_size#1.body_type",         "")
-        write_cell(row_idx, "apparel_size#1.height_type",       "")
+        write_cell(row_idx, _size_field(detected_product_type, "body_type", col_map),         "")
+        write_cell(row_idx, _size_field(detected_product_type, "height_type", col_map),       "")
         if fabric:
             write_cell(row_idx, "material#1.value",             fabric)
         write_cell(row_idx, "fabric_type#1.value",              fabric_type)
@@ -3721,7 +3730,7 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         if sleeve_type:
             write_cell(row_idx, "sleeve#1.type#1.value",        sleeve_type)
         # closure — left blank unless from data/override
-        write_cell(row_idx, "closure#1.type#1.value",             content.get("closure_type", "") or brand_cfg.get("default_closure", ""))
+        write_cell(row_idx, "closure#1.type#1.value",             content.get("closure_type", "") or style.get("closure_type", "") or brand_cfg.get("default_closure", ""))
         if upf:
             write_cell(row_idx, "ultraviolet_protection_factor#1.value", upf)
         write_cell(row_idx, "skip_offer#1.value",                       "No")
@@ -3784,9 +3793,9 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
             asin_col = _col("merchant_suggested_asin#1.value")
             if asin_col:
                 ws.cell(row=current_row, column=asin_col).value = child_asin
-        write_cell(current_row, "apparel_size#1.size_system",   "US")
-        write_cell(current_row, "apparel_size#1.size_class",    "Alpha")
-        write_cell(current_row, "apparel_size#1.size",          size_normalized or size)
+        write_cell(current_row, _size_field(detected_product_type, "size_system", col_map),   "US")
+        write_cell(current_row, _size_field(detected_product_type, "size_class", col_map),    "Alpha")
+        write_cell(current_row, _size_field(detected_product_type, "size", col_map),          size_normalized or size)
         write_cell(current_row, "color#1.standardized_values#1",         color_family)
         write_cell(current_row, "color#1.value",                color_name.title() if color_name else "")
         # Child cost price — always write so overrides can apply even if source is empty
@@ -3931,7 +3940,7 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
     for style in cat_styles:
         sn           = style["style_num"]
         style_name   = style.get("style_name", sn)
-        sub_class    = style.get("sub_class", "Day Dress")
+        sub_class    = style.get("subclass", "") or style.get("sub_class", "")
         sub_subclass = style.get("sub_subclass", "")
         content      = content_map.get(sn, {})
         if not content:
@@ -3944,8 +3953,8 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         care       = content.get("care", "")       or brand_cfg.get("default_care", "")
         upf        = content.get("upf", "")        or brand_cfg.get("default_upf", "")
         coo        = normalize_coo(content.get("coo", "")        or brand_cfg.get("default_coo", "")) or "Imported"
-        neck       = content.get("neck_type", "") or derive_neck_type(style_name)
-        sleeve     = content.get("sleeve_type", "") or derive_sleeve_type(style_name)
+        neck       = content.get("neck_type", "") or style.get("neck_type", "") or derive_neck_type(style_name)
+        sleeve     = content.get("sleeve_type", "") or style.get("sleeve_type", "") or derive_sleeve_type(style_name)
         sil        = content.get("silhouette", "") or derive_silhouette(sub_subclass)
         itk        = _derive_item_type_keyword(sub_class)
         itn        = _derive_item_type_name(sub_class)
@@ -3964,7 +3973,8 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
                              _itk=itk, _itn=itn, _ilen=ilen, _ftype=ftype,
                              _slvlen=slvlen, _bullets=bullets, _content=content,
                              _style_name=style_name, _sn=sn, _import_desig=import_desig,
-                             _cat_val=cat_val, _subcat_val=subcat_val):
+                             _cat_val=cat_val, _subcat_val=subcat_val,
+                             _style=style):
             wc(r, "rtip_vendor_code#1.value",         vendor_code, style_num=_sn)
             wc(r, "vendor_sku#1.value",               sku_val, style_num=_sn)
             wc(r, "product_type#1.value",             detected_product_type, style_num=_sn)
@@ -3989,12 +3999,12 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(r, "generic_keyword#1.value",          _content.get("backend_keywords", ""), style_num=_sn)
             wc(r, "style#1.value",                    _style_name.title(), style_num=_sn)
             # fit_type — from data/override only
-            wc(r, "fit_type#1.value",                 _content.get("fit_type", ""), style_num=_sn)
+            wc(r, "fit_type#1.value",                 _content.get("fit_type", "") or _style.get("fit_type", "") if hasattr(_style, "get") else _content.get("fit_type", ""), style_num=_sn)
             wc(r, "department#1.value",               brand_cfg.get("department", "Womens"), style_num=_sn)
             wc(r, "target_gender#1.value",            brand_cfg.get("gender", "Female"), style_num=_sn)
             wc(r, "age_range_description#1.value",    "Adult", style_num=_sn)
-            wc(r, "apparel_size#1.body_type",         "", style_num=_sn)
-            wc(r, "apparel_size#1.height_type",       "", style_num=_sn)
+            wc(r, _size_field(detected_product_type, "body_type", col_map),         "", style_num=_sn)
+            wc(r, _size_field(detected_product_type, "height_type", col_map),       "", style_num=_sn)
             if _fabric:
                 wc(r, "material#1.value",             _fabric, style_num=_sn)
             wc(r, "fabric_type#1.value",              _ftype, style_num=_sn)
@@ -4064,9 +4074,9 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             if upc:
                 wc(cr, "external_product_id#1.type",  "UPC", style_num=sn)
                 wc(cr, "external_product_id#1.value", re.sub(r"\D", "", str(upc)), style_num=sn)
-            wc(cr, "apparel_size#1.size_system",      "US", style_num=sn)
-            wc(cr, "apparel_size#1.size_class",       "Alpha", style_num=sn)
-            wc(cr, "apparel_size#1.size",             size_norm or size, style_num=sn)
+            wc(cr, _size_field(detected_product_type, "size_system", col_map),      "US", style_num=sn)
+            wc(cr, _size_field(detected_product_type, "size_class", col_map),       "Alpha", style_num=sn)
+            wc(cr, _size_field(detected_product_type, "size", col_map),             size_norm or size, style_num=sn)
             wc(cr, "color#1.standardized_values#1",            color_family, style_num=sn)
             wc(cr, "color#1.value",                   color.title() if color else "", style_num=sn)
             v_list_price = var.get("list_price", "") or list_price
@@ -4106,26 +4116,6 @@ def validate_before_build():
 
     brand_cfg = _load_brand_config_data(brand)
 
-    # Detect product type from template
-    import warnings as _vw
-    with _vw.catch_warnings():
-        _vw.simplefilter("ignore")
-        _vwb = openpyxl.load_workbook(template_path, keep_vba=True)
-    product_type = "DRESS"
-    for name in _vwb.sheetnames:
-        if name.upper().startswith("TEMPLATE"):
-            parts = name.split("-", 1)
-            if len(parts) == 2 and parts[1].strip():
-                product_type = parts[1].strip().upper()
-            break
-    _vwb.close()
-
-    dropdowns = load_dropdown_cache(product_type)
-    if not dropdowns:
-        # Try extracting
-        extract_template_dropdowns(template_path)
-        dropdowns = load_dropdown_cache(product_type)
-
     all_results = []
     total_valid = 0
     total_corrected = 0
@@ -4136,14 +4126,18 @@ def validate_before_build():
         content = content_map.get(sn, {})
         style_overrides = overrides.get(sn, {})
 
+        # Detect product type PER STYLE
+        product_type = _resolve_style_product_type(style)
+        dropdowns = load_dropdown_cache(product_type)
+
         # Build the field values that would be written
-        coo = normalize_coo(content.get("coo", "") or brand_cfg.get("default_coo", "")) or "Imported"
-        upf = content.get("upf", "") or brand_cfg.get("default_upf", "")
-        care = content.get("care", "") or brand_cfg.get("default_care", "")
-        fabric = content.get("fabric", "") or brand_cfg.get("default_fabric", "")
+        coo = normalize_coo(content.get("coo", "") or style.get("coo", "") or brand_cfg.get("default_coo", "")) or ""
+        upf = content.get("upf", "") or style.get("upf", "") or brand_cfg.get("default_upf", "")
+        care = content.get("care", "") or style.get("care", "") or brand_cfg.get("default_care", "")
+        fabric = content.get("fabric", "") or style.get("fabric", "") or brand_cfg.get("default_fabric", "")
 
         field_values = {
-            "product_category#1.value": _derive_amazon_product_category(style.get("sub_class", "")),
+            "product_category#1.value": _derive_amazon_product_category(style.get("subclass", "") or style.get("sub_class", "")),
             "lifecycle_supply_type#1.value": "Perennial",
             "department#1.value": brand_cfg.get("department", "womens"),
             "target_gender#1.value": brand_cfg.get("gender", "Female"),
@@ -4219,6 +4213,41 @@ def sync_before_download():
 
 
 # Template name mapping: product type ID → template filename
+# Size field prefix varies by template — detect from col_map or use this fallback
+SIZE_PREFIX_MAP = {
+    "BLAZER": "apparel_size",
+    "BRA": "shapewear_size",
+    "COAT": "apparel_size",
+    "DRESS": "apparel_size",
+    "HAT": "headwear_size",
+    "ONE_PIECE_OUTFIT": "apparel_size",
+    "OVERALLS": "bottoms_size",
+    "PANTS": "bottoms_size",
+    "SANDAL": "footwear_size",
+    "SHIRT": "shirt_size",
+    "SHORTS": "bottoms_size",
+    "SKIRT": "skirt_size",
+    "SNOWSUIT": "apparel_size",
+    "SNOW_PANT": "bottoms_size",
+    "SWEATSHIRT": "apparel_size",
+    "SWIMWEAR": "shapewear_size",
+}
+
+def _size_field(product_type, suffix, col_map=None):
+    """Return the correct size field_id for this product type.
+    e.g. _size_field('SWIMWEAR', 'size_system') -> 'shapewear_size#1.size_system'
+    If col_map provided, detect from template; else use SIZE_PREFIX_MAP.
+    """
+    if col_map:
+        # Auto-detect from template columns
+        for prefix in ["apparel_size", "shapewear_size", "bottoms_size", "shirt_size",
+                       "headwear_size", "footwear_size", "skirt_size"]:
+            candidate = f"{prefix}#1.{suffix}"
+            if candidate in col_map:
+                return candidate
+    prefix = SIZE_PREFIX_MAP.get(product_type, "apparel_size")
+    return f"{prefix}#1.{suffix}"
+
 PRODUCT_TYPE_TEMPLATE_MAP = {
     "BLAZER": "Blazers.xlsm",
     "BRA": "Bras.xlsm",
@@ -4283,7 +4312,7 @@ def _resolve_style_product_type(style):
     # Use resolve_product_type
     sub_class = style.get("subclass", "")
     div_name = style.get("division_name", "")
-    pt_id, _ = resolve_product_type(sub_class, div_name)
+    pt_id, _, _reason = resolve_product_type(sub_class, div_name)
     return pt_id
 
 
@@ -4448,7 +4477,7 @@ def download_category(category):
         return jsonify({"error": "No generated content. Run Generate Content first."}), 400
     
     # Filter styles by category
-    filtered_styles = [s for s in styles if s.get("sub_class", "").lower() == category.lower()
+    filtered_styles = [s for s in styles if (s.get("subclass", "") or s.get("sub_class", "")).lower() == category.lower()
                        or s.get("category", "").lower() == category.lower()]
     
     if not filtered_styles:
@@ -4473,7 +4502,7 @@ def get_categories():
     styles = session_data.get("styles", [])
     cats = {}
     for s in styles:
-        cat = s.get("sub_class", "Uncategorized") or "Uncategorized"
+        cat = s.get("subclass", "") or s.get("sub_class", "") or "Uncategorized"
         if cat not in cats:
             cats[cat] = {"name": cat, "count": 0, "variants": 0}
         cats[cat]["count"] += 1
