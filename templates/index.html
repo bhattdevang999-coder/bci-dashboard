@@ -5372,7 +5372,10 @@ function wsPopulateRail() {
           <div class="ws-style-row-num">${escHtml(s.style_num)}</div>
           <div class="ws-style-row-name">${escHtml(s.style_name || '')}</div>
         </div>
-        <button onclick="event.stopPropagation(); wsDownloadSingleStyle('${escHtml(s.style_num)}')" title="Download this style's NIS file" style="background:none; border:none; cursor:pointer; padding:2px 4px; font-size:14px; color:#64748b; opacity:0.5; flex-shrink:0;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">&#8681;</button>
+        <span style="display:flex; gap:2px; flex-shrink:0;">
+          <button onclick="event.stopPropagation(); regenerateAndDownloadStyle('${escHtml(s.style_num)}')" title="Generate NIS for this style only" style="background:none; border:none; cursor:pointer; padding:2px 3px; font-size:12px; color:#0d9488; opacity:0.6; flex-shrink:0;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">&#9881;</button>
+          <button onclick="event.stopPropagation(); wsDownloadSingleStyle('${escHtml(s.style_num)}')" title="Download this style's NIS file" style="background:none; border:none; cursor:pointer; padding:2px 3px; font-size:14px; color:#64748b; opacity:0.5; flex-shrink:0;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">&#8681;</button>
+        </span>
       `;
       list.appendChild(row);
     });
@@ -6573,6 +6576,32 @@ function wsDownloadPerType() {
 
 function wsDownloadSingleStyle(styleNum) {
   wsSyncAndDownload('/api/download-all?mode=per-style&style_num=' + encodeURIComponent(styleNum));
+}
+
+async function regenerateAndDownloadStyle(styleNum) {
+  showToast('Generating NIS for style ' + styleNum + '...', 'info');
+  try {
+    // Step 1: Generate content for just this style
+    const brief = (state.styleBriefs || {})[styleNum] || '';
+    const res = await fetch('/api/regenerate-style', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style_num: styleNum, brief, brand: state.brand }),
+    });
+    const d = await res.json();
+    if (!d.ok) { showToast(d.error || 'Generation failed', 'error'); return; }
+    // Update local state
+    if (!state.generatedContent) state.generatedContent = {};
+    const existing = state.generatedContent[styleNum] || {};
+    existing.title = d.content.title;
+    existing.bullets = d.content.bullets;
+    existing.description = d.content.description;
+    existing.backend_keywords = d.content.backend_keywords;
+    state.generatedContent[styleNum] = existing;
+    // Step 2: Download the NIS file
+    wsDownloadSingleStyle(styleNum);
+    showToast('NIS ready for ' + styleNum + (d.content.llm_generated ? ' (AI)' : ' (rules)'), 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
 }
 
 function wsDownloadStyle(styleNum) {
