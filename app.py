@@ -1880,6 +1880,15 @@ def upload_product_data():
 
         # ── Detect brand ──────────────────────────────────────────────
         brands_found = set(s.get("brand", "") for s in styles if s.get("brand"))
+
+        # Multi-brand check: reject if more than one brand
+        if len(brands_found) > 1:
+            return jsonify({
+                "error": "Multiple brands detected",
+                "brands": sorted(brands_found),
+                "message": f"This file contains {len(brands_found)} brands: {', '.join(sorted(brands_found))}. Please upload one brand at a time.",
+            }), 400
+
         brand = list(brands_found)[0] if len(brands_found) == 1 else ""
         if brand:
             session_data["brand"] = brand
@@ -4204,13 +4213,84 @@ def sync_before_download():
             if sn not in session_data.get("field_overrides", {}):
                 session_data.setdefault("field_overrides", {})[sn] = {}
             session_data["field_overrides"][sn].update(ov)
+    if data.get("style_product_types"):
+        session_data["style_product_types"] = data["style_product_types"]
     return jsonify({"ok": True})
+
+
+# Template name mapping: product type ID → template filename
+PRODUCT_TYPE_TEMPLATE_MAP = {
+    "BLAZER": "Blazers.xlsm",
+    "BRA": "Bras.xlsm",
+    "COAT": "Jackets_and_Coats.xlsm",
+    "DRESS": "Dresses.xlsm",
+    "HAT": "Hats.xlsm",
+    "ONE_PIECE_OUTFIT": "One-piece_Outfits.xlsm",
+    "OVERALLS": "Overalls.xlsm",
+    "PANTS": "Other_Pants.xlsm",
+    "SANDAL": "Sandals.xlsm",
+    "SHIRT": "Other_Shirts.xlsm",
+    "SHORTS": "Shorts.xlsm",
+    "SKIRT": "Skirts.xlsm",
+    "SNOWSUIT": "Snowsuits.xlsm",
+    "SNOW_PANT": "Snow_Pants.xlsm",
+    "SWEATSHIRT": "Sweatshirts.xlsm",
+    "SWIMWEAR": "Swimwear.xlsm",
+}
+
+def _get_template_for_product_type(product_type_id):
+    """Get the template .xlsm path for a product type.
+    Checks session templates first, then falls back to disk.
+    """
+    # Check session-loaded templates
+    session_templates = session_data.get("templates", {})
+    if product_type_id in session_templates:
+        return session_templates[product_type_id]
+
+    # Check the mapping
+    fname = PRODUCT_TYPE_TEMPLATE_MAP.get(product_type_id)
+    if fname:
+        path = UPLOAD_TEMPLATES / fname
+        if path.exists():
+            return str(path)
+
+    # Fallback: try to find any template that matches
+    for f in UPLOAD_TEMPLATES.glob("*.xlsm"):
+        if product_type_id.lower().replace("_", "") in f.stem.lower().replace("_", ""):
+            return str(f)
+
+    # Last resort: default template
+    return str(DEFAULT_TEMPLATE)
+
+
+@app.route("/api/save-style-product-types", methods=["POST"])
+def save_style_product_types():
+    """Save operator's product type assignments for styles.
+    Called from the per-style PT selector table.
+    """
+    data = request.get_json(force=True)
+    assignments = data.get("assignments", {})
+    session_data["style_product_types"] = assignments
+    return jsonify({"ok": True, "count": len(assignments)})
+
+
+def _resolve_style_product_type(style):
+    """Resolve the product type for a single style."""
+    # Check operator assignment first
+    pt_assignments = session_data.get("style_product_types", {})
+    if style["style_num"] in pt_assignments:
+        return pt_assignments[style["style_num"]]
+    # Use resolve_product_type
+    sub_class = style.get("subclass", "")
+    div_name = style.get("division_name", "")
+    pt_id, _ = resolve_product_type(sub_class, div_name)
+    return pt_id
 
 
 @app.route("/api/download-all")
 def download_all():
-    """Generate one .xlsm per style and ZIP them together.
-    Each style gets its own file for maximum flexibility.
+    """Generate one .xlsm per PRODUCT TYPE and ZIP them together.
+    Groups styles by product type, uses the correct template for each.
     """
     brand = session_data.get("brand", "Brand")
     styles = session_data.get("styles", [])
@@ -4220,51 +4300,81 @@ def download_all():
         return jsonify({"error": "No generated content"}), 400
 
     date_str = datetime.now().strftime("%m%d%y")
-    safe_brand = brand.replace(" ", "_")
-    template_path = session_data.get("template_path") or str(DEFAULT_TEMPLATE)
+    safe_brand = re.sub(r'[^\w\-]', '_', brand)
     brand_cfg = _load_brand_config_data(brand)
     vendor_code = session_data.get("vendor_code") or brand_cfg.get("vendor_code_full", "")
 
-    # Generate one .xlsm per style
-    style_files = []
+    # Group styles by product type
+    by_pt = defaultdict(list)
     for s in styles:
         sn = s["style_num"]
         if sn not in content_map:
             continue
-        safe_sn = re.sub(r'[^\w\-]', '_', sn)
-        fname = f"NIS_{safe_brand}_{safe_sn}_{date_str}.xlsm"
+        pt = _resolve_style_product_type(s)
+        by_pt[pt].append(s)
+
+    # Generate one .xlsm per product type
+    pt_files = []
+    for pt_id, pt_styles in by_pt.items():
+        template_path = _get_template_for_product_type(pt_id)
+        safe_pt = re.sub(r'[^\w\-]', '_', pt_id)
+        fname = f"NIS_{safe_brand}_{safe_pt}_{date_str}.xlsm"
         fpath = UPLOAD_OUTPUT / fname
         try:
-            _generate_category_file([s], content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
-            style_files.append((fname, str(fpath)))
+            _generate_category_file(pt_styles, content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
+            pt_files.append((fname, str(fpath), pt_id, len(pt_styles)))
         except Exception as e:
             traceback.print_exc()
 
-    if not style_files:
+    if not pt_files:
         return jsonify({"error": "No files generated"}), 500
 
-    # If only one style, return the single file directly
-    if len(style_files) == 1:
-        fname, fpath = style_files[0]
+    if len(pt_files) == 1:
+        fname, fpath, _, _ = pt_files[0]
         return send_file(fpath, as_attachment=True, download_name=fname,
                          mimetype="application/vnd.ms-excel.sheet.macroEnabled.12")
 
-    # Multiple styles: ZIP them
     zip_name = f"NIS_{safe_brand}_{date_str}.zip"
     zip_path = UPLOAD_OUTPUT / zip_name
     with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
-        for fname, fpath in style_files:
+        for fname, fpath, _, _ in pt_files:
             zf.write(fpath, fname)
 
     return send_file(str(zip_path), as_attachment=True, download_name=zip_name, mimetype="application/zip")
 
-@app.route("/api/download-style/<style_num>")
-def download_style(style_num):
-    """Generate and download a single .xlsm for one style."""
+
+@app.route("/api/download-product-type/<pt_id>")
+def download_product_type(pt_id):
+    """Download one .xlsm for all styles of a specific product type."""
     brand = session_data.get("brand", "Brand")
     styles = session_data.get("styles", [])
     content_map = session_data.get("generated_content", {})
-    template_path = session_data.get("template_path") or str(DEFAULT_TEMPLATE)
+    brand_cfg = _load_brand_config_data(brand)
+    vendor_code = session_data.get("vendor_code") or brand_cfg.get("vendor_code_full", "")
+
+    pt_styles = [s for s in styles if _resolve_style_product_type(s) == pt_id and s["style_num"] in content_map]
+    if not pt_styles:
+        return jsonify({"error": f"No styles for product type {pt_id}"}), 404
+
+    template_path = _get_template_for_product_type(pt_id)
+    date_str = datetime.now().strftime("%m%d%y")
+    safe_brand = re.sub(r'[^\w\-]', '_', brand)
+    safe_pt = re.sub(r'[^\w\-]', '_', pt_id)
+    fname = f"NIS_{safe_brand}_{safe_pt}_{date_str}.xlsm"
+    fpath = UPLOAD_OUTPUT / fname
+
+    _generate_category_file(pt_styles, content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
+
+    return send_file(str(fpath), as_attachment=True, download_name=fname,
+                     mimetype="application/vnd.ms-excel.sheet.macroEnabled.12")
+
+
+@app.route("/api/download-style/<style_num>")
+def download_style(style_num):
+    """Generate and download a single .xlsm for one style using its product type template."""
+    brand = session_data.get("brand", "Brand")
+    styles = session_data.get("styles", [])
+    content_map = session_data.get("generated_content", {})
     brand_cfg = _load_brand_config_data(brand)
     vendor_code = session_data.get("vendor_code") or brand_cfg.get("vendor_code_full", "")
 
@@ -4274,8 +4384,12 @@ def download_style(style_num):
     if style_num not in content_map:
         return jsonify({"error": f"No content for style {style_num}"}), 400
 
+    # Use the correct template for this style's product type
+    pt_id = _resolve_style_product_type(style)
+    template_path = _get_template_for_product_type(pt_id)
+
     date_str = datetime.now().strftime("%m%d%y")
-    safe_brand = brand.replace(" ", "_")
+    safe_brand = re.sub(r'[^\w\-]', '_', brand)
     safe_sn = re.sub(r'[^\w\-]', '_', style_num)
     fname = f"NIS_{safe_brand}_{safe_sn}_{date_str}.xlsm"
     fpath = UPLOAD_OUTPUT / fname

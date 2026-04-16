@@ -5212,21 +5212,48 @@ function wsPopulateRail() {
   if (!list) return;
   list.innerHTML = '';
 
+  // Group styles by product type
+  const byPT = {};
   state.styles.forEach(s => {
-    const row = document.createElement('div');
-    row.className = 'ws-style-row';
-    row.id = `ws-rail-${s.style_num}`;
-    row.onclick = () => wsSelectStyle(s.style_num);
-    row.innerHTML = `
-      <span class="ws-style-dot" id="ws-dot-${escHtml(s.style_num)}"></span>
-      <div class="ws-style-row-info">
-        <div class="ws-style-row-num">${escHtml(s.style_num)}</div>
-        <div class="ws-style-row-name">${escHtml(s.style_name || '')}</div>
-      </div>
-    `;
-    list.appendChild(row);
+    const pt = (wsState.styleProductTypes || {})[s.style_num] || s._resolved_pt || 'UNKNOWN';
+    if (!byPT[pt]) byPT[pt] = [];
+    byPT[pt].push(s);
+  });
+
+  // Render grouped
+  const ptIds = Object.keys(byPT).sort();
+  ptIds.forEach(ptId => {
+    const ptStyles = byPT[ptId];
+    const ptLabel = (ALL_PRODUCT_TYPES_FE || []).find(p => p.id === ptId);
+    const label = ptLabel ? ptLabel.label : ptId;
+
+    // Product type header
+    const header = document.createElement('div');
+    header.className = 'ws-rail-pt-header';
+    header.innerHTML = `<span>${escHtml(label)}</span> <span class="ws-rail-pt-count">${ptStyles.length}</span>`;
+    list.appendChild(header);
+
+    // Styles under this PT
+    ptStyles.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'ws-style-row';
+      row.id = `ws-rail-${s.style_num}`;
+      row.onclick = () => wsSelectStyle(s.style_num);
+      row.innerHTML = `
+        <span class="ws-style-dot" id="ws-dot-${escHtml(s.style_num)}"></span>
+        <div class="ws-style-row-info">
+          <div class="ws-style-row-num">${escHtml(s.style_num)}</div>
+          <div class="ws-style-row-name">${escHtml(s.style_name || '')}</div>
+        </div>
+      `;
+      list.appendChild(row);
+    });
   });
 }
+
+// Frontend copy of product type labels (loaded from /api/product-types)
+let ALL_PRODUCT_TYPES_FE = null;
+fetch('/api/product-types').then(r => r.json()).then(d => { ALL_PRODUCT_TYPES_FE = d.product_types || []; }).catch(() => {});
 
 function wsUpdateRailStatus(qaSummaryStyles) {
   if (!qaSummaryStyles || !qaSummaryStyles.length) return;
@@ -6180,7 +6207,7 @@ async function wsRunValidation(stylesList) {
         vendor_code: state.vendorCode || '',
         styles: state.styles || [],
         content_map: state.generatedContent || {},
-        field_overrides: wsState.fieldOverrides || {},
+        field_overrides: wsState.fieldOverrides || {}, style_product_types: wsState.styleProductTypes || {},
       }),
     });
   } catch(e) {}
@@ -6199,7 +6226,7 @@ async function wsRunValidation(stylesList) {
         brand: state.brand,
         styles: state.styles,
         content_map: state.generatedContent || {},
-        field_overrides: wsState.fieldOverrides || {},
+        field_overrides: wsState.fieldOverrides || {}, style_product_types: wsState.styleProductTypes || {},
       }),
     });
     valData = await res.json();
@@ -6296,24 +6323,38 @@ async function wsRunValidation(stylesList) {
   dlHtml += '<button class="btn btn-secondary" onclick="wsDownloadCombined()" style="font-size:12px;">\u2193 All in One .xlsm</button>';
   dlHtml += '</div>';
 
-  dlHtml += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Individual Styles</div>';
-  dlHtml += '<table class="ws-fields-table"><thead><tr><th>Style #</th><th>Name</th><th>Validation</th><th style="width:100px;"></th></tr></thead><tbody>';
+  // Group by product type for download files
+  dlHtml += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">NIS Files by Product Type</div>';
   
+  const byPT = {};
   (valData.styles || []).forEach(s => {
-    const vCount = (s.validations || []).length;
-    const vInvalid = (s.validations || []).filter(v => v.status === 'invalid').length;
-    const vCorrected = (s.validations || []).filter(v => v.status === 'corrected').length;
-    const statusHtml = vInvalid > 0
-      ? '<span style="color:var(--error); font-weight:600;">' + vInvalid + ' invalid</span>'
-      : vCorrected > 0
-        ? '<span style="color:var(--warn); font-weight:600;">' + vCorrected + ' corrected</span>'
+    const style = (state.styles || []).find(st => st.style_num === s.style_num);
+    const pt = style ? ((wsState.styleProductTypes || {})[s.style_num] || style._resolved_pt || 'UNKNOWN') : 'UNKNOWN';
+    if (!byPT[pt]) byPT[pt] = { styles: [], valid: 0, corrected: 0, invalid: 0 };
+    byPT[pt].styles.push(s);
+    (s.validations || []).forEach(v => {
+      if (v.status === 'valid') byPT[pt].valid++;
+      else if (v.status === 'corrected') byPT[pt].corrected++;
+      else if (v.status === 'invalid') byPT[pt].invalid++;
+    });
+  });
+
+  dlHtml += '<table class="ws-fields-table"><thead><tr><th>Product Type</th><th>Styles</th><th>Validation</th><th style="width:140px;"></th></tr></thead><tbody>';
+  
+  Object.entries(byPT).forEach(([ptId, ptData]) => {
+    const ptLabel = (ALL_PRODUCT_TYPES_FE || []).find(p => p.id === ptId);
+    const label = ptLabel ? ptLabel.label : ptId;
+    const statusHtml = ptData.invalid > 0
+      ? '<span style="color:var(--error); font-weight:600;">' + ptData.invalid + ' invalid</span>'
+      : ptData.corrected > 0
+        ? '<span style="color:var(--warn);">' + ptData.valid + ' valid, ' + ptData.corrected + ' corrected</span>'
         : '<span style="color:var(--success);">\u2713 All valid</span>';
     
     dlHtml += '<tr>';
-    dlHtml += '<td style="font-family:monospace;font-size:12px;">' + escHtml(s.style_num) + '</td>';
-    dlHtml += '<td>' + escHtml(s.style_name) + '</td>';
+    dlHtml += '<td><strong>' + escHtml(label) + '</strong></td>';
+    dlHtml += '<td>' + ptData.styles.length + ' styles</td>';
     dlHtml += '<td>' + statusHtml + '</td>';
-    dlHtml += "<td><button class=\"btn btn-secondary btn-sm\" style=\"font-size:11px;padding:3px 10px;\" onclick=\"wsDownloadStyle('" + encodeURIComponent(s.style_num) + "')\">\u2193 Download</button></td>";
+    dlHtml += "<td><button class=\"btn btn-primary btn-sm\" style=\"font-size:11px;padding:4px 12px;\" onclick=\"wsDownloadProductType('" + encodeURIComponent(ptId) + "')\">\u2193 Download .xlsm</button></td>";
     dlHtml += '</tr>';
   });
   dlHtml += '</tbody></table>';
@@ -6337,7 +6378,7 @@ async function wsSyncAndDownload(url) {
         vendor_code: state.vendorCode || '',
         styles: state.styles || [],
         content_map: state.generatedContent || {},
-        field_overrides: wsState.fieldOverrides || {},
+        field_overrides: wsState.fieldOverrides || {}, style_product_types: wsState.styleProductTypes || {},
       }),
     });
   } catch(e) {
@@ -6352,6 +6393,10 @@ function wsDownloadAllZip() {
 
 function wsDownloadStyle(styleNum) {
   wsSyncAndDownload('/api/download-style/' + encodeURIComponent(styleNum));
+}
+
+function wsDownloadProductType(ptId) {
+  wsSyncAndDownload('/api/download-product-type/' + encodeURIComponent(ptId));
 }
 
 function wsDownloadCombined() {
