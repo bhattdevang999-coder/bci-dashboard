@@ -3307,8 +3307,23 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
   </div>
 
-  <!-- Generate Button -->
+  <!-- Product Brief -->
+  <div style="margin:16px 0; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);">
+    <label style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:6px;">Product Brief (optional)</label>
+    <textarea id="product-brief-input" rows="3" style="width:100%; padding:8px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px; resize:vertical; font-family:inherit; background:var(--bg); color:var(--text);"
+              placeholder="Describe the product for better content. E.g.: 'Men's performance surf rashguard. Loose fit, hooded, UPF 50+. Volcom's surf heritage is the selling point. Target customer is 25-40 male surfer.'"></textarea>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+      <button class="btn btn-secondary btn-sm" onclick="saveProductBrief()" style="font-size:11px;">Save Brief for Brand</button>
+      <span id="brief-save-status" style="font-size:11px; color:var(--text-sec);"></span>
+    </div>
+  </div>
+
+  <!-- Generation Mode Toggle + Generate Button -->
   <div style="text-align:center; margin:24px 0;">
+    <div style="display:flex; justify-content:center; gap:8px; margin-bottom:12px;">
+      <button class="btn btn-sm" id="mode-auto" onclick="setGenMode('auto')" style="font-size:12px; padding:6px 14px; border:2px solid #0d9488; background:#0d9488; color:#fff;">✦ Auto (API + Rules)</button>
+      <button class="btn btn-sm" id="mode-rules" onclick="setGenMode('rules')" style="font-size:12px; padding:6px 14px; border:2px solid #d1d5db; background:#f9fafb; color:#374151;">⚙ Rules Only</button>
+    </div>
     <button class="btn btn-primary" id="generate-btn" onclick="startGeneration()"
             style="font-size:15px; padding:12px 32px;">
       ✦ Generate Content
@@ -3974,6 +3989,26 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
     </div><!-- /intel-results -->
 
+    <!-- ── Change Log + Learning ─────────────────────────────────── -->
+    <div style="margin-top:24px;">
+      <div style="display:flex; gap:10px; margin-bottom:12px;">
+        <button class="btn btn-secondary btn-sm" onclick="loadChangeLog()" style="font-size:12px;">View Change Log</button>
+        <button class="btn btn-secondary btn-sm" onclick="loadLearning()" style="font-size:12px;">View Learning Summary</button>
+      </div>
+
+      <!-- Change Log Table -->
+      <div id="changelog-panel" style="display:none;">
+        <div style="font-size:14px; font-weight:700; margin-bottom:8px;">Change Log</div>
+        <div id="changelog-content" style="font-size:12px; max-height:400px; overflow-y:auto;"></div>
+      </div>
+
+      <!-- Learning Summary -->
+      <div id="learning-panel" style="display:none;">
+        <div style="font-size:14px; font-weight:700; margin-bottom:8px;">Learning Summary</div>
+        <div id="learning-content" style="font-size:12px;"></div>
+      </div>
+    </div>
+
   </div><!-- /intel-page -->
 
 </div><!-- /main -->
@@ -4228,6 +4263,40 @@ const wsState = {
 // ════════════════════════════════════════════════════════════
 //  OPERATOR
 // ════════════════════════════════════════════════════════════
+// ── Generation mode toggle ──────────────────────────────────────
+let genMode = 'auto';
+function setGenMode(mode) {
+  genMode = mode;
+  const autoBtn = document.getElementById('mode-auto');
+  const rulesBtn = document.getElementById('mode-rules');
+  if (mode === 'auto') {
+    autoBtn.style.background = '#0d9488'; autoBtn.style.color = '#fff'; autoBtn.style.borderColor = '#0d9488';
+    rulesBtn.style.background = '#f9fafb'; rulesBtn.style.color = '#374151'; rulesBtn.style.borderColor = '#d1d5db';
+  } else {
+    rulesBtn.style.background = '#0d9488'; rulesBtn.style.color = '#fff'; rulesBtn.style.borderColor = '#0d9488';
+    autoBtn.style.background = '#f9fafb'; autoBtn.style.color = '#374151'; autoBtn.style.borderColor = '#d1d5db';
+  }
+}
+
+// ── Product brief ──────────────────────────────────────────────
+async function saveProductBrief() {
+  const brief = document.getElementById('product-brief-input').value.trim();
+  const brand = state.brand || wsState.brand;
+  if (!brand) { showToast('Upload product data first', 'error'); return; }
+  try {
+    const res = await fetch('/api/save-product-brief', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brand, key: '_default', brief }),
+    });
+    const d = await res.json();
+    if (d.ok) {
+      document.getElementById('brief-save-status').textContent = 'Saved';
+      setTimeout(() => { document.getElementById('brief-save-status').textContent = ''; }, 3000);
+    }
+  } catch(e) { showToast('Failed to save brief', 'error'); }
+}
+
 function setOperator(name) {
   wsState.operator = name.trim();
   if (wsState.operator) {
@@ -5049,7 +5118,7 @@ async function startGeneration() {
     const startRes = await fetch('/api/generate-content', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brand: state.brand, styles: state.styles }),
+      body: JSON.stringify({ brand: state.brand, styles: state.styles, mode: genMode }),
     });
     const startData = await startRes.json();
     if (startData.error) {
@@ -5389,7 +5458,30 @@ function wsRenderContentTab(styleNum) {
     return '';
   }
 
+  // Get any saved style brief
+  const styleBrief = (state.styleBriefs || {})[styleNum] || '';
+  const style = (state.styles || []).find(s => s.style_num === styleNum);
+  const styleName = style ? style.style_name : styleNum;
+  const subclass = style ? (style.subclass || '') : '';
+  const divName = style ? (style.division_name || '') : '';
+
   let html = '';
+
+  // ── Style Prompt / Training Section ──
+  html += `
+    <div style="margin-bottom:20px; padding:14px; background:#f0fdfa; border:1px solid #99f6e4; border-radius:8px;">
+      <div style="font-size:13px; font-weight:700; margin-bottom:4px;">Train this style</div>
+      <div style="font-size:11px; color:#475569; margin-bottom:8px;">${escHtml(styleName)} &mdash; ${escHtml(subclass)} &mdash; ${escHtml(divName)}</div>
+      <textarea id="style-brief-${escHtml(styleNum)}" rows="3"
+                style="width:100%; padding:8px 10px; font-size:13px; border:1px solid #d1d5db; border-radius:6px; resize:vertical; font-family:inherit;"
+                placeholder="Describe this specific product for better content. What makes it unique? Who is it for? What features matter most?">${escHtml(styleBrief)}</textarea>
+      <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+        <button class="btn btn-primary btn-sm" onclick="regenerateWithBrief('${escHtml(styleNum)}')" style="font-size:12px;">✦ Regenerate with this prompt</button>
+        <button class="btn btn-secondary btn-sm" onclick="saveStyleBrief('${escHtml(styleNum)}')" style="font-size:11px;">Save Brief</button>
+        <span id="style-brief-status-${escHtml(styleNum)}" style="font-size:11px; color:#64748b;"></span>
+      </div>
+    </div>
+  `;
 
   // Content fields
   html += '<div class="ws-content-section-label">Content</div>';
@@ -5416,6 +5508,14 @@ function wsRenderContentTab(styleNum) {
       <textarea class="nis-feedback-textarea" id="ws-sfb-${escHtml(styleNum)}" rows="2"
                 placeholder="Any feedback on this style's content? (saved on blur)"
                 onblur="wsSendFeedback('manual','review',{scope:'style', style_num:'${escHtml(styleNum)}'},{ message: this.value })"></textarea>
+    </div>
+  `;
+
+  // NIS Spreadsheet Preview
+  html += `
+    <div style="margin-top:16px;">
+      <button class="btn btn-secondary btn-sm" onclick="showNISPreview('${escHtml(styleNum)}')" style="font-size:12px;">▤ Show NIS Spreadsheet Preview</button>
+      <div id="nis-preview-panel" style="display:none; margin-top:10px;"></div>
     </div>
   `;
 
@@ -5466,6 +5566,20 @@ function wsFieldBlock(styleNum, fieldKey, label, content, charLimit, why) {
         <textarea id="wsfedit-${escHtml(styleNum)}-${escHtml(fieldKey)}" rows="3"
                   oninput="wsFieldCharCount('${escHtml(styleNum)}','${escHtml(fieldKey)}',${charLimit||0})"
                   >${escHtml(content)}</textarea>
+        <div style="margin:6px 0;">
+          <select id="wsreason-${escHtml(styleNum)}-${escHtml(fieldKey)}" style="font-size:11px; padding:3px 6px; border:1px solid var(--border); border-radius:4px; background:var(--surface); color:var(--text);">
+            <option value="">Why this change? (optional)</option>
+            <option value="wrong_product_type">Wrong product type (said dress, it's swimwear, etc.)</option>
+            <option value="wrong_tone">Wrong tone/voice</option>
+            <option value="missing_feature">Missing key feature</option>
+            <option value="factually_incorrect">Factually incorrect</option>
+            <option value="better_keyword">Better keyword/SEO</option>
+            <option value="too_long">Too long</option>
+            <option value="too_short">Too short/generic</option>
+            <option value="brand_preference">Brand preference</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
         <div class="ws-field-edit-btns">
           <button class="btn btn-primary btn-sm" onclick="wsConfirmContentEdit('${escHtml(styleNum)}','${escHtml(fieldKey)}')">Save Edit</button>
           <button class="btn btn-secondary btn-sm" onclick="wsCancelContentEdit('${escHtml(styleNum)}','${escHtml(fieldKey)}')">Cancel</button>
@@ -5578,17 +5692,21 @@ function wsConfirmContentEdit(styleNum, fieldKey) {
   const original = textEl.textContent;
   const newVal = editTA.value.trim();
 
-  // Log edit as feedback
+  // Get the reason from the edit-reason dropdown (if present)
+  const reasonEl = document.getElementById(`wsreason-${styleNum}-${fieldKey}`);
+  const reason = reasonEl ? reasonEl.value : '';
+
+  // Log edit as feedback with reason
   fetch('/api/submit-feedback', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ style_num: styleNum, field: fieldKey, original, updated: newVal }),
+    body: JSON.stringify({ style_num: styleNum, field: fieldKey, original, updated: newVal, feedback: reason }),
   }).catch(() => {});
 
   // Also send to /api/feedback
   wsSendFeedback('content_edit', 'review',
     { scope: 'field', field_name: fieldKey, style_num: styleNum },
-    { original, updated: newVal }
+    { original, updated: newVal, reason }
   );
 
   textEl.textContent = newVal;
@@ -5852,7 +5970,7 @@ function wsFieldRow(f, styleNum, sharedIds) {
 
   // Action buttons
   let actions = '';
-  if (f.editable && f.status !== 'locked') {
+  if (f.editable) {
     actions += `<button class="ws-fields-edit-btn" onclick="wsEditField('${escHtml(styleNum)}','${escHtml(f.field_id||'')}','${escHtml(f.header)}',${f.col},'${escHtml(f.value||'')}')" title="Edit">✏</button>`;
     if (isShared) {
       actions += `<button class="ws-apply-all-btn" onclick="wsApplyAllPrompt('${escHtml(f.field_id||'')}','${escHtml(f.value||'')}','${escHtml(f.header)}')" title="Apply to all styles + optionally save as brand default">⟿ All</button>`;
@@ -5920,7 +6038,7 @@ function wsStatusBadge(status, overridden) {
     case 'filled':  return '<span class="ws-status-badge ws-status-filled">✓ Filled</span>';
     case 'default': return '<span class="ws-status-badge ws-status-default">⚡ Default</span>';
     case 'empty':   return '<span class="ws-status-badge ws-status-empty">✗ Empty</span>';
-    case 'locked':  return '<span class="ws-status-badge ws-status-locked">🔒 Auto</span>';
+    case 'locked':  return '<span class="ws-status-badge ws-status-locked">Auto</span>';
     default:        return escHtml(status);
   }
 }
@@ -6345,8 +6463,8 @@ async function wsRunValidation(stylesList) {
   
   let dlHtml = sessHtml;
   dlHtml += '<div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">';
-  dlHtml += '<button class="btn btn-primary" onclick="wsDownloadAllZip()" style="font-size:13px;">\u2193 Download All (ZIP \u2014 1 file per style)</button>';
-  dlHtml += '<button class="btn btn-secondary" onclick="wsDownloadCombined()" style="font-size:12px;">\u2193 All in One .xlsm</button>';
+  dlHtml += '<button class="btn btn-primary" onclick="wsDownloadPerStyle()" style="font-size:13px;">\u2193 Download (1 file per style)</button>';
+  dlHtml += '<button class="btn btn-secondary" onclick="wsDownloadPerType()" style="font-size:12px;">\u2193 Download (1 file per product type)</button>';
   dlHtml += '</div>';
 
   // Group by product type for download files
@@ -6415,6 +6533,14 @@ async function wsSyncAndDownload(url) {
 
 function wsDownloadAllZip() {
   wsSyncAndDownload('/api/download-all');
+}
+
+function wsDownloadPerStyle() {
+  wsSyncAndDownload('/api/download-all?mode=per-style');
+}
+
+function wsDownloadPerType() {
+  wsSyncAndDownload('/api/download-all?mode=per-type');
 }
 
 function wsDownloadStyle(styleNum) {
@@ -6622,7 +6748,7 @@ function qaRenderPanel(data) {
       const displayVal = escHtml(valStr.length > 80 ? valStr.slice(0, 80) + '...' : valStr);
       const note = field.note ? `<div class="qa-note">${escHtml(field.note)}</div>` : '';
       let valueCell;
-      if (!field.editable || field.status === 'locked') {
+      if (!field.editable) {
         valueCell = `<span style="color:var(--text-sec);">${displayVal || '<em style="color:#bbb;">—</em>'}</span>${note}`;
       } else {
         const editId = `qa-val-${field.col}`;
@@ -7641,6 +7767,205 @@ function intelSyncGate() {
       const noDataEl = document.getElementById('intel-no-data');
       if (noDataEl) noDataEl.style.display = 'block';
     });
+}
+
+// ── Per-style training ──────────────────────────────────────────
+async function regenerateWithBrief(styleNum) {
+  const ta = document.getElementById('style-brief-' + styleNum);
+  const brief = ta ? ta.value.trim() : '';
+  const statusEl = document.getElementById('style-brief-status-' + styleNum);
+  if (statusEl) statusEl.textContent = 'Regenerating...';
+  try {
+    const resp = await fetch('/api/regenerate-style', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style_num: styleNum, brief, brand: state.brand }),
+    });
+    const d = await resp.json();
+    if (d.ok && d.content) {
+      // Update local state
+      if (!state.generatedContent) state.generatedContent = {};
+      const existing = state.generatedContent[styleNum] || {};
+      existing.title = d.content.title;
+      existing.bullets = d.content.bullets;
+      existing.description = d.content.description;
+      existing.backend_keywords = d.content.backend_keywords;
+      state.generatedContent[styleNum] = existing;
+      // Re-render
+      wsRenderContentTab(styleNum);
+      showToast('Content regenerated' + (d.content.llm_generated ? ' (AI)' : ' (rules)'), 'success');
+    } else {
+      showToast(d.error || 'Regeneration failed', 'error');
+    }
+  } catch(e) { showToast('Regeneration failed: ' + e.message, 'error'); }
+  if (statusEl) statusEl.textContent = '';
+}
+
+async function saveStyleBrief(styleNum) {
+  const ta = document.getElementById('style-brief-' + styleNum);
+  const brief = ta ? ta.value.trim() : '';
+  const statusEl = document.getElementById('style-brief-status-' + styleNum);
+  try {
+    await fetch('/api/save-style-brief', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style_num: styleNum, brief }),
+    });
+    if (!state.styleBriefs) state.styleBriefs = {};
+    state.styleBriefs[styleNum] = brief;
+    if (statusEl) { statusEl.textContent = 'Saved'; setTimeout(() => statusEl.textContent = '', 3000); }
+  } catch(e) { if (statusEl) statusEl.textContent = 'Failed'; }
+}
+
+// ── NIS Spreadsheet Preview ───────────────────────────────────
+async function showNISPreview(styleNum) {
+  const panel = document.getElementById('nis-preview-panel');
+  if (!panel) return;
+  panel.style.display = 'block';
+  panel.innerHTML = '<div style="padding:12px; color:#64748b;">Loading NIS preview...</div>';
+  try {
+    const resp = await fetch('/api/nis-spreadsheet-preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style_num: styleNum }),
+    });
+    const d = await resp.json();
+    if (d.error) { panel.innerHTML = `<div style="color:red;">${d.error}</div>`; return; }
+
+    let html = `<div style="font-size:13px; font-weight:700; margin-bottom:8px;">NIS Preview — ${escHtml(d.style_name)} (${d.variant_count} variants)</div>`;
+    html += '<div style="overflow-x:auto; max-height:500px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:6px;">';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:11px; white-space:nowrap;">';
+
+    // Header row
+    html += '<thead><tr style="background:#f1f5f9; position:sticky; top:0; z-index:1;">';
+    (d.fields || []).forEach(f => {
+      const bg = f.status === 'filled' ? '#dcfce7' : f.status === 'empty' ? '#fef2f2' : '#f8fafc';
+      html += `<th style="padding:4px 8px; border:1px solid #e2e8f0; font-size:10px; background:${bg}; text-align:left;">${escHtml(f.header)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    // Shared row (what goes into every variant)
+    html += '<tr style="background:#fffbeb;">';
+    (d.fields || []).forEach(f => {
+      const val = f.value || '';
+      const display = val.length > 40 ? val.substring(0, 40) + '...' : val;
+      html += `<td style="padding:3px 6px; border:1px solid #e2e8f0; max-width:200px; overflow:hidden; text-overflow:ellipsis;" title="${escHtml(val)}">${escHtml(display)}</td>`;
+    });
+    html += '</tr>';
+
+    // Variant rows (show first 5, then count)
+    const showMax = 5;
+    (d.variant_rows || []).slice(0, showMax).forEach(v => {
+      html += '<tr>';
+      html += `<td style="padding:3px 6px; border:1px solid #e2e8f0;" colspan="2">${escHtml(v.sku)}</td>`;
+      html += `<td style="padding:3px 6px; border:1px solid #e2e8f0;">${escHtml(v.color)}</td>`;
+      html += `<td style="padding:3px 6px; border:1px solid #e2e8f0;">${escHtml(v.size)}</td>`;
+      html += `<td style="padding:3px 6px; border:1px solid #e2e8f0;">${escHtml(v.upc)}</td>`;
+      html += `<td style="padding:3px 6px; border:1px solid #e2e8f0;">${escHtml(String(v.list_price || ''))}</td>`;
+      html += `<td style="padding:3px 6px; border:1px solid #e2e8f0;" colspan="${Math.max(1, (d.fields||[]).length - 6)}">${escHtml(String(v.cost_price || ''))}</td>`;
+      html += '</tr>';
+    });
+    if ((d.variant_rows || []).length > showMax) {
+      html += `<tr><td colspan="${(d.fields||[]).length}" style="padding:6px; text-align:center; color:#64748b; font-style:italic;">... and ${d.variant_rows.length - showMax} more variants</td></tr>`;
+    }
+
+    html += '</tbody></table></div>';
+    html += `<div style="margin-top:6px; font-size:11px; color:#64748b;">${(d.fields||[]).length} columns, ${d.variant_count} variant rows</div>`;
+    panel.innerHTML = html;
+  } catch(e) { panel.innerHTML = `<div style="color:red;">Failed: ${e.message}</div>`; }
+}
+
+async function loadChangeLog() {
+  const panel = document.getElementById('changelog-panel');
+  const content = document.getElementById('changelog-content');
+  panel.style.display = 'block';
+  document.getElementById('learning-panel').style.display = 'none';
+  content.innerHTML = '<div style="color:var(--text-sec);">Loading...</div>';
+  try {
+    const resp = await fetch('/api/feedback/changelog');
+    const d = await resp.json();
+    if (!d.rows || d.rows.length === 0) {
+      content.innerHTML = '<div style="color:var(--text-sec); padding:12px;">No edits recorded yet. Changes made during content review will appear here.</div>';
+      return;
+    }
+    let html = '<table style="width:100%; border-collapse:collapse;">';
+    html += '<thead><tr style="background:var(--surface); font-size:11px; text-transform:uppercase; letter-spacing:0.3px;">';
+    html += '<th style="padding:6px 8px; text-align:left; border-bottom:1px solid var(--border);">When</th>';
+    html += '<th style="padding:6px 8px; text-align:left; border-bottom:1px solid var(--border);">Who</th>';
+    html += '<th style="padding:6px 8px; text-align:left; border-bottom:1px solid var(--border);">Style</th>';
+    html += '<th style="padding:6px 8px; text-align:left; border-bottom:1px solid var(--border);">Field</th>';
+    html += '<th style="padding:6px 8px; text-align:left; border-bottom:1px solid var(--border);">Change</th>';
+    html += '<th style="padding:6px 8px; text-align:left; border-bottom:1px solid var(--border);">Why</th>';
+    html += '</tr></thead><tbody>';
+    d.rows.forEach(r => {
+      const when = r.timestamp ? new Date(r.timestamp).toLocaleString() : '';
+      const change = r.original && r.updated ? `"${r.original.substring(0,40)}..." \u2192 "${r.updated.substring(0,40)}..."` : (r.updated || r.original || '');
+      html += `<tr style="border-bottom:1px solid var(--border);">`;
+      html += `<td style="padding:5px 8px; white-space:nowrap;">${when}</td>`;
+      html += `<td style="padding:5px 8px;">${r.operator || '\u2014'}</td>`;
+      html += `<td style="padding:5px 8px; font-family:monospace;">${r.style_num || ''}</td>`;
+      html += `<td style="padding:5px 8px;">${r.field || ''}</td>`;
+      html += `<td style="padding:5px 8px; max-width:250px; overflow:hidden; text-overflow:ellipsis;">${change}</td>`;
+      html += `<td style="padding:5px 8px; color:var(--text-sec);">${r.reason || '\u2014'}</td>`;
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    content.innerHTML = html;
+  } catch(e) { content.innerHTML = '<div style="color:var(--error);">Failed to load change log.</div>'; }
+}
+
+async function loadLearning() {
+  const panel = document.getElementById('learning-panel');
+  const content = document.getElementById('learning-content');
+  panel.style.display = 'block';
+  document.getElementById('changelog-panel').style.display = 'none';
+  content.innerHTML = '<div style="color:var(--text-sec);">Loading...</div>';
+  try {
+    const resp = await fetch('/api/feedback/learning');
+    const d = await resp.json();
+    let html = '';
+    html += `<div style="margin-bottom:12px;">Total edits tracked: <strong>${d.total_edits || 0}</strong></div>`;
+
+    if (d.top_edited_fields && d.top_edited_fields.length) {
+      html += '<div style="font-weight:700; margin-bottom:6px;">Most Edited Fields</div>';
+      d.top_edited_fields.forEach(f => {
+        html += `<div style="display:flex; align-items:center; gap:8px; padding:4px 0;"><span style="font-weight:700; color:var(--primary); min-width:24px;">${f.count}</span><span>${f.field}</span></div>`;
+      });
+    }
+
+    if (d.top_reasons && d.top_reasons.length) {
+      html += '<div style="font-weight:700; margin:12px 0 6px;">Top Change Reasons</div>';
+      d.top_reasons.forEach(r => {
+        const label = r.reason.replace(/_/g, ' ');
+        html += `<div style="display:flex; align-items:center; gap:8px; padding:4px 0;"><span style="font-weight:700; color:var(--warn); min-width:24px;">${r.count}</span><span style="text-transform:capitalize;">${label}</span></div>`;
+      });
+    }
+
+    if (d.operators && d.operators.length) {
+      html += '<div style="font-weight:700; margin:12px 0 6px;">Active Operators</div>';
+      d.operators.forEach(o => {
+        html += `<div style="padding:4px 0;">${o.name}: ${o.edits} edits</div>`;
+      });
+    }
+
+    if (d.insights && d.insights.length) {
+      html += '<div style="font-weight:700; margin:12px 0 6px;">Insights</div>';
+      d.insights.forEach(ins => {
+        html += `<div style="padding:6px 10px; margin-bottom:4px; background:var(--surface); border-radius:6px;">${ins.message}`;
+        if (ins.examples && ins.examples.length) {
+          html += '<div style="margin-top:4px; font-size:11px; color:var(--text-sec);">';
+          ins.examples.forEach(ex => { html += `<div>"${ex.from.substring(0,40)}" \u2192 "${ex.to.substring(0,40)}"</div>`; });
+          html += '</div>';
+        }
+        html += '</div>';
+      });
+    }
+
+    if (!d.total_edits) {
+      html = '<div style="color:var(--text-sec); padding:12px;">No learning data yet. As your team edits content, patterns will appear here showing what gets changed most and why.</div>';
+    }
+    content.innerHTML = html;
+  } catch(e) { content.innerHTML = '<div style="color:var(--error);">Failed to load learning data.</div>'; }
 }
 
 async function runIntelAnalysis() {

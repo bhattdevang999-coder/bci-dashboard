@@ -557,6 +557,34 @@ DESCRIPTION_OPENERS_ROTATION = {}  # style_num -> opener_index
 def _safe(v):
     return str(v).strip() if v is not None else ""
 
+def _derive_gender_department(style):
+    """Derive Amazon gender + department from a style's division_name.
+    Returns (gender, department) tuple — e.g. ('Male', 'mens') or ('Female', 'womens').
+    Falls back to empty strings when unknown.
+    """
+    dn = (style.get("division_name", "") or "").upper()
+    gender = ""
+    department = ""
+    if "YOUTH" in dn or "KIDS" in dn or "BOY" in dn or "GIRL" in dn:
+        # Youth — Amazon uses Unisex or specific
+        if "GIRL" in dn:
+            gender = "Female"
+            department = "girls"
+        elif "BOY" in dn:
+            gender = "Male"
+            department = "boys"
+        else:
+            gender = "Unisex"
+            department = "boys"  # Amazon default for youth unisex
+    elif "WOMENS" in dn or "WOMEN'S" in dn or "WOMEN " in dn:
+        # Check WOMENS before MENS ("WOMENS" contains "MENS" as substring)
+        gender = "Female"
+        department = "womens"
+    elif "MENS" in dn or "MEN'S" in dn or " MEN " in dn or dn.endswith(" MEN"):
+        gender = "Male"
+        department = "mens"
+    return gender, department
+
 def normalize_color(raw_color):
     """Map raw color to Amazon color family."""
     if not raw_color:
@@ -754,140 +782,142 @@ def generate_title(brand_cfg, brand, style_name, product_type, color, size, upf=
         title = title[:120].rsplit(' ', 1)[0].rstrip(',')
     return title
 
-def generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, color, upf=""):
-    """Generate 5 bullet points per brand + style context."""
-    silhouette = derive_silhouette(sub_subclass)
-    sleeve = derive_sleeve_type(style_name)
-    neck = derive_neck_type(style_name)
+def generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, color, upf="",
+                     subclass="", gender="", product_type=""):
+    """Generate 5 bullet points per brand + style context. Product-type-aware."""
     brand = clean_brand_name(brand)
     focus = brand_cfg.get("bullet_1_focus", "Style and quality")
     actual_fabric = fabric or brand_cfg.get("default_fabric", "")
     actual_care = care or brand_cfg.get("default_care", "Machine Wash")
     actual_upf = upf or brand_cfg.get("default_upf", "")
+    # Normalize UPF: strip redundant "UPF" prefix so templates can add their own
+    if actual_upf and actual_upf.upper().startswith("UPF"):
+        actual_upf = actual_upf[3:].strip()  # "UPF 50+" → "50+"
 
-    # Bullet 1: brand-specific focus
-    if "upf" in focus.lower():
-        upf_val = actual_upf or "30+"
-        b1 = f"UPF {upf_val} SUN PROTECTION — Built with {upf_val} ultraviolet protection factor fabric, this dress shields your skin from harmful UV rays, making it ideal for outdoor activities, beach days, and sunny adventures."
+    # Determine the product word to use instead of "dress"
+    itn = _derive_item_type_name(subclass, product_type) or subclass or "garment"
+    itn_lower = itn.lower()
+    is_swim = product_type == "SWIMWEAR" or subclass in (
+        "Rashguard", "Trunk", "Bikini Top", "Bikini Bottom", "Swim Bottom",
+        "One Piece Swim", "Tankini", "Short", "Swim Set 2 pcs", "Board Short")
+    gender_word = "men's" if (gender or "").lower() == "male" else "women's" if (gender or "").lower() == "female" else ""
+
+    # ── Bullet 1: brand-specific focus ──
+    if actual_upf and ("upf" in focus.lower() or is_swim):
+        b1 = f"UPF {actual_upf} SUN PROTECTION — Built with UPF {actual_upf} ultraviolet protection factor fabric, this {itn_lower} shields your skin from harmful UV rays. Ideal for surfing, swimming, and all-day outdoor wear."
     elif "butterlux" in focus.lower():
-        b1 = f"BUTTERLUX FABRIC — Crafted from our signature Butterlux material, this {brand} dress delivers an extraordinarily soft, silky touch against your skin for all-day luxurious comfort."
-    elif "beach" in focus.lower() or "surf" in focus.lower():
-        b1 = f"SURF & BEACH READY — Designed with {brand}'s surf heritage in mind, this dress combines ocean-inspired style with durable, resort-worthy construction perfect for any beach escape."
+        b1 = f"BUTTERLUX FABRIC — Crafted from our signature Butterlux material, this {brand} {itn_lower} delivers an extraordinarily soft, silky touch for all-day luxurious comfort."
+    elif "beach" in focus.lower() or "surf" in focus.lower() or is_swim:
+        b1 = f"SURF & BEACH READY — Designed with {brand}'s surf heritage in mind, this {itn_lower} combines ocean-inspired style with durable, quick-dry construction perfect for any beach day or pool session."
     elif "nautical" in focus.lower():
-        b1 = f"NAUTICAL INSPIRED — Rooted in {brand}'s rich maritime heritage, this dress features classic nautical design elements that bring timeless, sophisticated style to every occasion."
+        b1 = f"NAUTICAL INSPIRED — Rooted in {brand}'s rich maritime heritage, this {itn_lower} features classic nautical design elements that bring timeless style to every occasion."
     elif "british" in focus.lower() or "mod" in focus.lower():
-        b1 = f"BRITISH MOD HERITAGE — Influenced by {brand}'s iconic British mod aesthetic, this dress delivers bold, fashion-forward style that stands out from the crowd."
+        b1 = f"BRITISH MOD HERITAGE — Influenced by {brand}'s iconic British mod aesthetic, this {itn_lower} delivers bold, fashion-forward style that stands out."
     elif "performance" in focus.lower():
-        b1 = f"PERFORMANCE DESIGN — Engineered with {brand}'s performance expertise, this dress combines athletic functionality with fashionable styling for active women on the go."
+        b1 = f"PERFORMANCE DESIGN — Engineered with {brand}'s performance expertise, this {itn_lower} combines athletic functionality with modern styling."
     elif "tailored" in focus.lower() or "sophisticated" in focus.lower():
-        b1 = f"SOPHISTICATED TAILORING — {brand}'s expert tailoring creates a refined, polished silhouette that transitions effortlessly from office to evening occasions."
+        b1 = f"SOPHISTICATED TAILORING — {brand}'s expert tailoring creates a refined, polished silhouette that transitions effortlessly between occasions."
     else:
-        b1 = f"QUALITY CRAFTSMANSHIP — {brand} brings signature quality to every stitch of this {style_name.title()} dress, combining premium materials with expert construction for lasting style."
+        b1 = f"QUALITY CRAFTSMANSHIP — {brand} brings signature quality to this {itn_lower}, combining premium materials with expert construction for lasting style and durability."
 
-    # Bullet 2: Style-specific, must vary per style
+    # ── Bullet 2: Style-specific features ──
     style_features = []
-    if neck:
-        style_features.append(f"flattering {neck} neckline")
-    if sleeve and sleeve != "Sleeveless":
-        style_features.append(f"{sleeve.lower()} detail")
-    elif sleeve == "Sleeveless":
-        style_features.append("sleeveless design")
-    if "PLEATED" in style_name.upper():
-        style_features.append("elegant pleated front")
-    if "RUFFLE" in style_name.upper() or "RFL" in style_name.upper():
-        style_features.append("playful ruffle accents")
-    if "FLUTTER" in style_name.upper():
-        style_features.append("delicate flutter sleeves")
-    if "PINTUCK" in style_name.upper():
-        style_features.append("refined pintuck detailing")
-    if "KEYHOLE" in style_name.upper():
-        style_features.append("sophisticated keyhole cutout")
-    if "COLORBLOCK" in style_name.upper():
-        style_features.append("bold colorblock paneling")
-    if "SWING" in style_name.upper():
-        style_features.append("flirty swing silhouette")
-    if "BALLOON" in style_name.upper():
-        style_features.append("statement balloon sleeves")
-    if "BABYDOLL" in style_name.upper().replace(" ", "") or "BBYDOLL" in style_name.upper():
-        style_features.append("romantic baby doll cut")
-    if "YOKE" in style_name.upper():
-        style_features.append("structured yoke detailing")
-    if "LUNA" in style_name.upper():
-        style_features.append("graceful feminine silhouette")
-    if "CINCH" in style_name.upper():
-        style_features.append("cinched waist for definition")
-    if "ZIP" in style_name.upper():
-        style_features.append("convenient front zip closure")
-
-    feature_str = ", ".join(style_features[:3]) if style_features else "thoughtfully designed details"
-    b2 = f"DESIGNED TO IMPRESS — This {style_name.title()} features {feature_str} that create a {silhouette or 'flattering'} silhouette perfect for making a lasting impression wherever you go."
-
-    # Bullet 3: Fit & sizing
-    if silhouette:
-        fit_desc = f"{silhouette} silhouette"
+    sn_upper = style_name.upper()
+    if is_swim:
+        if "HOODED" in sn_upper or "HOOD" in sn_upper: style_features.append("integrated hood for extra sun coverage")
+        if "LONG SLEEVE" in sn_upper: style_features.append("long-sleeve design for full arm protection")
+        if "SHORT SLEEVE" in sn_upper: style_features.append("short-sleeve design for freedom of movement")
+        if "LOOSE" in sn_upper: style_features.append("loose, relaxed fit for layering comfort")
+        if "4-WAY" in sn_upper or "4 WAY" in sn_upper: style_features.append("4-way stretch fabric for unrestricted movement")
+        if "E-WAIST" in sn_upper or "ELASTIC" in sn_upper: style_features.append("elastic waistband for easy on/off")
+        if "BOARD" in sn_upper: style_features.append("boardshort styling built for the water")
+        if "TWIST" in sn_upper: style_features.append("twist-front detail for a flattering silhouette")
+        if "V-NECK" in sn_upper or "VNECK" in sn_upper: style_features.append("V-neckline for a sleek profile")
+        if "PRINTED" in sn_upper or "PRINT" in sn_upper: style_features.append("bold all-over print")
+        if "LOGO" in sn_upper: style_features.append("signature logo branding")
+        if "ZIP" in sn_upper: style_features.append("front zip closure")
     else:
-        fit_desc = "flattering cut"
-    b3 = f"PERFECT FIT & COMFORT — The {fit_desc} is designed to flatter a range of body types, with a relaxed yet refined fit that moves with you throughout the day. Available in sizes XS–3X to ensure every woman finds her perfect match."
+        # Dress/apparel features
+        neck = derive_neck_type(style_name)
+        sleeve = derive_sleeve_type(style_name)
+        if neck: style_features.append(f"flattering {neck} neckline")
+        if sleeve and sleeve != "Sleeveless": style_features.append(f"{sleeve.lower()} detail")
+        if "PLEATED" in sn_upper: style_features.append("elegant pleated front")
+        if "RUFFLE" in sn_upper: style_features.append("playful ruffle accents")
 
-    # Bullet 4: Fabric + care
+    if not style_features:
+        style_features = ["thoughtfully designed details"]
+    feature_str = ", ".join(style_features[:3])
+    b2 = f"DESIGNED FOR PERFORMANCE — This {style_name.title()} features {feature_str} that set it apart from the competition."
+
+    # ── Bullet 3: Fit & sizing ──
+    fit_type = brand_cfg.get("default_fit_type", "")
+    if is_swim:
+        b3 = f"COMFORTABLE FIT — Designed to fit true to size with a {fit_type.lower() or 'relaxed'} fit that moves with your body. Available in a full size range so every {gender_word + ' ' if gender_word else ''}customer finds the right fit."
+    else:
+        sil = derive_silhouette(sub_subclass)
+        fit_desc = f"{sil} silhouette" if sil else "flattering cut"
+        b3 = f"PERFECT FIT & COMFORT — The {fit_desc} is designed to flatter a range of body types with a relaxed yet refined fit that moves with you throughout the day."
+
+    # ── Bullet 4: Fabric + care ──
     if actual_fabric:
-        b4 = f"PREMIUM FABRIC — Made from {actual_fabric}, this dress offers a smooth, comfortable feel with just the right amount of stretch. {actual_care} for easy home care."
+        if is_swim:
+            b4 = f"QUICK-DRY FABRIC — Made from {actual_fabric} for rapid moisture wicking and fast drying. {actual_care} for easy upkeep after every swim session."
+        else:
+            b4 = f"PREMIUM FABRIC — Made from {actual_fabric}, offering a smooth, comfortable feel with just the right amount of stretch. {actual_care} for easy home care."
     else:
-        b4 = f"EASY CARE FABRIC — Crafted for effortless wearability with a smooth, comfortable construction. {actual_care} for convenient upkeep."
+        b4 = f"EASY CARE — Crafted for effortless wearability with durable construction. {actual_care} for convenient upkeep."
 
-    # Bullet 5: Cross-sell + complete the look
-    b5 = f"COMPLETE THE LOOK — Pair this {color.title() if color else ''} dress with strappy sandals and a clutch for evenings out, or dress it down with white sneakers and a denim jacket for a casual daytime look. The perfect versatile addition to your {brand} wardrobe."
+    # ── Bullet 5: Use case ──
+    if is_swim:
+        b5 = f"VERSATILE WATER WEAR — Whether you're surfing, swimming laps, or lounging poolside, this {brand} {itn_lower} delivers. Pair with your favorite {brand} swim gear for a complete look."
+    else:
+        b5 = f"COMPLETE THE LOOK — Pair this {color.title() if color else ''} {itn_lower} with your favorite accessories for any occasion. A versatile addition to your {brand} wardrobe."
 
     return [b1, b2, b3, b4, b5]
 
-def generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, color, upf=""):
-    """Generate product description. Max 2000 chars, uses rotating openers."""
-    global DESCRIPTION_OPENERS_ROTATION
-    
+def generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, color, upf="",
+                         subclass="", gender="", product_type=""):
+    """Generate product description. Max 2000 chars. Product-type-aware."""
     brand = clean_brand_name(brand)
-    silhouette = derive_silhouette(sub_subclass)
-    sleeve = derive_sleeve_type(style_name)
-    neck = derive_neck_type(style_name)
     actual_fabric = fabric or brand_cfg.get("default_fabric", "")
     actual_care = care or brand_cfg.get("default_care", "Machine Wash")
     actual_upf = upf or brand_cfg.get("default_upf", "")
+    if actual_upf and actual_upf.upper().startswith("UPF"):
+        actual_upf = actual_upf[3:].strip()
+    itn = _derive_item_type_name(subclass, product_type) or subclass or "garment"
+    itn_lower = itn.lower()
+    is_swim = product_type == "SWIMWEAR" or subclass in (
+        "Rashguard", "Trunk", "Bikini Top", "Bikini Bottom", "Swim Bottom",
+        "One Piece Swim", "Tankini", "Short", "Swim Set 2 pcs", "Board Short")
 
-    # Get opener (rotate per style)
-    if style_num not in DESCRIPTION_OPENERS_ROTATION:
-        idx = len(DESCRIPTION_OPENERS_ROTATION) % len(DESCRIPTION_OPENERS)
-        DESCRIPTION_OPENERS_ROTATION[style_num] = idx
-    opener_template = DESCRIPTION_OPENERS[DESCRIPTION_OPENERS_ROTATION[style_num]]
-    opener = opener_template.format(brand=brand, style_name=style_name.title())
+    parts = []
+    if is_swim:
+        parts.append(f"The {brand} {style_name.title()} is built for performance in and out of the water.")
+        if actual_fabric:
+            fp = f"Constructed from {actual_fabric}"
+            if actual_upf:
+                fp += f" with UPF {actual_upf} sun protection"
+            fp += ", this " + itn_lower + " dries quickly and resists chlorine and salt water."
+            parts.append(fp)
+        parts.append(f"Designed for surfing, swimming, and beach days, it combines {brand}'s signature style with functional performance. {actual_care} for easy care after every session.")
+    else:
+        # Dress / general apparel
+        global DESCRIPTION_OPENERS_ROTATION
+        if style_num not in DESCRIPTION_OPENERS_ROTATION:
+            idx = len(DESCRIPTION_OPENERS_ROTATION) % len(DESCRIPTION_OPENERS)
+            DESCRIPTION_OPENERS_ROTATION[style_num] = idx
+        opener_template = DESCRIPTION_OPENERS[DESCRIPTION_OPENERS_ROTATION[style_num]]
+        parts.append(opener_template.format(brand=brand, style_name=style_name.title()))
+        if actual_fabric:
+            fp = f"Constructed from {actual_fabric}"
+            if actual_upf:
+                fp += f" with UPF {actual_upf} sun protection built right in"
+            fp += f", this {itn_lower} provides all-day comfort. {actual_care} for easy upkeep."
+            parts.append(fp)
+        parts.append(f"Versatile enough for any occasion, this {brand} {itn_lower} transitions effortlessly from day to night.")
 
-    parts = [opener]
-
-    # Style details paragraph
-    style_details = []
-    if neck:
-        style_details.append(f"the elegant {neck} neckline frames your face beautifully")
-    if sleeve and sleeve != "Sleeveless":
-        style_details.append(f"{sleeve.lower()} detailing adds movement and visual interest")
-    elif sleeve == "Sleeveless":
-        style_details.append("the sleeveless construction keeps you cool and comfortable")
-    if silhouette:
-        style_details.append(f"the {silhouette} silhouette creates a polished, put-together look")
-    
-    if style_details:
-        parts.append("From " + ", ".join(style_details[:2]) + " — every element is thoughtfully considered.")
-
-    # Fabric paragraph
-    if actual_fabric:
-        fabric_para = f"Constructed from {actual_fabric}"
-        if actual_upf:
-            fabric_para += f" with UPF {actual_upf} sun protection built right in"
-        fabric_para += f", this dress provides all-day comfort with a flattering drape. {actual_care} for easy upkeep."
-        parts.append(fabric_para)
-
-    # Occasion paragraph
-    parts.append(f"Versatile enough for brunches, work events, weekend outings, and special occasions, this {brand} dress is a true wardrobe workhorse. Dress it up with heels and statement jewelry, or keep it casual with flat sandals and a crossbody bag.")
-
-    desc = " ".join(parts)
-    return desc[:2000]
+    return " ".join(parts)[:2000]
 
 def qa_check_content(content, brand):
     """Run QA checks on generated content. Returns list of issues."""
@@ -1025,55 +1055,76 @@ def generate_keywords_why(brand, keywords_list, result_kw, has_keywords):
             f'Brand name excluded per Amazon guidelines.')
 
 
-def generate_backend_keywords(brand, style_name, sub_subclass, color, fabric, upf=""):
-    """Generate backend keywords. Max 250 bytes, lowercase, no brand, no title duplicates."""
+def generate_backend_keywords(brand, style_name, sub_subclass, color, fabric, upf="",
+                              subclass="", gender="", product_type=""):
+    """Generate backend keywords. Max 250 bytes, lowercase, no brand, no title duplicates.
+    Product-type-aware."""
     brand_lower = brand.lower()
-    
-    candidates = [
-        "womens dress", "women dress", "ladies dress",
-        f"{sub_subclass.lower() if sub_subclass else 'dress'}",
-        f"{derive_silhouette(sub_subclass).lower() if sub_subclass else ''} dress",
-        f"{derive_sleeve_type(style_name).lower()} dress",
-        f"{derive_neck_type(style_name).lower() if derive_neck_type(style_name) else ''} dress",
-        "casual dress", "everyday dress", "versatile dress",
-        "comfortable dress", "flattering dress", "stylish dress",
-        "summer dress", "spring dress", "all season dress",
-        "work dress", "office dress", "occasion dress",
-        f"women {normalize_color(color).lower() if color else ''} dress",
-    ]
-    
-    if upf:
-        candidates.append(f"upf {upf} dress")
-        candidates.append("sun protective clothing")
-        candidates.append("uv protection dress")
-    
+    itn = _derive_item_type_name(subclass, product_type) or subclass or ""
+    itk = _derive_item_type_keyword(subclass, product_type) or ""
+    is_swim = product_type == "SWIMWEAR" or subclass in (
+        "Rashguard", "Trunk", "Bikini Top", "Bikini Bottom", "Swim Bottom",
+        "One Piece Swim", "Tankini", "Short", "Swim Set 2 pcs", "Board Short")
+    g = (gender or "").lower()
+    gender_kw = "mens" if g == "male" else "womens" if g == "female" else "kids" if g == "unisex" else ""
+
+    candidates = []
+    if is_swim:
+        # Swimwear-specific keywords
+        if gender_kw:
+            candidates.append(f"{gender_kw} {itn.lower()}" if itn else f"{gender_kw} swimwear")
+        candidates.append(itn.lower() if itn else "swimwear")
+        candidates.append(itk.replace("-", " ") if itk else "")
+        candidates.append(subclass.lower() if subclass else "")
+        candidates.extend(["swim", "swimwear", "beach", "pool"])
+        if "RASH" in (subclass or "").upper() or "RASH" in style_name.upper():
+            candidates.extend(["rash guard", "rashguard", "sun shirt", "swim shirt"])
+        if "TRUNK" in (subclass or "").upper() or "TRUNK" in style_name.upper():
+            candidates.extend(["swim trunks", "board shorts", "bathing suit"])
+        if "BIKINI" in (subclass or "").upper():
+            candidates.extend(["bikini", "two piece", "swimsuit"])
+        if "ONE PIECE" in (subclass or "").upper():
+            candidates.extend(["one piece", "swimsuit", "bathing suit"])
+        if "TANKINI" in (subclass or "").upper():
+            candidates.extend(["tankini", "two piece", "swimsuit"])
+        if "BOARD" in style_name.upper():
+            candidates.extend(["boardshorts", "board shorts", "surf shorts"])
+        if upf:
+            candidates.extend([f"upf {upf}", "sun protection", "uv protection"])
+        candidates.extend(["quick dry", "water sports", "surf", "swimming"])
+    else:
+        # Dress / general apparel keywords
+        if gender_kw:
+            candidates.append(f"{gender_kw} {itn.lower()}" if itn else f"{gender_kw} dress")
+        candidates.append(itn.lower() if itn else "dress")
+        candidates.append(f"{sub_subclass.lower()}" if sub_subclass else "")
+        candidates.extend(["casual", "everyday", "comfortable", "stylish"])
+        if upf:
+            candidates.extend([f"upf {upf}", "sun protective clothing"])
+
     if fabric:
-        if "polyester" in fabric.lower():
-            candidates.append("polyester dress")
-        if "spandex" in fabric.lower() or "elastane" in fabric.lower():
-            candidates.append("stretchy dress")
-        if "nylon" in fabric.lower():
-            candidates.append("nylon dress")
-    
+        if "polyester" in fabric.lower(): candidates.append("polyester")
+        if "spandex" in fabric.lower(): candidates.append("stretch")
+        if "nylon" in fabric.lower(): candidates.append("nylon")
+    if color:
+        candidates.append(normalize_color(color).lower())
+
     # Filter: no brand name, no empty, no duplicates
     seen = set()
     result = []
     for kw in candidates:
         kw = kw.strip().lower()
-        if not kw or brand_lower in kw or kw in seen:
-            continue
-        # Remove empty/whitespace-only from cleaning
-        if re.match(r'^\s*dress$', kw):
+        if not kw or brand_lower in kw or kw in seen or len(kw) < 2:
             continue
         seen.add(kw)
         result.append(kw)
-    
+
     # Join and cap at 250 bytes
     joined = " ".join(result)
     while len(joined.encode('utf-8')) > 250 and result:
         result.pop()
         joined = " ".join(result)
-    
+
     return joined
 
 # ── Template parsing ───────────────────────────────────────────────────────────
@@ -1144,38 +1195,63 @@ def generate_content_llm(brand_cfg, brand, style, feedback_history):
     # Brand voice description
     bullet_1_focus = brand_cfg.get("bullet_1_focus", "Style and quality")
     never_words = brand_cfg.get("never_words", [])
-    gender = brand_cfg.get("gender", "Female")
+    # Derive gender per-style from division_name, not brand config
+    style_gender, style_dept = _derive_gender_department(style)
+    gender = style_gender or brand_cfg.get("gender", "")
     never_words_str = ", ".join(never_words) if never_words else "none"
+    product_type = _resolve_style_product_type(style) or ""
+    itn = _derive_item_type_name(subclass, product_type) or subclass or "garment"
+    division = style.get("division_name", "")
+
+    # Product brief from brand config (brand-level + per-subclass)
+    product_briefs = brand_cfg.get("product_briefs", {})
+    brief = product_briefs.get(f"{product_type}/{subclass}", "") or product_briefs.get(product_type, "") or product_briefs.get("_default", "")
 
     feedback_count = len([l for l in feedback_history.splitlines() if l.strip()]) if feedback_history else 0
     feedback_section = f"LEARNED PREFERENCES (from {feedback_count} previous edits):\n{feedback_history}" if feedback_history else "LEARNED PREFERENCES: None yet."
 
+    # Gender-aware audience description
+    if gender == "Male":
+        audience = "men and boys"
+        gender_prefix = "Men's"
+    elif gender == "Female":
+        audience = "women and girls"
+        gender_prefix = "Women's"
+    else:
+        audience = "all genders"
+        gender_prefix = ""
+
     prompt = f"""You are an Amazon listing content expert generating Vendor Central NIS content.
 
 BRAND: {clean_brand}
-BRAND VOICE: Professional women's apparel brand targeting {gender} shoppers. {bullet_1_focus} is the key differentiator.
+BRAND VOICE: {clean_brand} is a {bullet_1_focus}-focused brand targeting {audience}. {brief or ''}
 HERO FEATURE: {bullet_1_focus}
 NEVER USE: {never_words_str}
 
 PRODUCT:
+- Product Type: {itn} ({product_type})
 - Style: {style_name}
 - Style #: {style_num}
-- Category: {subclass} / {sub_subclass}
+- Sub-class: {subclass} / {sub_subclass}
+- Division: {division}
+- Gender: {gender or 'not specified'}
 - Fabric: {fabric or 'not specified'}
 - UPF: {upf or 'none'}
 - COO: {coo or 'not specified'}
 - Care: {care or 'not specified'}
 - Colors: {', '.join(colors[:8]) if colors else 'not specified'}
 - Sizes: {', '.join(sizes[:10]) if sizes else 'not specified'}
-- Sample UPCs: {', '.join(upcs) if upcs else 'not provided'}
+
+{f'PRODUCT BRIEF FROM OPERATOR: {brief}' if brief else ''}
 
 {feedback_section}
 
 RULES:
-- Title: max 120 characters. Format: Brand Women's [Style Descriptor] [Product Type], [Key Feature], [Color], [Size]. Brand name is "{clean_brand}".
+- Title: max 120 characters. Format: {clean_brand} {gender_prefix + ' ' if gender_prefix else ''}[Style Descriptor] [Product Type], [Key Feature], [Color], [Size].
+- This is a {itn}, NOT a dress. Do not use the word "dress" unless the product is actually a dress.
 - 5 bullet points, each max 500 chars. Format: LABEL — description. Each bullet must be unique. Bullet 1 focuses on {bullet_1_focus}. Bullet 2 must describe THIS specific style's unique design features.
 - Description: max 2000 chars. Plain text, no HTML. Buyer-focused, mentions brand + product name.
-- Backend keywords: max 250 bytes. Lowercase, space-separated. No brand name, no words from title.
+- Backend keywords: max 250 bytes. Lowercase, space-separated. No brand name, no words from title. Include product-type-specific search terms (e.g. for swimwear: swim, swimwear, beach, pool, rash guard, etc.).
 - No promotional language (best seller, limited time, on sale, guaranteed, free shipping).
 - No competitor brand names.
 
@@ -2168,9 +2244,10 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
             time.sleep(0.2)
         content_progress["current_step"] = f"Generating SEO-optimized title (max 120 chars)..."
 
-        # Try LLM generation first
+        # Try LLM generation first (unless mode is "rules")
+        gen_mode = session_data.get("generation_mode", "auto")
         llm_result = None
-        if _anthropic_client is not None:
+        if gen_mode != "rules" and _anthropic_client is not None:
             try:
                 llm_result = generate_content_llm(brand_cfg, brand, style, feedback_history)
             except Exception as e:
@@ -2194,9 +2271,15 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
             # Use actual subclass as product type descriptor (not hardcoded "Dress")
             pt_label = subclass or sub_subclass or _resolve_style_product_type(style).replace("_", " ").title() or "Dress"
             title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf)
-            bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf)
-            description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf)
-            backend_kw = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf)
+            resolved_pt = _resolve_style_product_type(style) or ""
+            style_gender, _ = _derive_gender_department(style)
+            eff_gender_gen = style_gender or brand_cfg.get("gender", "")
+            bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf,
+                                       subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt)
+            description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf,
+                                               subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt)
+            backend_kw = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf,
+                                                    subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt)
 
         content_progress["current_step"] = f"Crafting 5 unique bullet points..."
         time.sleep(0.2)
@@ -2320,6 +2403,10 @@ def generate_content():
             "action": "request_template",
             
         }), 400
+
+    # Content generation mode: "api" (LLM) or "rules" (rule-based only)
+    gen_mode = data.get("mode", "auto")  # auto = try API first, fall back to rules
+    session_data["generation_mode"] = gen_mode
 
     # Load brand config from file if available, fall back to in-memory
     brand_cfg = _load_brand_config_data(brand)
@@ -2737,6 +2824,93 @@ def feedback_digest():
     })
 
 
+@app.route("/api/feedback/changelog")
+def feedback_changelog():
+    """Return recent content edits as a flat table for the change log view."""
+    brand = request.args.get("brand", "") or session_data.get("brand", "")
+    limit = int(request.args.get("limit", "100"))
+    entries = _load_feedback(brand=brand or None, fb_type="content_edit", limit=limit)
+    # Also include field_override and manual types
+    entries += _load_feedback(brand=brand or None, fb_type="field_override", limit=limit)
+    entries += _load_feedback(brand=brand or None, fb_type="manual", limit=limit)
+    # Sort by timestamp desc
+    entries.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    entries = entries[:limit]
+
+    rows = []
+    for e in entries:
+        ctx = e.get("context", {})
+        data = e.get("data", {})
+        rows.append({
+            "timestamp": e.get("timestamp", ""),
+            "operator": e.get("operator", ""),
+            "brand": e.get("brand", ""),
+            "style_num": ctx.get("style_num", ""),
+            "field": ctx.get("field_name", "") or data.get("field", ""),
+            "type": e.get("type", ""),
+            "original": str(data.get("original", ""))[:100],
+            "updated": str(data.get("updated", ""))[:100],
+            "reason": data.get("reason", "") or data.get("message", ""),
+        })
+    return jsonify({"brand": brand, "total": len(rows), "rows": rows})
+
+
+@app.route("/api/feedback/learning")
+def feedback_learning():
+    """Aggregate feedback patterns into actionable learning insights."""
+    brand = request.args.get("brand", "") or session_data.get("brand", "")
+    entries = _load_feedback(brand=brand or None, limit=10000)
+
+    # Patterns: which fields get edited most, which reasons, which operators
+    field_edits = defaultdict(int)
+    reason_counts = defaultdict(int)
+    operator_counts = defaultdict(int)
+    original_to_updated = defaultdict(list)  # field -> list of (original, updated)
+
+    for e in entries:
+        if e.get("type") not in ("content_edit", "field_override"):
+            continue
+        ctx = e.get("context", {})
+        data = e.get("data", {})
+        fname = ctx.get("field_name", "") or data.get("field", "")
+        if fname:
+            field_edits[fname] += 1
+        reason = data.get("reason", "")
+        if reason:
+            reason_counts[reason] += 1
+        op = e.get("operator", "")
+        if op:
+            operator_counts[op] += 1
+        orig = str(data.get("original", ""))[:80]
+        updated = str(data.get("updated", ""))[:80]
+        if fname and orig and updated:
+            original_to_updated[fname].append({"from": orig, "to": updated})
+
+    insights = []
+    # Top edited fields
+    for field, count in sorted(field_edits.items(), key=lambda x: x[1], reverse=True)[:10]:
+        examples = original_to_updated.get(field, [])[:3]
+        insights.append({
+            "type": "frequent_edit",
+            "field": field,
+            "count": count,
+            "message": f"'{field}' was edited {count} times. Consider updating the default or derivation.",
+            "examples": examples,
+        })
+
+    # Top reasons
+    top_reasons = sorted(reason_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    return jsonify({
+        "brand": brand,
+        "total_edits": sum(field_edits.values()),
+        "top_edited_fields": [{"field": f, "count": c} for f, c in sorted(field_edits.items(), key=lambda x: x[1], reverse=True)[:10]],
+        "top_reasons": [{"reason": r, "count": c} for r, c in top_reasons],
+        "operators": [{"name": n, "edits": c} for n, c in sorted(operator_counts.items(), key=lambda x: x[1], reverse=True)],
+        "insights": insights,
+    })
+
+
 def _run_nis_generation(brand, styles, content_map, vendor_code, template_path, brand_cfg, template_map):
     """Background worker for NIS file generation."""
     results = []
@@ -2895,11 +3069,12 @@ def generate_progress():
     })
 
 # ── Category / field derivation helpers ───────────────────────────────────────
-def _derive_amazon_product_category(sub_class):
-    """Map sub_class to Amazon product_category dropdown value (Col 13).
-    These are the high-level category names from the template dropdown.
+def _derive_amazon_product_category(sub_class, gender="", product_type=""):
+    """Map sub_class + gender to Amazon product_category dropdown value.
+    Gender-aware: Men's Swimwear vs Women's Swimwear vs Swim (youth).
     """
-    _map = {
+    # ── Dresses ──
+    DRESS_MAP = {
         "Day Dress": "Women's Dresses",
         "Cocktail Dress": "Women's Dresses",
         "Active Dress": "Women's Active",
@@ -2913,25 +3088,145 @@ def _derive_amazon_product_category(sub_class):
         "Jacket": "Women's Everyday Sportswear",
         "Coat": "Women's Everyday Sportswear",
     }
-    return _map.get(sub_class, "")  # leave blank if unknown — operator sets on dashboard
+    # ── Swimwear — gender-dependent ──
+    SWIM_SUBCLASSES = {"Rashguard", "Trunk", "Bikini Top", "Bikini Bottom", "Swim Bottom",
+                       "One Piece Swim", "Tankini", "Short", "Swim Set 2 pcs", "Swim Set",
+                       "Board Short", "Boardshort", "Swim Shirt", "Cover Up", "Swimdress"}
 
-def _derive_item_type_keyword(sub_class):
-    """Map sub_class to Amazon item_type_keyword (Col 15)."""
+    if sub_class in DRESS_MAP:
+        return DRESS_MAP[sub_class]
+
+    if sub_class in SWIM_SUBCLASSES or product_type == "SWIMWEAR":
+        g = (gender or "").lower()
+        if g == "male":
+            return "Men's Swimwear"
+        elif g == "female":
+            return "Women's Swimwear"
+        else:
+            return "Swim"  # youth/unisex
+
+    return ""  # leave blank if unknown — operator sets on dashboard
+
+def _derive_item_type_keyword(sub_class, product_type=""):
+    """Map sub_class to Amazon item_type_keyword (free-text SEO slug).
+    Covers all 16 product types."""
     _map = {
-        "Day Dress": "casual-and-day-dresses",
-        "Cocktail Dress": "cocktail-and-party-dresses",
-        "Active Dress": "active-dresses",
+        # Dresses
+        "Day Dress": "casual-and-day-dresses", "Cocktail Dress": "cocktail-and-party-dresses",
+        "Active Dress": "active-dresses", "Maxi Dress": "maxi-dresses",
+        "Mini Dress": "mini-dresses", "Wrap Dress": "wrap-dresses",
+        "Shirt Dress": "shirt-dresses", "Dress": "dresses",
+        # Swimwear
+        "Rashguard": "rash-guards", "Rash Guard": "rash-guards",
+        "Trunk": "swim-trunks", "Swim Trunk": "swim-trunks",
+        "Board Short": "board-shorts", "Boardshort": "board-shorts", "Boardshorts": "board-shorts",
+        "Bikini Top": "bikini-tops", "Bikini Bottom": "bikini-bottoms", "Swim Bottom": "bikini-bottoms",
+        "One Piece Swim": "one-piece-swimsuits", "One Piece": "one-piece-swimsuits",
+        "Tankini": "tankini-swimsuits", "Short": "board-shorts",
+        "Swim Set 2 pcs": "bikini-sets", "Swim Set": "bikini-sets",
+        "Swim Shirt": "rash-guards", "Cover Up": "fashion-swimwear-cover-ups",
         "Swimdress": "fashion-swimwear-cover-ups",
+        # Blazers
+        "Blazer": "blazers", "Sport Coat": "sport-coats",
+        # Bras
+        "Bra": "bras", "Bralette": "bralettes", "Sports Bra": "sports-bras",
+        # Coats/Jackets
+        "Jacket": "jackets", "Coat": "coats", "Vest": "vests",
+        "Puffer": "puffer-jackets", "Windbreaker": "windbreakers",
+        "Anorak": "anoraks", "Parka": "parkas",
+        # Hats
+        "Hat": "hats", "Cap": "baseball-caps", "Beanie": "beanies",
+        "Visor": "visors", "Sun Hat": "sun-hats",
+        "Trucker Hat": "trucker-hats", "Bucket Hat": "bucket-hats",
+        # One-piece outfits
+        "Romper": "rompers", "Jumpsuit": "jumpsuits",
+        "Bodysuit": "bodysuits", "One Piece Outfit": "rompers",
+        # Overalls
+        "Overalls": "overalls", "Dungarees": "overalls", "Overall": "overalls",
+        # Pants
+        "Pants": "casual-pants", "Leggings": "leggings",
+        "Joggers": "jogger-pants", "Trousers": "dress-pants",
+        "Chino": "chinos", "Cargo Pant": "cargo-pants",
+        # Sandals
+        "Sandal": "sandals", "Flip Flop": "flip-flops",
+        "Slide": "slide-sandals", "Thong Sandal": "thong-sandals", "Slipper": "slippers",
+        # Shirts
+        "Pullover": "pullovers", "Tank": "tank-tops", "Tee": "t-shirts",
+        "Blouse": "blouses", "Polo": "polo-shirts", "Henley": "henley-shirts",
+        "Crop Top": "crop-tops", "Camisole": "camisoles", "Tunic": "tunics",
+        # Shorts
+        "Shorts": "casual-shorts", "Chino Short": "chino-shorts",
+        "Cargo Short": "cargo-shorts", "Skort": "skorts",
+        # Skirts
+        "Skirt": "skirts", "Mini Skirt": "mini-skirts",
+        "Maxi Skirt": "maxi-skirts", "Wrap Skirt": "wrap-skirts",
+        # Snowsuits
+        "Snowsuit": "snowsuits", "Snow Suit": "snowsuits", "Ski Suit": "ski-suits",
+        # Snow Pants
+        "Snow Pant": "snow-pants", "Snow Pants": "snow-pants",
+        "Ski Pants": "ski-pants", "Ski Pant": "ski-pants",
+        # Sweatshirts
+        "Sweatshirt": "sweatshirts", "Hoodie": "hoodies",
+        "Fleece": "fleece-jackets", "Quarter Zip": "quarter-zip-pullovers",
     }
-    return _map.get(sub_class, "")  # leave blank if unknown
+    return _map.get(sub_class, "")
 
-def _derive_item_type_name(sub_class):
-    """Human-readable item type name (Col 62)."""
+def _derive_item_type_name(sub_class, product_type=""):
+    """Human-readable item type name — must match template dropdown exactly.
+    Covers all 16 product types."""
     _map = {
-        "Day Dress": "Casual Dress",
-        "Cocktail Dress": "Cocktail Dress",
-        "Active Dress": "Active Dress",
+        # Dresses
+        "Day Dress": "Casual Dress", "Cocktail Dress": "Cocktail Dress",
+        "Active Dress": "Tennis Dress", "Maxi Dress": "Casual Dress",
+        "Mini Dress": "Casual Dress", "Wrap Dress": "Casual Dress",
+        "Shirt Dress": "Business Casual Dress", "Dress": "Dress",
+        # Swimwear
+        "Rashguard": "Rash Guard Shirt", "Rash Guard": "Rash Guard Shirt",
+        "Trunk": "Swim Trunks", "Swim Trunk": "Swim Trunks",
+        "Board Short": "Board Shorts", "Boardshort": "Board Shorts", "Boardshorts": "Board Shorts",
+        "Bikini Top": "Bikini Top", "Bikini Bottom": "Bikini Bottoms", "Swim Bottom": "Bikini Bottoms",
+        "One Piece Swim": "One Piece Swimsuit", "One Piece": "One Piece Swimsuit",
+        "Tankini": "Tankini Swimsuit", "Short": "Board Shorts",
+        "Swim Set 2 pcs": "Bikini Set", "Swim Set": "Bikini Set",
+        "Swim Shirt": "Rash Guard Shirt", "Cover Up": "Swimwear Cover Up",
         "Swimdress": "Swimwear Cover Up",
+        # Blazers
+        "Blazer": "Blazer", "Sport Coat": "Sport Jacket",
+        # Bras
+        "Bra": "Bra", "Bralette": "Bra", "Sports Bra": "Sports Bra",
+        # Coats/Jackets (template has no ITN dropdown — leave blank, operator fills)
+        # Hats
+        "Hat": "Hat", "Cap": "Baseball Cap", "Beanie": "Beanie Hat",
+        "Visor": "Cap", "Sun Hat": "Hat",
+        "Trucker Hat": "Baseball Cap", "Bucket Hat": "Bucket Hat",
+        # One-piece outfits (template has no ITN dropdown)
+        "Romper": "", "Jumpsuit": "", "Bodysuit": "",
+        # Overalls (template has no ITN dropdown)
+        "Overalls": "", "Dungarees": "",
+        # Pants
+        "Pants": "Casual Pants", "Leggings": "Leggings",
+        "Joggers": "Casual Pants", "Trousers": "Dress Pants",
+        "Chino": "Khakis", "Cargo Pant": "Casual Pants",
+        # Sandals
+        "Sandal": "Sandal", "Flip Flop": "Flip-Flop",
+        "Slide": "Slide Sandal", "Thong Sandal": "Flat Sandal", "Slipper": "Sandal",
+        # Shirts (template has no ITN dropdown)
+        "Pullover": "", "Tank": "", "Tee": "", "Blouse": "",
+        "Polo": "", "Henley": "", "Crop Top": "", "Camisole": "", "Tunic": "",
+        # Shorts
+        "Shorts": "Casual Shorts", "Chino Short": "Khaki Shorts",
+        "Cargo Short": "Cargo Shorts", "Skort": "Skorts",
+        # Skirts
+        "Skirt": "Skirt", "Mini Skirt": "Skirt",
+        "Maxi Skirt": "Skirt", "Wrap Skirt": "Skirt",
+        # Snowsuits (template has no ITN dropdown)
+        "Snowsuit": "", "Snow Suit": "", "Ski Suit": "",
+        # Snow Pants
+        "Snow Pant": "Casual Pants", "Snow Pants": "Casual Pants",
+        "Ski Pants": "Casual Pants", "Ski Pant": "Casual Pants",
+        # Sweatshirts
+        "Sweatshirt": "Sweatshirt", "Hoodie": "Hooded Sweatshirt",
+        "Fleece": "Pullover Sweater", "Quarter Zip": "Pullover Sweater",
     }
     return _map.get(sub_class, "")  # leave blank if unknown
 
@@ -3013,22 +3308,26 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     neck_type    = content.get("neck_type", "") or style.get("neck_type", "") or derive_neck_type(style_name)
     sleeve_type  = content.get("sleeve_type", "") or style.get("sleeve_type", "") or derive_sleeve_type(style_name)
     silhouette   = content.get("silhouette", "") or derive_silhouette(sub_subclass)
-    # Always derive from dropdown-validated function, not stale content values
-    category     = _derive_amazon_product_category(sub_class)
+    # Derive gender/department per-style from division_name
+    style_gender, style_dept = _derive_gender_department(style)
+    eff_gender = style_gender or brand_cfg.get("gender", "")
+    eff_dept   = style_dept or brand_cfg.get("department", "")
+    # Resolve actual product type for this style
+    resolved_pt    = _resolve_style_product_type(style) or "DRESS"
+    # Always derive from dropdown-validated function, gender-aware
+    category     = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=resolved_pt)
     subcategory  = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
     fabric       = content.get("fabric", "") or style.get("fabric", "") or brand_cfg.get("default_fabric", "")
     care         = content.get("care", "") or style.get("care", "") or brand_cfg.get("default_care", "")
     upf          = content.get("upf", "") or style.get("upf", "") or brand_cfg.get("default_upf", "")
     coo          = normalize_coo(content.get("coo", "") or style.get("coo", "") or brand_cfg.get("default_coo", "")) or ""
     clean_brand  = clean_brand_name(brand)
-    item_type_name = _derive_item_type_name(sub_class)
+    item_type_name = _derive_item_type_name(sub_class, product_type=resolved_pt)
     item_length    = _derive_item_length(sub_subclass, style_name)
     fabric_type    = _derive_fabric_type(fabric)
-    itk_value      = _derive_item_type_keyword(sub_class)
+    itk_value      = _derive_item_type_keyword(sub_class, product_type=resolved_pt)
     today_str      = datetime.now().strftime("%Y%m%d")
     parent_sku     = style_num
-    # Resolve actual product type for this style (not hardcoded DRESS)
-    resolved_pt    = _resolve_style_product_type(style) or "DRESS"
 
     # Sample title (parent)
     title = content.get("title", style_name)
@@ -3059,15 +3358,15 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="rtip_vendor_code#1.value", req_level="required"),
         f(2, "Vendor SKU (Parent)", parent_sku, "filled", False,
           field_id="vendor_sku#1.value", req_level="required"),
-        f(3, "Product Type", resolved_pt, "locked", True,
+        f(3, "Product Type", resolved_pt, "default", True,
           field_id="product_type#1.value", req_level="required"),
-        f(4, "Parentage Level", "Parent / Child", "locked", True,
+        f(4, "Parentage Level", "Parent / Child", "default", True,
           field_id="parentage_level#1.value", req_level="required"),
-        f(5, "Child Relationship Type", "Variation", "locked", True,
+        f(5, "Child Relationship Type", "Variation", "default", True,
           field_id="child_parent_sku_relationship#1.child_relationship_type", req_level="required"),
-        f(6, "Parent SKU", parent_sku, "locked", True,
+        f(6, "Parent SKU", parent_sku, "default", True,
           field_id="child_parent_sku_relationship#1.parent_sku", req_level="required"),
-        f(7, "Variation Theme", "COLOR/SIZE", "locked", True,
+        f(7, "Variation Theme", "COLOR/SIZE", "default", True,
           field_id="variation_theme#1.name", req_level="required"),
 
         # ── Product Info ──
@@ -3121,15 +3420,15 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
         # ── Attributes ──
         f(46, "Style Name", style_name.title(), "filled", False,
           field_id="style#1.value", req_level="recommended"),
-        f(47, "Department", brand_cfg.get("department", "Womens"), "filled", False,
+        f(47, "Department", eff_dept, "filled" if eff_dept else "empty", False,
           field_id="department#1.value", req_level="required"),
-        f(48, "Target Gender", brand_cfg.get("gender", "Female"), "filled", False,
+        f(48, "Target Gender", eff_gender, "filled" if eff_gender else "empty", False,
           field_id="target_gender#1.value", req_level="required"),
-        f(49, "Age Range", "Adult", "locked", True,
+        f(49, "Age Range", "Adult", "default", True,
           field_id="age_range_description#1.value", req_level="required"),
-        f(50, "Size System", "US", "locked", True,
+        f(50, "Size System", "US", "default", True,
           field_id=_size_field(resolved_pt, "size_system"), req_level="required"),
-        f(51, "Size Class", "Alpha", "locked", True,
+        f(51, "Size Class", "Alpha", "default", True,
           field_id=_size_field(resolved_pt, "size_class"), req_level="required"),
         f(52, "Size (first variant)", size_normalized or size, "filled" if size else "default", False,
           field_id=_size_field(resolved_pt, "size"), req_level="required"),
@@ -3138,7 +3437,7 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="material#1.value", req_level="required"),
         f(59, "Fabric Type", fabric_type, "filled" if fabric else "default", False,
           field_id="fabric_type#1.value", req_level="recommended"),
-        f(61, "Number of Items", "1", "locked", True,
+        f(61, "Number of Items", "1", "default", True,
           field_id="number_of_items#1.value", req_level="required"),
         f(62, "Item Type Name", item_type_name, "filled", False,
           field_id="item_type_name#1.value", req_level="required"),
@@ -3177,18 +3476,18 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
         f(77, "Item Booking Date", datetime.now().strftime("%Y-%m-%dT00:00:00Z"), "default", True,
           "Using today's date. Change if different.",
           field_id="item_booking_date#1.value", req_level="required"),
-        f(126, "Product Lifecycle", "Perennial", "locked", True,
+        f(126, "Product Lifecycle", "Perennial", "default", True,
           field_id="lifecycle_supply_type#1.value", req_level="required"),
         f(153, "Earliest Shipping Date", today_str, "default", True,
           "Using today's date. Update if different.",
           field_id="rtip_earliest_shipping_date#1.value", req_level="required"),
 
         # ── Counts & Units ──
-        f(91, "Unit Count", "1", "locked", True,
+        f(91, "Unit Count", "1", "default", True,
           field_id="unit_count#1.value", req_level="required"),
-        f(92, "Unit Count Type", "Count", "locked", True,
+        f(92, "Unit Count Type", "Count", "default", True,
           field_id="unit_count#1.type.value", req_level="required"),
-        f(149, "Skip Offer", "No", "locked", True,
+        f(149, "Skip Offer", "No", "default", True,
           field_id="skip_offer#1.value", req_level="required"),
 
         # ── Pricing ──
@@ -3200,40 +3499,40 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="cost_price#1.value", req_level="required"),
 
         # ── Shipping & Compliance ──
-        f(152, "Import Designation", "Imported", "locked", True,
+        f(152, "Import Designation", "Imported", "default", True,
           field_id="import_designation#1.value", req_level="required"),
         f(160, "Item Package Length", brand_cfg.get("default_pkg_length", ""), "filled" if brand_cfg.get("default_pkg_length") else "empty", True,
           "" if brand_cfg.get("default_pkg_length") else "Set package length or use Apply All.",
           field_id="item_package_dimensions#1.length.value", req_level="required"),
-        f(161, "Package Length Unit", "Inches", "locked", True,
+        f(161, "Package Length Unit", "Inches", "default", True,
           field_id="item_package_dimensions#1.length.unit", req_level="required"),
         f(162, "Item Package Width", brand_cfg.get("default_pkg_width", ""), "filled" if brand_cfg.get("default_pkg_width") else "empty", True,
           "" if brand_cfg.get("default_pkg_width") else "Set package width or use Apply All.",
           field_id="item_package_dimensions#1.width.value", req_level="required"),
-        f(163, "Package Width Unit", "Inches", "locked", True,
+        f(163, "Package Width Unit", "Inches", "default", True,
           field_id="item_package_dimensions#1.width.unit", req_level="required"),
         f(164, "Item Package Height", brand_cfg.get("default_pkg_height", ""), "filled" if brand_cfg.get("default_pkg_height") else "empty", True,
           "" if brand_cfg.get("default_pkg_height") else "Set package height or use Apply All.",
           field_id="item_package_dimensions#1.height.value", req_level="required"),
-        f(165, "Package Height Unit", "Inches", "locked", True,
+        f(165, "Package Height Unit", "Inches", "default", True,
           field_id="item_package_dimensions#1.height.unit", req_level="required"),
         f(166, "Item Package Weight", brand_cfg.get("default_pkg_weight", ""), "filled" if brand_cfg.get("default_pkg_weight") else "empty", True,
           "" if brand_cfg.get("default_pkg_weight") else "Set package weight or use Apply All.",
           field_id="item_package_weight#1.value", req_level="required"),
-        f(167, "Package Weight Unit", "Pounds", "locked", True,
+        f(167, "Package Weight Unit", "Pounds", "default", True,
           field_id="item_package_weight#1.unit", req_level="required"),
-        f(168, "Order Aggregate Type", "Each", "locked", True,
+        f(168, "Order Aggregate Type", "Each", "default", True,
           field_id="rtip_order_aggregate_type#1.value", req_level="required"),
-        f(169, "Items per Inner Pack", "1", "locked", True,
+        f(169, "Items per Inner Pack", "1", "default", True,
           field_id="rtip_items_per_inner_pack#1.value", req_level="required"),
         f(170, "Country of Origin", coo, "filled" if coo else "default", True,
           "" if coo else "Update with actual country of origin.",
           field_id="country_of_origin#1.value", req_level="required"),
-        f(171, "Batteries Required", "No", "locked", True,
+        f(171, "Batteries Required", "No", "default", True,
           field_id="batteries_required#1.value", req_level="required"),
-        f(172, "Batteries Included", "No", "locked", True,
+        f(172, "Batteries Included", "No", "default", True,
           field_id="batteries_included#1.value", req_level="required"),
-        f(230, "Contains Battery or Cell", "No", "locked", True,
+        f(230, "Contains Battery or Cell", "No", "default", True,
           field_id="contains_battery_or_cell#1.value", req_level="required"),
     ]
 
@@ -3627,7 +3926,10 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     neck_type   = content.get("neck_type", "")  or style.get("neck_type", "") or derive_neck_type(style_name)
     sleeve_type = content.get("sleeve_type", "") or style.get("sleeve_type", "") or derive_sleeve_type(style_name)
     silhouette  = content.get("silhouette", "")  or derive_silhouette(sub_subclass)
-    category    = _derive_amazon_product_category(sub_class)
+    style_gender, style_dept = _derive_gender_department(style)
+    eff_gender = style_gender or brand_cfg.get("gender", "")
+    eff_dept   = style_dept or brand_cfg.get("department", "")
+    category    = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=detected_product_type)
     subcategory = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
     fabric      = content.get("fabric", "")      or brand_cfg.get("default_fabric", "")
     care        = content.get("care", "")        or brand_cfg.get("default_care", "")
@@ -3635,10 +3937,10 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     coo         = normalize_coo(content.get("coo", "")         or brand_cfg.get("default_coo", "")) or "Imported"
 
     clean_brand    = clean_brand_name(brand)
-    item_type_name = _derive_item_type_name(sub_class)
+    item_type_name = _derive_item_type_name(sub_class, product_type=detected_product_type)
     item_length    = _derive_item_length(sub_subclass, style_name)
     fabric_type    = _derive_fabric_type(fabric)
-    itk_value      = _derive_item_type_keyword(sub_class)
+    itk_value      = _derive_item_type_keyword(sub_class, product_type=detected_product_type)
     sleeve_len     = _derive_sleeve_length(sleeve_type)
     today_str      = datetime.now().strftime("%Y%m%d")
     booking_date  = datetime.now().strftime("%Y-%m-%dT00:00:00Z")
@@ -3703,8 +4005,8 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "style#1.value",                    style_name.title())
         # fit_type — left blank unless from data/override
         write_cell(row_idx, "fit_type#1.value",                 content.get("fit_type", "") or style.get("fit_type", "") or brand_cfg.get("default_fit_type", ""))
-        write_cell(row_idx, "department#1.value",               brand_cfg.get("department", "Womens"))
-        write_cell(row_idx, "target_gender#1.value",            brand_cfg.get("gender", "Female"))
+        write_cell(row_idx, "department#1.value",               eff_dept)
+        write_cell(row_idx, "target_gender#1.value",            eff_gender)
         write_cell(row_idx, "age_range_description#1.value",    "Adult")
         write_cell(row_idx, _size_field(detected_product_type, "body_type", col_map),         "")
         write_cell(row_idx, _size_field(detected_product_type, "height_type", col_map),       "")
@@ -3907,7 +4209,12 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         if c is None or value is None:
             return
         # Auto-correct against template dropdown (if available)
-        if isinstance(value, str) and value and field_id:
+        # Skip fuzzy-match for free-text fields that accept compositions (e.g. "95% Polyester, 5% Spandex")
+        SKIP_FUZZY = {"material#1.value", "generic_keyword#1.value", "item_type_keyword#1.value",
+                      "rtip_product_description#1.value", "item_name#1.value",
+                      "bullet_point#1.value", "bullet_point#2.value", "bullet_point#3.value",
+                      "bullet_point#4.value", "bullet_point#5.value"}
+        if isinstance(value, str) and value and field_id and field_id not in SKIP_FUZZY:
             dropdowns = load_dropdown_cache(detected_product_type)
             if field_id in dropdowns:
                 valid = dropdowns[field_id]
@@ -3948,6 +4255,10 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
 
         psku = f"{brand_cfg.get('vendor_code_prefix', '')}-{sn}".strip("-") or sn
 
+        # Derive per-style gender/department from division_name
+        style_gender, style_dept = _derive_gender_department(style)
+        eff_gender = style_gender or brand_cfg.get("gender", "")
+        eff_dept   = style_dept or brand_cfg.get("department", "")
         # Derive per-style fields
         fabric     = content.get("fabric", "")     or brand_cfg.get("default_fabric", "")
         care       = content.get("care", "")       or brand_cfg.get("default_care", "")
@@ -3956,15 +4267,15 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         neck       = content.get("neck_type", "") or style.get("neck_type", "") or derive_neck_type(style_name)
         sleeve     = content.get("sleeve_type", "") or style.get("sleeve_type", "") or derive_sleeve_type(style_name)
         sil        = content.get("silhouette", "") or derive_silhouette(sub_subclass)
-        itk        = _derive_item_type_keyword(sub_class)
-        itn        = _derive_item_type_name(sub_class)
+        itk        = _derive_item_type_keyword(sub_class, product_type=detected_product_type)
+        itn        = _derive_item_type_name(sub_class, product_type=detected_product_type)
         ilen       = _derive_item_length(sub_subclass, style_name)
         ftype      = _derive_fabric_type(fabric)
         slvlen     = _derive_sleeve_length(sleeve)
         list_price = style.get("list_price", "") or content.get("list_price", "")
         bullets    = content.get("bullets", [])
         import_desig = "Imported" if coo.upper() not in ("US", "USA", "UNITED STATES") else "Domestic"
-        cat_val    = _derive_amazon_product_category(sub_class)
+        cat_val    = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=detected_product_type)
         subcat_val = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, "")
 
         # ── Shared-fields helper for this style ─────────────────────────────
@@ -4000,8 +4311,8 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(r, "style#1.value",                    _style_name.title(), style_num=_sn)
             # fit_type — from data/override only
             wc(r, "fit_type#1.value",                 _content.get("fit_type", "") or _style.get("fit_type", "") if hasattr(_style, "get") else _content.get("fit_type", ""), style_num=_sn)
-            wc(r, "department#1.value",               brand_cfg.get("department", "Womens"), style_num=_sn)
-            wc(r, "target_gender#1.value",            brand_cfg.get("gender", "Female"), style_num=_sn)
+            wc(r, "department#1.value",               eff_dept, style_num=_sn)
+            wc(r, "target_gender#1.value",            eff_gender, style_num=_sn)
             wc(r, "age_range_description#1.value",    "Adult", style_num=_sn)
             wc(r, _size_field(detected_product_type, "body_type", col_map),         "", style_num=_sn)
             wc(r, _size_field(detected_product_type, "height_type", col_map),       "", style_num=_sn)
@@ -4137,10 +4448,13 @@ def validate_before_build():
         fabric = content.get("fabric", "") or style.get("fabric", "") or brand_cfg.get("default_fabric", "")
 
         field_values = {
-            "product_category#1.value": _derive_amazon_product_category(style.get("subclass", "") or style.get("sub_class", "")),
+            "product_category#1.value": _derive_amazon_product_category(
+                style.get("subclass", "") or style.get("sub_class", ""),
+                gender=_derive_gender_department(style)[0] or brand_cfg.get("gender", ""),
+                product_type=product_type),
             "lifecycle_supply_type#1.value": "Perennial",
-            "department#1.value": brand_cfg.get("department", "womens"),
-            "target_gender#1.value": brand_cfg.get("gender", "Female"),
+            "department#1.value": _derive_gender_department(style)[1] or brand_cfg.get("department", ""),
+            "target_gender#1.value": _derive_gender_department(style)[0] or brand_cfg.get("gender", ""),
             "country_of_origin#1.value": coo,
             "care_instructions#1.value": care,
             "material#1.value": fabric,
@@ -4318,9 +4632,11 @@ def _resolve_style_product_type(style):
 
 @app.route("/api/download-all")
 def download_all():
-    """Generate one .xlsm per PRODUCT TYPE and ZIP them together.
-    Groups styles by product type, uses the correct template for each.
+    """Generate .xlsm files and ZIP them together.
+    ?mode=per-style → one .xlsm per style
+    ?mode=per-type (default) → one .xlsm per product type
     """
+    dl_mode = request.args.get("mode", "per-type")
     brand = session_data.get("brand", "Brand")
     styles = session_data.get("styles", [])
     content_map = session_data.get("generated_content", {})
@@ -4333,40 +4649,59 @@ def download_all():
     brand_cfg = _load_brand_config_data(brand)
     vendor_code = session_data.get("vendor_code") or brand_cfg.get("vendor_code_full", "")
 
-    # Group styles by product type
-    by_pt = defaultdict(list)
-    for s in styles:
-        sn = s["style_num"]
-        if sn not in content_map:
-            continue
-        pt = _resolve_style_product_type(s)
-        by_pt[pt].append(s)
+    generated_files = []  # (filename, filepath)
 
-    # Generate one .xlsm per product type
-    pt_files = []
-    for pt_id, pt_styles in by_pt.items():
-        template_path = _get_template_for_product_type(pt_id)
-        safe_pt = re.sub(r'[^\w\-]', '_', pt_id)
-        fname = f"NIS_{safe_brand}_{safe_pt}_{date_str}.xlsm"
-        fpath = UPLOAD_OUTPUT / fname
-        try:
-            _generate_category_file(pt_styles, content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
-            pt_files.append((fname, str(fpath), pt_id, len(pt_styles)))
-        except Exception as e:
-            traceback.print_exc()
+    if dl_mode == "per-style":
+        # ── One .xlsm per STYLE ────────────────────────────────────────────
+        for s in styles:
+            sn = s["style_num"]
+            if sn not in content_map:
+                continue
+            pt = _resolve_style_product_type(s)
+            template_path = _get_template_for_product_type(pt)
+            safe_sn = re.sub(r'[^\w\-]', '_', str(sn))
+            safe_name = re.sub(r'[^\w\-]', '_', s.get("style_name", sn)[:30])
+            fname = f"NIS_{safe_brand}_{safe_sn}_{safe_name}_{date_str}.xlsm"
+            fpath = UPLOAD_OUTPUT / fname
+            try:
+                _generate_category_file([s], content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
+                generated_files.append((fname, str(fpath)))
+            except Exception as e:
+                print(f"[Download] Error generating {sn}: {e}")
+                traceback.print_exc()
+    else:
+        # ── One .xlsm per PRODUCT TYPE (original behavior) ─────────────
+        by_pt = defaultdict(list)
+        for s in styles:
+            sn = s["style_num"]
+            if sn not in content_map:
+                continue
+            pt = _resolve_style_product_type(s)
+            by_pt[pt].append(s)
 
-    if not pt_files:
+        for pt_id, pt_styles in by_pt.items():
+            template_path = _get_template_for_product_type(pt_id)
+            safe_pt = re.sub(r'[^\w\-]', '_', pt_id)
+            fname = f"NIS_{safe_brand}_{safe_pt}_{date_str}.xlsm"
+            fpath = UPLOAD_OUTPUT / fname
+            try:
+                _generate_category_file(pt_styles, content_map, template_path, brand, brand_cfg, vendor_code, str(fpath))
+                generated_files.append((fname, str(fpath)))
+            except Exception as e:
+                traceback.print_exc()
+
+    if not generated_files:
         return jsonify({"error": "No files generated"}), 500
 
-    if len(pt_files) == 1:
-        fname, fpath, _, _ = pt_files[0]
+    if len(generated_files) == 1:
+        fname, fpath = generated_files[0]
         return send_file(fpath, as_attachment=True, download_name=fname,
                          mimetype="application/vnd.ms-excel.sheet.macroEnabled.12")
 
     zip_name = f"NIS_{safe_brand}_{date_str}.zip"
     zip_path = UPLOAD_OUTPUT / zip_name
     with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
-        for fname, fpath, _, _ in pt_files:
+        for fname, fpath in generated_files:
             zf.write(fpath, fname)
 
     return send_file(str(zip_path), as_attachment=True, download_name=zip_name, mimetype="application/zip")
@@ -4556,6 +4891,32 @@ def save_brand_config():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/save-product-brief", methods=["POST"])
+def save_product_brief():
+    """Save a product brief for a brand + product type/subclass.
+    Stored in brand config under 'product_briefs' key.
+    """
+    data = request.get_json(force=True)
+    brand = data.get("brand") or session_data.get("brand", "")
+    key = data.get("key", "_default")  # e.g. "SWIMWEAR/Rashguard" or "SWIMWEAR" or "_default"
+    brief = data.get("brief", "")
+    if not brand:
+        return jsonify({"error": "No brand"}), 400
+
+    cfg = _load_brand_config_data(brand)
+    if "product_briefs" not in cfg:
+        cfg["product_briefs"] = {}
+    cfg["product_briefs"][key] = brief
+
+    brand_file = BRAND_CONFIGS_DIR / f"{re.sub(r'[^w]', '_', brand)}.json"
+    try:
+        with open(str(brand_file), "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2)
+        return jsonify({"ok": True, "brand": brand, "key": key})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/load-brand-config", methods=["GET"])
 def load_brand_config_endpoint():
     brand = request.args.get("brand", "")
@@ -4569,6 +4930,161 @@ def load_brand_config_endpoint():
         "config": cfg,
         "has_saved_config": brand_file.exists(),
     })
+
+
+@app.route("/api/regenerate-style", methods=["POST"])
+def regenerate_style():
+    """Regenerate all content for a single style using a custom brief.
+    Used by the per-style 'Train this style' feature.
+    """
+    data = request.get_json(force=True)
+    style_num = data.get("style_num", "")
+    brief = data.get("brief", "")
+    brand = data.get("brand") or session_data.get("brand", "")
+    styles = session_data.get("styles", [])
+    style = next((s for s in styles if s["style_num"] == style_num), None)
+    if not style:
+        return jsonify({"error": f"Style {style_num} not found"}), 404
+
+    brand_cfg = _load_brand_config_data(brand)
+    # Save the style brief
+    if brief:
+        if "style_briefs" not in session_data:
+            session_data["style_briefs"] = {}
+        session_data["style_briefs"][style_num] = brief
+        # Also save to brand config for persistence
+        if "product_briefs" not in brand_cfg:
+            brand_cfg["product_briefs"] = {}
+        brand_cfg["product_briefs"][f"style_{style_num}"] = brief
+
+    # Inject brief into brand_cfg temporarily for LLM
+    if brief:
+        brand_cfg["product_briefs"] = brand_cfg.get("product_briefs", {})
+        brand_cfg["product_briefs"]["_default"] = brief
+
+    feedback_history = load_brand_feedback(brand)
+    style_name = style["style_name"]
+    subclass = style.get("subclass", "")
+    sub_subclass = style.get("sub_subclass", "")
+    fabric = parse_fabric(style.get("fabric", "")) or brand_cfg.get("default_fabric", "")
+    care = style.get("care", "") or brand_cfg.get("default_care", "")
+    upf = style.get("upf", "") or brand_cfg.get("default_upf", "")
+    first_variant = style["variants"][0] if style.get("variants") else {}
+    first_color = first_variant.get("color_name", "")
+    first_size = first_variant.get("size", "")
+
+    # Try LLM first (unless rules mode)
+    gen_mode = session_data.get("generation_mode", "auto")
+    llm_result = None
+    if gen_mode != "rules" and _anthropic_client is not None:
+        try:
+            llm_result = generate_content_llm(brand_cfg, brand, style, feedback_history)
+        except Exception as e:
+            print(f"[Regen] LLM failed for {style_num}: {e}")
+
+    if llm_result:
+        title = llm_result["title"]
+        bullets = [llm_result.get(f"bullet_{i}", "") for i in range(1, 6)]
+        description = llm_result["description"]
+        backend_kw = llm_result["backend_keywords"]
+    else:
+        resolved_pt = _resolve_style_product_type(style) or ""
+        style_gender, _ = _derive_gender_department(style)
+        eff_gender = style_gender or brand_cfg.get("gender", "")
+        pt_label = subclass or sub_subclass or resolved_pt.replace("_", " ").title() or "Dress"
+        title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf)
+        bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf,
+                                   subclass=subclass, gender=eff_gender, product_type=resolved_pt)
+        description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf,
+                                           subclass=subclass, gender=eff_gender, product_type=resolved_pt)
+        backend_kw = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf,
+                                               subclass=subclass, gender=eff_gender, product_type=resolved_pt)
+
+    entry = {
+        "title": title,
+        "bullets": bullets,
+        "description": description,
+        "backend_keywords": backend_kw,
+        "llm_generated": llm_result is not None,
+        "brief_used": brief[:100] if brief else "",
+    }
+    # Update session content
+    if "generated_content" not in session_data:
+        session_data["generated_content"] = {}
+    existing = session_data["generated_content"].get(style_num, {})
+    existing.update(entry)
+    session_data["generated_content"][style_num] = existing
+
+    return jsonify({"ok": True, "style_num": style_num, "content": entry})
+
+
+@app.route("/api/nis-spreadsheet-preview", methods=["POST"])
+def nis_spreadsheet_preview():
+    """Return full NIS spreadsheet preview for a style — every column/row as it would appear in the .xlsm.
+    Returns rows (parent header + child variants) with all field values.
+    """
+    data = request.get_json(force=True)
+    style_num = data.get("style_num", "")
+    brand = session_data.get("brand", "Brand")
+    styles = session_data.get("styles", [])
+    content_map = session_data.get("generated_content", {})
+    brand_cfg = _load_brand_config_data(brand)
+    vendor_code = session_data.get("vendor_code") or brand_cfg.get("vendor_code_full", "")
+
+    style = next((s for s in styles if s["style_num"] == style_num), None)
+    if not style:
+        return jsonify({"error": f"Style {style_num} not found"}), 404
+
+    content = content_map.get(style_num, {})
+    fields = _build_preview_fields(brand, brand_cfg, vendor_code, style, content)
+
+    # Apply overrides
+    overrides = session_data.get("field_overrides", {}).get(style_num, {})
+    for f in fields:
+        fid = f.get("field_id", "")
+        if fid and fid in overrides:
+            f["value"] = overrides[fid]
+            f["status"] = "filled"
+            f["overridden"] = True
+
+    # Build variant rows
+    variants = style.get("variants", [])
+    variant_rows = []
+    for v in variants:
+        color = v.get("color_name", "") or v.get("color", "")
+        size = v.get("size", "")
+        upc = v.get("upc", "")
+        variant_rows.append({
+            "color": color,
+            "size": normalize_size(size) or size,
+            "upc": re.sub(r"\D", "", str(upc)) if upc else "",
+            "sku": f"{style_num}-{color}-{size}".replace(" ", "-"),
+            "cost_price": v.get("cost_price", ""),
+            "list_price": v.get("list_price", "") or style.get("list_price", ""),
+        })
+
+    return jsonify({
+        "style_num": style_num,
+        "style_name": style.get("style_name", ""),
+        "product_type": _resolve_style_product_type(style),
+        "fields": fields,
+        "variant_count": len(variants),
+        "variant_rows": variant_rows,
+    })
+
+
+@app.route("/api/save-style-brief", methods=["POST"])
+def save_style_brief():
+    """Save a per-style brief for later reuse."""
+    data = request.get_json(force=True)
+    style_num = data.get("style_num", "")
+    brief = data.get("brief", "")
+    if not style_num:
+        return jsonify({"error": "No style_num"}), 400
+    if "style_briefs" not in session_data:
+        session_data["style_briefs"] = {}
+    session_data["style_briefs"][style_num] = brief
+    return jsonify({"ok": True, "style_num": style_num})
 
 
 @app.route("/api/regenerate-field", methods=["POST"])
@@ -4614,7 +5130,11 @@ def regenerate_field():
                 bullet_idx = int(field.split("_")[1]) - 1
             except (IndexError, ValueError):
                 bullet_idx = 0
-            bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf)
+            rpt = _resolve_style_product_type(style) or ""
+            sg, _ = _derive_gender_department(style)
+            eg = sg or brand_cfg.get("gender", "")
+            bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf,
+                                       subclass=subclass, gender=eg, product_type=rpt)
             # Rotate bullet labels for variation
             labels = ["OUTSTANDING FEATURE", "STYLE HIGHLIGHT", "DESIGN DETAIL", "FASHION FORWARD", "KEY BENEFIT"]
             if bullet_idx < len(bullets):
@@ -4632,12 +5152,20 @@ def regenerate_field():
             current_idx = DESCRIPTION_OPENERS_ROTATION.get(style_id, 0)
             alt_idx = (current_idx + 1) % total
             DESCRIPTION_OPENERS_ROTATION[style_id] = alt_idx
-            content = generate_description(brand_cfg, brand, style_id, style_name, sub_subclass, fabric, care, first_color, upf)
+            rpt2 = _resolve_style_product_type(style) or ""
+            sg2, _ = _derive_gender_department(style)
+            eg2 = sg2 or brand_cfg.get("gender", "")
+            content = generate_description(brand_cfg, brand, style_id, style_name, sub_subclass, fabric, care, first_color, upf,
+                                           subclass=subclass, gender=eg2, product_type=rpt2)
             why = generate_description_why(brand_cfg, style_id, alt_idx, has_keywords) + " [Alternative opener used.]"
         
         elif field == "backend_keywords":
             # Reorder keywords
-            kw_list = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf)
+            rpt3 = _resolve_style_product_type(style) or ""
+            sg3, _ = _derive_gender_department(style)
+            eg3 = sg3 or brand_cfg.get("gender", "")
+            kw_list = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf,
+                                                subclass=subclass, gender=eg3, product_type=rpt3)
             words = kw_list.split()
             # Shuffle order (deterministic rotation)
             mid = len(words) // 2
