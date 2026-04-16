@@ -6495,43 +6495,38 @@ async function wsRunValidation(stylesList) {
   sessHtml += '</div>';
   
   let dlHtml = sessHtml;
+
+  // ── Bulk download options ──
   dlHtml += '<div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">';
-  dlHtml += '<button class="btn btn-primary" onclick="wsDownloadPerStyle()" style="font-size:13px;">\u2193 Download (1 file per style)</button>';
-  dlHtml += '<button class="btn btn-secondary" onclick="wsDownloadPerType()" style="font-size:12px;">\u2193 Download (1 file per product type)</button>';
+  dlHtml += '<button class="btn btn-secondary btn-sm" onclick="wsDownloadPerStyle()" style="font-size:12px;">\u2193 Download ALL as ZIP</button>';
   dlHtml += '</div>';
 
-  // Group by product type for download files
-  dlHtml += '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">NIS Files by Product Type</div>';
-  
-  const byPT = {};
-  (valData.styles || []).forEach(s => {
-    const style = (state.styles || []).find(st => st.style_num === s.style_num);
-    const pt = style ? ((wsState.styleProductTypes || {})[s.style_num] || style._resolved_pt || 'UNKNOWN') : 'UNKNOWN';
-    if (!byPT[pt]) byPT[pt] = { styles: [], valid: 0, corrected: 0, invalid: 0 };
-    byPT[pt].styles.push(s);
-    (s.validations || []).forEach(v => {
-      if (v.status === 'valid') byPT[pt].valid++;
-      else if (v.status === 'corrected') byPT[pt].corrected++;
-      else if (v.status === 'invalid') byPT[pt].invalid++;
-    });
-  });
+  // ── Per-style NIS file list ──
+  dlHtml += '<div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:8px;">NIS Files — One per Style</div>';
+  dlHtml += '<table class="ws-fields-table" style="font-size:12px;"><thead><tr>';
+  dlHtml += '<th style="width:110px;">Style #</th>';
+  dlHtml += '<th>Style Name</th>';
+  dlHtml += '<th style="width:100px;">Sub-Class</th>';
+  dlHtml += '<th style="width:80px;">Variants</th>';
+  dlHtml += '<th style="width:110px;"></th>';
+  dlHtml += '</tr></thead><tbody>';
 
-  dlHtml += '<table class="ws-fields-table"><thead><tr><th>Product Type</th><th>Styles</th><th>Validation</th><th style="width:140px;"></th></tr></thead><tbody>';
-  
-  Object.entries(byPT).forEach(([ptId, ptData]) => {
-    const ptLabel = (ALL_PRODUCT_TYPES_FE || []).find(p => p.id === ptId);
-    const label = ptLabel ? ptLabel.label : ptId;
-    const statusHtml = ptData.invalid > 0
-      ? '<span style="color:var(--error); font-weight:600;">' + ptData.invalid + ' invalid</span>'
-      : ptData.corrected > 0
-        ? '<span style="color:var(--warn);">' + ptData.valid + ' valid, ' + ptData.corrected + ' corrected</span>'
-        : '<span style="color:var(--success);">\u2713 All valid</span>';
-    
+  const allStyles = state.styles || [];
+  const content = state.generatedContent || {};
+  allStyles.forEach(s => {
+    const sn = s.style_num;
+    const hasContent = !!content[sn];
+    const subclass = s.subclass || s.sub_class || '';
+    const variants = (s.variants || []).length;
+    const btnHtml = hasContent
+      ? '<button class="btn btn-primary btn-sm" style="font-size:11px;padding:4px 10px;" onclick="wsDownloadSingleStyle(\'' + escHtml(sn) + '\')">\u2193 Download</button>'
+      : '<span style="font-size:11px; color:var(--text-sec);">No content</span>';
     dlHtml += '<tr>';
-    dlHtml += '<td><strong>' + escHtml(label) + '</strong></td>';
-    dlHtml += '<td>' + ptData.styles.length + ' styles</td>';
-    dlHtml += '<td>' + statusHtml + '</td>';
-    dlHtml += "<td><button class=\"btn btn-primary btn-sm\" style=\"font-size:11px;padding:4px 12px;\" onclick=\"wsDownloadProductType('" + encodeURIComponent(ptId) + "')\">\u2193 Download .xlsm</button></td>";
+    dlHtml += '<td style="font-family:monospace; font-size:11px;">' + escHtml(sn) + '</td>';
+    dlHtml += '<td>' + escHtml(s.style_name || sn).substring(0, 50) + '</td>';
+    dlHtml += '<td style="color:var(--text-sec);">' + escHtml(subclass) + '</td>';
+    dlHtml += '<td style="text-align:center;">' + variants + '</td>';
+    dlHtml += '<td>' + btnHtml + '</td>';
     dlHtml += '</tr>';
   });
   dlHtml += '</tbody></table>';
