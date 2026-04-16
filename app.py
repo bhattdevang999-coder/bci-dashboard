@@ -4908,7 +4908,7 @@ def save_product_brief():
         cfg["product_briefs"] = {}
     cfg["product_briefs"][key] = brief
 
-    brand_file = BRAND_CONFIGS_DIR / f"{re.sub(r'[^w]', '_', brand)}.json"
+    brand_file = BRAND_CONFIGS_DIR / f"{re.sub(r'[^\w]', '_', brand)}.json"
     try:
         with open(str(brand_file), "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2)

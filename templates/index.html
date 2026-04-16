@@ -4739,6 +4739,34 @@ function wsConfirmProductType(ptId, checked) {
   }
 }
 
+async function loadBrandConfigForBrand(brand) {
+  if (!brand) return;
+  try {
+    const resp = await fetch('/api/load-brand-config?brand=' + encodeURIComponent(brand));
+    const d = await resp.json();
+    if (d.config) {
+      state.brandConfig = d.config;
+      state.vendorCode = d.config.vendor_code_full || '';
+      // Populate the brand config UI fields
+      const el = (id) => document.getElementById(id);
+      if (el('cfg-vendor-code')) el('cfg-vendor-code').value = d.config.vendor_code_full || '';
+      if (el('cfg-upf')) el('cfg-upf').value = d.config.default_upf || '';
+      if (el('cfg-coo')) el('cfg-coo').value = d.config.default_coo || '';
+      if (el('cfg-care')) el('cfg-care').value = d.config.default_care || '';
+      if (el('cfg-gender')) el('cfg-gender').value = d.config.gender || '';
+      if (el('cfg-lead-feature')) el('cfg-lead-feature').value = d.config.bullet_1_focus || '';
+      if (el('cfg-never-words')) el('cfg-never-words').value = (d.config.never_words || []).join(', ');
+      // Load product brief if saved
+      const briefs = d.config.product_briefs || {};
+      const briefEl = document.getElementById('product-brief-input');
+      if (briefEl && briefs._default) briefEl.value = briefs._default;
+      if (d.has_saved_config) {
+        if (el('acc-brand-meta')) el('acc-brand-meta').textContent = brand + ' — config loaded';
+      }
+    }
+  } catch(e) { console.warn('Failed to load brand config:', e); }
+}
+
 function onBrandConfigChange() {
   const brand = document.getElementById('cfg-brand').value.trim();
   if (brand) {
