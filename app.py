@@ -48,6 +48,7 @@ UPLOAD_TEMPLATES = BASE_DIR / "uploads" / "templates"
 UPLOAD_PRODUCTS  = BASE_DIR / "uploads" / "products"
 UPLOAD_KEYWORDS  = BASE_DIR / "uploads" / "keywords"
 UPLOAD_OUTPUT    = BASE_DIR / "uploads" / "output"
+UPLOAD_IMAGES    = BASE_DIR / "uploads" / "style_images"
 FEEDBACK_FILE    = BASE_DIR / "feedback" / "content_feedback.jsonl"
 FEEDBACK_DIR     = BASE_DIR / "feedback"
 DEFAULT_TEMPLATE = UPLOAD_TEMPLATES / "Dresses-Training.xlsm"
@@ -128,7 +129,7 @@ def resolve_product_type(sub_class, division_name=""):
     return "UNKNOWN", "unknown", f"Cannot determine product type for sub-class '{sub_class}'"
 
 
-for d in [UPLOAD_TEMPLATES, UPLOAD_PRODUCTS, UPLOAD_KEYWORDS, UPLOAD_OUTPUT, BRAND_CONFIGS_DIR, FEEDBACK_DIR, DROPDOWN_CACHE_DIR]:
+for d in [UPLOAD_TEMPLATES, UPLOAD_PRODUCTS, UPLOAD_KEYWORDS, UPLOAD_OUTPUT, UPLOAD_IMAGES, BRAND_CONFIGS_DIR, FEEDBACK_DIR, DROPDOWN_CACHE_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
@@ -1203,9 +1204,10 @@ def generate_content_llm(brand_cfg, brand, style, feedback_history):
     itn = _derive_item_type_name(subclass, product_type) or subclass or "garment"
     division = style.get("division_name", "")
 
-    # Product brief from brand config (brand-level + per-subclass)
+    # Product brief: per-style brief overrides brand-level brief
+    style_briefs = session_data.get("style_briefs", {})
     product_briefs = brand_cfg.get("product_briefs", {})
-    brief = product_briefs.get(f"{product_type}/{subclass}", "") or product_briefs.get(product_type, "") or product_briefs.get("_default", "")
+    brief = style_briefs.get(str(style_num), "") or product_briefs.get(f"{product_type}/{subclass}", "") or product_briefs.get(product_type, "") or product_briefs.get("_default", "")
 
     feedback_count = len([l for l in feedback_history.splitlines() if l.strip()]) if feedback_history else 0
     feedback_section = f"LEARNED PREFERENCES (from {feedback_count} previous edits):\n{feedback_history}" if feedback_history else "LEARNED PREFERENCES: None yet."
@@ -1259,10 +1261,29 @@ Respond in this exact JSON format (no other text, no markdown, just the JSON obj
 {{"title": "...", "bullet_1": "...", "bullet_2": "...", "bullet_3": "...", "bullet_4": "...", "bullet_5": "...", "description": "...", "backend_keywords": "..."}}"""
 
     try:
+        # Build message content — text prompt + optional image (vision)
+        msg_content = []
+        style_num = style["style_num"]
+        img_path = (session_data.get("style_images") or {}).get(str(style_num))
+        if img_path and Path(img_path).exists():
+            import base64 as _b64
+            with open(img_path, "rb") as _img_f:
+                img_bytes = _b64.b64encode(_img_f.read()).decode("utf-8")
+            ext = Path(img_path).suffix.lower()
+            media_type = {"jpg": "image/jpeg", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+                          ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}.get(ext, "image/jpeg")
+            msg_content.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": media_type, "data": img_bytes}
+            })
+            msg_content.append({"type": "text", "text": "Above is a photo of this product. Use it to accurately describe the product's appearance, design details, and visual features.\n\n" + prompt})
+        else:
+            msg_content.append({"type": "text", "text": prompt})
+
         message = _anthropic_client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=2000,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": msg_content}],
         )
         raw = message.content[0].text.strip()
         # Strip any markdown code fences if present
@@ -2408,8 +2429,19 @@ def generate_content():
     gen_mode = data.get("mode", "auto")  # auto = try API first, fall back to rules
     session_data["generation_mode"] = gen_mode
 
+    # Store style briefs + brand brief from frontend
+    style_briefs = data.get("style_briefs", {})
+    if style_briefs:
+        session_data["style_briefs"] = style_briefs
+    brand_brief = data.get("brand_brief", "")
+
     # Load brand config from file if available, fall back to in-memory
     brand_cfg = _load_brand_config_data(brand)
+    # Inject brand brief into config so LLM prompt picks it up
+    if brand_brief:
+        if "product_briefs" not in brand_cfg:
+            brand_cfg["product_briefs"] = {}
+        brand_cfg["product_briefs"]["_default"] = brand_brief
     has_keywords = len(session_data.get("keywords", [])) > 0
 
     # Load feedback history for this brand
@@ -5085,6 +5117,52 @@ def save_style_brief():
         session_data["style_briefs"] = {}
     session_data["style_briefs"][style_num] = brief
     return jsonify({"ok": True, "style_num": style_num})
+
+
+@app.route("/api/upload-style-image", methods=["POST"])
+def upload_style_image():
+    """Upload a product image for a specific style.
+    Saved to disk and stored in session for LLM vision.
+    """
+    style_num = request.form.get("style_num", "")
+    if not style_num:
+        return jsonify({"error": "No style_num"}), 400
+    if "file" not in request.files:
+        return jsonify({"error": "No file"}), 400
+
+    f = request.files["file"]
+    ext = Path(f.filename).suffix.lower()
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+        return jsonify({"error": f"Unsupported image type: {ext}"}), 400
+
+    # Save to disk
+    style_dir = UPLOAD_IMAGES / str(style_num)
+    style_dir.mkdir(parents=True, exist_ok=True)
+    save_path = style_dir / f"product{ext}"
+    f.save(str(save_path))
+
+    # Store path in session
+    if "style_images" not in session_data:
+        session_data["style_images"] = {}
+    session_data["style_images"][style_num] = str(save_path)
+
+    return jsonify({"ok": True, "style_num": style_num, "path": f"/api/style-image/{style_num}"})
+
+
+@app.route("/api/style-image/<style_num>")
+def serve_style_image(style_num):
+    """Serve a previously uploaded style image."""
+    # Check session first
+    img_path = (session_data.get("style_images") or {}).get(style_num)
+    if img_path and Path(img_path).exists():
+        return send_file(img_path)
+    # Check disk
+    style_dir = UPLOAD_IMAGES / str(style_num)
+    for ext in [".jpg", ".jpeg", ".png", ".webp"]:
+        p = style_dir / f"product{ext}"
+        if p.exists():
+            return send_file(str(p))
+    return jsonify({"error": "No image"}), 404
 
 
 @app.route("/api/regenerate-field", methods=["POST"])

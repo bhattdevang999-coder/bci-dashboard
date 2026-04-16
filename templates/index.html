@@ -3307,17 +3307,6 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
   </div>
 
-  <!-- Product Brief -->
-  <div style="margin:16px 0; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);">
-    <label style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:6px;">Product Brief (optional)</label>
-    <textarea id="product-brief-input" rows="3" style="width:100%; padding:8px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px; resize:vertical; font-family:inherit; background:var(--bg); color:var(--text);"
-              placeholder="Describe the product for better content. E.g.: 'Men's performance surf rashguard. Loose fit, hooded, UPF 50+. Volcom's surf heritage is the selling point. Target customer is 25-40 male surfer.'"></textarea>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-      <button class="btn btn-secondary btn-sm" onclick="saveProductBrief()" style="font-size:11px;">Save Brief for Brand</button>
-      <span id="brief-save-status" style="font-size:11px; color:var(--text-sec);"></span>
-    </div>
-  </div>
-
   <!-- Generation Mode Toggle + Generate Button -->
   <div style="text-align:center; margin:24px 0;">
     <div style="display:flex; justify-content:center; gap:8px; margin-bottom:12px;">
@@ -4206,37 +4195,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Restore session state
+  // Always start fresh — clear server session on every page load
   try {
-    const res = await fetch('/api/session-restore');
-    const session = await res.json();
-    if (session.brand && session.styles_count > 0) {
-      state.brand = session.brand;
-      state.brandConfig = session.brand_config;
-      state.vendorCode = session.vendor_code || '';
-      state.styles = session.styles || [];
-      if (session.template_loaded) {
-        state.templateLoaded = true;
-        state.hasTemplate = true;
-      }
-      if (session.content_generated) {
-        state.generatedContent = session.generated_content;
-      }
-      document.getElementById('reset-btn').style.display = 'inline-flex';
-      showToast('Session restored — ' + session.brand + ', ' + session.styles_count + ' styles.', 'success');
-
-      // If content was generated, show the workspace
-      if (session.content_generated && Object.keys(state.generatedContent || {}).length > 0) {
-        try {
-          wsPopulateRail();
-          fetchQaSummaryAndUpdate();
-          const ws = document.getElementById('nis-workspace');
-          if (ws) ws.style.display = 'flex';
-          if (state.styles.length > 0) wsSelectStyle(state.styles[0].style_num);
-        } catch(e2) { console.warn('Workspace restore failed:', e2); }
-      }
-    }
-  } catch(e) { /* fresh session */ }
+    await fetch('/api/session-reset', { method: 'POST' });
+  } catch(e) { /* ignore */ }
 });
 
 
@@ -4280,7 +4242,7 @@ function setGenMode(mode) {
 
 // ── Product brief ──────────────────────────────────────────────
 async function saveProductBrief() {
-  const brief = document.getElementById('product-brief-input').value.trim();
+  const brief = (document.getElementById('brand-brief-input') || document.getElementById('product-brief-input') || {value:''}).value.trim();
   const brand = state.brand || wsState.brand;
   if (!brand) { showToast('Upload product data first', 'error'); return; }
   try {
@@ -4584,9 +4546,24 @@ async function showStyleSummary(data) {
     html += '<div style="font-size:13px; margin-bottom:12px;">Brand: ' + brandLine + '</div>';
   }
 
+  // ── Brand Brief (right after upload, before styles table) ──
+  html += `
+    <div style="margin:16px 0; padding:14px; background:#f0fdfa; border:1px solid #99f6e4; border-radius:8px;">
+      <div style="font-size:13px; font-weight:700; margin-bottom:4px;">Brand Context</div>
+      <div style="font-size:11px; color:#475569; margin-bottom:6px;">Describe the brand, target customer, voice, and anything that applies to ALL styles. This context feeds into content generation.</div>
+      <textarea id="brand-brief-input" rows="3"
+                style="width:100%; padding:8px 10px; font-size:13px; border:1px solid #d1d5db; border-radius:6px; resize:vertical; font-family:inherit;"
+                placeholder="E.g.: 'Volcom is a surf/skate lifestyle brand. Target audience: 18-35 active males and females. Tone is casual, confident, action-sports oriented. Always mention surf heritage. Never say luxury or elegant.'"></textarea>
+      <div style="display:flex; gap:8px; margin-top:6px; align-items:center;">
+        <button class="btn btn-secondary btn-sm" onclick="saveProductBrief()" style="font-size:11px;">Save for Brand</button>
+        <span id="brief-save-status" style="font-size:11px; color:#64748b;"></span>
+      </div>
+    </div>
+  `;
+
   // Per-style product type table
   html += '<div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-sec); margin-bottom:6px;">Confirm Product Type per Style</div>';
-  html += '<div style="font-size:12px; color:var(--text-sec); margin-bottom:8px;">Review the detected product type for each style. Change if incorrect. Only trained types will generate NIS files.</div>';
+  html += '<div style="font-size:12px; color:var(--text-sec); margin-bottom:8px;">Review product types and optionally describe each style. Click the arrow to expand and add style-specific context for better content.</div>';
 
   html += '<table class="ws-fields-table" style="font-size:13px;"><thead><tr>';
   html += '<th style="width:110px;">Style #</th>';
@@ -4640,11 +4617,11 @@ async function showStyleSummary(data) {
       ? '<span style="color:var(--success); font-weight:600; font-size:11px;">\u2713 Ready</span>'
       : '<span style="color:var(--warn); font-weight:600; font-size:11px;">\u26a0 Skip</span>';
 
-    html += '<tr id="pt-row-' + escHtml(sn) + '">';
-    html += '<td style="font-family:monospace; font-size:11px;">' + escHtml(sn) + '</td>';
+    html += '<tr id="pt-row-' + escHtml(sn) + '" style="cursor:pointer;" onclick="toggleStyleBrief(\'' + escHtml(sn) + '\')">';
+    html += '<td style="font-family:monospace; font-size:11px;"><span id="pt-arrow-' + escHtml(sn) + '" style="display:inline-block; transition:transform 0.2s;">\u25b6</span> ' + escHtml(sn) + '</td>';
     html += '<td>' + escHtml(s.style_name || sn) + '</td>';
     html += '<td style="font-size:12px; color:var(--text-sec);">' + escHtml(subClass) + '</td>';
-    html += '<td>' + selectHtml + '</td>';
+    html += '<td onclick="event.stopPropagation()">' + selectHtml + '</td>';
     html += '<td id="pt-status-' + escHtml(sn) + '">' + statusHtml + '</td>';
     const reason = s._pt_reason || '';
     const confBadge = s._pt_confidence === 'known'
@@ -4654,6 +4631,27 @@ async function showStyleSummary(data) {
         : '<span style="color:var(--error);font-size:11px;">unknown</span>';
     html += '<td style="font-size:11px;color:var(--text-sec);">' + confBadge + ' ' + escHtml(reason) + '</td>';
     html += '</tr>';
+
+    // Expandable training row (hidden by default)
+    html += '<tr id="pt-brief-row-' + escHtml(sn) + '" style="display:none;">';
+    html += '<td colspan="6" style="padding:12px 16px; background:#f0fdfa; border-bottom:2px solid #99f6e4;">';
+    html += '<div style="display:grid; grid-template-columns: 1fr 200px; gap:12px;">';
+    // Brief textarea
+    html += '<div>';
+    html += '<div style="font-size:11px; font-weight:700; margin-bottom:4px; color:#475569;">Style Context / Prompt</div>';
+    html += '<textarea id="style-brief-' + escHtml(sn) + '" rows="3" onclick="event.stopPropagation()" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #d1d5db; border-radius:4px; resize:vertical; font-family:inherit;" placeholder="Describe this specific product. What makes it unique? Key features, target customer, positioning..."></textarea>';
+    html += '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); saveStyleBrief(\'' + escHtml(sn) + '\')" style="margin-top:4px; font-size:10px;">Save Brief</button>';
+    html += '<span id="style-brief-status-' + escHtml(sn) + '" style="font-size:10px; color:#64748b; margin-left:6px;"></span>';
+    html += '</div>';
+    // Image upload
+    html += '<div>';
+    html += '<div style="font-size:11px; font-weight:700; margin-bottom:4px; color:#475569;">Product Photo</div>';
+    html += '<div id="style-img-preview-' + escHtml(sn) + '" style="margin-bottom:6px;"></div>';
+    html += '<input type="file" accept="image/*" onclick="event.stopPropagation()" onchange="uploadStyleImage(\'' + escHtml(sn) + '\', this.files)" style="font-size:11px; width:100%;">';
+    html += '<div style="font-size:10px; color:#94a3b8; margin-top:2px;">JPG/PNG — AI will analyze this image</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '</td></tr>';
   });
 
   html += '</tbody></table>';
@@ -5146,7 +5144,13 @@ async function startGeneration() {
     const startRes = await fetch('/api/generate-content', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brand: state.brand, styles: state.styles, mode: genMode }),
+      body: JSON.stringify({
+        brand: state.brand,
+        styles: state.styles,
+        mode: genMode,
+        style_briefs: state.styleBriefs || {},
+        brand_brief: (document.getElementById('brand-brief-input') || {}).value || '',
+      }),
     });
     const startData = await startRes.json();
     if (startData.error) {
@@ -7092,39 +7096,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Restore session — if content was already generated, reveal workspace
-  try {
-    const res = await fetch('/api/session-restore');
-    const session = await res.json();
-    if (session.brand && session.styles_count > 0) {
-      state.brand = session.brand;
-      state.brandConfig = session.brand_config;
-      state.vendorCode = session.vendor_code || '';
-      state.styles = session.styles || [];
-      if (session.template_loaded) {
-        state.templateLoaded = true;
-        state.hasTemplate = true;
-      }
-      if (session.content_generated) {
-        state.generatedContent = session.generated_content || {};
-      }
-      document.getElementById('reset-btn').style.display = 'inline-flex';
-
-      // If content exists, show workspace
-      if (session.content_generated && Object.keys(state.generatedContent).length > 0) {
-        wsPopulateRail();
-        fetchQaSummaryAndUpdate();
-        const ws = document.getElementById('nis-workspace');
-        if (ws) ws.style.display = 'flex';
-        const firstStyle = state.styles[0];
-        if (firstStyle) wsSelectStyle(firstStyle.style_num);
-        // Show optional sections too (for config access)
-        document.getElementById('section-optional').classList.remove('hidden');
-      }
-
-      showToast('Session restored — ' + session.brand + ', ' + session.styles_count + ' styles.', 'success');
-    }
-  } catch(e) { /* fresh session */ }
+  // Session restore disabled — every refresh starts clean
+  // (session is already reset in the first DOMContentLoaded handler)
 
   // Load default template silently
   loadDefaultTemplate();
@@ -7795,6 +7768,36 @@ function intelSyncGate() {
       const noDataEl = document.getElementById('intel-no-data');
       if (noDataEl) noDataEl.style.display = 'block';
     });
+}
+
+// ── Style expand/collapse + image upload ─────────────────────
+function toggleStyleBrief(styleNum) {
+  const row = document.getElementById('pt-brief-row-' + styleNum);
+  const arrow = document.getElementById('pt-arrow-' + styleNum);
+  if (!row) return;
+  const visible = row.style.display !== 'none';
+  row.style.display = visible ? 'none' : 'table-row';
+  if (arrow) arrow.style.transform = visible ? '' : 'rotate(90deg)';
+}
+
+async function uploadStyleImage(styleNum, files) {
+  if (!files || !files.length) return;
+  const formData = new FormData();
+  formData.append('style_num', styleNum);
+  formData.append('file', files[0]);
+  try {
+    const resp = await fetch('/api/upload-style-image', { method: 'POST', body: formData });
+    const d = await resp.json();
+    if (d.ok) {
+      const preview = document.getElementById('style-img-preview-' + styleNum);
+      if (preview) {
+        preview.innerHTML = '<img src="' + d.path + '" style="max-width:180px; max-height:120px; border-radius:4px; border:1px solid #e2e8f0;">';
+      }
+      showToast('Image uploaded for style ' + styleNum, 'success');
+    } else {
+      showToast(d.error || 'Upload failed', 'error');
+    }
+  } catch(e) { showToast('Image upload failed: ' + e.message, 'error'); }
 }
 
 // ── Per-style training ──────────────────────────────────────────
