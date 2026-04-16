@@ -5368,10 +5368,11 @@ function wsPopulateRail() {
       row.onclick = () => wsSelectStyle(s.style_num);
       row.innerHTML = `
         <span class="ws-style-dot" id="ws-dot-${escHtml(s.style_num)}"></span>
-        <div class="ws-style-row-info">
+        <div class="ws-style-row-info" style="flex:1;">
           <div class="ws-style-row-num">${escHtml(s.style_num)}</div>
           <div class="ws-style-row-name">${escHtml(s.style_name || '')}</div>
         </div>
+        <button onclick="event.stopPropagation(); wsDownloadSingleStyle('${escHtml(s.style_num)}')" title="Download this style's NIS file" style="background:none; border:none; cursor:pointer; padding:2px 4px; font-size:14px; color:#64748b; opacity:0.5; flex-shrink:0;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">&#8681;</button>
       `;
       list.appendChild(row);
     });
@@ -6573,6 +6574,10 @@ function wsDownloadPerStyle() {
 
 function wsDownloadPerType() {
   wsSyncAndDownload('/api/download-all?mode=per-type');
+}
+
+function wsDownloadSingleStyle(styleNum) {
+  wsSyncAndDownload('/api/download-all?mode=per-style&style_num=' + encodeURIComponent(styleNum));
 }
 
 function wsDownloadStyle(styleNum) {

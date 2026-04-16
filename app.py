@@ -4683,9 +4683,13 @@ def download_all():
 
     generated_files = []  # (filename, filepath)
 
+    # Optional: filter to single style
+    single_style = request.args.get("style_num", "")
+
     if dl_mode == "per-style":
         # ── One .xlsm per STYLE ────────────────────────────────────────────
-        for s in styles:
+        target_styles = [s for s in styles if s["style_num"] == single_style] if single_style else styles
+        for s in target_styles:
             sn = s["style_num"]
             if sn not in content_map:
                 continue
