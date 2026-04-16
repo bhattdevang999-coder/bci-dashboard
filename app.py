@@ -1740,16 +1740,22 @@ def list_templates():
 
 # All product types we know about (from master_nis_reference + common Amazon categories)
 ALL_PRODUCT_TYPES = [
-    {"id": "DRESS", "label": "Dresses", "sub_classes": ["Day Dress", "Cocktail Dress", "Active Dress", "Swimdress", "Maxi Dress", "Mini Dress", "Wrap Dress", "Shirt Dress"]},
-    {"id": "SWIMWEAR", "label": "Swimwear (1PC, 2PC, Tops, Bottoms, Rashguards)", "sub_classes": ["One Piece", "One Piece Swim", "Bikini Top", "Bikini Bottom", "Swim Bottom", "Tankini", "Cover Up", "Boardshorts", "Rashguard", "Swim Set 2 pcs", "Trunk", "Short"]},
-    {"id": "SHIRT", "label": "Shirts / Tops (Pullovers, Tanks, Tees, Blouses)", "sub_classes": ["Pullover", "Tank", "Tee", "Blouse", "Shirt"]},
-    {"id": "SHORTS", "label": "Shorts / Skorts", "sub_classes": ["Shorts", "Skort"]},
-    {"id": "PANTS", "label": "Pants / Leggings", "sub_classes": ["Pants", "Leggings", "Joggers"]},
-    {"id": "SKIRT", "label": "Skirts", "sub_classes": ["Skirt"]},
-    {"id": "COAT", "label": "Jackets / Coats / Outerwear", "sub_classes": ["Jacket", "Coat", "Blazer", "Vest"]},
-    {"id": "SWEATSHIRT", "label": "Sweatshirts / Hoodies", "sub_classes": ["Sweatshirt", "Hoodie"]},
-    {"id": "OVERALLS", "label": "Overalls / Jumpsuits", "sub_classes": ["Overalls", "Jumpsuit", "Romper"]},
-    {"id": "SANDAL", "label": "Sandals / Footwear", "sub_classes": ["Sandal", "Flip Flop"]},
+    {"id": "BLAZER", "label": "Blazers", "sub_classes": ["Blazer", "Sport Coat"]},
+    {"id": "BRA", "label": "Bras / Intimates", "sub_classes": ["Bra", "Bralette", "Sports Bra"]},
+    {"id": "COAT", "label": "Jackets & Coats", "sub_classes": ["Jacket", "Coat", "Vest", "Puffer", "Windbreaker", "Anorak", "Parka"]},
+    {"id": "DRESS", "label": "Dresses", "sub_classes": ["Day Dress", "Cocktail Dress", "Active Dress", "Swimdress", "Maxi Dress", "Mini Dress", "Wrap Dress", "Shirt Dress", "Dress"]},
+    {"id": "HAT", "label": "Hats / Headwear", "sub_classes": ["Hat", "Cap", "Beanie", "Visor", "Sun Hat", "Trucker Hat", "Bucket Hat"]},
+    {"id": "ONE_PIECE_OUTFIT", "label": "One-Piece Outfits / Rompers", "sub_classes": ["Romper", "Jumpsuit", "Bodysuit", "Catsuit", "One Piece Outfit"]},
+    {"id": "OVERALLS", "label": "Overalls", "sub_classes": ["Overalls", "Dungarees", "Overall"]},
+    {"id": "PANTS", "label": "Pants / Leggings", "sub_classes": ["Pants", "Leggings", "Joggers", "Trousers", "Chino", "Cargo Pant"]},
+    {"id": "SANDAL", "label": "Sandals / Footwear", "sub_classes": ["Sandal", "Flip Flop", "Slide", "Thong Sandal", "Slipper"]},
+    {"id": "SHIRT", "label": "Shirts / Tops", "sub_classes": ["Pullover", "Tank", "Tee", "Blouse", "Shirt", "Polo", "Henley", "Crop Top", "Camisole", "Tunic"]},
+    {"id": "SHORTS", "label": "Shorts", "sub_classes": ["Shorts", "Board Short", "Chino Short", "Boardshorts", "Skort", "Cargo Short"]},
+    {"id": "SKIRT", "label": "Skirts", "sub_classes": ["Skirt", "Mini Skirt", "Maxi Skirt", "Wrap Skirt"]},
+    {"id": "SNOWSUIT", "label": "Snowsuits", "sub_classes": ["Snowsuit", "Snow Suit", "Ski Suit"]},
+    {"id": "SNOW_PANT", "label": "Snow Pants", "sub_classes": ["Snow Pant", "Snow Pants", "Ski Pants", "Ski Pant"]},
+    {"id": "SWEATSHIRT", "label": "Sweatshirts / Hoodies", "sub_classes": ["Sweatshirt", "Hoodie", "Fleece", "Quarter Zip"]},
+    {"id": "SWIMWEAR", "label": "Swimwear", "sub_classes": ["One Piece", "One Piece Swim", "Bikini Top", "Bikini Bottom", "Swim Bottom", "Tankini", "Cover Up", "Boardshorts", "Rashguard", "Swim Set 2 pcs", "Trunk", "Short", "Swim Trunk", "Rash Guard"]},
 ]
 
 
