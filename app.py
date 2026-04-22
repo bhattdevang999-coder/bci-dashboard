@@ -559,19 +559,22 @@ def _safe(v):
     return str(v).strip() if v is not None else ""
 
 def _derive_gender_department(style):
-    """Derive Amazon gender + department from a style's division_name.
+    """Derive Amazon gender + department from a style's division_name AND style_name.
+    style_name is used to refine YOUTH styles that don't have BOY/GIRL in division_name
+    (e.g. 'VOLCOM YOUTH SWIM' + style 'Little Boys Long Sleeve Rashguard' -> Male/boys).
     Returns (gender, department) tuple — e.g. ('Male', 'mens') or ('Female', 'womens').
     Falls back to empty strings when unknown.
     """
     dn = (style.get("division_name", "") or "").upper()
+    sn = (style.get("style_name", "") or "").upper()
     gender = ""
     department = ""
     if "YOUTH" in dn or "KIDS" in dn or "BOY" in dn or "GIRL" in dn:
-        # Youth — Amazon uses Unisex or specific
-        if "GIRL" in dn:
+        # Youth — refine with style_name
+        if "GIRL" in dn or "GIRL" in sn:
             gender = "Female"
             department = "girls"
-        elif "BOY" in dn:
+        elif "BOY" in dn or "BOY" in sn:
             gender = "Male"
             department = "boys"
         else:
@@ -585,6 +588,66 @@ def _derive_gender_department(style):
         gender = "Male"
         department = "mens"
     return gender, department
+
+def _derive_youth_size_info(style_name, gender, raw_size):
+    """Given a youth style's name + gender + raw_size, return:
+      (special_size_type, size_class, age_range_description, normalized_size)
+    for adults returns ("", "Alpha", "Adult", normalize_size(raw_size)).
+    Maps toddler 2T/3T/etc. to '2 Years'/'3 Years' (Amazon-valid values).
+    """
+    sn = (style_name or "").lower()
+    g = (gender or "").lower()
+    raw = str(raw_size).strip()
+
+    # Detect youth bucket from style_name
+    is_toddler    = "toddler" in sn or raw.upper().endswith("T") and raw[:-1].isdigit()
+    is_little_boy  = "little boy" in sn or "little boys" in sn
+    is_big_boy     = "big boy" in sn or "big boys" in sn
+    is_little_girl = "little girl" in sn or "little girls" in sn
+    is_big_girl    = "big girl" in sn or "big girls" in sn
+    is_youth       = g == "unisex" or is_toddler or is_little_boy or is_big_boy or is_little_girl or is_big_girl or "boys" in sn or "girls" in sn
+
+    # If this isn't a youth style, adult defaults
+    if not is_youth:
+        return "", "Alpha", "Adult", (normalize_size(raw) or raw)
+
+    # Pick special_size_type
+    if is_toddler:
+        sst = "Toddler Girls" if ("girls" in sn or is_little_girl) else "Toddler Boys"
+    elif is_little_boy:
+        sst = "Little Boys"
+    elif is_big_boy:
+        sst = "Big Boys"
+    elif is_little_girl:
+        sst = "Little Girls"
+    elif is_big_girl:
+        sst = "Big Girls"
+    else:
+        # Fallback — use gender
+        sst = "Big Boys" if g == "male" else ("Big Girls" if g == "female" else "")
+
+    # Pick age_range_description
+    if is_toddler:
+        ard = "Toddler"
+    elif is_little_boy or is_little_girl:
+        ard = "Little Kid"
+    elif is_big_boy or is_big_girl:
+        ard = "Big Kid"
+    else:
+        ard = "Big Kid"
+
+    # Normalize size for youth
+    # 2T/3T/4T/5T -> 'N Years' (Amazon-valid)
+    if raw.upper().endswith("T") and raw[:-1].isdigit():
+        return sst, "Age", ard, f"{int(raw[:-1])} Years"
+    # Plain numeric kid sizes (4,5,6,7,8,10,12,14,16) -> 'N Years'
+    if raw.isdigit():
+        years = int(raw)
+        if 0 <= years <= 18:
+            return sst, "Age", ard, f"{years} Years"
+        return sst, "Numeric", ard, raw
+    # Alpha youth sizes — keep alpha
+    return sst, "Alpha", ard, (normalize_size(raw) or raw)
 
 def normalize_color(raw_color):
     """Map raw color to Amazon color family."""
@@ -753,31 +816,89 @@ def style_descriptor_from_name(style_name):
     # Title case
     return result.title().strip()
 
-def generate_title(brand_cfg, brand, style_name, product_type, color, size, upf=""):
-    """Generate Amazon-compliant title. Max 120 chars for Vendor Central apparel."""
+def _title_case_preserve_acronyms(s):
+    """Title-case a string while preserving common acronyms (UPF, 4-Way, etc.)
+    and correctly handling possessives (Men's, Women's, Boys', Girls').
+    """
+    if not s:
+        return s
+    out = s.title()
+    # Fix possessives that .title() breaks: Men'S -> Men's
+    out = re.sub(r"'S\b", "'s", out)
+    out = re.sub(r"S'\b", "s'", out)
+    # Restore acronyms that .title() lowercased
+    restorations = {
+        r'\bUpf\b': 'UPF',
+        r'\bUv\b': 'UV',
+        r'\bUsa\b': 'USA',
+        r'\bUs\b': 'US',
+        r'\bNfl\b': 'NFL',
+        r'\bMlb\b': 'MLB',
+        r'\bNba\b': 'NBA',
+        r'\bLs\b': 'LS',
+        r'\bSs\b': 'SS',
+    }
+    for pat, repl in restorations.items():
+        out = re.sub(pat, repl, out)
+    return out
+
+def _gender_title_word(gender_str, style_name=""):
+    """Return the gender word used in titles, given a style-derived gender.
+    Male -> Men's, Female -> Women's, Unisex/boys -> Boys' / Girls' / Kids' per style_name.
+    """
+    g = (gender_str or "").lower()
+    sn = (style_name or "").lower()
+    if g == "male" and ("boys" in sn or "boy" in sn or "toddler" in sn):
+        return "Boys'"
+    if g == "female" and ("girls" in sn or "girl" in sn):
+        return "Girls'"
+    if g == "male":
+        return "Men's"
+    if g == "female":
+        return "Women's"
+    if g == "unisex":
+        if "boys" in sn:
+            return "Boys'"
+        if "girls" in sn:
+            return "Girls'"
+        return "Kids'"
+    return ""
+
+def generate_title(brand_cfg, brand, style_name, product_type, color, size, upf="", style_gender=""):
+    """Generate Amazon-compliant title. Max 120 chars for Vendor Central apparel.
+    style_gender should come from _derive_gender_department(style)[0] — takes priority
+    over brand_cfg['gender'] so brand-level defaults never leak into mis-gendered titles.
+    """
     # Always clean the brand name
     clean_brand = clean_brand_name(brand)
-    formula = brand_cfg.get("title_formula", "{brand} Women's {style_descriptor} {product_type}, {color}, {size}")
+    formula = brand_cfg.get("title_formula", "{brand} {gender} {style_descriptor} {product_type}, {color}, {size}")
     descriptor = style_descriptor_from_name(style_name)
-    
+
     # If style name already contains the product type, don't append it again
     pt_title = product_type.title() if product_type else ""
     if pt_title and pt_title.lower() in style_name.lower():
         pt_title = ""  # avoid "Swim Trunk Trunk"
+
+    # Style-derived gender takes priority over brand config; brand config is last resort
+    effective_gender = style_gender or brand_cfg.get("gender", "")
+    gender_word = _gender_title_word(effective_gender, style_name)
+
     title = formula.format(
         brand=clean_brand,
         style_descriptor=descriptor,
-        style_name=style_name.title(),
+        style_name=_title_case_preserve_acronyms(style_name),
         product_type=pt_title,
         color=color.title() if color else "",
         size=normalize_size(size),
         upf=upf or brand_cfg.get("default_upf", ""),
-        gender=brand_cfg.get("gender", "Women's"),
+        gender=gender_word,
     )
     # Clean up double spaces, leading/trailing punctuation
     title = re.sub(r'\s+', ' ', title).strip()
     title = re.sub(r',\s*,', ',', title)
     title = re.sub(r',\s*$', '', title)
+    # Preserve acronyms (UPF etc.) in final title
+    title = _title_case_preserve_acronyms(title) if title else title
     # Enforce 120 char limit — truncate at last complete word before limit
     if len(title) > 120:
         title = title[:120].rsplit(' ', 1)[0].rstrip(',')
@@ -2291,10 +2412,10 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
                 print(f"[LLM] Falling back to rule-based for style {style_num}")
             # Use actual subclass as product type descriptor (not hardcoded "Dress")
             pt_label = subclass or sub_subclass or _resolve_style_product_type(style).replace("_", " ").title() or "Dress"
-            title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf)
             resolved_pt = _resolve_style_product_type(style) or ""
             style_gender, _ = _derive_gender_department(style)
             eff_gender_gen = style_gender or brand_cfg.get("gender", "")
+            title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf, style_gender=style_gender)
             bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf,
                                        subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt)
             description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf,
@@ -3101,7 +3222,7 @@ def generate_progress():
     })
 
 # ── Category / field derivation helpers ───────────────────────────────────────
-def _derive_amazon_product_category(sub_class, gender="", product_type=""):
+def _derive_amazon_product_category(sub_class, gender="", product_type="", style_name="", department=""):
     """Map sub_class + gender to Amazon product_category dropdown value.
     Gender-aware: Men's Swimwear vs Women's Swimwear vs Swim (youth).
     """
@@ -3130,16 +3251,21 @@ def _derive_amazon_product_category(sub_class, gender="", product_type=""):
 
     if sub_class in SWIM_SUBCLASSES or product_type == "SWIMWEAR":
         g = (gender or "").lower()
+        sn = (style_name or "").lower()
+        dept = (department or "").lower()
+        is_youth = ("boys" in sn or "girls" in sn or "toddler" in sn or
+                    dept in ("boys","girls") or g == "unisex")
+        if is_youth:
+            return "Swim"
         if g == "male":
             return "Men's Swimwear"
-        elif g == "female":
+        if g == "female":
             return "Women's Swimwear"
-        else:
-            return "Swim"  # youth/unisex
+        return "Swim"
 
     return ""  # leave blank if unknown — operator sets on dashboard
 
-def _derive_item_type_keyword(sub_class, product_type=""):
+def _derive_item_type_keyword(sub_class, product_type="", gender="", style_name=""):
     """Map sub_class to Amazon item_type_keyword (free-text SEO slug).
     Covers all 16 product types."""
     _map = {
@@ -3155,7 +3281,8 @@ def _derive_item_type_keyword(sub_class, product_type=""):
         "Bikini Top": "bikini-tops", "Bikini Bottom": "bikini-bottoms", "Swim Bottom": "bikini-bottoms",
         "One Piece Swim": "one-piece-swimsuits", "One Piece": "one-piece-swimsuits",
         "Tankini": "tankini-swimsuits", "Short": "board-shorts",
-        "Swim Set 2 pcs": "bikini-sets", "Swim Set": "bikini-sets",
+        # Gender-aware: see post-mapping logic below
+        "Swim Set 2 pcs": "rash-guard-sets", "Swim Set": "rash-guard-sets",
         "Swim Shirt": "rash-guards", "Cover Up": "fashion-swimwear-cover-ups",
         "Swimdress": "fashion-swimwear-cover-ups",
         # Blazers
@@ -3201,9 +3328,19 @@ def _derive_item_type_keyword(sub_class, product_type=""):
         "Sweatshirt": "sweatshirts", "Hoodie": "hoodies",
         "Fleece": "fleece-jackets", "Quarter Zip": "quarter-zip-pullovers",
     }
-    return _map.get(sub_class, "")
+    base = _map.get(sub_class, "")
+    # Gender-aware swim-set keyword
+    if sub_class in ("Swim Set 2 pcs", "Swim Set"):
+        sn = (style_name or "").lower()
+        g = (gender or "").lower()
+        if "rash" in sn or "sleeve" in sn or "swim shirt" in sn or "sun shirt" in sn:
+            return "rash-guard-sets"
+        if g == "female" or "girls" in sn or "bikini" in sn:
+            return "bikini-sets"
+        return "swim-sets"
+    return base
 
-def _derive_item_type_name(sub_class, product_type=""):
+def _derive_item_type_name(sub_class, product_type="", gender="", style_name=""):
     """Human-readable item type name — must match template dropdown exactly.
     Covers all 16 product types."""
     _map = {
@@ -3219,7 +3356,8 @@ def _derive_item_type_name(sub_class, product_type=""):
         "Bikini Top": "Bikini Top", "Bikini Bottom": "Bikini Bottoms", "Swim Bottom": "Bikini Bottoms",
         "One Piece Swim": "One Piece Swimsuit", "One Piece": "One Piece Swimsuit",
         "Tankini": "Tankini Swimsuit", "Short": "Board Shorts",
-        "Swim Set 2 pcs": "Bikini Set", "Swim Set": "Bikini Set",
+        # "Swim Set 2 pcs" resolved below — gender-aware (see post-mapping logic)
+        "Swim Set 2 pcs": "Rash Guard Set", "Swim Set": "Rash Guard Set",
         "Swim Shirt": "Rash Guard Shirt", "Cover Up": "Swimwear Cover Up",
         "Swimdress": "Swimwear Cover Up",
         # Blazers
@@ -3260,7 +3398,22 @@ def _derive_item_type_name(sub_class, product_type=""):
         "Sweatshirt": "Sweatshirt", "Hoodie": "Hooded Sweatshirt",
         "Fleece": "Pullover Sweater", "Quarter Zip": "Pullover Sweater",
     }
-    return _map.get(sub_class, "")  # leave blank if unknown
+    base = _map.get(sub_class, "")
+    # Gender-aware swim-set mapping: boys' swim sets are NOT bikini sets.
+    # Valid SWIMWEAR item_type_name values include: 'Bikini Set', 'Rash Guard Set',
+    # 'Swim Shirt Set', 'Tankini Set', 'Two Piece Swimsuit', 'Swimwear Cover Up Set'.
+    if sub_class in ("Swim Set 2 pcs", "Swim Set"):
+        sn = (style_name or "").lower()
+        g = (gender or "").lower()
+        # Rash guard style sets (long/short sleeve swim shirt + trunk)
+        if "rash" in sn or "sleeve" in sn or "swim shirt" in sn or "sun shirt" in sn:
+            return "Rash Guard Set"
+        # Girls/women bikini set (only when clearly signaled)
+        if g == "female" or "girls" in sn or "girl" in sn or "bikini" in sn:
+            return "Bikini Set"
+        # Default — two-piece swimsuit (safer than 'Bikini Set' for boys/unisex)
+        return "Two Piece Swimsuit"
+    return base  # leave blank if unknown
 
 def _derive_item_length(sub_subclass, style_name):
     """Derive item length description from sub_subclass / style name (Col 70)."""
@@ -3347,19 +3500,34 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     # Resolve actual product type for this style
     resolved_pt    = _resolve_style_product_type(style) or "DRESS"
     # Always derive from dropdown-validated function, gender-aware
-    category     = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=resolved_pt)
+    category     = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=resolved_pt, style_name=style_name, department=eff_dept)
     subcategory  = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
     fabric       = content.get("fabric", "") or style.get("fabric", "") or brand_cfg.get("default_fabric", "")
     care         = content.get("care", "") or style.get("care", "") or brand_cfg.get("default_care", "")
     upf          = content.get("upf", "") or style.get("upf", "") or brand_cfg.get("default_upf", "")
     coo          = normalize_coo(content.get("coo", "") or style.get("coo", "") or brand_cfg.get("default_coo", "")) or ""
     clean_brand  = clean_brand_name(brand)
-    item_type_name = _derive_item_type_name(sub_class, product_type=resolved_pt)
+    item_type_name = _derive_item_type_name(sub_class, product_type=resolved_pt, gender=eff_gender, style_name=style_name)
     item_length    = _derive_item_length(sub_subclass, style_name)
     fabric_type    = _derive_fabric_type(fabric)
-    itk_value      = _derive_item_type_keyword(sub_class, product_type=resolved_pt)
+    itk_value      = _derive_item_type_keyword(sub_class, product_type=resolved_pt, gender=eff_gender, style_name=style_name)
     today_str      = datetime.now().strftime("%Y%m%d")
     parent_sku     = style_num
+
+    # Preview values: variation theme, target_gender (Male/Female refined), youth size info
+    _prev_vts = variants or []
+    _prev_hc  = len({(v.get("color_name") or v.get("color") or "") for v in _prev_vts}) > 1
+    _prev_hs  = len({v.get("size", "") for v in _prev_vts}) > 1
+    _prev_vt  = "SIZE/COLOR" if (_prev_hc and _prev_hs) else ("COLOR" if _prev_hc else ("SIZE" if _prev_hs else "COLOR"))
+    _prev_sn_low = (style_name or "").lower()
+    if "boys" in _prev_sn_low or "men" in _prev_sn_low:
+        _prev_tg = "Male"
+    elif "girls" in _prev_sn_low or "women" in _prev_sn_low:
+        _prev_tg = "Female"
+    else:
+        _prev_tg = eff_gender if eff_gender in ("Male","Female") else ""
+    _first_var_sz = (variants[0] if variants else {}).get("size", "")
+    _prev_sst, _prev_sclass, _prev_ard, _prev_size = _derive_youth_size_info(style_name, eff_gender, _first_var_sz)
 
     # Sample title (parent)
     title = content.get("title", style_name)
@@ -3398,7 +3566,7 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="child_parent_sku_relationship#1.child_relationship_type", req_level="required"),
         f(6, "Parent SKU", parent_sku, "default", True,
           field_id="child_parent_sku_relationship#1.parent_sku", req_level="required"),
-        f(7, "Variation Theme", "COLOR/SIZE", "default", True,
+        f(7, "Variation Theme", _prev_vt, "default", True,
           field_id="variation_theme#1.name", req_level="required"),
 
         # ── Product Info ──
@@ -3454,13 +3622,13 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="style#1.value", req_level="recommended"),
         f(47, "Department", eff_dept, "filled" if eff_dept else "empty", False,
           field_id="department#1.value", req_level="required"),
-        f(48, "Target Gender", eff_gender, "filled" if eff_gender else "empty", False,
+        f(48, "Target Gender", _prev_tg, "filled" if _prev_tg else "empty", False,
           field_id="target_gender#1.value", req_level="required"),
-        f(49, "Age Range", "Adult", "default", True,
+        f(49, "Age Range", _prev_ard, "default", True,
           field_id="age_range_description#1.value", req_level="required"),
         f(50, "Size System", "US", "default", True,
           field_id=_size_field(resolved_pt, "size_system"), req_level="required"),
-        f(51, "Size Class", "Alpha", "default", True,
+        f(51, "Size Class", _prev_sclass, "default", True,
           field_id=_size_field(resolved_pt, "size_class"), req_level="required"),
         f(52, "Size (first variant)", size_normalized or size, "filled" if size else "default", False,
           field_id=_size_field(resolved_pt, "size"), req_level="required"),
@@ -3473,7 +3641,7 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
           field_id="number_of_items#1.value", req_level="required"),
         f(62, "Item Type Name", item_type_name, "filled", False,
           field_id="item_type_name#1.value", req_level="required"),
-        f(66, "Special Size Type", "", "default", True,
+        f(66, "Special Size Type", _prev_sst, "default", True,
           field_id="special_size_type#1.value", req_level="conditional"),
         f(68, "Color (Standardized)", color_family, "filled" if color_family else "default", False,
           field_id="color#1.standardized_values#1", req_level="required"),
@@ -3961,7 +4129,7 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     style_gender, style_dept = _derive_gender_department(style)
     eff_gender = style_gender or brand_cfg.get("gender", "")
     eff_dept   = style_dept or brand_cfg.get("department", "")
-    category    = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=detected_product_type)
+    category    = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=detected_product_type, style_name=style_name, department=eff_dept)
     subcategory = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
     fabric      = content.get("fabric", "")      or brand_cfg.get("default_fabric", "")
     care        = content.get("care", "")        or brand_cfg.get("default_care", "")
@@ -3969,10 +4137,10 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     coo         = normalize_coo(content.get("coo", "")         or brand_cfg.get("default_coo", "")) or "Imported"
 
     clean_brand    = clean_brand_name(brand)
-    item_type_name = _derive_item_type_name(sub_class, product_type=detected_product_type)
+    item_type_name = _derive_item_type_name(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
     item_length    = _derive_item_length(sub_subclass, style_name)
     fabric_type    = _derive_fabric_type(fabric)
-    itk_value      = _derive_item_type_keyword(sub_class, product_type=detected_product_type)
+    itk_value      = _derive_item_type_keyword(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
     sleeve_len     = _derive_sleeve_length(sleeve_type)
     today_str      = datetime.now().strftime("%Y%m%d")
     booking_date  = datetime.now().strftime("%Y-%m-%dT00:00:00Z")
@@ -4018,7 +4186,18 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "rtip_vendor_code#1.value",         vendor_code or brand_cfg.get("vendor_code_full", ""))
         write_cell(row_idx, "vendor_sku#1.value",               vendor_sku_val)
         write_cell(row_idx, "product_type#1.value",             detected_product_type)
-        write_cell(row_idx, "variation_theme#1.name",     "COLOR/SIZE")
+        # Variation theme must match Amazon dropdown. For SWIMWEAR, 'SIZE/COLOR' is valid; 'COLOR/SIZE' is NOT.
+        _hm_color = len({(_v.get("color") or _v.get("color_name") or "") for _v in variants}) > 1
+        _hm_size  = len({_v.get("size", "") for _v in variants}) > 1
+        if _hm_color and _hm_size:
+            _vt = "SIZE/COLOR"
+        elif _hm_color:
+            _vt = "COLOR"
+        elif _hm_size:
+            _vt = "SIZE"
+        else:
+            _vt = "COLOR"
+        write_cell(row_idx, "variation_theme#1.name",     _vt)
         write_cell(row_idx, "brand#1.value",                    clean_brand)
         if category:
             write_cell(row_idx, "product_category#1.value",     category)
@@ -4037,9 +4216,21 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "style#1.value",                    style_name.title())
         # fit_type — left blank unless from data/override
         write_cell(row_idx, "fit_type#1.value",                 content.get("fit_type", "") or style.get("fit_type", "") or brand_cfg.get("default_fit_type", ""))
+        # Target gender: Amazon accepts Male/Female; refine youth via style_name.
+        _tg_sn = (style_name or "").lower()
+        if "boys" in _tg_sn or "men" in _tg_sn:
+            _tg = "Male"
+        elif "girls" in _tg_sn or "women" in _tg_sn:
+            _tg = "Female"
+        else:
+            _tg = eff_gender if eff_gender in ("Male", "Female") else ""
+        _first_var = variants[0] if variants else {}
+        _sst_s, _sclass_s, _ard_s, _ = _derive_youth_size_info(style_name, eff_gender, _first_var.get("size", ""))
         write_cell(row_idx, "department#1.value",               eff_dept)
-        write_cell(row_idx, "target_gender#1.value",            eff_gender)
-        write_cell(row_idx, "age_range_description#1.value",    "Adult")
+        write_cell(row_idx, "target_gender#1.value",            _tg)
+        write_cell(row_idx, "age_range_description#1.value",    _ard_s)
+        if _sst_s:
+            write_cell(row_idx, "special_size_type#1.value",   _sst_s)
         write_cell(row_idx, _size_field(detected_product_type, "body_type", col_map),         "")
         write_cell(row_idx, _size_field(detected_product_type, "height_type", col_map),       "")
         if fabric:
@@ -4047,7 +4238,6 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "fabric_type#1.value",              fabric_type)
         write_cell(row_idx, "number_of_items#1.value", "1")
         write_cell(row_idx, "item_type_name#1.value",           item_type_name)
-        write_cell(row_idx, "special_size_type#1.value",             "")
         write_cell(row_idx, "rtip_product_description#1.value", description)
         write_cell(row_idx, "item_length_description#1.value",  item_length)
         write_cell(row_idx, "item_booking_date#1.value",        booking_date)
@@ -4098,8 +4288,13 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     current_row = 7
 
     # ── Parent row ────────────────────────────────────────────────────────────
-    # NOTE: No parent row — all ASINs are children (merged to parent later)
-    # ── Child rows (one per variant) ──────────────────────────────────────────
+    # Parent row (required by Amazon)
+    write_shared(current_row, parent_sku, is_child=False)
+    write_cell(current_row, "parentage_level#1.value", "Parent")
+    write_cell(current_row, "item_name#1.value", content.get("title", style_name))
+    current_row += 1
+
+    # Child rows (one per variant)
     for v in variants:
         color_name = v.get("color_name", "")
         size       = v.get("size", "")
@@ -4112,8 +4307,11 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
 
         variant_title = generate_title(
             brand_cfg, brand, style_name, detected_product_type.title(),
-            color_name, size, upf
+            color_name, size, upf, style_gender=style_gender
         )
+        # Youth-aware size resolution: 2T -> '2 Years', Alpha stays as-is.
+        _sst_v, _sclass_v, _ard_v, _size_youth = _derive_youth_size_info(style_name, eff_gender, size)
+        size_normalized = _size_youth or size_normalized
 
         write_shared(current_row, sku, is_child=True)
         write_cell(current_row, "parentage_level#1.value",      "Child")
@@ -4128,8 +4326,11 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
             if asin_col:
                 ws.cell(row=current_row, column=asin_col).value = child_asin
         write_cell(current_row, _size_field(detected_product_type, "size_system", col_map),   "US")
-        write_cell(current_row, _size_field(detected_product_type, "size_class", col_map),    "Alpha")
+        write_cell(current_row, _size_field(detected_product_type, "size_class", col_map),    _sclass_v)
         write_cell(current_row, _size_field(detected_product_type, "size", col_map),          size_normalized or size)
+        if _sst_v:
+            write_cell(current_row, "special_size_type#1.value", _sst_v)
+        write_cell(current_row, "age_range_description#1.value", _ard_v)
         write_cell(current_row, "color#1.standardized_values#1",         color_family)
         write_cell(current_row, "color#1.value",                color_name.title() if color_name else "")
         # Child cost price — always write so overrides can apply even if source is empty
@@ -4299,15 +4500,15 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         neck       = content.get("neck_type", "") or style.get("neck_type", "") or derive_neck_type(style_name)
         sleeve     = content.get("sleeve_type", "") or style.get("sleeve_type", "") or derive_sleeve_type(style_name)
         sil        = content.get("silhouette", "") or derive_silhouette(sub_subclass)
-        itk        = _derive_item_type_keyword(sub_class, product_type=detected_product_type)
-        itn        = _derive_item_type_name(sub_class, product_type=detected_product_type)
+        itk        = _derive_item_type_keyword(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
+        itn        = _derive_item_type_name(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
         ilen       = _derive_item_length(sub_subclass, style_name)
         ftype      = _derive_fabric_type(fabric)
         slvlen     = _derive_sleeve_length(sleeve)
         list_price = style.get("list_price", "") or content.get("list_price", "")
         bullets    = content.get("bullets", [])
         import_desig = "Imported" if coo.upper() not in ("US", "USA", "UNITED STATES") else "Domestic"
-        cat_val    = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=detected_product_type)
+        cat_val    = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=detected_product_type, style_name=style_name, department=eff_dept)
         subcat_val = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, "")
 
         # ── Shared-fields helper for this style ─────────────────────────────
@@ -4318,10 +4519,25 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
                              _style_name=style_name, _sn=sn, _import_desig=import_desig,
                              _cat_val=cat_val, _subcat_val=subcat_val,
                              _style=style):
-            wc(r, "rtip_vendor_code#1.value",         vendor_code, style_num=_sn)
+            # Vendor code — REQUIRED by Amazon, falls back to brand config
+            vc_val = vendor_code or brand_cfg.get("vendor_code_full", "")
+            wc(r, "rtip_vendor_code#1.value",         vc_val, style_num=_sn)
             wc(r, "vendor_sku#1.value",               sku_val, style_num=_sn)
             wc(r, "product_type#1.value",             detected_product_type, style_num=_sn)
-            wc(r, "variation_theme#1.name",     "COLOR/SIZE", style_num=_sn)
+            # Variation theme — must match Amazon dropdown. For SWIMWEAR, 'SIZE/COLOR' is valid;
+            # 'COLOR/SIZE' is NOT. Use SIZE/COLOR when both vary, COLOR-only or SIZE-only otherwise.
+            _vts = _style.get("variants", []) or []
+            _has_multi_color = len({(v.get("color") or v.get("color_name") or "") for v in _vts}) > 1
+            _has_multi_size  = len({v.get("size", "") for v in _vts}) > 1
+            if _has_multi_color and _has_multi_size:
+                _vt = "SIZE/COLOR"
+            elif _has_multi_color:
+                _vt = "COLOR"
+            elif _has_multi_size:
+                _vt = "SIZE"
+            else:
+                _vt = "COLOR"
+            wc(r, "variation_theme#1.name",     _vt, style_num=_sn)
             wc(r, "brand#1.value",                    clean_brand, style_num=_sn)
             if _cat_val:
                 wc(r, "product_category#1.value",     _cat_val, style_num=_sn)
@@ -4343,9 +4559,21 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(r, "style#1.value",                    _style_name.title(), style_num=_sn)
             # fit_type — from data/override only
             wc(r, "fit_type#1.value",                 _content.get("fit_type", "") or _style.get("fit_type", "") if hasattr(_style, "get") else _content.get("fit_type", ""), style_num=_sn)
+            # Amazon target_gender for SWIMWEAR accepts only Male/Female; refine youth
+            # using style_name ("Little Boys", "Big Girls") when division gives only Unisex.
+            _tg_sn = (_style_name or "").lower()
+            if "boys" in _tg_sn or " boy" in _tg_sn or "men" in _tg_sn:
+                _tg = "Male"
+            elif "girls" in _tg_sn or " girl" in _tg_sn or "women" in _tg_sn:
+                _tg = "Female"
+            else:
+                _tg = eff_gender if eff_gender in ("Male", "Female") else ""
             wc(r, "department#1.value",               eff_dept, style_num=_sn)
-            wc(r, "target_gender#1.value",            eff_gender, style_num=_sn)
-            wc(r, "age_range_description#1.value",    "Adult", style_num=_sn)
+            wc(r, "target_gender#1.value",            _tg, style_num=_sn)
+            # Age range / size_class / special_size_type — youth-aware via first variant
+            _first_var = (_style.get("variants", []) or [{}])[0]
+            _sst, _sclass, _ard, _ = _derive_youth_size_info(_style_name, eff_gender, _first_var.get("size", ""))
+            wc(r, "age_range_description#1.value",    _ard, style_num=_sn)
             wc(r, _size_field(detected_product_type, "body_type", col_map),         "", style_num=_sn)
             wc(r, _size_field(detected_product_type, "height_type", col_map),       "", style_num=_sn)
             if _fabric:
@@ -4353,7 +4581,8 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(r, "fabric_type#1.value",              _ftype, style_num=_sn)
             wc(r, "number_of_items#1.value", "1", style_num=_sn)
             wc(r, "item_type_name#1.value",           _itn, style_num=_sn)
-            wc(r, "special_size_type#1.value",             "", style_num=_sn)
+            if _sst:
+                wc(r, "special_size_type#1.value",    _sst, style_num=_sn)
             wc(r, "rtip_product_description#1.value", _content.get("description", ""), style_num=_sn)
             wc(r, "item_length_description#1.value",  _ilen, style_num=_sn)
             wc(r, "item_booking_date#1.value",        booking_date, style_num=_sn)
@@ -4393,17 +4622,23 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             wc(r, "batteries_required#1.value",  "No", style_num=_sn)
             wc(r, "batteries_included#1.value",  "No", style_num=_sn)
 
-        # ── Parent row ────────────────────────────────────────────────────────
-        # NOTE: No parent row — all ASINs are children (merged to parent later)
+        # ── Parent row (required by Amazon) ───────────────────────────────────
+        write_shared_row(cr, psku)
+        wc(cr, "parentage_level#1.value",                "Parent", style_num=sn)
+        wc(cr, "item_name#1.value",                      content.get("title", style_name), style_num=sn)
+        # Parent rows do NOT get child-specific fields (UPC, color, size, child_parent relationship)
+        cr += 1
+
         # ── Child rows ────────────────────────────────────────────────────────
         for var in style.get("variants", []):
             color  = var.get("color", "") or var.get("color_name", "")
             size   = var.get("size", "")
             upc    = var.get("upc", "")
             v_cost = var.get("cost_price", "")
+            # Youth-aware size resolution: 2T -> '2 Years'; adult alpha stays as-is.
+            _sst_c, _sclass_c, _ard_c, size_norm = _derive_youth_size_info(style_name, eff_gender, size)
             csku   = f"{psku}-{color}-{size}".replace(" ", "-")
             color_family = COLOR_MAP.get(color.upper().strip(), normalize_color(color))
-            size_norm    = normalize_size(size)
             if color:
                 ctitle = content.get("title", "").split(",")[0] + f", {color.title()}, {size_norm or size}"
             else:
@@ -4418,8 +4653,12 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
                 wc(cr, "external_product_id#1.type",  "UPC", style_num=sn)
                 wc(cr, "external_product_id#1.value", re.sub(r"\D", "", str(upc)), style_num=sn)
             wc(cr, _size_field(detected_product_type, "size_system", col_map),      "US", style_num=sn)
-            wc(cr, _size_field(detected_product_type, "size_class", col_map),       "Alpha", style_num=sn)
+            wc(cr, _size_field(detected_product_type, "size_class", col_map),       _sclass_c, style_num=sn)
             wc(cr, _size_field(detected_product_type, "size", col_map),             size_norm or size, style_num=sn)
+            # Repeat special_size_type + age range on every child row (Amazon expects per-row)
+            if _sst_c:
+                wc(cr, "special_size_type#1.value",   _sst_c, style_num=sn)
+            wc(cr, "age_range_description#1.value",   _ard_c, style_num=sn)
             wc(cr, "color#1.standardized_values#1",            color_family, style_num=sn)
             wc(cr, "color#1.value",                   color.title() if color else "", style_num=sn)
             v_list_price = var.get("list_price", "") or list_price
@@ -5028,7 +5267,7 @@ def regenerate_style():
         style_gender, _ = _derive_gender_department(style)
         eff_gender = style_gender or brand_cfg.get("gender", "")
         pt_label = subclass or sub_subclass or resolved_pt.replace("_", " ").title() or "Dress"
-        title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf)
+        title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf, style_gender=style_gender)
         bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf,
                                    subclass=subclass, gender=eff_gender, product_type=resolved_pt)
         description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf,

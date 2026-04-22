@@ -1,9 +1,10 @@
 {
-  "vendor_code_full": "",
+  "vendor_code_full": "Volcom, us_apparel, 7E8G6",
+  "vendor_code_prefix": "7E8G6",
   "default_upf": "",
   "default_coo": "",
   "default_care": "Machine Wash",
-  "gender": "Female",
+  "gender": "",
   "bullet_1_focus": "UPF sun protection",
   "never_words": []
 }
