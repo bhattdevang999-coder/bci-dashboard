@@ -1,5 +1,59 @@
 # Changelog
 
+## 2026-04-22 — Phase 2 Taxonomy UX + NIS Row-Spacing Fix
+
+### Phase 2 — Taxonomy UX on Dashboard
+
+Delivers the operator-facing surface on top of the Phase 1 backend (commit `d3059d8`). The dashboard can now drive per-item-type taxonomy confirmation without leaving the page.
+
+**Added to `templates/index.html`:**
+- **Taxonomy banner** after upload summarising confirmed vs unconfirmed buckets, with `[Review & Confirm]` and `[Generate Anyway]` CTAs.
+- **4 cascading dropdowns** inside each expanded style row (Category → Subcategory → Item Type Keyword → Item Type Name). Subcategory list is silently filtered by the selected category using `universe.subcategories_by_category`. If the previously-selected subcategory is no longer valid after the category change, it is auto-cleared.
+- **`Save as default for …`** button per style — persists the triple `(product_type, sub_class, gender_bucket)` override to the backend and shows a toast.
+- **Bulk-confirm modal** (`[Review & Confirm]`) — one row per unconfirmed bucket with the same 4 dropdowns + individual `Confirm` and `Save All`.
+- **Soft-block on Generate** when any bucket is unconfirmed. Dialog: "Some item-type buckets have no confirmed taxonomy. Auto-derived values will be used. Click Cancel to review and confirm them first, or OK to generate with auto-derived taxonomy." `[Generate Anyway]` sets `window.__taxonomyAck` to bypass on subsequent clicks.
+- **Source indicator per style** (`✓ confirmed` green pill / `⚠ auto-derived` amber pill) on the expanded taxonomy panel.
+- Hydration wiring: `taxonomyInit(data)` on upload response, `taxonomyRenderForStyle(sn)` on first row expand.
+
+**QA performed (this commit):**
+- Upload Volcom swim (59 styles) → 13 buckets detected, banner renders.
+- Save override on `SWIMWEAR|Rashguard|Mens` → `taxonomy_overrides.json` persists entry, banner updates to 1 confirmed / 12 unconfirmed.
+- Bulk-confirm modal opens showing only the 12 remaining unconfirmed buckets.
+- Soft-block fires on Generate Content. `[Generate Anyway]` sets ack flag and lets generation proceed.
+- Cascade recalibration: picking `Men's Swimwear > Trunks`, then switching category to `Boys Private Label`, auto-clears the now-invalid subcategory and repopulates the dropdown with `[Baby Boys PL Swimwear, Boys PL Swimwear]`.
+- End-to-end NIS generation: 2/2 styles succeed, 0 errors, files land in `uploads/output/`.
+
+### NIS Row-Spacing Fix
+
+User-reported: "the NIS file generation has issues with row spacing, they're on top of each other."
+
+**Root cause.** Amazon's .xlsm templates ship with `customHeight=True, height=12.75` on every data row (a single text-line's worth of height) and `wrap_text=None` on bullet/description columns. Our writers were copying cell styles from row 7 into each data row but never:
+1. Setting `wrap_text=True` on long-text cells (bullets up to 500 chars, titles 82-91 chars, descriptions 200+ chars).
+2. Releasing the fixed row height on the data rows.
+
+Result: when Excel opened the file, it crammed 7-line wrapped bullets into 12.75pt rows, which rendered as text visually stacking on top of subsequent rows.
+
+**Fix** (added to `app.py` above `do_xlsm_surgery`):
+- `LONG_TEXT_FIELD_IDS` — set of field IDs that must wrap (5 bullets, description, item_name, style, model_name, generic_keyword, item_type_keyword).
+- `_is_long_text_field(field_id)` helper.
+- `_apply_long_text_alignment(cell, cached_alignment)` — sets `wrap_text=True, vertical=top, shrink_to_fit=False` while preserving horizontal/indent from the template's row-7 style.
+- `_clear_row_heights_for_auto_fit(ws, start_row=7)` — sets `row_dimensions[r].height = None` for rows 7+ so Excel auto-sizes based on wrapped content. Header rows 1-6 keep their heights (row 2 stays 42, row 3 stays 28).
+
+Both writers — `do_xlsm_surgery()` (per-style) and `_generate_category_file()` (combined per product-type) — now call the clear helper after clearing data values and apply long-text alignment when writing any field in `LONG_TEXT_FIELD_IDS`.
+
+**Validation.**
+- Generated NIS_Volcom_436008622.xlsm (Rashguard parent + 4 child variants).
+- Row-dimensions inspection: rows 1-6 keep heights (12.75 / 42 / 28 / 12.75 / 12.75 / 12.75); rows 7-59 have `height=None`, so Excel auto-fits.
+- Bullet cells: `wrap_text=True, vertical=top` in every data row.
+- Converted to PDF via LibreOffice and visually inspected page 24 (bullet_point column): each 149-char bullet renders as 7 neatly wrapped lines inside an auto-sized row with clear separator borders between variants. No stacking.
+
+### Files touched
+- `templates/index.html` — +~570 lines (Phase 2 UX module, banner, per-row taxonomy panel, bulk modal, soft-block wiring).
+- `app.py` — +~50 lines (`LONG_TEXT_FIELD_IDS`, three helpers, two writer call-sites).
+- `taxonomy_overrides.json` — updated with test override for `SWIMWEAR|Rashguard|Mens`.
+
+---
+
 ## 2026-04-22 — Volcom Swimwear QA Pass
 
 End-to-end QA of the Volcom pre-upload file (59 styles, 726 variants) through upload → routing → generation → NIS .xlsm download. Every finding below is triaged Blocker / Major / Minor based on whether Amazon would reject the file or a partner would notice on a demo.

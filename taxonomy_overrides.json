@@ -1,17 +1,5 @@
 {
   "version": 1,
-  "updated_at": "2026-04-22T14:31:13.843342Z",
-  "entries": {
-    "SWIMWEAR|Rashguard|Mens": {
-      "product_type": "SWIMWEAR",
-      "product_category": "Men's Swimwear",
-      "product_subcategory": "Board Shorts",
-      "item_type_keyword": "Rash Guard",
-      "item_type_name": "Rash Guard Shirt",
-      "confirmed_by": "operator@Volcom",
-      "confirmed_at": "2026-04-22T14:31:13.843277Z",
-      "source": "manual",
-      "notes": ""
-    }
-  }
+  "updated_at": "",
+  "entries": {}
 }

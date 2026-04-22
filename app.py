@@ -4468,6 +4468,52 @@ def nis_qa_summary():
     })
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# NIS ROW-SPACING FIX
+# Long-text fields (bullets, description, item_name, style, model_name) must
+# render with wrap_text=True and auto-fit row heights. The Amazon templates
+# ship with customHeight=True, height=12.75 on every data row — when wrapped
+# 200-char bullets are written, Excel hides the wrapped lines because the
+# row is clamped to a single text-line's worth of vertical space, which
+# shows up as "rows on top of each other".
+# ═══════════════════════════════════════════════════════════════════════
+LONG_TEXT_FIELD_IDS = {
+    "bullet_point#1.value", "bullet_point#2.value", "bullet_point#3.value",
+    "bullet_point#4.value", "bullet_point#5.value",
+    "rtip_product_description#1.value",
+    "item_name#1.value", "style#1.value", "model_name#1.value",
+    "generic_keyword#1.value", "item_type_keyword#1.value",
+}
+
+def _is_long_text_field(field_id):
+    return field_id in LONG_TEXT_FIELD_IDS
+
+def _apply_long_text_alignment(cell, cached_alignment=None):
+    """Force wrap_text=True and top-vertical alignment on a long-text cell,
+    preserving any other alignment properties from the template's row-7 style."""
+    base = cached_alignment if cached_alignment is not None else cell.alignment
+    cell.alignment = Alignment(
+        horizontal=(base.horizontal if base is not None else None) or "left",
+        vertical="top",
+        wrap_text=True,
+        shrink_to_fit=False,
+        indent=base.indent if base is not None else 0,
+        text_rotation=base.text_rotation if base is not None else 0,
+    )
+
+def _clear_row_heights_for_auto_fit(ws, start_row=7, end_row=None):
+    """Remove the fixed 12.75 customHeight on data rows so Excel auto-fits
+    wrapped bullet text. Preserves heights on header rows 1-6.
+    openpyxl derives customHeight from whether height is set, so clearing
+    the height alone is enough — the customHeight attribute has no setter."""
+    end_row = end_row or (ws.max_row or 100)
+    for r in range(start_row, end_row + 1):
+        if r in ws.row_dimensions:
+            rd = ws.row_dimensions[r]
+            # Setting height to None releases the fixed row height and lets
+            # Excel auto-size based on wrapped content.
+            rd.height = None
+
 def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content):
     """
     .xlsm surgery — field-ID based dynamic column mapping:
@@ -4534,6 +4580,9 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     for row_idx in range(7, (ws.max_row or 100) + 1):
         for col in range(1, max_col + 1):
             ws.cell(row=row_idx, column=col).value = None
+
+    # ── NIS row-spacing fix: release fixed row heights so wrapped bullet text auto-fits
+    _clear_row_heights_for_auto_fit(ws, start_row=7)
 
     # ── Unpack style / content data ───────────────────────────────────────────
     style_num      = style["style_num"]
@@ -4614,6 +4663,10 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         if cached.get("border"):        cell.border        = copy.copy(cached["border"])
         if cached.get("alignment"):     cell.alignment     = copy.copy(cached["alignment"])
         if cached.get("number_format"): cell.number_format = cached["number_format"]
+        # Long-text fields need wrap_text=True so Excel renders all wrapped
+        # lines instead of stacking them into a single 12.75pt row.
+        if _is_long_text_field(field_id):
+            _apply_long_text_alignment(cell, cached.get("alignment"))
 
     # ── Shared-fields writer (called for both parent and child rows) ──────────
     def write_shared(row_idx, vendor_sku_val, is_child=False):
@@ -4860,6 +4913,9 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         for col in range(1, max_col + 1):
             ws.cell(row=row, column=col).value = None
 
+    # ── NIS row-spacing fix: release fixed row heights so wrapped bullet text auto-fits
+    _clear_row_heights_for_auto_fit(ws, start_row=7)
+
     clean_brand = clean_brand_name(brand)
     today_str   = datetime.now().strftime("%Y%m%d")
     booking_date = datetime.now().strftime("%Y-%m-%dT00:00:00Z")
@@ -4910,6 +4966,9 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         if cached.get("border"):        cell.border        = copy.copy(cached["border"])
         if cached.get("alignment"):     cell.alignment     = copy.copy(cached["alignment"])
         if cached.get("number_format"): cell.number_format = cached["number_format"]
+        # Long-text fields need wrap_text=True for bullets, description, etc.
+        if _is_long_text_field(field_id):
+            _apply_long_text_alignment(cell, cached.get("alignment"))
 
     cr = 7
     for style in cat_styles:

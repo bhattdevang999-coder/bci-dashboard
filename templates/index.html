@@ -3088,6 +3088,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
                 onblur="wsSendFeedback('manual','upload',{scope:'upload'},'summary-feedback-input')"></textarea>
     </div>
 
+    <!-- Taxonomy banner (Phase 2) — populated by taxonomyInit() after upload -->
+    <div id="taxonomy-banner" class="hidden" style="margin:14px 0; padding:14px 16px; border-radius:8px; background:#fff; border:1px solid #cbd5e1;"></div>
+
     <!-- Legacy detection card + stats (kept for compatibility) -->
     <div id="detection-card" class="detection-card hidden"></div>
     <div class="stats-grid mt-16" id="product-stats"></div>
@@ -4319,6 +4322,14 @@ async function handleProductUpload(files) {
     // Show summary card (new design)
     showStyleSummary(data);
 
+    // ── Phase 2: Taxonomy UX ─────────────────────────────────────────────────
+    // Load the universe + overrides once per upload so cascading dropdowns
+    // work without hitting the backend per keystroke. Then render the banner
+    // and hydrate the per-style taxonomy panels lazily.
+    if (typeof taxonomyInit === 'function') {
+      taxonomyInit(data).catch(e => console.error('taxonomy init failed', e));
+    }
+
     // Legacy detection card
     const detectionCard = document.getElementById('detection-card');
     detectionCard.classList.remove('hidden');
@@ -4635,6 +4646,11 @@ async function showStyleSummary(data) {
     // Expandable training row (hidden by default)
     html += '<tr id="pt-brief-row-' + escHtml(sn) + '" style="display:none;">';
     html += '<td colspan="6" style="padding:12px 16px; background:#f0fdfa; border-bottom:2px solid #99f6e4;">';
+    // Taxonomy dropdowns block — rendered lazily by taxonomyRenderForStyle() once we have universe + overrides
+    html += '<div id="tax-row-' + escHtml(sn) + '" class="tax-row" data-style-num="' + escHtml(sn) + '" style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:10px 12px; margin-bottom:10px;">';
+    html += '  <div style="font-size:11px; font-weight:700; color:#0f766e; margin-bottom:6px; display:flex; align-items:center; gap:8px;">TAXONOMY <span id="tax-badge-' + escHtml(sn) + '" style="font-size:10px; padding:1px 6px; border-radius:4px; background:#e2e8f0; color:#475569;">loading\u2026</span></div>';
+    html += '  <div id="tax-body-' + escHtml(sn) + '" style="font-size:11px; color:#64748b;">Initializing\u2026</div>';
+    html += '</div>';
     html += '<div style="display:grid; grid-template-columns: 1fr 200px; gap:12px;">';
     // Brief textarea
     html += '<div>';
@@ -5089,6 +5105,23 @@ async function startGeneration() {
   if (state.styles.length === 0) {
     showToast('Please upload product data first.', 'error');
     return;
+  }
+
+  // ── Phase 2: Taxonomy soft-block ─────────────────────────────────────
+  // If unconfirmed buckets exist and operator has NOT already acknowledged, prompt.
+  // window.__taxonomyAck = true means they clicked 'Generate Anyway' in the banner.
+  if (typeof taxonomyHasUnconfirmed === 'function' && taxonomyHasUnconfirmed() && !window.__taxonomyAck) {
+    const proceed = confirm(
+      'Some item-type buckets have no confirmed taxonomy. Auto-derived values will be used.\n\n' +
+      'Click Cancel to review and confirm them first, or OK to generate with auto-derived taxonomy.'
+    );
+    if (!proceed) {
+      // Scroll to the banner
+      const banner = document.getElementById('taxonomy-banner');
+      if (banner) banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    window.__taxonomyAck = true;
   }
 
   // Filter to only styles with trained product types (per-style selection)
@@ -7807,6 +7840,10 @@ function toggleStyleBrief(styleNum) {
   const visible = row.style.display !== 'none';
   row.style.display = visible ? 'none' : 'table-row';
   if (arrow) arrow.style.transform = visible ? '' : 'rotate(90deg)';
+  // Hydrate the taxonomy dropdowns on first expand
+  if (!visible && typeof taxonomyRenderForStyle === 'function') {
+    taxonomyRenderForStyle(styleNum);
+  }
 }
 
 async function uploadStyleImage(styleNum, files) {
@@ -8175,6 +8212,502 @@ async function intelDismiss(recId) {
     showToast('Error: ' + e.message, 'error');
   }
 }
+
+// ═════════════════════════════════════════════════════════════════
+// PHASE 2: TAXONOMY UX MODULE
+// ═════════════════════════════════════════════════════════════════
+
+window.taxonomyState = {
+  universe: {},        // { PRODUCT_TYPE: { product_categories, subcategories_by_category, item_type_names } }
+  overrides: {},       // { key: entry }
+  summary: null,       // taxonomy_summary from upload
+  buckets: [],         // flat list of bucket objects from upload
+  styleMeta: {},       // styleNum -> { key, pt, sub_class, gender_bucket, confirmed }
+};
+
+async function taxonomyInit(uploadData) {
+  // 1. Fetch the universe + current overrides once per upload
+  try {
+    const r = await fetch('/api/taxonomy');
+    const d = await r.json();
+    taxonomyState.universe = d.universe || {};
+    taxonomyState.overrides = d.entries || {};
+  } catch(e) { console.error('taxonomy load failed', e); return; }
+
+  // 2. Ingest per-style bucket info from the upload response
+  const summary = (uploadData && uploadData.taxonomy_summary) || { buckets: [] };
+  taxonomyState.summary = summary;
+  taxonomyState.buckets = summary.buckets || [];
+
+  // Build styleNum -> bucket key map by re-deriving client-side
+  taxonomyState.styleMeta = {};
+  (uploadData.styles || []).forEach(s => {
+    const pt = s._resolved_pt || '';
+    const sc = s.subclass || s.sub_class || '';
+    const gb = taxonomyDeriveGenderBucket(s);
+    const key = (pt + '|' + sc + '|' + gb).toUpperCase().replace(/^\|/, '').replace(pt + '|', pt + '|').replace(/\|$/, '');
+    // Safer: rebuild from parts
+    const fullKey = pt + '|' + sc + '|' + gb;
+    taxonomyState.styleMeta[s.style_num] = {
+      key: fullKey,
+      product_type: pt,
+      sub_class: sc,
+      gender_bucket: gb,
+      confirmed: !!(taxonomyState.overrides[fullKey] && taxonomyState.overrides[fullKey].source === 'manual'),
+    };
+  });
+
+  // Reset acknowledgment so a fresh upload shows the prompt again
+  window.__taxonomyAck = false;
+
+  // 3. Render the banner above the styles table
+  taxonomyRenderBanner();
+}
+
+function taxonomyDeriveGenderBucket(style) {
+  // Mirrors backend _derive_gender_bucket() closely so client + server agree.
+  const dn = ((style.division_name || '') + '').toUpperCase();
+  const sn = ((style.style_name || '') + '').toUpperCase();
+  const all = dn + ' ' + sn;
+  if (all.includes('BABY') || all.includes('INFANT')) return 'Baby';
+  if (all.includes('YOUTH') || all.includes('KIDS') || all.includes(' BOY') || all.includes('BOYS') || all.includes(' GIRL') || all.includes('GIRLS') || all.includes('TODDLER')) {
+    const girls = all.includes('GIRL');
+    const boys = all.includes('BOY');
+    if (all.includes('TODDLER')) return girls ? 'GirlsToddler' : 'BoysToddler';
+    if (all.includes('LITTLE'))  return girls ? 'GirlsLittle' : 'BoysLittle';
+    if (all.includes('BIG'))     return girls ? 'GirlsBig' : 'BoysBig';
+    if (girls) return 'GirlsBig';
+    if (boys)  return 'BoysBig';
+    return 'Unisex';
+  }
+  if (dn.includes('WOMENS') || dn.includes("WOMEN'S") || dn.includes('WOMEN ')) {
+    if (all.includes('PETITE')) return 'WomensPetite';
+    if (/PLUS| 1X| 2X| 3X/.test(all)) return 'WomensPlus';
+    return 'Womens';
+  }
+  if (dn.includes('MENS') || dn.includes("MEN'S") || dn.includes(' MEN ') || dn.endsWith(' MEN')) {
+    if (/BIG AND TALL|BIG & TALL|PLUS| 2XL| 3XL| 4XL/.test(all)) return 'MensPlus';
+    return 'Mens';
+  }
+  return 'Unisex';
+}
+
+function taxonomyHasUnconfirmed() {
+  const b = taxonomyState.summary;
+  return b && b.unconfirmed_buckets && b.unconfirmed_buckets > 0;
+}
+
+function taxonomyRenderBanner() {
+  const el = document.getElementById('taxonomy-banner');
+  if (!el) return;
+  const s = taxonomyState.summary;
+  if (!s || !s.total_buckets) { el.classList.add('hidden'); return; }
+
+  const conf = s.confirmed_buckets || 0;
+  const unconf = s.unconfirmed_buckets || 0;
+  const total = s.total_buckets || 0;
+
+  let border = unconf > 0 ? '#fbbf24' : '#10b981';
+  let bg = unconf > 0 ? '#fef3c7' : '#ecfdf5';
+  el.style.border = '1px solid ' + border;
+  el.style.background = bg;
+
+  let h = '';
+  h += '<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">';
+  h += '  <div style="font-size:13px; font-weight:700; letter-spacing:0.3px; text-transform:uppercase;">Taxonomy Check</div>';
+  h += '  <div style="font-size:13px;">';
+  h += '    <span style="color:#059669;">\u2713 ' + conf + ' confirmed</span>';
+  if (unconf > 0) h += '    <span style="color:#b45309; margin-left:12px;">\u26a0 ' + unconf + ' unconfirmed</span>';
+  h += '    <span style="color:#64748b; margin-left:12px; font-size:12px;">(' + total + ' item-type buckets in this upload)</span>';
+  h += '  </div>';
+  h += '  <div style="margin-left:auto; display:flex; gap:8px;">';
+  h += '    <button class="btn btn-primary btn-sm" onclick="taxonomyOpenBulkModal()">Review & Confirm</button>';
+  if (unconf > 0) h += '    <button class="btn btn-secondary btn-sm" onclick="taxonomyGenerateAnyway()">Generate Anyway</button>';
+  h += '  </div>';
+  h += '</div>';
+
+  if (unconf > 0) {
+    const unconfBuckets = taxonomyState.buckets.filter(b => !b.confirmed);
+    h += '<div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;">';
+    unconfBuckets.slice(0, 12).forEach(b => {
+      h += '<span style="font-size:11px; padding:3px 8px; border-radius:4px; background:#fde68a; color:#78350f;">'
+         + (b.product_type || '') + ' / ' + (b.sub_class || '') + ' / ' + (b.gender_bucket || '')
+         + ' (' + (b.style_count || 0) + ')</span>';
+    });
+    if (unconfBuckets.length > 12) h += '<span style="font-size:11px; color:#78350f;">+' + (unconfBuckets.length - 12) + ' more</span>';
+    h += '</div>';
+  }
+
+  el.innerHTML = h;
+  el.classList.remove('hidden');
+}
+
+function taxonomyGenerateAnyway() {
+  window.__taxonomyAck = true;
+  const genBtn = document.getElementById('generate-btn');
+  if (genBtn) genBtn.scrollIntoView({behavior: 'smooth', block: 'center'});
+  showToast('Proceed with auto-derived taxonomy \u2014 click Generate Content when ready.', 'info');
+}
+
+// ── Per-style taxonomy panel (cascading dropdowns) ───────────────────
+function taxonomyRenderForStyle(styleNum) {
+  const bodyEl = document.getElementById('tax-body-' + styleNum);
+  const badgeEl = document.getElementById('tax-badge-' + styleNum);
+  if (!bodyEl) return;
+  const meta = taxonomyState.styleMeta[styleNum];
+  if (!meta) { bodyEl.textContent = 'No taxonomy metadata for this style.'; return; }
+
+  const pt = meta.product_type;
+  const u = (taxonomyState.universe || {})[pt] || {};
+  const cats = u.product_categories || [];
+  const itns = u.item_type_names || [];
+  const subsByCat = u.subcategories_by_category || {};
+  const override = taxonomyState.overrides[meta.key];
+  const source = override && override.source === 'manual' ? 'override' : 'auto';
+
+  // Seed values: override wins, else auto-derive from the bucket's auto_derived
+  let cat = '', sub = '', itk = '', itn = '';
+  if (override) {
+    cat = override.product_category || '';
+    sub = override.product_subcategory || '';
+    itk = override.item_type_keyword || '';
+    itn = override.item_type_name || '';
+  } else {
+    const bucket = taxonomyState.buckets.find(b => b.key === meta.key);
+    const ad = (bucket && bucket.auto_derived) || {};
+    cat = ad.product_category || '';
+    sub = ad.product_subcategory || '';
+    itk = ad.item_type_keyword || '';
+    itn = ad.item_type_name || '';
+  }
+
+  if (badgeEl) {
+    if (source === 'override') {
+      badgeEl.textContent = '\u2713 confirmed';
+      badgeEl.style.background = '#d1fae5';
+      badgeEl.style.color = '#065f46';
+    } else {
+      badgeEl.textContent = '\u26a0 auto-derived';
+      badgeEl.style.background = '#fef3c7';
+      badgeEl.style.color = '#78350f';
+    }
+  }
+
+  let h = '';
+  h += '<div style="font-size:11px; color:#475569; margin-bottom:8px;">';
+  h += 'Item-type bucket: <strong>' + escHtml(pt) + '</strong> / <strong>' + escHtml(meta.sub_class) + '</strong> / <strong>' + escHtml(meta.gender_bucket) + '</strong>';
+  h += '</div>';
+  h += '<div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:8px; font-size:11px;">';
+
+  // Category dropdown
+  h += '<div><label style="font-weight:700; color:#475569; display:block; margin-bottom:3px;">Category</label>';
+  h += '<select id="tax-cat-' + escHtml(styleNum) + '" onchange="taxonomyOnChange(\'' + escHtml(styleNum) + '\')" style="width:100%; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
+  h += '<option value="">\u2014 pick \u2014</option>';
+  cats.forEach(c => { h += '<option value="' + escHtml(c) + '"' + (c === cat ? ' selected' : '') + '>' + escHtml(c) + '</option>'; });
+  h += '</select></div>';
+
+  // Subcategory dropdown (filtered by category)
+  h += '<div><label style="font-weight:700; color:#475569; display:block; margin-bottom:3px;">Subcategory</label>';
+  h += '<select id="tax-sub-' + escHtml(styleNum) + '" onchange="taxonomyOnChange(\'' + escHtml(styleNum) + '\')" style="width:100%; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
+  const validSubs = subsByCat[cat] || [];
+  h += '<option value="">\u2014 pick \u2014</option>';
+  validSubs.forEach(sv => { h += '<option value="' + escHtml(sv) + '"' + (sv === sub ? ' selected' : '') + '>' + escHtml(sv) + '</option>'; });
+  h += '</select></div>';
+
+  // Item Type Keyword (free-text with suggestion datalist)
+  h += '<div><label style="font-weight:700; color:#475569; display:block; margin-bottom:3px;">Item Type Keyword</label>';
+  h += '<input type="text" id="tax-itk-' + escHtml(styleNum) + '" value="' + escHtml(itk) + '" oninput="taxonomyOnChange(\'' + escHtml(styleNum) + '\')" list="tax-itk-suggest" style="width:100%; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
+  h += '</div>';
+
+  // Item Type Name dropdown
+  h += '<div><label style="font-weight:700; color:#475569; display:block; margin-bottom:3px;">Item Type Name</label>';
+  h += '<select id="tax-itn-' + escHtml(styleNum) + '" onchange="taxonomyOnChange(\'' + escHtml(styleNum) + '\')" style="width:100%; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
+  h += '<option value="">\u2014 pick \u2014</option>';
+  itns.forEach(n => { h += '<option value="' + escHtml(n) + '"' + (n === itn ? ' selected' : '') + '>' + escHtml(n) + '</option>'; });
+  h += '</select></div>';
+
+  h += '</div>';
+
+  // Action row
+  h += '<div style="margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">';
+  h += '  <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); taxonomySaveForStyle(\'' + escHtml(styleNum) + '\')" style="font-size:11px;">Save as default for ' + escHtml(pt) + ' / ' + escHtml(meta.sub_class) + ' / ' + escHtml(meta.gender_bucket) + '</button>';
+  h += '  <span id="tax-save-status-' + escHtml(styleNum) + '" style="font-size:11px; color:#64748b;"></span>';
+  h += '  <span id="tax-validation-' + escHtml(styleNum) + '" style="font-size:11px; color:#b91c1c;"></span>';
+  h += '</div>';
+
+  bodyEl.innerHTML = h;
+  // Also seed the suggestion datalist once
+  taxonomyEnsureITKDatalist();
+}
+
+function taxonomyEnsureITKDatalist() {
+  if (document.getElementById('tax-itk-suggest')) return;
+  const dl = document.createElement('datalist');
+  dl.id = 'tax-itk-suggest';
+  ['rash-guards','swim-trunks','board-shorts','bikini-tops','bikini-bottoms','one-piece-swimsuits','tankini-swimsuits','bikini-sets','rash-guard-sets','swim-sets','swim-shorts','fashion-swimwear-cover-ups'].forEach(v => {
+    const o = document.createElement('option'); o.value = v; dl.appendChild(o);
+  });
+  document.body.appendChild(dl);
+}
+
+function taxonomyOnChange(styleNum) {
+  // Recalibrate: when Category changes, rebuild Subcategory dropdown.
+  const meta = taxonomyState.styleMeta[styleNum];
+  if (!meta) return;
+  const u = (taxonomyState.universe || {})[meta.product_type] || {};
+  const subsByCat = u.subcategories_by_category || {};
+  const catEl = document.getElementById('tax-cat-' + styleNum);
+  const subEl = document.getElementById('tax-sub-' + styleNum);
+  if (!catEl || !subEl) return;
+  const selectedCat = catEl.value;
+  const prevSub = subEl.value;
+  const validSubs = subsByCat[selectedCat] || [];
+
+  // Rebuild subcategory options
+  subEl.innerHTML = '<option value="">\u2014 pick \u2014</option>' +
+    validSubs.map(s => '<option value="' + escHtml(s) + '">' + escHtml(s) + '</option>').join('');
+  // Preserve previous subcategory if still valid; otherwise clear
+  if (validSubs.includes(prevSub)) subEl.value = prevSub;
+  else if (prevSub) {
+    // Show a transient notice that the prev subcategory was cleared
+    const val = document.getElementById('tax-validation-' + styleNum);
+    if (val) {
+      val.textContent = '"' + prevSub + '" is not valid under "' + selectedCat + '" \u2014 pick a new subcategory';
+      setTimeout(() => { if (val) val.textContent = ''; }, 4000);
+    }
+  }
+}
+
+async function taxonomySaveForStyle(styleNum) {
+  const meta = taxonomyState.styleMeta[styleNum];
+  if (!meta) return;
+  const cat = (document.getElementById('tax-cat-' + styleNum) || {}).value || '';
+  const sub = (document.getElementById('tax-sub-' + styleNum) || {}).value || '';
+  const itk = (document.getElementById('tax-itk-' + styleNum) || {}).value || '';
+  const itn = (document.getElementById('tax-itn-' + styleNum) || {}).value || '';
+  const statusEl = document.getElementById('tax-save-status-' + styleNum);
+  const valEl = document.getElementById('tax-validation-' + styleNum);
+  if (valEl) valEl.textContent = '';
+  if (statusEl) statusEl.textContent = 'Saving\u2026';
+
+  try {
+    const res = await fetch('/api/taxonomy/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sub_class: meta.sub_class,
+        gender_bucket: meta.gender_bucket,
+        product_type: meta.product_type,
+        product_category: cat,
+        product_subcategory: sub,
+        item_type_keyword: itk,
+        item_type_name: itn,
+        confirmed_by: (state.brand ? 'operator@' + state.brand : 'operator'),
+      }),
+    });
+    const d = await res.json();
+    if (!res.ok || d.error) {
+      if (statusEl) statusEl.textContent = '';
+      if (valEl && d.errors && d.errors.length) {
+        const e0 = d.errors[0];
+        valEl.textContent = e0.field + ': ' + e0.reason + '.';
+      } else if (valEl) {
+        valEl.textContent = d.error || 'Save failed';
+      }
+      showToast((d.error || 'Validation failed') + (d.errors ? ': ' + d.errors.map(e => e.field).join(', ') : ''), 'error');
+      return;
+    }
+    // Update local state
+    taxonomyState.overrides[d.key] = d.entry;
+    meta.confirmed = true;
+    // Refresh banner counts
+    if (taxonomyState.summary) {
+      // Recount confirmed across all styles
+      let confBuckets = 0, unconfBuckets = 0;
+      const seen = new Set();
+      Object.values(taxonomyState.styleMeta).forEach(m => {
+        if (seen.has(m.key)) return; seen.add(m.key);
+        const e = taxonomyState.overrides[m.key];
+        if (e && e.source === 'manual') { confBuckets++; m.confirmed = true; }
+        else unconfBuckets++;
+      });
+      taxonomyState.summary.confirmed_buckets = confBuckets;
+      taxonomyState.summary.unconfirmed_buckets = unconfBuckets;
+      taxonomyState.buckets.forEach(b => {
+        b.confirmed = !!(taxonomyState.overrides[b.key] && taxonomyState.overrides[b.key].source === 'manual');
+      });
+      taxonomyRenderBanner();
+    }
+    // Refresh this style's badge
+    const badgeEl = document.getElementById('tax-badge-' + styleNum);
+    if (badgeEl) {
+      badgeEl.textContent = '\u2713 confirmed';
+      badgeEl.style.background = '#d1fae5';
+      badgeEl.style.color = '#065f46';
+    }
+    if (statusEl) statusEl.textContent = '\u2713 saved \u2014 ' + d.affected_styles_in_session + ' style(s) in this session inherit';
+    showToast('Saved taxonomy for ' + meta.sub_class + ' / ' + meta.gender_bucket + ' \u2014 ' + d.affected_styles_in_session + ' styles in session updated', 'success');
+  } catch(e) {
+    if (statusEl) statusEl.textContent = '';
+    showToast('Save failed: ' + e.message, 'error');
+  }
+}
+
+// ── Bulk confirm modal ─────────────────────────────────────────────────────
+function taxonomyOpenBulkModal() {
+  let modal = document.getElementById('tax-bulk-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'tax-bulk-modal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = taxonomyBuildBulkModalHTML();
+  modal.style.display = 'flex';
+}
+
+function taxonomyCloseBulkModal() {
+  const modal = document.getElementById('tax-bulk-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function taxonomyBuildBulkModalHTML() {
+  const buckets = (taxonomyState.buckets || []).slice().sort((a, b) => {
+    if (a.confirmed !== b.confirmed) return a.confirmed ? 1 : -1;
+    return (b.style_count || 0) - (a.style_count || 0);
+  });
+  let h = '<div style="background:#fff; border-radius:8px; max-width:1100px; width:100%; max-height:85vh; overflow-y:auto; padding:20px;">';
+  h += '<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:14px;">';
+  h += '<div style="font-size:16px; font-weight:700;">Bulk Taxonomy Confirmation</div>';
+  h += '<div style="margin-left:auto;"><button class="btn btn-secondary btn-sm" onclick="taxonomyCloseBulkModal()">Close</button></div>';
+  h += '</div>';
+  h += '<div style="font-size:12px; color:#64748b; margin-bottom:12px;">Review and confirm the taxonomy for every item-type bucket in this upload. Auto-derived values are pre-filled \u2014 accept or adjust, then click Confirm.</div>';
+  h += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+  h += '<thead><tr style="background:#f1f5f9; text-align:left;">';
+  h += '<th style="padding:8px; border-bottom:1px solid #cbd5e1; width:28%;">Bucket</th>';
+  h += '<th style="padding:8px; border-bottom:1px solid #cbd5e1;">Category</th>';
+  h += '<th style="padding:8px; border-bottom:1px solid #cbd5e1;">Subcategory</th>';
+  h += '<th style="padding:8px; border-bottom:1px solid #cbd5e1;">Item Type Name</th>';
+  h += '<th style="padding:8px; border-bottom:1px solid #cbd5e1; width:14%;">Action</th>';
+  h += '</tr></thead><tbody>';
+
+  buckets.forEach((b, i) => {
+    const confirmed = !!b.confirmed;
+    const override = taxonomyState.overrides[b.key];
+    const ad = (override && override.source === 'manual') ? override : (b.auto_derived || {});
+    const pt = b.product_type || '';
+    const u = (taxonomyState.universe || {})[pt] || {};
+    const cats = u.product_categories || [];
+    const itns = u.item_type_names || [];
+    const subs = (u.subcategories_by_category || {})[ad.product_category || ''] || [];
+    h += '<tr id="tax-bulk-row-' + i + '" style="border-bottom:1px solid #f1f5f9;">';
+    h += '<td style="padding:8px; vertical-align:top;">';
+    h += '  ' + (confirmed ? '<span style="color:#059669;">\u2713</span>' : '<span style="color:#b45309;">\u26a0</span>') + ' ';
+    h += '  <strong>' + escHtml(b.sub_class || '') + '</strong><br/>';
+    h += '  <span style="font-size:11px; color:#64748b;">' + escHtml(pt) + ' / ' + escHtml(b.gender_bucket || '') + '</span><br/>';
+    h += '  <span style="font-size:11px; color:#64748b;">' + (b.style_count || 0) + ' styles</span>';
+    h += '</td>';
+    h += '<td style="padding:8px; vertical-align:top;"><select id="bulk-cat-' + i + '" onchange="taxonomyBulkOnChange(' + i + ', \'' + escHtml(pt) + '\')" style="width:100%; font-size:11px; padding:4px;">'
+         + '<option value="">\u2014</option>'
+         + cats.map(c => '<option value="' + escHtml(c) + '"' + (c === ad.product_category ? ' selected' : '') + '>' + escHtml(c) + '</option>').join('')
+         + '</select></td>';
+    h += '<td style="padding:8px; vertical-align:top;"><select id="bulk-sub-' + i + '" style="width:100%; font-size:11px; padding:4px;">'
+         + '<option value="">\u2014</option>'
+         + subs.map(s => '<option value="' + escHtml(s) + '"' + (s === ad.product_subcategory ? ' selected' : '') + '>' + escHtml(s) + '</option>').join('')
+         + '</select></td>';
+    h += '<td style="padding:8px; vertical-align:top;"><select id="bulk-itn-' + i + '" style="width:100%; font-size:11px; padding:4px;">'
+         + '<option value="">\u2014</option>'
+         + itns.map(n => '<option value="' + escHtml(n) + '"' + (n === ad.item_type_name ? ' selected' : '') + '>' + escHtml(n) + '</option>').join('')
+         + '</select>'
+         + '<input type="hidden" id="bulk-itk-' + i + '" value="' + escHtml(ad.item_type_keyword || '') + '"/>'
+         + '</td>';
+    h += '<td style="padding:8px; vertical-align:top;">';
+    h += '  <button class="btn btn-primary btn-sm" onclick="taxonomyBulkSaveRow(' + i + ')" style="font-size:11px; width:100%;">Confirm</button>';
+    h += '  <span id="bulk-status-' + i + '" style="font-size:10px; color:#64748b; display:block; margin-top:4px;"></span>';
+    h += '</td>';
+    h += '</tr>';
+    // Stash bucket ref on row for lookups
+    window.__taxonomyBulkBuckets = buckets;
+  });
+
+  h += '</tbody></table>';
+  h += '<div style="margin-top:14px; display:flex; align-items:center; gap:10px;">';
+  h += '  <button class="btn btn-primary" onclick="taxonomyBulkSaveAll()">Confirm All Remaining (use shown values)</button>';
+  h += '  <span style="font-size:12px; color:#64748b;">Closes automatically when done.</span>';
+  h += '</div>';
+  h += '</div>';
+  return h;
+}
+
+function taxonomyBulkOnChange(i, pt) {
+  const catEl = document.getElementById('bulk-cat-' + i);
+  const subEl = document.getElementById('bulk-sub-' + i);
+  if (!catEl || !subEl) return;
+  const u = (taxonomyState.universe || {})[pt] || {};
+  const subs = (u.subcategories_by_category || {})[catEl.value] || [];
+  const prev = subEl.value;
+  subEl.innerHTML = '<option value="">\u2014</option>' + subs.map(s => '<option value="' + escHtml(s) + '">' + escHtml(s) + '</option>').join('');
+  if (subs.includes(prev)) subEl.value = prev;
+}
+
+async function taxonomyBulkSaveRow(i) {
+  const b = (window.__taxonomyBulkBuckets || [])[i];
+  if (!b) return;
+  const cat = (document.getElementById('bulk-cat-' + i) || {}).value || '';
+  const sub = (document.getElementById('bulk-sub-' + i) || {}).value || '';
+  const itn = (document.getElementById('bulk-itn-' + i) || {}).value || '';
+  const itk = (document.getElementById('bulk-itk-' + i) || {}).value || '';
+  const status = document.getElementById('bulk-status-' + i);
+  if (status) status.textContent = 'saving\u2026';
+  try {
+    const res = await fetch('/api/taxonomy/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sub_class: b.sub_class,
+        gender_bucket: b.gender_bucket,
+        product_type: b.product_type,
+        product_category: cat,
+        product_subcategory: sub,
+        item_type_keyword: itk,
+        item_type_name: itn,
+        confirmed_by: (state.brand ? 'operator@' + state.brand : 'operator'),
+      }),
+    });
+    const d = await res.json();
+    if (!res.ok || d.error) {
+      if (status) status.textContent = '\u2717 ' + (d.errors && d.errors[0] ? d.errors[0].reason : (d.error || 'failed'));
+      return;
+    }
+    if (status) status.textContent = '\u2713 saved';
+    taxonomyState.overrides[d.key] = d.entry;
+    b.confirmed = true;
+    // Update banner counts
+    taxonomyState.summary.confirmed_buckets++;
+    taxonomyState.summary.unconfirmed_buckets = Math.max(0, (taxonomyState.summary.unconfirmed_buckets || 0) - 1);
+    taxonomyRenderBanner();
+  } catch(e) {
+    if (status) status.textContent = '\u2717 ' + e.message;
+  }
+}
+
+async function taxonomyBulkSaveAll() {
+  const buckets = window.__taxonomyBulkBuckets || [];
+  let saved = 0, failed = 0;
+  for (let i = 0; i < buckets.length; i++) {
+    if (buckets[i].confirmed) continue;
+    await taxonomyBulkSaveRow(i);
+    const status = document.getElementById('bulk-status-' + i);
+    if (status && status.textContent.indexOf('\u2713') === 0) saved++;
+    else failed++;
+  }
+  showToast('Bulk save: ' + saved + ' confirmed' + (failed ? ', ' + failed + ' failed' : ''), failed ? 'warn' : 'success');
+  if (!failed) taxonomyCloseBulkModal();
+}
+
+// ═════════════════════════════════════════════════════════════════
+// END PHASE 2 TAXONOMY
+// ═════════════════════════════════════════════════════════════════
 
 </script>
 </body>
