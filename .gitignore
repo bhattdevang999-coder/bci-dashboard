@@ -7,3 +7,4 @@ uploads/output/*
 !uploads/keywords/.gitkeep
 !uploads/output/.gitkeep
 *.zip
+feedback/taxonomy_history.jsonl

@@ -56,6 +56,211 @@ BRAND_CONFIGS_DIR = BASE_DIR / "brand_configs"
 DROPDOWN_CACHE_DIR = BASE_DIR / "dropdown_cache"
 SUBCLASS_MAP_FILE = BASE_DIR / "subclass_product_type_map.json"
 
+# ── Taxonomy Overrides (Phase 1) ───────────────────────────────────────────────
+# Per-item-type confirmed taxonomy quadruple: product_category / product_subcategory
+# / item_type_keyword / item_type_name. Keyed by (product_type, sub_class, gender_bucket).
+# Universal across brands — Amazon's taxonomy doesn't care which brand owns the SKU.
+TAXONOMY_OVERRIDES_FILE = BASE_DIR / "taxonomy_overrides.json"
+TAXONOMY_UNIVERSE_FILE  = BASE_DIR / "taxonomy_universe.json"
+TAXONOMY_HISTORY_FILE   = BASE_DIR / "feedback" / "taxonomy_history.jsonl"
+
+# Closed set of 13 gender buckets — see spec for derivation rules.
+GENDER_BUCKETS = [
+    "Mens", "Womens", "MensPlus", "WomensPlus", "WomensPetite",
+    "BoysToddler", "BoysLittle", "BoysBig",
+    "GirlsToddler", "GirlsLittle", "GirlsBig",
+    "Baby", "Unisex",
+]
+
+def _load_taxonomy_universe():
+    """Load the pre-computed valid-value universe from taxonomy_universe.json.
+    Structure: { PRODUCT_TYPE: { product_categories, subcategories_by_category, item_type_names } }
+    Returns {} if the file doesn't exist yet (universe builder hasn't run).
+    """
+    if not TAXONOMY_UNIVERSE_FILE.exists():
+        return {}
+    try:
+        return json.loads(TAXONOMY_UNIVERSE_FILE.read_text())
+    except Exception:
+        return {}
+
+def _load_taxonomy_overrides():
+    """Load the operator-confirmed taxonomy store. Returns a dict with
+    'version' / 'updated_at' / 'entries' keys. Creates an empty shell if missing.
+    """
+    if not TAXONOMY_OVERRIDES_FILE.exists():
+        return {"version": 1, "updated_at": "", "entries": {}}
+    try:
+        data = json.loads(TAXONOMY_OVERRIDES_FILE.read_text())
+        if "entries" not in data:
+            data["entries"] = {}
+        if "version" not in data:
+            data["version"] = 1
+        return data
+    except Exception:
+        return {"version": 1, "updated_at": "", "entries": {}}
+
+def _save_taxonomy_overrides(data):
+    """Atomic write: tmp -> rename. No git push here — that's done separately
+    so one failing push doesn't block the save."""
+    data["updated_at"] = datetime.now().isoformat() + "Z"
+    tmp = TAXONOMY_OVERRIDES_FILE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(data, indent=2, sort_keys=False))
+    tmp.replace(TAXONOMY_OVERRIDES_FILE)
+
+def _append_taxonomy_history(key, entry, action):
+    """Append audit log entry for every taxonomy change."""
+    try:
+        TAXONOMY_HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(str(TAXONOMY_HISTORY_FILE), "a") as f:
+            f.write(json.dumps({
+                "timestamp": datetime.now().isoformat() + "Z",
+                "action": action,
+                "key": key,
+                "entry": entry,
+            }) + "\n")
+    except Exception:
+        pass
+
+def _try_git_commit_taxonomy(key, user):
+    """Best-effort git commit + push of taxonomy_overrides.json. Silent failure.
+    Runs in-process but with a short timeout so a slow network doesn't block the request.
+    """
+    import subprocess
+    try:
+        cwd = str(BASE_DIR)
+        subprocess.run(["git", "add", "taxonomy_overrides.json"], cwd=cwd, timeout=5, capture_output=True)
+        msg = f"taxonomy: confirm {key} by {user or 'unknown'}"
+        subprocess.run(["git", "commit", "-m", msg], cwd=cwd, timeout=5, capture_output=True)
+        subprocess.run(["git", "push", "origin", "master"], cwd=cwd, timeout=10, capture_output=True)
+    except Exception as e:
+        print(f"[taxonomy] git push failed (non-blocking): {e}")
+
+def _derive_gender_bucket(style):
+    """Map a style to one of the 13 closed-set gender buckets.
+    Uses division_name AND style_name so 'VOLCOM YOUTH SWIM' + 'Little Boys ...'
+    resolves to 'BoysLittle' not 'Unisex'.
+    """
+    dn = (style.get("division_name", "") or "").upper()
+    sn = (style.get("style_name", "") or "").upper()
+    combined = f"{dn} {sn}"
+
+    # Baby/infant first
+    if "BABY" in combined or "INFANT" in combined:
+        return "Baby"
+
+    # Youth buckets (check before adult since YOUTH-division styles may have style_name signals)
+    if any(t in combined for t in ["YOUTH", "KIDS", " BOY", "BOYS", " GIRL", "GIRLS", "TODDLER"]):
+        is_girls = "GIRL" in combined
+        is_boys  = "BOY" in combined
+        if "TODDLER" in combined:
+            return "GirlsToddler" if is_girls else "BoysToddler"
+        if "LITTLE" in combined:
+            return "GirlsLittle" if is_girls else "BoysLittle"
+        if "BIG" in combined:
+            return "GirlsBig" if is_girls else "BoysBig"
+        # Youth without size bucket — default to Big Kid
+        if is_girls:
+            return "GirlsBig"
+        if is_boys:
+            return "BoysBig"
+        return "Unisex"
+
+    # Women's buckets (check BEFORE men's — 'WOMENS' contains 'MENS' substring)
+    if "WOMENS" in dn or "WOMEN'S" in dn or "WOMEN " in dn:
+        if "PETITE" in combined:
+            return "WomensPetite"
+        if any(t in combined for t in ["PLUS", " 1X", " 2X", " 3X"]):
+            return "WomensPlus"
+        return "Womens"
+
+    # Men's buckets
+    if "MENS" in dn or "MEN'S" in dn or " MEN " in dn or dn.endswith(" MEN"):
+        if any(t in combined for t in ["BIG AND TALL", "BIG & TALL", "PLUS", " 2XL", " 3XL", " 4XL"]):
+            return "MensPlus"
+        return "Mens"
+
+    return "Unisex"
+
+def _taxonomy_key(product_type, sub_class, gender_bucket):
+    """Build the canonical composite key for the overrides store."""
+    pt = (product_type or "").strip().upper()
+    sc = (sub_class or "").strip()
+    gb = (gender_bucket or "Unisex").strip()
+    return f"{pt}|{sc}|{gb}"
+
+def _resolve_taxonomy_for_style(style, brand_cfg=None):
+    """Look up a confirmed taxonomy quadruple for a style.
+    Returns a dict with: matched (bool), source ('override'|'auto'), entry (the quadruple),
+    key (the composite key), gender_bucket, auto_derived (the rule-based fallback for UI display).
+
+    Callers should prefer entry[field] when matched=True, else fall back to the existing
+    rule-based _derive_* functions.
+    """
+    pt = _resolve_style_product_type(style) or ""
+    sc = style.get("subclass", "") or style.get("sub_class", "")
+    gb = _derive_gender_bucket(style)
+    key = _taxonomy_key(pt, sc, gb)
+
+    overrides = _load_taxonomy_overrides()
+    entry = overrides.get("entries", {}).get(key)
+    if entry and entry.get("source") == "manual":
+        return {"matched": True, "source": "override", "entry": entry, "key": key,
+                "gender_bucket": gb, "product_type": pt, "sub_class": sc}
+
+    # No confirmed entry — return the auto-derived quadruple for fallback display
+    style_gender, _ = _derive_gender_department(style)
+    eff_gender = style_gender or (brand_cfg.get("gender", "") if brand_cfg else "")
+    style_name = style.get("style_name", "")
+    auto_cat    = _derive_amazon_product_category(sc, gender=eff_gender, product_type=pt,
+                                                  style_name=style_name)
+    auto_subcat = _derive_swim_product_subcategory(sc, gender=eff_gender, style_name=style_name,
+                                                   product_category=auto_cat) if pt == "SWIMWEAR" else SUBCLASS_SUBCATEGORY_MAP.get(sc, "")
+    auto_itk    = _derive_item_type_keyword(sc, product_type=pt, gender=eff_gender, style_name=style_name)
+    auto_itn    = _derive_item_type_name(sc, product_type=pt, gender=eff_gender, style_name=style_name)
+    auto = {
+        "product_type": pt,
+        "product_category": auto_cat,
+        "product_subcategory": auto_subcat,
+        "item_type_keyword": auto_itk,
+        "item_type_name": auto_itn,
+    }
+    return {"matched": False, "source": "auto", "entry": auto, "key": key,
+            "gender_bucket": gb, "product_type": pt, "sub_class": sc,
+            "auto_derived": auto}
+
+def _validate_taxonomy_quadruple(pt, category, subcategory, itk, itn):
+    """Check each value is dropdown-valid for the product type. Returns (ok, errors).
+    errors is a list of {field, value, reason, valid_options} dicts."""
+    errors = []
+    universe = _load_taxonomy_universe().get(pt, {})
+    cache = load_dropdown_cache(pt) or {}
+
+    valid_cats = universe.get("product_categories", []) or cache.get("product_category#1.value", [])
+    if category and valid_cats and category not in valid_cats:
+        errors.append({"field": "product_category", "value": category,
+                       "reason": "not in Amazon dropdown", "valid_options": valid_cats[:50]})
+
+    valid_subs_by_cat = universe.get("subcategories_by_category", {})
+    if subcategory and category and category in valid_subs_by_cat:
+        if subcategory not in valid_subs_by_cat[category]:
+            errors.append({"field": "product_subcategory", "value": subcategory,
+                           "reason": f"not valid under category '{category}'",
+                           "valid_options": valid_subs_by_cat[category]})
+
+    valid_itns = universe.get("item_type_names", []) or cache.get("item_type_name#1.value", [])
+    if itn and valid_itns and itn not in valid_itns:
+        errors.append({"field": "item_type_name", "value": itn,
+                       "reason": "not in Amazon dropdown", "valid_options": valid_itns[:50]})
+
+    # item_type_keyword is free-text; just length-check
+    if itk and len(itk) > 100:
+        errors.append({"field": "item_type_keyword", "value": itk,
+                       "reason": "exceeds 100 chars", "valid_options": []})
+
+    return (len(errors) == 0, errors)
+# ── End Taxonomy Overrides ────────────────────────────────────────────────────
+
 def _load_subclass_map():
     """Load the learned sub-class → product type mapping."""
     if SUBCLASS_MAP_FILE.exists():
@@ -2359,11 +2564,33 @@ def upload_product_data():
         trained_count = sum(1 for c in category_breakdown if c["trained"])
         total_categories = len(category_breakdown)
 
+        # Taxonomy bucket summary: which (product_type, sub_class, gender_bucket) triples
+        # exist in this upload, and which are already confirmed in the overrides store.
+        _tax_store = _load_taxonomy_overrides().get("entries", {})
+        _tax_buckets = {}
+        for _s in styles:
+            _pt = _resolve_style_product_type(_s) or ""
+            _sc = _s.get("subclass") or _s.get("sub_class") or ""
+            _gb = _derive_gender_bucket(_s)
+            _k = _taxonomy_key(_pt, _sc, _gb)
+            _b = _tax_buckets.setdefault(_k, {"key": _k, "product_type": _pt,
+                                              "sub_class": _sc, "gender_bucket": _gb,
+                                              "style_count": 0, "confirmed": False})
+            _b["style_count"] += 1
+            if _tax_store.get(_k, {}).get("source") == "manual":
+                _b["confirmed"] = True
+        _tax_summary = {
+            "total_buckets": len(_tax_buckets),
+            "confirmed_buckets": sum(1 for b in _tax_buckets.values() if b["confirmed"]),
+            "unconfirmed_buckets": sum(1 for b in _tax_buckets.values() if not b["confirmed"]),
+            "buckets": list(_tax_buckets.values()),
+        }
         return jsonify({
             "total_styles": len(styles),
             "total_variants": total_variants,
             "brand": brand,
             "brand_known": brand_known,
+            "taxonomy_summary": _tax_summary,
             "category_breakdown": category_breakdown,
             "trained_count": trained_count,
             "total_categories": total_categories,
@@ -3699,6 +3926,16 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     item_length    = _derive_item_length(sub_subclass, style_name, product_type=resolved_pt, sub_class=sub_class)
     fabric_type    = _derive_fabric_type(fabric)
     itk_value      = _derive_item_type_keyword(sub_class, product_type=resolved_pt, gender=eff_gender, style_name=style_name)
+    # Taxonomy override: a confirmed override (if any) trumps the auto-derived values above
+    _tax = _resolve_taxonomy_for_style(style, brand_cfg)
+    if _tax.get("matched"):
+        _e = _tax["entry"]
+        category     = _e.get("product_category", category)
+        subcategory  = _e.get("product_subcategory", subcategory)
+        itk_value    = _e.get("item_type_keyword", itk_value)
+        item_type_name = _e.get("item_type_name", item_type_name)
+    taxonomy_source = "override" if _tax.get("matched") else "auto"
+    taxonomy_key = _tax.get("key", "")
     today_str      = datetime.now().strftime("%Y%m%d")
     parent_sku     = style_num
 
@@ -4331,6 +4568,14 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     item_length    = _derive_item_length(sub_subclass, style_name, product_type=detected_product_type, sub_class=sub_class)
     fabric_type    = _derive_fabric_type(fabric)
     itk_value      = _derive_item_type_keyword(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
+    # Taxonomy override wins over auto-derivation (Phase 1)
+    _tax = _resolve_taxonomy_for_style(style, brand_cfg)
+    if _tax.get("matched"):
+        _e = _tax["entry"]
+        category       = _e.get("product_category", category)
+        subcategory    = _e.get("product_subcategory", subcategory)
+        itk_value      = _e.get("item_type_keyword", itk_value)
+        item_type_name = _e.get("item_type_name", item_type_name)
     sleeve_len     = _derive_sleeve_length(sleeve_type)
     today_str      = datetime.now().strftime("%Y%m%d")
     booking_date  = datetime.now().strftime("%Y-%m-%dT00:00:00Z")
@@ -4692,6 +4937,12 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         sil        = content.get("silhouette", "") or derive_silhouette(sub_subclass)
         itk        = _derive_item_type_keyword(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
         itn        = _derive_item_type_name(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
+        # Taxonomy override: if a confirmed entry exists for this style's bucket, use it
+        _tax = _resolve_taxonomy_for_style(style, brand_cfg)
+        if _tax.get("matched"):
+            _e = _tax["entry"]
+            itk = _e.get("item_type_keyword", itk)
+            itn = _e.get("item_type_name", itn)
         ilen       = _derive_item_length(sub_subclass, style_name, product_type=detected_product_type, sub_class=sub_class)
         ftype      = _derive_fabric_type(fabric)
         slvlen     = _derive_sleeve_length(sleeve)
@@ -4702,6 +4953,11 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         subcat_val = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, "")
         if not subcat_val and detected_product_type == "SWIMWEAR":
             subcat_val = _derive_swim_product_subcategory(sub_class, gender=eff_gender, style_name=style_name, product_category=cat_val)
+        # Taxonomy override wins for category + subcategory too
+        if _tax.get("matched"):
+            _e = _tax["entry"]
+            cat_val    = _e.get("product_category", cat_val)
+            subcat_val = _e.get("product_subcategory", subcat_val)
 
         # ── Shared-fields helper for this style ─────────────────────────────
         def write_shared_row(r, sku_val, _fabric=fabric, _care=care, _upf=upf,
@@ -5078,6 +5334,174 @@ def save_style_product_types():
     assignments = data.get("assignments", {})
     session_data["style_product_types"] = assignments
     return jsonify({"ok": True, "count": len(assignments)})
+
+
+# ── Taxonomy Overrides API endpoints (Phase 1) ───────────────────────────────
+
+@app.route("/api/taxonomy", methods=["GET"])
+def taxonomy_get():
+    """Return the full override store + the valid-value universe so the frontend
+    can populate cascading dropdowns client-side without per-keystroke backend calls.
+
+    Optional ?product_type=SWIMWEAR filter to reduce payload.
+    """
+    pt_filter = (request.args.get("product_type") or "").strip().upper() or None
+    overrides = _load_taxonomy_overrides()
+    universe_all = _load_taxonomy_universe()
+    universe = {pt_filter: universe_all[pt_filter]} if pt_filter and pt_filter in universe_all else universe_all
+
+    # Also surface observed sub_classes from current session for UI convenience
+    sub_classes_seen = set()
+    for s in session_data.get("styles", []):
+        sc = s.get("subclass") or s.get("sub_class")
+        if sc:
+            sub_classes_seen.add(sc)
+
+    return jsonify({
+        "version": overrides.get("version", 1),
+        "updated_at": overrides.get("updated_at", ""),
+        "entries": overrides.get("entries", {}),
+        "universe": universe,
+        "sub_classes_seen": sorted(sub_classes_seen),
+        "gender_buckets": GENDER_BUCKETS,
+    })
+
+
+@app.route("/api/taxonomy/save", methods=["POST"])
+def taxonomy_save():
+    """Upsert one taxonomy entry. Validates against Amazon dropdowns + template
+    cascade rules before writing. Triggers a best-effort git commit + push so
+    learned taxonomy survives Render redeploys.
+    """
+    data = request.get_json(force=True) or {}
+    sub_class = (data.get("sub_class") or "").strip()
+    gender_bucket = (data.get("gender_bucket") or "").strip()
+    pt = (data.get("product_type") or "").strip().upper()
+    cat = (data.get("product_category") or "").strip()
+    subcat = (data.get("product_subcategory") or "").strip()
+    itk = (data.get("item_type_keyword") or "").strip()
+    itn = (data.get("item_type_name") or "").strip()
+    notes = data.get("notes") or ""
+    user = data.get("confirmed_by") or "unknown"
+
+    if not sub_class or not gender_bucket or not pt:
+        return jsonify({"error": "sub_class, gender_bucket, and product_type are required"}), 400
+    if gender_bucket not in GENDER_BUCKETS:
+        return jsonify({"error": f"Invalid gender_bucket. Must be one of {GENDER_BUCKETS}"}), 400
+
+    # Dropdown validation
+    ok, errors = _validate_taxonomy_quadruple(pt, cat, subcat, itk, itn)
+    if not ok:
+        return jsonify({"error": "Validation failed", "errors": errors}), 400
+
+    key = _taxonomy_key(pt, sub_class, gender_bucket)
+    now = datetime.now().isoformat() + "Z"
+    entry = {
+        "product_type": pt,
+        "product_category": cat,
+        "product_subcategory": subcat,
+        "item_type_keyword": itk,
+        "item_type_name": itn,
+        "confirmed_by": user,
+        "confirmed_at": now,
+        "source": "manual",
+        "notes": notes,
+    }
+
+    store = _load_taxonomy_overrides()
+    existing = store.get("entries", {}).get(key)
+    action = "update" if existing else "create"
+    store.setdefault("entries", {})[key] = entry
+    _save_taxonomy_overrides(store)
+    _append_taxonomy_history(key, entry, action)
+
+    # Count how many currently-loaded styles match this bucket — UI hint
+    affected = 0
+    for s in session_data.get("styles", []):
+        s_pt = _resolve_style_product_type(s) or ""
+        s_sc = s.get("subclass") or s.get("sub_class") or ""
+        s_gb = _derive_gender_bucket(s)
+        if s_pt.upper() == pt and s_sc == sub_class and s_gb == gender_bucket:
+            affected += 1
+
+    # Best-effort git commit in a thread so it doesn't block the response
+    try:
+        import threading
+        threading.Thread(target=_try_git_commit_taxonomy, args=(key, user), daemon=True).start()
+    except Exception:
+        pass
+
+    return jsonify({
+        "ok": True,
+        "key": key,
+        "entry": entry,
+        "action": action,
+        "affected_styles_in_session": affected,
+    })
+
+
+@app.route("/api/taxonomy/validate", methods=["POST"])
+def taxonomy_validate():
+    """Pre-flight check. For every style in the session (or in the request body),
+    report which buckets have a confirmed override and which are auto-derived.
+    Used by the post-upload banner to decide whether to prompt for confirmation.
+    """
+    data = request.get_json(silent=True) or {}
+    styles = data.get("styles") or session_data.get("styles", [])
+    if not styles:
+        return jsonify({"error": "No styles in session"}), 400
+
+    # Group styles by (product_type, sub_class, gender_bucket)
+    buckets = {}  # key -> { style_nums, sub_class, gender_bucket, product_type }
+    for s in styles:
+        pt = _resolve_style_product_type(s) or ""
+        sc = s.get("subclass") or s.get("sub_class") or ""
+        gb = _derive_gender_bucket(s)
+        key = _taxonomy_key(pt, sc, gb)
+        b = buckets.setdefault(key, {
+            "key": key, "product_type": pt, "sub_class": sc,
+            "gender_bucket": gb, "style_nums": [], "style_count": 0,
+        })
+        b["style_nums"].append(s.get("style_num"))
+        b["style_count"] += 1
+
+    overrides = _load_taxonomy_overrides().get("entries", {})
+    brand = session_data.get("brand", "")
+    brand_cfg = _load_brand_config_data(brand) if brand else {}
+
+    confirmed = []
+    unconfirmed = []
+    for key, b in buckets.items():
+        entry = overrides.get(key)
+        if entry and entry.get("source") == "manual":
+            confirmed.append({"key": key, **b, "entry": entry})
+        else:
+            # Auto-derive fallback for UI display
+            sample = {"subclass": b["sub_class"],
+                      "style_name": (styles[0].get("style_name", "") if styles else ""),
+                      "division_name": (styles[0].get("division_name", "") if styles else "")}
+            # Find a style actually in this bucket so style_name is representative
+            for s in styles:
+                if s.get("style_num") in b["style_nums"]:
+                    sample = s; break
+            resolved = _resolve_taxonomy_for_style(sample, brand_cfg)
+            unconfirmed.append({"key": key, **b, "auto_derived": resolved["entry"]})
+
+    return jsonify({
+        "total_styles": len(styles),
+        "total_buckets": len(buckets),
+        "confirmed": sum(b["style_count"] for b in confirmed) if False else len([b for b in confirmed]),
+        "confirmed_styles": sum(b["style_count"] for b in confirmed),
+        "unconfirmed_styles": sum(b["style_count"] for b in unconfirmed),
+        "buckets": {"confirmed": confirmed, "unconfirmed": unconfirmed},
+        "blocking": len(unconfirmed) > 0,
+        "message": (
+            f"{len(unconfirmed)} of {len(buckets)} item-type buckets need taxonomy confirmation."
+            if unconfirmed else
+            f"All {len(buckets)} item-type buckets are confirmed."
+        ),
+    })
+# ── End Taxonomy Overrides API ──────────────────────────────────────────
 
 
 def _resolve_style_product_type(style):

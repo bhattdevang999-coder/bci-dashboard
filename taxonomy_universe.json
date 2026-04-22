@@ -1,0 +1,2820 @@
+{
+  "BLAZER": {
+    "item_type_names": [
+      "Blazer",
+      "Business Casual Blazer",
+      "Casual Blazer",
+      "Sport Jacket"
+    ],
+    "product_categories": [
+      "Men's Contemporary Collections",
+      "Men's Tailored",
+      "Men's Traditional Collections",
+      "Women's Contemporary",
+      "Women's Everyday Sportswear",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Maternity",
+      "Women's Private Label",
+      "Women's Special Sizes",
+      "Women's Traditional"
+    ],
+    "subcategories_by_category": {
+      "Men's Contemporary Collections": [
+        "Tailored & Sportcoats"
+      ],
+      "Men's Tailored": [
+        "Blazers",
+        "Suit Separate Jackets"
+      ],
+      "Men's Traditional Collections": [
+        "Sportcoats"
+      ],
+      "Women's Contemporary": [
+        "Blazers and Fashion Jackets"
+      ],
+      "Women's Everyday Sportswear": [
+        "Blazers and Fashion Jackets"
+      ],
+      "Women's Fast Fashion": [
+        "Blazers and Fashion Jackets"
+      ],
+      "Women's Juniors": [
+        "Blazers and Fashion Jackets"
+      ],
+      "Women's Maternity": [
+        "Blazers and Fashion Jackets"
+      ],
+      "Women's Private Label": [
+        "Blazers and Fashion Jackets"
+      ],
+      "Women's Special Sizes": [
+        "Blazers and Fashion Jackets"
+      ],
+      "Women's Traditional": [
+        "Blazers and Fashion Jackets"
+      ]
+    }
+  },
+  "BRA": {
+    "item_type_names": [
+      "Balconette Bra",
+      "Bra",
+      "Demi Bra",
+      "Full Coverage Bra",
+      "Minimizer Bra",
+      "Molded Bra",
+      "Padded Bra",
+      "Plunge Bra",
+      "Push Up Bra",
+      "Sports Bra",
+      "T-Shirt Bra",
+      "Training Bra"
+    ],
+    "product_categories": [
+      "Athletic Sports Apparel",
+      "Girl's Private Label Active Apparel",
+      "Girls Basics Accessories and Sleep",
+      "Hair Care and Beauty Appliances",
+      "Kids Athletic",
+      "SPORTS Licensed Fan Shop",
+      "Shaving & Hair Removal",
+      "Women's Active",
+      "Women's Exotic Clothing",
+      "Women's Intimate Apparel",
+      "Women's Maternity",
+      "Women's Private Label",
+      "Women's Private Label Active Apparel"
+    ],
+    "subcategories_by_category": {
+      "Athletic Sports Apparel": [
+        "Sports Bras"
+      ],
+      "Girl's Private Label Active Apparel": [
+        "Sports Bras"
+      ],
+      "Girls Basics Accessories and Sleep": [
+        "Girls Bras & Undershirts"
+      ],
+      "Hair Care and Beauty Appliances": [
+        "Hair Setters"
+      ],
+      "Kids Athletic": [
+        "Girl Sport Bras"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5010 Formula 1 Other Apparel & Accessories",
+        "5039 MLB Other Apparel & Accessories",
+        "5049 MLS Other Apparel & Accessories",
+        "5059 NASCAR Other Apparel & Accessories",
+        "5069 NBA Other Apparel & Accessories",
+        "5079 NCAA Other Apparel & Accessories",
+        "5089 NFL Other Apparel & Accessories",
+        "5099 NHL Other Apparel & Accessories",
+        "5100 International Rugby Apparel & Accessories",
+        "5119 International Soccer Other Apparel & Accessories",
+        "5120 WNBA Other Apparel & Accessories",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5719 X Games Other Apparel & Accessories",
+        "5919 NWSL Other Apparel & Accessories",
+        "5999 Uncategorized"
+      ],
+      "Shaving & Hair Removal": [
+        "Women's Shavers"
+      ],
+      "Women's Active": [
+        "Sports Bras"
+      ],
+      "Women's Exotic Clothing": [
+        "Bras",
+        "Corsets and Bustiers"
+      ],
+      "Women's Intimate Apparel": [
+        "Accessories",
+        "Bras",
+        "Full Figure Bras",
+        "Nursing and Maternity Bras",
+        "Post-Operative Bras",
+        "Sports Bras"
+      ],
+      "Women's Maternity": [
+        "Active",
+        "Intimates"
+      ],
+      "Women's Private Label": [
+        "Active Sports Bra",
+        "Intimate Apparel"
+      ],
+      "Women's Private Label Active Apparel": [
+        "Sports Bras"
+      ]
+    }
+  },
+  "COAT": {
+    "item_type_names": [],
+    "product_categories": [
+      "Athletic Sports Apparel",
+      "Baby Private Label Apparel",
+      "Boy's Private Label Active Apparel",
+      "Boys Private Label",
+      "Girl's Private Label Active Apparel",
+      "Girls Private Label",
+      "Hair Care and Beauty Appliances",
+      "Kids & Baby Outerwear",
+      "Men's Contemporary Collections",
+      "Men's Outerwear",
+      "Men's Private Label",
+      "Men's Private Label Active Apparel",
+      "Men's Traditional Collections",
+      "Men's Uniform",
+      "Men's Workwear",
+      "OUTDOORS - Apparel",
+      "Occupational Health & Safety",
+      "SPORTS Licensed Fan Shop",
+      "Team Sports",
+      "Women's Contemporary",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Maternity",
+      "Women's Outerwear",
+      "Women's Petite Sportswear",
+      "Women's Private Label",
+      "Women's Private Label Active Apparel",
+      "Women's Special Sizes",
+      "Women's Traditional",
+      "Women's Workwear & Uniforms",
+      "Young Men's"
+    ],
+    "subcategories_by_category": {
+      "Athletic Sports Apparel": [
+        "Men's Hunting & Tactical",
+        "Outerwear",
+        "Women's Hunting & Tactical",
+        "Youth Hunting & Tactical"
+      ],
+      "Baby Private Label Apparel": [
+        "Baby Boy Outerwear",
+        "Baby Girl Outerwear",
+        "Baby Unisex Outerwear"
+      ],
+      "Boy's Private Label Active Apparel": [
+        "Active Jackets",
+        "Outerwear Jackets",
+        "Vests"
+      ],
+      "Boys Private Label": [
+        "Baby Boys PL Outerwear",
+        "Boys PL Outerwear"
+      ],
+      "Girl's Private Label Active Apparel": [
+        "Active Jackets",
+        "Outerwear Jackets",
+        "Vests"
+      ],
+      "Girls Private Label": [
+        "Baby Girls PL Outerwear",
+        "Girls PL Outerwear"
+      ],
+      "Hair Care and Beauty Appliances": [
+        "Salon Supplies"
+      ],
+      "Kids & Baby Outerwear": [
+        "Baby Boys Heavyweight Outerwear",
+        "Baby Boys Lightweight Outerwear",
+        "Baby Boys Midweight Outerwear",
+        "Baby Boys Wool Outerwear",
+        "Baby Girls Heavyweight Outerwear",
+        "Baby Girls Lightweight Outerwear",
+        "Baby Girls Midweight Outerwear",
+        "Baby Girls Wool & Fur Outerwear",
+        "Boys Heavyweight Outerwear",
+        "Boys Lightweight Outerwear",
+        "Boys Midweight Outerwear",
+        "Boys Wool Outerwear",
+        "Girls Heavyweight Outerwear",
+        "Girls Lightweight Outerwear",
+        "Girls Midweight Outerwear",
+        "Girls Wool & Fur Outerwear"
+      ],
+      "Men's Contemporary Collections": [
+        "Casual Jackets",
+        "Denim",
+        "Outerwear"
+      ],
+      "Men's Outerwear": [
+        "Down",
+        "Extreme Weather Sports",
+        "Wool Coats"
+      ],
+      "Men's Private Label": [
+        "Lab Coats",
+        "Outerwear"
+      ],
+      "Men's Private Label Active Apparel": [
+        "Active Jackets",
+        "Outerwear Jackets",
+        "Vests"
+      ],
+      "Men's Traditional Collections": [
+        "Denim",
+        "Outerwear"
+      ],
+      "Men's Uniform": [
+        "Lab Coats"
+      ],
+      "Men's Workwear": [
+        "Flame Resistant Outerwear",
+        "High Visibility Outerwear",
+        "Outerwear",
+        "Performance Outerwear"
+      ],
+      "OUTDOORS - Apparel": [
+        "Cycling Tops",
+        "Hunting Tops",
+        "Outdoor Lifestyle Tops",
+        "Outerwear",
+        "Rainwear Tops",
+        "Snow & Ski Tops",
+        "Workwear Bottoms"
+      ],
+      "Occupational Health & Safety": [
+        "Personal Protective Equipment & Safety Apparel"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5014 Formula 1 Infant & Baby Apparel",
+        "5017 Formula 1 Outerwear & Jackets",
+        "5033 MLB Infant & Baby Apparel",
+        "5036 MLB Outerwear & Jackets",
+        "5043 MLS Infant & Baby Apparel",
+        "5046 MLS Outerwear & Jackets",
+        "5053 NASCAR Infant & Baby Apparel",
+        "5056 NASCAR Outerwear & Jackets",
+        "5063 NBA Infant & Baby Apparel",
+        "5066 NBA Outerwear & Jackets",
+        "5073 NCAA Infant & Baby Apparel",
+        "5076 NCAA Outerwear & Jackets",
+        "5083 NFL Infant & Baby Apparel",
+        "5086 NFL Outerwear & Jackets",
+        "5093 NHL Infant & Baby Apparel",
+        "5096 NHL Outerwear & Jackets",
+        "5100 International Rugby Apparel & Accessories",
+        "5113 International Soccer Infant & Baby Apparel",
+        "5116 International Soccer Outerwear & Jackets",
+        "5124 WNBA Infant & Baby Apparel",
+        "5127 WNBA Outerwear & Jackets",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5713 X Games Infant & Baby Apparel",
+        "5716 X Games Outerwear & Jackets",
+        "5913 NWSL Infant & Baby Apparel",
+        "5916 NWSL Outerwear & Jackets",
+        "5999 Uncategorized"
+      ],
+      "Team Sports": [
+        "Fencing"
+      ],
+      "Women's Contemporary": [
+        "Denim",
+        "Outerwear and Vests"
+      ],
+      "Women's Fast Fashion": [
+        "Denim",
+        "Outerwear and Vests"
+      ],
+      "Women's Juniors": [
+        "Denim",
+        "Outerwear and Vests"
+      ],
+      "Women's Maternity": [
+        "Outerwear and Vests"
+      ],
+      "Women's Outerwear": [
+        "Down and Parkas",
+        "Fur and Faux Fur",
+        "Lightweight Jackets and Windbreakers",
+        "Raincoats and Trenchcoats",
+        "Wool"
+      ],
+      "Women's Petite Sportswear": [
+        "Petite Denim",
+        "Petite Outerwear"
+      ],
+      "Women's Private Label": [
+        "Active Jackets",
+        "Denim",
+        "Down & Parkas",
+        "Fleece Outerwear",
+        "Fur & Faux Fur Outerwear",
+        "Leather/Suede Outerwear",
+        "Outerwear and Vests",
+        "Trenches/Windbreakers",
+        "Vests"
+      ],
+      "Women's Private Label Active Apparel": [
+        "Active Jackets",
+        "Outerwear Jackets",
+        "Vests"
+      ],
+      "Women's Special Sizes": [
+        "Denim",
+        "Outerwear and Vests"
+      ],
+      "Women's Traditional": [
+        "Denim",
+        "Outerwear and Vests"
+      ],
+      "Women's Workwear & Uniforms": [
+        "Industrial",
+        "Jackets and Outerwear",
+        "Medical"
+      ],
+      "Young Men's": [
+        "Denim",
+        "Jackets/Vests"
+      ]
+    }
+  },
+  "DRESS": {
+    "item_type_names": [
+      "Bridesmaid Dress",
+      "Business Casual Dress",
+      "Casual Dress",
+      "Casual Night Out Dress",
+      "Christening Dress",
+      "Cocktail Dress",
+      "Dress",
+      "Formal Dress",
+      "Formal Night Out Dress",
+      "Homecoming Dress",
+      "Mother Of The Bride Dress",
+      "Playwear Dress",
+      "Prom Dress",
+      "Special Occasion Dress",
+      "Tennis Dress",
+      "Wedding Dress"
+    ],
+    "product_categories": [
+      "Artist Merch Apparel",
+      "Athletic Sports Apparel",
+      "Baby Apparel",
+      "Baby Private Label Apparel",
+      "Character",
+      "Girl's Private Label Active Apparel",
+      "Girls",
+      "Girls Private Label",
+      "Kid's & Baby Print On-Demand",
+      "Kids Athletic",
+      "Kids Uniforms",
+      "OUTDOORS - Apparel",
+      "Professional Dental",
+      "Professional Medical",
+      "SPORTS Licensed Fan Shop",
+      "Unisex Print On-Demand",
+      "Women's Active",
+      "Women's Contemporary",
+      "Women's Denim",
+      "Women's Dresses",
+      "Women's Everyday Sportswear",
+      "Women's Exotic Clothing",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Maternity",
+      "Women's Petite Sportswear",
+      "Women's Print On-Demand",
+      "Women's Private Label",
+      "Women's Private Label Active Apparel",
+      "Women's Special Sizes",
+      "Women's Traditional"
+    ],
+    "subcategories_by_category": {
+      "Artist Merch Apparel": [
+        "Dress"
+      ],
+      "Athletic Sports Apparel": [
+        "Women's Golf",
+        "Youth Golf"
+      ],
+      "Baby Apparel": [
+        "Baby Christening Apparel",
+        "Baby Girl Casual Dresses",
+        "Baby Girl Special Occasion Dresses"
+      ],
+      "Baby Private Label Apparel": [
+        "Baby Girl Casual Dresses",
+        "Baby Girl Special Occasion Dresses"
+      ],
+      "Character": [
+        "Baby Girl Dresses",
+        "Girl Dresses"
+      ],
+      "Girl's Private Label Active Apparel": [
+        "Dresses/Tunics"
+      ],
+      "Girls": [
+        "Active",
+        "Casual Dresses",
+        "Special Occasion Dresses"
+      ],
+      "Girls Private Label": [
+        "Baby Girls PL Dresses",
+        "Girls PL Dresses"
+      ],
+      "Kid's & Baby Print On-Demand": [
+        "Dresses"
+      ],
+      "Kids Athletic": [
+        "Girl Dresses"
+      ],
+      "Kids Uniforms": [
+        "Girls Uniform Dresses"
+      ],
+      "OUTDOORS - Apparel": [
+        "Outdoor Lifestyle One Piece"
+      ],
+      "Professional Dental": [
+        "Professional Apparel - Disposable",
+        "Professional Apparel - Reusable"
+      ],
+      "Professional Medical": [
+        "Professional Apparel"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5010 Formula 1 Other Apparel & Accessories",
+        "5014 Formula 1 Infant & Baby Apparel",
+        "5033 MLB Infant & Baby Apparel",
+        "5039 MLB Other Apparel & Accessories",
+        "5043 MLS Infant & Baby Apparel",
+        "5049 MLS Other Apparel & Accessories",
+        "5053 NASCAR Infant & Baby Apparel",
+        "5059 NASCAR Other Apparel & Accessories",
+        "5063 NBA Infant & Baby Apparel",
+        "5069 NBA Other Apparel & Accessories",
+        "5073 NCAA Infant & Baby Apparel",
+        "5079 NCAA Other Apparel & Accessories",
+        "5083 NFL Infant & Baby Apparel",
+        "5089 NFL Other Apparel & Accessories",
+        "5093 NHL Infant & Baby Apparel",
+        "5099 NHL Other Apparel & Accessories",
+        "5100 International Rugby Apparel & Accessories",
+        "5113 International Soccer Infant & Baby Apparel",
+        "5119 International Soccer Other Apparel & Accessories",
+        "5120 WNBA Other Apparel & Accessories",
+        "5124 WNBA Infant & Baby Apparel",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5713 X Games Infant & Baby Apparel",
+        "5719 X Games Other Apparel & Accessories",
+        "5913 NWSL Infant & Baby Apparel",
+        "5919 NWSL Other Apparel & Accessories",
+        "5999 Uncategorized"
+      ],
+      "Unisex Print On-Demand": [
+        "Dresses"
+      ],
+      "Women's Active": [
+        "Dresses"
+      ],
+      "Women's Contemporary": [
+        "Dresses"
+      ],
+      "Women's Denim": [
+        "Dresses"
+      ],
+      "Women's Dresses": [
+        "Cardigan",
+        "Casual and Day Dresses",
+        "Night Out and Cocktail Dresses",
+        "Special Occasion Dresses",
+        "Sweater Dresses",
+        "Wear to Work Dresses"
+      ],
+      "Women's Everyday Sportswear": [
+        "Dresses"
+      ],
+      "Women's Exotic Clothing": [
+        "Clubwear/Ravewear",
+        "Dresses"
+      ],
+      "Women's Fast Fashion": [
+        "Dresses"
+      ],
+      "Women's Juniors": [
+        "Dresses"
+      ],
+      "Women's Maternity": [
+        "Active",
+        "Dresses"
+      ],
+      "Women's Petite Sportswear": [
+        "Petite Dresses",
+        "Petite Suit Dresses"
+      ],
+      "Women's Print On-Demand": [
+        "Dresses"
+      ],
+      "Women's Private Label": [
+        "A-Line Dresses",
+        "Dresses",
+        "Maxi Dresses",
+        "Sheath Dresses",
+        "Shift Dresses",
+        "Sweater Dresses",
+        "Wrap Dresses"
+      ],
+      "Women's Private Label Active Apparel": [
+        "Dresses/Tunics"
+      ],
+      "Women's Special Sizes": [
+        "Dresses"
+      ],
+      "Women's Traditional": [
+        "Dresses"
+      ]
+    }
+  },
+  "HAT": {
+    "item_type_names": [
+      "Balaclava",
+      "Baseball Cap",
+      "Beanie Hat",
+      "Beret",
+      "Bomber Hat",
+      "Bucket Hat",
+      "Cap",
+      "Chef Hat",
+      "Cold Weather Hat",
+      "Cold Weather Headband",
+      "Cowboy Hat",
+      "Fascinator",
+      "Fedora",
+      "Hat",
+      "Newsie Cap",
+      "Panama Hat",
+      "Rain Hat",
+      "Sun Hat",
+      "Visor"
+    ],
+    "product_categories": [
+      "Artist Merch Apparel",
+      "Athletic Sports Apparel",
+      "Boys Basics Accessories and Sleep",
+      "Cooks' Tools",
+      "Food Service",
+      "Girls Basics Accessories and Sleep",
+      "Kid's & Baby Print On-Demand",
+      "Mass Hair Care",
+      "Men's Contemporary Collections",
+      "Men's Furnishings",
+      "Men's Print On-Demand",
+      "Men's Traditional Collections",
+      "Merch by Amazon",
+      "OUTDOORS - Apparel",
+      "Occupational Health & Safety",
+      "SPORTS Licensed Fan Shop",
+      "Unisex Print On-Demand",
+      "Women's Accessories",
+      "Women's Everyday Sportswear",
+      "Women's Print On-Demand",
+      "Young Men's"
+    ],
+    "subcategories_by_category": {
+      "Artist Merch Apparel": [
+        "Hats"
+      ],
+      "Athletic Sports Apparel": [
+        "Cold Weather Accessories",
+        "Hats",
+        "Hats, Caps, Visors, Beanie"
+      ],
+      "Boys Basics Accessories and Sleep": [
+        "Baby Boys Cold Weather Accessories",
+        "Boys Cold Weather Accessories",
+        "Boys Hats"
+      ],
+      "Cooks' Tools": [
+        "Specialty Tools"
+      ],
+      "Food Service": [
+        "Disposable Place Settings"
+      ],
+      "Girls Basics Accessories and Sleep": [
+        "Baby Girls Accessories",
+        "Baby Girls Cold Weather Accessories",
+        "Girls Cold Weather Accessories",
+        "Girls Hats"
+      ],
+      "Kid's & Baby Print On-Demand": [
+        "Hats"
+      ],
+      "Mass Hair Care": [
+        "Styling Accessories"
+      ],
+      "Men's Contemporary Collections": [
+        "Hats"
+      ],
+      "Men's Furnishings": [
+        "Cold Weather Headwear",
+        "Gifts",
+        "Headwear"
+      ],
+      "Men's Print On-Demand": [
+        "Hats"
+      ],
+      "Men's Traditional Collections": [
+        "Hats"
+      ],
+      "Merch by Amazon": [
+        "Print on Demand Unisex Hats"
+      ],
+      "OUTDOORS - Apparel": [
+        "Cold Weather Accessories",
+        "Hats, Caps, Visors, Beanie"
+      ],
+      "Occupational Health & Safety": [
+        "Above the Neck Protection"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5014 Formula 1 Infant & Baby Apparel",
+        "5019 Formula 1 Headwear",
+        "5033 MLB Infant & Baby Apparel",
+        "5038 MLB Headwear",
+        "5043 MLS Infant & Baby Apparel",
+        "5048 MLS Headwear",
+        "5053 NASCAR Infant & Baby Apparel",
+        "5058 NASCAR Headwear",
+        "5063 NBA Infant & Baby Apparel",
+        "5068 NBA Headwear",
+        "5073 NCAA Infant & Baby Apparel",
+        "5078 NCAA Headwear",
+        "5083 NFL Infant & Baby Apparel",
+        "5088 NFL Headwear",
+        "5093 NHL Infant & Baby Apparel",
+        "5098 NHL Headwear",
+        "5100 International Rugby Apparel & Accessories",
+        "5113 International Soccer Infant & Baby Apparel",
+        "5118 International Soccer Headwear",
+        "5124 WNBA Infant & Baby Apparel",
+        "5129 WNBA Headwear",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5713 X Games Infant & Baby Apparel",
+        "5718 X Games Headwear",
+        "5913 NWSL Infant & Baby Apparel",
+        "5918 NWSL Headwear",
+        "5999 Uncategorized"
+      ],
+      "Unisex Print On-Demand": [
+        "Hats"
+      ],
+      "Women's Accessories": [
+        "Cold Weather Headwear",
+        "Headwear"
+      ],
+      "Women's Everyday Sportswear": [
+        "Accessories"
+      ],
+      "Women's Print On-Demand": [
+        "Hats"
+      ],
+      "Young Men's": [
+        "Cold Weather Accessories",
+        "Hats"
+      ]
+    }
+  },
+  "ONE_PIECE_OUTFIT": {
+    "item_type_names": [],
+    "product_categories": [
+      "Artist Merch Apparel",
+      "Baby Apparel",
+      "Boys",
+      "Girls",
+      "Men's Bottoms",
+      "Men's Workwear",
+      "SPORTS Licensed Fan Shop",
+      "Women's Contemporary",
+      "Women's Denim",
+      "Women's Dresses",
+      "Women's Everyday Sportswear",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Special Sizes",
+      "Women's Traditional",
+      "Women's Workwear & Uniforms"
+    ],
+    "subcategories_by_category": {
+      "Artist Merch Apparel": [
+        "Bodysuits & Rompers"
+      ],
+      "Baby Apparel": [
+        "Baby Boy Bodysuits",
+        "Baby Boy Footies and Rompers",
+        "Baby Boy Playwear Sets",
+        "Baby Boy Sleepwear",
+        "Baby Girl Bodysuits",
+        "Baby Girl Footies and Rompers",
+        "Baby Girl Playwear Sets",
+        "Baby Girl Sleepwear",
+        "Baby Unisex Bodysuits",
+        "Baby Unisex Footies and Rompers",
+        "Baby Unisex Playwear Sets",
+        "Baby Unisex Sleepwear"
+      ],
+      "Boys": [
+        "Active",
+        "Jeans",
+        "Non-Denim Pants"
+      ],
+      "Girls": [
+        "Active",
+        "Non-Denim Pants",
+        "Romper and Jumpsuits"
+      ],
+      "Men's Bottoms": [
+        "Bibs and Overalls"
+      ],
+      "Men's Workwear": [
+        "Bibs & Overalls",
+        "Coveralls"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5014 Formula 1 Infant & Baby Apparel",
+        "5033 MLB Infant & Baby Apparel",
+        "5043 MLS Infant & Baby Apparel",
+        "5053 NASCAR Infant & Baby Apparel",
+        "5063 NBA Infant & Baby Apparel",
+        "5073 NCAA Infant & Baby Apparel",
+        "5083 NFL Infant & Baby Apparel",
+        "5093 NHL Infant & Baby Apparel",
+        "5100 International Rugby Apparel & Accessories",
+        "5113 International Soccer Infant & Baby Apparel",
+        "5124 WNBA Infant & Baby Apparel",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5713 X Games Infant & Baby Apparel",
+        "5913 NWSL Infant & Baby Apparel",
+        "5999 Uncategorized"
+      ],
+      "Women's Contemporary": [
+        "Pants and Jumpsuits",
+        "Shorts and Rompers"
+      ],
+      "Women's Denim": [
+        "Pants and Jumpsuits",
+        "Shorts and Rompers"
+      ],
+      "Women's Dresses": [
+        "Jumpsuits and Rompers"
+      ],
+      "Women's Everyday Sportswear": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Fast Fashion": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Juniors": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Special Sizes": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Traditional": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Workwear & Uniforms": [
+        "Bottoms and Overalls"
+      ]
+    }
+  },
+  "OVERALLS": {
+    "item_type_names": [],
+    "product_categories": [
+      "Athletic Sports Apparel",
+      "Baby Apparel",
+      "Boys",
+      "Girls",
+      "Men's Bottoms",
+      "Men's Workwear",
+      "OUTDOORS - Apparel",
+      "Occupational Health & Safety",
+      "SPORTS Licensed Fan Shop",
+      "Security & Safety",
+      "Women's Contemporary",
+      "Women's Everyday Sportswear",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Special Sizes",
+      "Women's Traditional",
+      "Women's Workwear & Uniforms"
+    ],
+    "subcategories_by_category": {
+      "Athletic Sports Apparel": [
+        "Hunting One Piece"
+      ],
+      "Baby Apparel": [
+        "Baby Boy Bodysuits",
+        "Baby Boy Footies and Rompers",
+        "Baby Boy Playwear Sets",
+        "Baby Boy Sleepwear",
+        "Baby Girl Bodysuits",
+        "Baby Girl Footies and Rompers",
+        "Baby Girl Playwear Sets",
+        "Baby Girl Sleepwear",
+        "Baby Unisex Bodysuits",
+        "Baby Unisex Footies and Rompers",
+        "Baby Unisex Playwear Sets",
+        "Baby Unisex Sleepwear"
+      ],
+      "Boys": [
+        "Active",
+        "Jeans",
+        "Non-Denim Pants"
+      ],
+      "Girls": [
+        "Active",
+        "Non-Denim Pants",
+        "Romper and Jumpsuits"
+      ],
+      "Men's Bottoms": [
+        "Bibs and Overalls"
+      ],
+      "Men's Workwear": [
+        "Bibs & Overalls",
+        "Coveralls"
+      ],
+      "OUTDOORS - Apparel": [
+        "Workwear One Piece"
+      ],
+      "Occupational Health & Safety": [
+        "Personal Protective Equipment & Safety Apparel"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5010 Formula 1 Other Apparel & Accessories",
+        "5012 Formula 1 Pants & Shorts",
+        "5031 MLB Pants & Shorts",
+        "5039 MLB Other Apparel & Accessories",
+        "5041 MLS Pants & Shorts",
+        "5049 MLS Other Apparel & Accessories",
+        "5051 NASCAR Pants & Shorts",
+        "5059 NASCAR Other Apparel & Accessories",
+        "5061 NBA Pants & Shorts",
+        "5069 NBA Other Apparel & Accessories",
+        "5071 NCAA Pants & Shorts",
+        "5079 NCAA Other Apparel & Accessories",
+        "5081 NFL Pants & Shorts",
+        "5089 NFL Other Apparel & Accessories",
+        "5091 NHL Pants & Shorts",
+        "5099 NHL Other Apparel & Accessories",
+        "5100 International Rugby Apparel & Accessories",
+        "5111 International Soccer Pants & Shorts",
+        "5119 International Soccer Other Apparel & Accessories",
+        "5120 WNBA Other Apparel & Accessories",
+        "5122 WNBA Pants & Shorts",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5711 X Games Pants & Shorts",
+        "5719 X Games Other Apparel & Accessories",
+        "5911 NWSL Pants & Shorts",
+        "5919 NWSL Other Apparel & Accessories",
+        "5999 Uncategorized"
+      ],
+      "Security & Safety": [
+        "Personal Protective Equipment"
+      ],
+      "Women's Contemporary": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Everyday Sportswear": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Fast Fashion": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Juniors": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Special Sizes": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Traditional": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Workwear & Uniforms": [
+        "Bottoms and Overalls"
+      ]
+    }
+  },
+  "PANTS": {
+    "item_type_names": [
+      "Baby & Toddler Footie",
+      "Baby & Toddler Layette Set",
+      "Bodystocking",
+      "Business Casual Pants",
+      "Casual Pants",
+      "Chefs Pants",
+      "Compression Pants",
+      "Corduroys",
+      "Dress Pants",
+      "Golf Pants",
+      "Hiking Pants",
+      "Jeans",
+      "Jumpsuit",
+      "Khakis",
+      "Leggings",
+      "Medical Scrubs Pants",
+      "Medical Scrubs Set",
+      "Overalls",
+      "Pants",
+      "Pants Set",
+      "Slacks",
+      "Suit Pants",
+      "Sweatpants",
+      "Sweatsuit",
+      "Tennis Pants",
+      "Track Pants",
+      "Tracksuit",
+      "Work Utility Coveralls",
+      "Work Utility Pants",
+      "Work Utility Set",
+      "Yoga Pants"
+    ],
+    "product_categories": [
+      "Artist Merch Apparel",
+      "Athletic Sports Apparel",
+      "Baby Apparel",
+      "Baby Private Label Apparel",
+      "Boy's Private Label Active Apparel",
+      "Boys",
+      "Boys Private Label",
+      "Character",
+      "Girl's Private Label Active Apparel",
+      "Girls",
+      "Girls Private Label",
+      "Kid's & Baby Print On-Demand",
+      "Kids Athletic",
+      "Kids Uniforms",
+      "Men's Athletic",
+      "Men's Bottoms",
+      "Men's Contemporary Collections",
+      "Men's Print On-Demand",
+      "Men's Private Label",
+      "Men's Private Label Active Apparel",
+      "Men's Traditional Collections",
+      "Men's Uniform",
+      "Men's Workwear",
+      "Merch by Amazon",
+      "OUTDOORS - Apparel",
+      "Occupational Health & Safety",
+      "Professional Dental",
+      "Professional Medical",
+      "SPORTS Licensed Fan Shop",
+      "Security & Safety",
+      "Team Sports",
+      "Unisex Print On-Demand",
+      "Women's Active",
+      "Women's Contemporary",
+      "Women's Denim",
+      "Women's Everyday Sportswear",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Maternity",
+      "Women's Petite Sportswear",
+      "Women's Print On-Demand",
+      "Women's Private Label",
+      "Women's Private Label Active Apparel",
+      "Women's Special Sizes",
+      "Women's Traditional",
+      "Women's Workwear & Uniforms",
+      "Young Men's"
+    ],
+    "subcategories_by_category": {
+      "Artist Merch Apparel": [
+        "Unisex Bottoms",
+        "Unisex Kids Bottoms",
+        "Women's Bottoms"
+      ],
+      "Athletic Sports Apparel": [
+        "Baseball Tops",
+        "Baselayer Bottoms",
+        "Basketball Bottoms",
+        "Dance Bottoms",
+        "Football Bottoms",
+        "Gymnastics Bottoms",
+        "Hockey Bottoms",
+        "Hunting Bottoms",
+        "Lacrosse Bottoms",
+        "Martial Arts Bottoms",
+        "Men's Baseball",
+        "Men's Basketball",
+        "Men's Football",
+        "Men's Golf",
+        "Men's Hunting & Tactical",
+        "Other Bottoms",
+        "Running Bottoms",
+        "Skateboarding Bottoms",
+        "Soccer Bottoms",
+        "Softball Bottoms",
+        "Tactical & Military Bottoms",
+        "Tennis Bottoms",
+        "Women's Baseball",
+        "Women's Basketball",
+        "Women's Football",
+        "Women's Golf",
+        "Women's Hunting & Tactical",
+        "Wrestling Bottoms",
+        "Youth Baseball",
+        "Youth Basketball",
+        "Youth Football",
+        "Youth Golf",
+        "Youth Hunting & Tactical"
+      ],
+      "Baby Apparel": [
+        "Baby Boy Bodysuits",
+        "Baby Boy Bottoms",
+        "Baby Boy Footies and Rompers",
+        "Baby Boy Gift Sets",
+        "Baby Boy Playwear Sets",
+        "Baby Girl Bodysuits",
+        "Baby Girl Bottoms",
+        "Baby Girl Footies and Rompers",
+        "Baby Girl Gift Sets",
+        "Baby Girl Playwear Sets",
+        "Baby Unisex Bodysuits",
+        "Baby Unisex Bottoms",
+        "Baby Unisex Footies and Rompers",
+        "Baby Unisex Gift Sets",
+        "Baby Unisex Playwear Sets"
+      ],
+      "Baby Private Label Apparel": [
+        "Baby Boy Bottoms",
+        "Baby Boy Footies and Rompers",
+        "Baby Girl Bottoms",
+        "Baby Girl Footies and Rompers",
+        "Baby Unisex Bottoms",
+        "Baby Unisex Footies and Rompers"
+      ],
+      "Boy's Private Label Active Apparel": [
+        "Active Tights/Leggings",
+        "Pants"
+      ],
+      "Boys": [
+        "Active",
+        "Clothing Sets",
+        "Jeans",
+        "Non-Denim Pants"
+      ],
+      "Boys Private Label": [
+        "Baby Boys PL Active Bottoms",
+        "Baby Boys PL Bottoms",
+        "Baby Boys PL Sets",
+        "Boys PL Active Bottoms",
+        "Boys PL Bottoms",
+        "Boys PL Sets"
+      ],
+      "Character": [
+        "Baby Boy Bodysuits",
+        "Baby Boy Clothing Sets",
+        "Baby Boy Footies & Rompers",
+        "Baby Boy Gift Sets",
+        "Baby Boy Separates",
+        "Baby Girl Bodysuits",
+        "Baby Girl Clothing Sets",
+        "Baby Girl Footies & Rompers",
+        "Baby Girl Gift Sets",
+        "Baby Girl Separates",
+        "Boy Bottoms",
+        "Boy Clothing Sets",
+        "Girl Bottoms",
+        "Girl Clothing Sets"
+      ],
+      "Girl's Private Label Active Apparel": [
+        "Active Tights/Leggings",
+        "Pants"
+      ],
+      "Girls": [
+        "2pc Clothing Sets",
+        "3pc Clothing Sets",
+        "Active",
+        "Jeans",
+        "Non-Denim Pants",
+        "Romper and Jumpsuits"
+      ],
+      "Girls Private Label": [
+        "Baby Girls PL Bottoms",
+        "Baby Girls PL Sets",
+        "Girls PL Bottoms",
+        "Girls PL Sets"
+      ],
+      "Kid's & Baby Print On-Demand": [
+        "Bottoms",
+        "Leggings"
+      ],
+      "Kids Athletic": [
+        "Baby Boy Separates",
+        "Baby Boy Sets",
+        "Baby Girl Separates",
+        "Baby Girl Sets",
+        "Boy Pants",
+        "Boy Sets",
+        "Girl Pants",
+        "Girl Sets",
+        "Unisex Pants"
+      ],
+      "Kids Uniforms": [
+        "Boys Uniform Pants",
+        "Girls Uniform Pants"
+      ],
+      "Men's Athletic": [
+        "Pants",
+        "Sets/Track Suits"
+      ],
+      "Men's Bottoms": [
+        "Bibs and Overalls",
+        "Casual Pant",
+        "Dress Pants",
+        "Jeans",
+        "Performance",
+        "Suit Separate Pants"
+      ],
+      "Men's Contemporary Collections": [
+        "Bottoms"
+      ],
+      "Men's Print On-Demand": [
+        "Bottoms",
+        "Leggings"
+      ],
+      "Men's Private Label": [
+        "Casual Pant",
+        "Dress Pants",
+        "Jeans",
+        "Misc Bottoms",
+        "Scrubs Bottoms",
+        "Shorts",
+        "Workwear Bottoms"
+      ],
+      "Men's Private Label Active Apparel": [
+        "Active Tights/Leggings",
+        "Pants"
+      ],
+      "Men's Traditional Collections": [
+        "Bottoms"
+      ],
+      "Men's Uniform": [
+        "Scrubs Bottoms",
+        "Uniforms Bottoms"
+      ],
+      "Men's Workwear": [
+        "Bibs & Overalls",
+        "Coveralls",
+        "Flame Resistant Bottoms",
+        "High Visibility Bottoms",
+        "Jeans",
+        "Pants"
+      ],
+      "Merch by Amazon": [
+        "Print on Demand Unisex Bottoms",
+        "Print on Demand Unisex Leggings"
+      ],
+      "OUTDOORS - Apparel": [
+        "Baselayer Bottoms",
+        "Boating Bottoms",
+        "Cycling Bottoms",
+        "Fishing Bottoms",
+        "Hiking Bottoms",
+        "Hunting Bottoms",
+        "Outdoor Lifestyle Bottoms",
+        "Rainwear Bottoms",
+        "Snow & Ski Bottoms",
+        "Tactical Bottoms",
+        "Workwear Bottoms"
+      ],
+      "Occupational Health & Safety": [
+        "Personal Protective Equipment & Safety Apparel"
+      ],
+      "Professional Dental": [
+        "Professional Apparel - Disposable",
+        "Professional Apparel - Reusable"
+      ],
+      "Professional Medical": [
+        "Professional Apparel"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5012 Formula 1 Pants & Shorts",
+        "5014 Formula 1 Infant & Baby Apparel",
+        "5031 MLB Pants & Shorts",
+        "5033 MLB Infant & Baby Apparel",
+        "5041 MLS Pants & Shorts",
+        "5043 MLS Infant & Baby Apparel",
+        "5051 NASCAR Pants & Shorts",
+        "5053 NASCAR Infant & Baby Apparel",
+        "5061 NBA Pants & Shorts",
+        "5063 NBA Infant & Baby Apparel",
+        "5071 NCAA Pants & Shorts",
+        "5073 NCAA Infant & Baby Apparel",
+        "5081 NFL Pants & Shorts",
+        "5083 NFL Infant & Baby Apparel",
+        "5091 NHL Pants & Shorts",
+        "5093 NHL Infant & Baby Apparel",
+        "5100 International Rugby Apparel & Accessories",
+        "5111 International Soccer Pants & Shorts",
+        "5113 International Soccer Infant & Baby Apparel",
+        "5122 WNBA Pants & Shorts",
+        "5124 WNBA Infant & Baby Apparel",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5711 X Games Pants & Shorts",
+        "5713 X Games Infant & Baby Apparel",
+        "5911 NWSL Pants & Shorts",
+        "5913 NWSL Infant & Baby Apparel",
+        "5999 Uncategorized"
+      ],
+      "Security & Safety": [
+        "Personal Protective Equipment"
+      ],
+      "Team Sports": [
+        "Fencing"
+      ],
+      "Unisex Print On-Demand": [
+        "Bottoms",
+        "Leggings"
+      ],
+      "Women's Active": [
+        "Dance Leotards and Unitards",
+        "Dance Tights",
+        "Leggings",
+        "Pants"
+      ],
+      "Women's Contemporary": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Denim": [
+        "Contemporary Jeans",
+        "Everyday Jeans",
+        "Fast Fashion Jeans",
+        "Juniors Jeans",
+        "Pants and Jumpsuits"
+      ],
+      "Women's Everyday Sportswear": [
+        "Jeans",
+        "Pants and Jumpsuits"
+      ],
+      "Women's Fast Fashion": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Juniors": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Maternity": [
+        "Active",
+        "Pants and Jumpsuits"
+      ],
+      "Women's Petite Sportswear": [
+        "Petite Capri/Ankle Pants",
+        "Petite Casual Woven Pants",
+        "Petite Dress Pants",
+        "Petite Knit Pants",
+        "Petite Overalls/Jumpsuits",
+        "Petite Suit Pants"
+      ],
+      "Women's Print On-Demand": [
+        "Bottoms",
+        "Leggings"
+      ],
+      "Women's Private Label": [
+        "Active",
+        "Active Capri Pants",
+        "Active Pants",
+        "Active Tights",
+        "Jumpsuits & Rompers",
+        "Pants and Jumpsuits"
+      ],
+      "Women's Private Label Active Apparel": [
+        "Active Tights/Leggings",
+        "Pants"
+      ],
+      "Women's Special Sizes": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Traditional": [
+        "Pants and Jumpsuits"
+      ],
+      "Women's Workwear & Uniforms": [
+        "Bottoms and Overalls",
+        "Food Service",
+        "Hospitality",
+        "Industrial",
+        "Medical"
+      ],
+      "Young Men's": [
+        "Bottoms",
+        "Cold Weather Base Layers",
+        "Snowboarding Pants"
+      ]
+    }
+  },
+  "SANDAL": {
+    "item_type_names": [
+      "Espadrille Wedge Sandal",
+      "Fisherman Sandal",
+      "Flat Sandal",
+      "Flip-Flop",
+      "Geta & Zori Sandal",
+      "Heeled Sandal",
+      "Sandal",
+      "Slide Sandal",
+      "Sport Sandal",
+      "Wedge Sandal"
+    ],
+    "product_categories": [
+      "Athletic",
+      "Classics",
+      "Comfort",
+      "Contemporary",
+      "Fashion",
+      "Juniors",
+      "Kids' Shoes",
+      "Outdoor",
+      "SPORTS Licensed Fan Shop"
+    ],
+    "subcategories_by_category": {
+      "Athletic": [
+        "Men's Sandals/Slides",
+        "Women's Sandals/Slides"
+      ],
+      "Classics": [
+        "Men's Non Tech Athletic",
+        "Men's Sandals",
+        "Women's Flats",
+        "Women's Non Tech Athletic",
+        "Women's Sandals"
+      ],
+      "Comfort": [
+        "Men's Non Tech Athletic",
+        "Men's Sandals",
+        "Women's Flats",
+        "Women's Non Tech Athletic",
+        "Women's Sandals"
+      ],
+      "Contemporary": [
+        "Men's Non Tech Athletic",
+        "Men's Sandals",
+        "Women's Flats",
+        "Women's Non Tech Athletic",
+        "Women's Sandals"
+      ],
+      "Fashion": [
+        "Men's Non Tech Athletic",
+        "Men's Sandals",
+        "Women's Flats",
+        "Women's Non Tech Athletic",
+        "Women's Sandals"
+      ],
+      "Juniors": [
+        "Men's Casual",
+        "Men's Non Tech Athletic",
+        "Men's Sandals",
+        "Women's Non Tech Athletic",
+        "Women's Sandals"
+      ],
+      "Kids' Shoes": [
+        "Casual",
+        "Dress",
+        "Fashion Sandals",
+        "Sport Sandals"
+      ],
+      "Outdoor": [
+        "Men's Sandals",
+        "Women's Sandals"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5018 Formula 1 Footwear",
+        "5037 MLB Footwear",
+        "5047 MLS Footwear",
+        "5057 NASCAR Footwear",
+        "5067 NBA Footwear",
+        "5077 NCAA Footwear",
+        "5087 NFL Footwear",
+        "5097 NHL Footwear",
+        "5100 International Rugby Apparel & Accessories",
+        "5117 International Soccer Footwear",
+        "5128 WNBA Footwear",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5717 X Games Footwear",
+        "5917 NWSL Footwear",
+        "5999 Uncategorized"
+      ]
+    }
+  },
+  "SHIRT": {
+    "item_type_names": [],
+    "product_categories": [
+      "Artist Merch Apparel",
+      "Athletic Sports Apparel",
+      "Baby Apparel",
+      "Baby Private Label Apparel",
+      "Boy's Private Label Active Apparel",
+      "Boys",
+      "Boys Private Label",
+      "Character",
+      "Girl's Private Label Active Apparel",
+      "Girls",
+      "Girls Private Label",
+      "Kid's & Baby Print On-Demand",
+      "Kids Athletic",
+      "Kids Uniforms",
+      "Men's Athletic",
+      "Men's Contemporary Collections",
+      "Men's Dress Shirt",
+      "Men's Print On-Demand",
+      "Men's Private Label",
+      "Men's Private Label Active Apparel",
+      "Men's Tops",
+      "Men's Traditional Collections",
+      "Men's Underwear",
+      "Men's Uniform",
+      "Men's Workwear",
+      "Merch by Amazon",
+      "OUTDOORS - Apparel",
+      "Occupational Health & Safety",
+      "Professional Dental",
+      "Professional Medical",
+      "SPORTS Licensed Fan Shop",
+      "Security & Safety",
+      "Unisex Print On-Demand",
+      "Women's Active",
+      "Women's Contemporary",
+      "Women's Denim",
+      "Women's Everyday Sportswear",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Maternity",
+      "Women's Petite Sportswear",
+      "Women's Print On-Demand",
+      "Women's Private Label",
+      "Women's Private Label Active Apparel",
+      "Women's Special Sizes",
+      "Women's Traditional",
+      "Women's Workwear & Uniforms",
+      "Young Men's"
+    ],
+    "subcategories_by_category": {
+      "Artist Merch Apparel": [
+        "Baby Unisex Tops",
+        "Unisex Kids T-shirts",
+        "Unisex Long Sleeves",
+        "Unisex Raglans",
+        "Unisex T-shirts",
+        "Unisex Tank Tops",
+        "Unisex V-Necks",
+        "Women's Long Sleeves",
+        "Women's Raglans",
+        "Women's T-shirts",
+        "Women's Tank Tops",
+        "Women's V-Necks"
+      ],
+      "Athletic Sports Apparel": [
+        "Baseball Tops",
+        "Baselayer Tops",
+        "Basketball Tops",
+        "Dance Tops",
+        "Equestrian Tops",
+        "Football Tops",
+        "Gymnastics Tops",
+        "Hockey Tops",
+        "Hunting Tops",
+        "Lacrosse Tops",
+        "Martial Arts Tops",
+        "Men's Baseball",
+        "Men's Basketball",
+        "Men's Football",
+        "Men's Golf",
+        "Men's Hunting & Tactical",
+        "Other Tops",
+        "Running Tops",
+        "Skateboarding Tops",
+        "Soccer Tops",
+        "Softball Tops",
+        "Tactical & Military Tops",
+        "Tennis Tops",
+        "Women's Baseball",
+        "Women's Basketball",
+        "Women's Football",
+        "Women's Golf",
+        "Women's Hunting & Tactical",
+        "Wrestling Tops",
+        "Youth Baseball",
+        "Youth Basketball",
+        "Youth Football",
+        "Youth Golf",
+        "Youth Hunting & Tactical"
+      ],
+      "Baby Apparel": [
+        "Baby Boy Bodysuits",
+        "Baby Boy Gift Sets",
+        "Baby Boy Playwear Sets",
+        "Baby Boy Tops",
+        "Baby Christening Apparel",
+        "Baby Girl Bodysuits",
+        "Baby Girl Gift Sets",
+        "Baby Girl Playwear Sets",
+        "Baby Girl Tops",
+        "Baby Unisex Bodysuits",
+        "Baby Unisex Gift Sets",
+        "Baby Unisex Playwear Sets",
+        "Baby Unisex Tops"
+      ],
+      "Baby Private Label Apparel": [
+        "Baby Boy Bodysuits",
+        "Baby Boy Gift Sets",
+        "Baby Boy Playwear Sets",
+        "Baby Boy Tops",
+        "Baby Boys Sweaters",
+        "Baby Christening Apparel",
+        "Baby Girl Bodysuits",
+        "Baby Girl Gift Sets",
+        "Baby Girl Playwear Sets",
+        "Baby Girl Sweaters",
+        "Baby Girl Tops",
+        "Baby Unisex Bodysuits",
+        "Baby Unisex Gift Sets",
+        "Baby Unisex Playwear Sets",
+        "Baby Unisex Tops"
+      ],
+      "Boy's Private Label Active Apparel": [
+        "Polos",
+        "Tops/Tees"
+      ],
+      "Boys": [
+        "Active",
+        "Clothing Sets",
+        "Knit Shirts",
+        "Tees",
+        "Woven Shirts"
+      ],
+      "Boys Private Label": [
+        "Baby Boys PL Active Tops",
+        "Baby Boys PL Tops",
+        "Boys PL Active Tops",
+        "Boys PL Tops"
+      ],
+      "Character": [
+        "Baby Boy Bodysuits",
+        "Baby Boy Clothing Sets",
+        "Baby Boy Footies & Rompers",
+        "Baby Boy Gift Sets",
+        "Baby Boy Separates",
+        "Baby Girl Bodysuits",
+        "Baby Girl Clothing Sets",
+        "Baby Girl Footies & Rompers",
+        "Baby Girl Gift Sets",
+        "Baby Girl Separates",
+        "Boy Clothing Sets",
+        "Boy Layering",
+        "Boy Tops",
+        "Girl Clothing Sets",
+        "Girl Layering",
+        "Girl Tops"
+      ],
+      "Girl's Private Label Active Apparel": [
+        "Tops/Tees"
+      ],
+      "Girls": [
+        "2pc Clothing Sets",
+        "3pc Clothing Sets",
+        "Active",
+        "Fashion Tops",
+        "Tees"
+      ],
+      "Girls Private Label": [
+        "Baby Girls PL Active Tops",
+        "Baby Girls PL Tops",
+        "Girls PL Active Tops",
+        "Girls PL Tops"
+      ],
+      "Kid's & Baby Print On-Demand": [
+        "Knits",
+        "Long Sleeves",
+        "Raglans",
+        "Sets",
+        "T-shirts",
+        "Tank Tops",
+        "V-Necks"
+      ],
+      "Kids Athletic": [
+        "Baby Boy Bodysuits",
+        "Baby Boy Separates",
+        "Baby Boy Sets",
+        "Baby Girl Bodysuits",
+        "Baby Girl Separates",
+        "Baby Girl Sets",
+        "Boy Bodysuits",
+        "Boy Hoodies",
+        "Boy Sets",
+        "Boy Tops",
+        "Girl Bodysuits",
+        "Girl Hoodies",
+        "Girl Sets",
+        "Girl Tops",
+        "Unisex Tops"
+      ],
+      "Kids Uniforms": [
+        "Boys Uniform Knit Tops",
+        "Boys Uniform Layering",
+        "Boys Uniform Woven Tops",
+        "Girls Uniform Knit Tops",
+        "Girls Uniform Layering",
+        "Girls Uniform Woven Tops"
+      ],
+      "Men's Athletic": [
+        "Sets/Track Suits",
+        "Sweatshirts",
+        "Tops/Tees"
+      ],
+      "Men's Contemporary Collections": [
+        "Knits",
+        "Tees",
+        "Woven"
+      ],
+      "Men's Dress Shirt": [
+        "Classic Fit",
+        "Oxford",
+        "Short Sleeve",
+        "Slim Fit",
+        "Tuxedo"
+      ],
+      "Men's Print On-Demand": [
+        "Knits",
+        "Long Sleeves",
+        "Performance Shirt",
+        "Raglans",
+        "T-shirts",
+        "Tank Tops",
+        "V-Necks"
+      ],
+      "Men's Private Label": [
+        "Dress Shirts / Sportshirts",
+        "Knit Tops",
+        "Misc Tops",
+        "Polos",
+        "Scrubs Tops",
+        "Sweaters",
+        "Tees",
+        "Workwear Tops",
+        "Wovens Tops"
+      ],
+      "Men's Private Label Active Apparel": [
+        "Polos",
+        "Tops/Tees"
+      ],
+      "Men's Tops": [
+        "Casual Wovens",
+        "Knit Tops",
+        "Polos",
+        "Tees"
+      ],
+      "Men's Traditional Collections": [
+        "Knits",
+        "Tees",
+        "Woven"
+      ],
+      "Men's Underwear": [
+        "Undershirts"
+      ],
+      "Men's Uniform": [
+        "Lab Coats",
+        "Scrubs Tops",
+        "Uniforms Tops"
+      ],
+      "Men's Workwear": [
+        "Flame Resistant Tops",
+        "High Visibility Tops",
+        "Knit Tops",
+        "Tees/Tanks",
+        "Woven Shirts"
+      ],
+      "Merch by Amazon": [
+        "Print on Demand Unisex Knits",
+        "Print on Demand Unisex Long Sleeves",
+        "Print on Demand Unisex Raglans",
+        "Print on Demand Unisex T-Shirt",
+        "Print on Demand Unisex Tank Tops",
+        "Print on Demand Unisex V-Necks"
+      ],
+      "OUTDOORS - Apparel": [
+        "Baselayer Tops",
+        "Boating Tops",
+        "Cycling Tops",
+        "Fishing Tops",
+        "Hiking Tops",
+        "Hunting Tops",
+        "Outdoor Lifestyle Tops",
+        "Rainwear Tops",
+        "T-Shirts/Button-up Shirts",
+        "Tactical Tops",
+        "Underwear Tops",
+        "Workwear Tops"
+      ],
+      "Occupational Health & Safety": [
+        "Personal Protective Equipment & Safety Apparel"
+      ],
+      "Professional Dental": [
+        "Patient Apparel (Reusable)",
+        "Patient Apparel - Disposable",
+        "Professional Apparel - Disposable",
+        "Professional Apparel - Reusable"
+      ],
+      "Professional Medical": [
+        "Patient Apparel (Reusable)",
+        "Patient Apparel - Disposable",
+        "Professional Apparel"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5010 Formula 1 Other Apparel & Accessories",
+        "5011 Formula 1 Shirts",
+        "5014 Formula 1 Infant & Baby Apparel",
+        "5016 Formula 1 Jerseys",
+        "5030 MLB Shirts",
+        "5033 MLB Infant & Baby Apparel",
+        "5034 MLB Jerseys",
+        "5039 MLB Other Apparel & Accessories",
+        "5040 MLS Shirts",
+        "5043 MLS Infant & Baby Apparel",
+        "5044 MLS Jerseys",
+        "5049 MLS Other Apparel & Accessories",
+        "5050 NASCAR Shirts",
+        "5053 NASCAR Infant & Baby Apparel",
+        "5054 NASCAR Jerseys",
+        "5059 NASCAR Other Apparel & Accessories",
+        "5060 NBA Shirts",
+        "5063 NBA Infant & Baby Apparel",
+        "5064 NBA Jerseys",
+        "5069 NBA Other Apparel & Accessories",
+        "5070 NCAA Shirts",
+        "5073 NCAA Infant & Baby Apparel",
+        "5074 NCAA Jerseys",
+        "5079 NCAA Other Apparel & Accessories",
+        "5080 NFL Shirts",
+        "5083 NFL Infant & Baby Apparel",
+        "5084 NFL Jerseys",
+        "5089 NFL Other Apparel & Accessories",
+        "5090 NHL Shirts",
+        "5093 NHL Infant & Baby Apparel",
+        "5094 NHL Jerseys",
+        "5099 NHL Other Apparel & Accessories",
+        "5100 International Rugby Apparel & Accessories",
+        "5110 International Soccer Shirts",
+        "5113 International Soccer Infant & Baby Apparel",
+        "5114 International Soccer Jerseys",
+        "5119 International Soccer Other Apparel & Accessories",
+        "5120 WNBA Other Apparel & Accessories",
+        "5121 WNBA Shirts",
+        "5124 WNBA Infant & Baby Apparel",
+        "5126 WNBA Jerseys",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5710 X Games Shirts",
+        "5713 X Games Infant & Baby Apparel",
+        "5714 X Games Jerseys",
+        "5719 X Games Other Apparel & Accessories",
+        "5910 NWSL Shirts",
+        "5913 NWSL Infant & Baby Apparel",
+        "5914 NWSL Jerseys",
+        "5919 NWSL Other Apparel & Accessories",
+        "5999 Uncategorized"
+      ],
+      "Security & Safety": [
+        "Work Uniforms"
+      ],
+      "Unisex Print On-Demand": [
+        "Knits",
+        "Long Sleeves",
+        "Raglans",
+        "Sets",
+        "T-shirts",
+        "Tank Tops",
+        "V-Necks"
+      ],
+      "Women's Active": [
+        "Dance Leotards and Unitards",
+        "Pullover Hoodies and Crewnecks",
+        "Tops"
+      ],
+      "Women's Contemporary": [
+        "Tops"
+      ],
+      "Women's Denim": [
+        "Tops"
+      ],
+      "Women's Everyday Sportswear": [
+        "Tops"
+      ],
+      "Women's Fast Fashion": [
+        "Tops"
+      ],
+      "Women's Juniors": [
+        "Tops"
+      ],
+      "Women's Maternity": [
+        "Active",
+        "Tops"
+      ],
+      "Women's Petite Sportswear": [
+        "Petite Blazers/Fashion Jackets",
+        "Petite Knit Tops",
+        "Petite Suit Jackets",
+        "Petite Vests",
+        "Petite Woven Tops",
+        "Tees/Basic T-Shirts"
+      ],
+      "Women's Print On-Demand": [
+        "Knits",
+        "Long Sleeves",
+        "Performance Shirt",
+        "Raglans",
+        "Sets",
+        "T-shirts",
+        "Tank Tops",
+        "V-Necks"
+      ],
+      "Women's Private Label": [
+        "Active SS Tops",
+        "Active Shirts & Tees",
+        "Active Tank Tops",
+        "Knit Basic Tops",
+        "LS Knit Fashion",
+        "S/L Knit Fashion",
+        "S/L Wovens Fashion",
+        "SS Knit Fashion",
+        "SS Wovens Fashion",
+        "Tops",
+        "Woven Basic Tops"
+      ],
+      "Women's Private Label Active Apparel": [
+        "Tops/Tees"
+      ],
+      "Women's Special Sizes": [
+        "Tops"
+      ],
+      "Women's Traditional": [
+        "Tops"
+      ],
+      "Women's Workwear & Uniforms": [
+        "Food Service",
+        "Hospitality",
+        "Industrial",
+        "Medical",
+        "Tops and Sweaters"
+      ],
+      "Young Men's": [
+        "Cold Weather Base Layers",
+        "Knits",
+        "Sweatshirts",
+        "Tanks",
+        "Tees",
+        "Woven"
+      ]
+    }
+  },
+  "SHORTS": {
+    "item_type_names": [
+      "Bermuda Shorts",
+      "Cargo Shorts",
+      "Casual Shorts",
+      "Corduroy Shorts",
+      "Denim Shorts",
+      "Dress Shorts",
+      "Golf Shorts",
+      "Hiking Shorts",
+      "Khaki Shorts",
+      "Rompers",
+      "Shorts",
+      "Shorts Set",
+      "Skateboarding Shorts",
+      "Tennis Shorts",
+      "Work Utility Shorts",
+      "Yoga Shorts"
+    ],
+    "product_categories": [
+      "Artist Merch Apparel",
+      "Athletic Sports Apparel",
+      "Baby Apparel",
+      "Boy's Private Label Active Apparel",
+      "Boys",
+      "Equine",
+      "Girl's Private Label Active Apparel",
+      "Girls",
+      "Girls Private Label",
+      "Kid's & Baby Print On-Demand",
+      "Kids Athletic",
+      "Kids Uniforms",
+      "Men's Athletic",
+      "Men's Bottoms",
+      "Men's Contemporary Collections",
+      "Men's Private Label Active Apparel",
+      "Men's Traditional Collections",
+      "Men's Workwear",
+      "OUTDOORS - Apparel",
+      "SPORTS Licensed Fan Shop",
+      "Unisex Print On-Demand",
+      "Women's Active",
+      "Women's Contemporary",
+      "Women's Denim",
+      "Women's Everyday Sportswear",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Maternity",
+      "Women's Petite Sportswear",
+      "Women's Print On-Demand",
+      "Women's Private Label",
+      "Women's Private Label Active Apparel",
+      "Women's Special Sizes",
+      "Women's Traditional",
+      "Women's Workwear & Uniforms",
+      "Young Men's"
+    ],
+    "subcategories_by_category": {
+      "Artist Merch Apparel": [
+        "Unisex Bottoms",
+        "Unisex Kids Bottoms",
+        "Women's Bottoms"
+      ],
+      "Athletic Sports Apparel": [
+        "Baseball Tops",
+        "Baselayer Bottoms",
+        "Basketball Bottoms",
+        "Dance Bottoms",
+        "Football Bottoms",
+        "Gymnastics Bottoms",
+        "Hockey Bottoms",
+        "Hunting Bottoms",
+        "Lacrosse Bottoms",
+        "Martial Arts Bottoms",
+        "Men's Baseball",
+        "Men's Basketball",
+        "Men's Football",
+        "Men's Golf",
+        "Men's Hunting & Tactical",
+        "Other Bottoms",
+        "Running Bottoms",
+        "Skateboarding Bottoms",
+        "Soccer Bottoms",
+        "Softball Bottoms",
+        "Tactical & Military Bottoms",
+        "Tennis Bottoms",
+        "Women's Baseball",
+        "Women's Basketball",
+        "Women's Football",
+        "Women's Golf",
+        "Women's Hunting & Tactical",
+        "Wrestling Bottoms",
+        "Youth Baseball",
+        "Youth Basketball",
+        "Youth Football",
+        "Youth Golf",
+        "Youth Hunting & Tactical"
+      ],
+      "Baby Apparel": [
+        "Baby Boy Bottoms",
+        "Baby Boy Footies and Rompers",
+        "Baby Girl Bottoms",
+        "Baby Girl Footies and Rompers",
+        "Baby Unisex Bottoms",
+        "Baby Unisex Footies and Rompers"
+      ],
+      "Boy's Private Label Active Apparel": [
+        "Shorts"
+      ],
+      "Boys": [
+        "Active",
+        "Shorts"
+      ],
+      "Equine": [
+        "Horse Supplies"
+      ],
+      "Girl's Private Label Active Apparel": [
+        "Shorts"
+      ],
+      "Girls": [
+        "2pc Clothing Sets",
+        "3pc Clothing Sets",
+        "Active",
+        "Romper and Jumpsuits",
+        "Shorts"
+      ],
+      "Girls Private Label": [
+        "Baby Girls PL Active Bottoms",
+        "Girls PL Active Bottoms"
+      ],
+      "Kid's & Baby Print On-Demand": [
+        "Body Suits & Rompers",
+        "Rompers"
+      ],
+      "Kids Athletic": [
+        "Boy Shorts",
+        "Girl Shorts"
+      ],
+      "Kids Uniforms": [
+        "Boys Uniform Shorts",
+        "Girls Uniform Shorts"
+      ],
+      "Men's Athletic": [
+        "Shorts"
+      ],
+      "Men's Bottoms": [
+        "Performance",
+        "Shorts"
+      ],
+      "Men's Contemporary Collections": [
+        "Denim",
+        "Shorts"
+      ],
+      "Men's Private Label Active Apparel": [
+        "Shorts"
+      ],
+      "Men's Traditional Collections": [
+        "Denim",
+        "Shorts"
+      ],
+      "Men's Workwear": [
+        "Shorts"
+      ],
+      "OUTDOORS - Apparel": [
+        "Boating Bottoms",
+        "Cycling Bottoms",
+        "Fishing Bottoms",
+        "Hiking Bottoms",
+        "Outdoor Lifestyle Bottoms",
+        "Outdoor Lifestyle Tops",
+        "Workwear Bottoms"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5012 Formula 1 Pants & Shorts",
+        "5014 Formula 1 Infant & Baby Apparel",
+        "5031 MLB Pants & Shorts",
+        "5033 MLB Infant & Baby Apparel",
+        "5041 MLS Pants & Shorts",
+        "5043 MLS Infant & Baby Apparel",
+        "5051 NASCAR Pants & Shorts",
+        "5053 NASCAR Infant & Baby Apparel",
+        "5061 NBA Pants & Shorts",
+        "5063 NBA Infant & Baby Apparel",
+        "5071 NCAA Pants & Shorts",
+        "5073 NCAA Infant & Baby Apparel",
+        "5081 NFL Pants & Shorts",
+        "5083 NFL Infant & Baby Apparel",
+        "5091 NHL Pants & Shorts",
+        "5093 NHL Infant & Baby Apparel",
+        "5100 International Rugby Apparel & Accessories",
+        "5111 International Soccer Pants & Shorts",
+        "5113 International Soccer Infant & Baby Apparel",
+        "5122 WNBA Pants & Shorts",
+        "5124 WNBA Infant & Baby Apparel",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5711 X Games Pants & Shorts",
+        "5713 X Games Infant & Baby Apparel",
+        "5911 NWSL Pants & Shorts",
+        "5913 NWSL Infant & Baby Apparel",
+        "5999 Uncategorized"
+      ],
+      "Unisex Print On-Demand": [
+        "Body Suits & Rompers",
+        "Rompers"
+      ],
+      "Women's Active": [
+        "Shorts and Skirts"
+      ],
+      "Women's Contemporary": [
+        "Denim",
+        "Shorts and Rompers"
+      ],
+      "Women's Denim": [
+        "Shorts and Rompers"
+      ],
+      "Women's Everyday Sportswear": [
+        "Shorts and Rompers"
+      ],
+      "Women's Fast Fashion": [
+        "Denim",
+        "Shorts and Rompers"
+      ],
+      "Women's Juniors": [
+        "Denim",
+        "Shorts and Rompers"
+      ],
+      "Women's Maternity": [
+        "Active",
+        "Shorts and Rompers"
+      ],
+      "Women's Petite Sportswear": [
+        "Petite Denim",
+        "Petite Shorts/Rompers"
+      ],
+      "Women's Print On-Demand": [
+        "Body Suits & Rompers",
+        "Rompers"
+      ],
+      "Women's Private Label": [
+        "Active Shorts & Skirts",
+        "Denim",
+        "Shorts and Rompers"
+      ],
+      "Women's Private Label Active Apparel": [
+        "Shorts"
+      ],
+      "Women's Special Sizes": [
+        "Denim",
+        "Shorts and Rompers"
+      ],
+      "Women's Traditional": [
+        "Denim",
+        "Shorts and Rompers"
+      ],
+      "Women's Workwear & Uniforms": [
+        "Industrial"
+      ],
+      "Young Men's": [
+        "Shorts"
+      ]
+    }
+  },
+  "SKIRT": {
+    "item_type_names": [
+      "Business Casual Skirt",
+      "Scooter Skirt",
+      "Skirt",
+      "Skirt Set",
+      "Skort",
+      "Tennis Skirt",
+      "Tennis Skort"
+    ],
+    "product_categories": [
+      "Athletic Sports Apparel",
+      "Girls",
+      "Girls Private Label",
+      "Kids Athletic",
+      "Kids Uniforms",
+      "OUTDOORS - Apparel",
+      "SPORTS Licensed Fan Shop",
+      "Women's Active",
+      "Women's Contemporary",
+      "Women's Denim",
+      "Women's Everyday Sportswear",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Maternity",
+      "Women's Petite Sportswear",
+      "Women's Private Label",
+      "Women's Special Sizes",
+      "Women's Traditional"
+    ],
+    "subcategories_by_category": {
+      "Athletic Sports Apparel": [
+        "Women's Golf",
+        "Youth Golf"
+      ],
+      "Girls": [
+        "2pc Clothing Sets",
+        "3pc Clothing Sets",
+        "Skirts/Skort"
+      ],
+      "Girls Private Label": [
+        "Baby Girls PL Skirts",
+        "Girls PL Skirts"
+      ],
+      "Kids Athletic": [
+        "Girl Skirts"
+      ],
+      "Kids Uniforms": [
+        "Girls Uniform Skirts"
+      ],
+      "OUTDOORS - Apparel": [
+        "Boating Bottoms",
+        "Fishing Bottoms",
+        "Outdoor Lifestyle Bottoms"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5010 Formula 1 Other Apparel & Accessories",
+        "5014 Formula 1 Infant & Baby Apparel",
+        "5033 MLB Infant & Baby Apparel",
+        "5039 MLB Other Apparel & Accessories",
+        "5043 MLS Infant & Baby Apparel",
+        "5049 MLS Other Apparel & Accessories",
+        "5053 NASCAR Infant & Baby Apparel",
+        "5059 NASCAR Other Apparel & Accessories",
+        "5063 NBA Infant & Baby Apparel",
+        "5069 NBA Other Apparel & Accessories",
+        "5073 NCAA Infant & Baby Apparel",
+        "5079 NCAA Other Apparel & Accessories",
+        "5083 NFL Infant & Baby Apparel",
+        "5089 NFL Other Apparel & Accessories",
+        "5093 NHL Infant & Baby Apparel",
+        "5099 NHL Other Apparel & Accessories",
+        "5100 International Rugby Apparel & Accessories",
+        "5113 International Soccer Infant & Baby Apparel",
+        "5119 International Soccer Other Apparel & Accessories",
+        "5120 WNBA Other Apparel & Accessories",
+        "5124 WNBA Infant & Baby Apparel",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5713 X Games Infant & Baby Apparel",
+        "5719 X Games Other Apparel & Accessories",
+        "5913 NWSL Infant & Baby Apparel",
+        "5919 NWSL Other Apparel & Accessories",
+        "5999 Uncategorized"
+      ],
+      "Women's Active": [
+        "Shorts and Skirts"
+      ],
+      "Women's Contemporary": [
+        "Skirts"
+      ],
+      "Women's Denim": [
+        "Skirts"
+      ],
+      "Women's Everyday Sportswear": [
+        "Skirts"
+      ],
+      "Women's Fast Fashion": [
+        "Skirts"
+      ],
+      "Women's Juniors": [
+        "Skirts"
+      ],
+      "Women's Maternity": [
+        "Active",
+        "Skirts"
+      ],
+      "Women's Petite Sportswear": [
+        "Petite Skirts",
+        "Petite Suit Skirts"
+      ],
+      "Women's Private Label": [
+        "Skirts"
+      ],
+      "Women's Special Sizes": [
+        "Skirts"
+      ],
+      "Women's Traditional": [
+        "Skirts"
+      ]
+    }
+  },
+  "SNOWSUIT": {
+    "item_type_names": [],
+    "product_categories": [
+      "Boys Basics Accessories and Sleep",
+      "Kids & Baby Outerwear",
+      "Men's Outerwear",
+      "Men's Workwear",
+      "Women's Outerwear"
+    ],
+    "subcategories_by_category": {
+      "Kids & Baby Outerwear": [
+        "Baby Boys Heavyweight Outerwear",
+        "Baby Girls Heavyweight Outerwear",
+        "Boys Heavyweight Outerwear",
+        "Girls Heavyweight Outerwear"
+      ],
+      "Men's Outerwear": [
+        "Extreme Weather Sports"
+      ],
+      "Men's Workwear": [
+        "Coveralls"
+      ],
+      "Women's Outerwear": [
+        "Active and Performance",
+        "Down and Parkas",
+        "Lightweight Jackets and Windbreakers"
+      ]
+    }
+  },
+  "SNOW_PANT": {
+    "item_type_names": [
+      "Baby & Toddler Footie",
+      "Baby & Toddler Layette Set",
+      "Bodystocking",
+      "Business Casual Pants",
+      "Casual Pants",
+      "Chefs Pants",
+      "Compression Pants",
+      "Corduroys",
+      "Dress Pants",
+      "Golf Pants",
+      "Hiking Pants",
+      "Jeans",
+      "Jumpsuit",
+      "Khakis",
+      "Leggings",
+      "Medical Scrubs Pants",
+      "Medical Scrubs Set",
+      "Overalls",
+      "Pants",
+      "Pants Set",
+      "Slacks",
+      "Suit Pants",
+      "Sweatpants",
+      "Sweatsuit",
+      "Tennis Pants",
+      "Track Pants",
+      "Tracksuit",
+      "Work Utility Coveralls",
+      "Work Utility Pants",
+      "Work Utility Set",
+      "Yoga Pants"
+    ],
+    "product_categories": [
+      "Kids & Baby Outerwear",
+      "Men's Athletic",
+      "Men's Bottoms",
+      "SPORTS Licensed Fan Shop",
+      "Women's Active",
+      "Women's Contemporary"
+    ],
+    "subcategories_by_category": {
+      "Kids & Baby Outerwear": [
+        "Boys Heavyweight Outerwear"
+      ],
+      "Men's Athletic": [
+        "Pants"
+      ],
+      "Men's Bottoms": [
+        "Performance"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5015 Formula 1 Hardgoods",
+        "5035 MLB Hardgoods",
+        "5045 MLS Hardgoods",
+        "5055 NASCAR Hardgoods",
+        "5065 NBA Hardgoods",
+        "5075 NCAA Hardgoods",
+        "5085 NFL Hardgoods",
+        "5095 NHL Hardgoods",
+        "5105 International Rugby Hardgoods",
+        "5115 International Soccer Hardgoods",
+        "5125 WNBA Hardgoods",
+        "5135 UFC Hardgoods",
+        "5225 PGA Hardgoods",
+        "5235 LPGA Hardgoods",
+        "5245 Minor League Baseball Hardgoods",
+        "5255 World Baseball Classic Hardgoods",
+        "5301 Olympics Hardgoods",
+        "5455 WUSA Hardgoods",
+        "5715 X Games Hardgoods",
+        "5915 NWSL Hardgoods",
+        "5999 Uncategorized"
+      ],
+      "Women's Active": [
+        "Pants"
+      ],
+      "Women's Contemporary": [
+        "Pants and Jumpsuits"
+      ]
+    }
+  },
+  "SWEATSHIRT": {
+    "item_type_names": [
+      "Cardigan Sweater",
+      "Hooded Sweatshirt",
+      "Polo Sweater",
+      "Pullover Sweater",
+      "Shrug Sweater",
+      "Skateboarding Hoodie",
+      "Sunsuit",
+      "Sweater",
+      "Sweater Vest",
+      "Sweatshirt"
+    ],
+    "product_categories": [
+      "Artist Merch Apparel",
+      "Athletic Sports Apparel",
+      "Baby Apparel",
+      "Boys",
+      "Girls",
+      "Men's Athletic",
+      "Men's Contemporary Collections",
+      "Men's Tops",
+      "Men's Traditional Collections",
+      "Men's Workwear",
+      "OUTDOORS - Apparel",
+      "SPORTS Licensed Fan Shop",
+      "Women's Active",
+      "Women's Contemporary",
+      "Women's Everyday Sportswear",
+      "Women's Fast Fashion",
+      "Women's Juniors",
+      "Women's Maternity",
+      "Women's Special Sizes",
+      "Women's Traditional",
+      "Young Men's"
+    ],
+    "subcategories_by_category": {
+      "Artist Merch Apparel": [
+        "Unisex Kids Pullover Hoodie",
+        "Unisex Kids Sweatshirts",
+        "Unisex Kids Zip Hoodies",
+        "Unisex Pullover Hoodie",
+        "Unisex Sweatshirts",
+        "Unisex Zip Hoodie",
+        "Women's Pullover Hoodie",
+        "Women's Sweatshirts",
+        "Women's Zip Hoodie"
+      ],
+      "Athletic Sports Apparel": [
+        "Men's Golf",
+        "Men's Hunting & Tactical",
+        "Women's Golf",
+        "Women's Hunting & Tactical",
+        "Youth Golf",
+        "Youth Hunting & Tactical"
+      ],
+      "Baby Apparel": [
+        "Baby Boys Sweaters",
+        "Baby Girl Sweaters"
+      ],
+      "Boys": [
+        "Active"
+      ],
+      "Girls": [
+        "Active"
+      ],
+      "Men's Athletic": [
+        "Sweatshirts"
+      ],
+      "Men's Contemporary Collections": [
+        "Sweatshirts"
+      ],
+      "Men's Tops": [
+        "Sweat Shirts"
+      ],
+      "Men's Traditional Collections": [
+        "Sweatshirts"
+      ],
+      "Men's Workwear": [
+        "Sweatshirts/Hoodies"
+      ],
+      "OUTDOORS - Apparel": [
+        "Outdoor Lifestyle Tops"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5010 Formula 1 Other Apparel & Accessories",
+        "5013 Formula 1 Sweaters & Sweatshirts",
+        "5014 Formula 1 Infant & Baby Apparel",
+        "5032 MLB Sweaters & Sweatshirts",
+        "5033 MLB Infant & Baby Apparel",
+        "5039 MLB Other Apparel & Accessories",
+        "5042 MLS Sweaters & Sweatshirts",
+        "5043 MLS Infant & Baby Apparel",
+        "5049 MLS Other Apparel & Accessories",
+        "5052 NASCAR Sweaters & Sweatshirts",
+        "5053 NASCAR Infant & Baby Apparel",
+        "5059 NASCAR Other Apparel & Accessories",
+        "5062 NBA Sweaters & Sweatshirts",
+        "5063 NBA Infant & Baby Apparel",
+        "5069 NBA Other Apparel & Accessories",
+        "5072 NCAA Sweaters & Sweatshirts",
+        "5073 NCAA Infant & Baby Apparel",
+        "5079 NCAA Other Apparel & Accessories",
+        "5082 NFL Sweaters & Sweatshirts",
+        "5083 NFL Infant & Baby Apparel",
+        "5089 NFL Other Apparel & Accessories",
+        "5092 NHL Sweaters & Sweatshirts",
+        "5093 NHL Infant & Baby Apparel",
+        "5099 NHL Other Apparel & Accessories",
+        "5100 International Rugby Apparel & Accessories",
+        "5112 International Soccer Sweaters & Sweatshirts",
+        "5113 International Soccer Infant & Baby Apparel",
+        "5119 International Soccer Other Apparel & Accessories",
+        "5120 WNBA Other Apparel & Accessories",
+        "5123 WNBA Sweaters & Sweatshirts",
+        "5124 WNBA Infant & Baby Apparel",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5712 X Games Sweaters & Sweatshirts",
+        "5713 X Games Infant & Baby Apparel",
+        "5719 X Games Other Apparel & Accessories",
+        "5912 NWSL Sweaters & Sweatshirts",
+        "5913 NWSL Infant & Baby Apparel",
+        "5919 NWSL Other Apparel & Accessories",
+        "5999 Uncategorized"
+      ],
+      "Women's Active": [
+        "Pullover Hoodies and Crewnecks"
+      ],
+      "Women's Contemporary": [
+        "Sweaters"
+      ],
+      "Women's Everyday Sportswear": [
+        "Sweaters"
+      ],
+      "Women's Fast Fashion": [
+        "Sweaters"
+      ],
+      "Women's Juniors": [
+        "Sweaters"
+      ],
+      "Women's Maternity": [
+        "Active",
+        "Sweaters"
+      ],
+      "Women's Special Sizes": [
+        "Sweaters"
+      ],
+      "Women's Traditional": [
+        "Sweaters"
+      ],
+      "Young Men's": [
+        "Sweatshirts"
+      ]
+    }
+  },
+  "SWIMWEAR": {
+    "item_type_names": [
+      "Baby & Toddler Swim Diaper",
+      "Baby & Toddler Two Piece Bikini",
+      "Bikini",
+      "Bikini Bottoms",
+      "Bikini Set",
+      "Bikini Top",
+      "Board Shorts",
+      "One Piece Swimsuit",
+      "Rash Guard Set",
+      "Rash Guard Shirt",
+      "Sunsuit",
+      "Swim Briefs",
+      "Swim Shirt Set",
+      "Swim Trunks",
+      "Swimsuit Separates",
+      "Swimwear Cover Up",
+      "Swimwear Cover Up Set",
+      "Tankini Set",
+      "Tankini Swimsuit",
+      "Tankini Top",
+      "Two Piece Swimsuit"
+    ],
+    "product_categories": [
+      "Athletic Sports Apparel",
+      "Baby Private Label Apparel",
+      "Boy's Private Label Active Apparel",
+      "Boys Private Label",
+      "Girl's Private Label Active Apparel",
+      "Girls Private Label",
+      "Men's Contemporary Collections",
+      "Men's Private Label",
+      "Men's Private Label Active Apparel",
+      "Men's Swimwear",
+      "Men's Traditional Collections",
+      "OUTDOORS - Apparel",
+      "SPORTS Licensed Fan Shop",
+      "Swim",
+      "Women's Exotic Clothing",
+      "Women's Maternity",
+      "Women's Petite Sportswear",
+      "Women's Private Label",
+      "Women's Private Label Active Apparel",
+      "Women's Special Sizes",
+      "Women's Swimwear",
+      "Young Men's"
+    ],
+    "subcategories_by_category": {
+      "Athletic Sports Apparel": [
+        "Accessories",
+        "Men's Swim",
+        "Women's Swim",
+        "Youth Swim"
+      ],
+      "Baby Private Label Apparel": [
+        "Baby Boy Swimwear",
+        "Baby Girl Swimwear"
+      ],
+      "Boy's Private Label Active Apparel": [
+        "Swimwear"
+      ],
+      "Boys Private Label": [
+        "Baby Boys PL Swimwear",
+        "Boys PL Swimwear"
+      ],
+      "Girl's Private Label Active Apparel": [
+        "Swimwear"
+      ],
+      "Girls Private Label": [
+        "Baby Girls PL Swimwear",
+        "Girls PL Swimwear"
+      ],
+      "Men's Contemporary Collections": [
+        "Swim"
+      ],
+      "Men's Private Label": [
+        "Swimwear"
+      ],
+      "Men's Private Label Active Apparel": [
+        "Swimwear"
+      ],
+      "Men's Swimwear": [
+        "Board Shorts",
+        "Briefs",
+        "Misc",
+        "Trunks"
+      ],
+      "Men's Traditional Collections": [
+        "Swim"
+      ],
+      "OUTDOORS - Apparel": [
+        "Outdoor Lifestyle Bottoms",
+        "Outdoor Lifestyle One Piece",
+        "Outdoor Lifestyle Tops",
+        "Rash Guards",
+        "Wetsuit Accessories"
+      ],
+      "SPORTS Licensed Fan Shop": [
+        "5010 Formula 1 Other Apparel & Accessories",
+        "5012 Formula 1 Pants & Shorts",
+        "5031 MLB Pants & Shorts",
+        "5039 MLB Other Apparel & Accessories",
+        "5041 MLS Pants & Shorts",
+        "5049 MLS Other Apparel & Accessories",
+        "5051 NASCAR Pants & Shorts",
+        "5059 NASCAR Other Apparel & Accessories",
+        "5061 NBA Pants & Shorts",
+        "5069 NBA Other Apparel & Accessories",
+        "5071 NCAA Pants & Shorts",
+        "5079 NCAA Other Apparel & Accessories",
+        "5081 NFL Pants & Shorts",
+        "5089 NFL Other Apparel & Accessories",
+        "5091 NHL Pants & Shorts",
+        "5099 NHL Other Apparel & Accessories",
+        "5100 International Rugby Apparel & Accessories",
+        "5111 International Soccer Pants & Shorts",
+        "5119 International Soccer Other Apparel & Accessories",
+        "5120 WNBA Other Apparel & Accessories",
+        "5122 WNBA Pants & Shorts",
+        "5130 UFC Apparel & Accessories",
+        "5220 PGA Apparel & Accessories",
+        "5230 LPGA Apparel & Accessories",
+        "5240 Minor League Baseball Apparel & Accessories",
+        "5250 World Baseball Classic Apparel & Accessories",
+        "5300 Olympics Apparel & Accessories",
+        "5450 WUSA Apparel & Accessories",
+        "5711 X Games Pants & Shorts",
+        "5719 X Games Other Apparel & Accessories",
+        "5911 NWSL Pants & Shorts",
+        "5919 NWSL Other Apparel & Accessories",
+        "5999 Uncategorized"
+      ],
+      "Swim": [
+        "Baby Boys Swim Bottoms",
+        "Baby Boys Swim Rashguards",
+        "Baby Boys Swim Sets",
+        "Baby Girls Coverups & Boardshorts",
+        "Baby Girls One Piece Swim",
+        "Baby Girls Rashguards",
+        "Baby Girls Swim Sets",
+        "Baby Girls Two Piece Swim",
+        "Baby Swim Diapers",
+        "Boys Swim Bottoms",
+        "Boys Swim Rashguards",
+        "Boys Swim Sets",
+        "Girls Coverups & Boardshorts",
+        "Girls One Piece Swim",
+        "Girls Rashguards",
+        "Girls Swim Sets",
+        "Girls Two Piece Swim"
+      ],
+      "Women's Exotic Clothing": [
+        "Swimwear"
+      ],
+      "Women's Maternity": [
+        "Swim"
+      ],
+      "Women's Petite Sportswear": [
+        "Petite Swim"
+      ],
+      "Women's Private Label": [
+        "Swim"
+      ],
+      "Women's Private Label Active Apparel": [
+        "Swimwear"
+      ],
+      "Women's Special Sizes": [
+        "Swim"
+      ],
+      "Women's Swimwear": [
+        "Active",
+        "Bikini Bottom Separates",
+        "Bikini Top Separates",
+        "Cover-Ups",
+        "One-Piece Swimsuits",
+        "Rashguards",
+        "Swim Shorts",
+        "Tankini Top Separates",
+        "Two-Piece Swimsuit Sets"
+      ],
+      "Young Men's": [
+        "Boardshorts",
+        "Rashguards"
+      ]
+    }
+  }
+}
