@@ -1,5 +1,55 @@
 # Changelog
 
+## 2026-04-22 — Catalog Health Step A (v0.3.0)
+
+First production wiring of Catalog Health. The tab now runs Layer 1 (content completeness scoring) and Layer 2 (structural integrity checks) end-to-end against any Amazon catalog export or the TLG Catalog Health Template.
+
+### Input handling
+- `_find_header_row()` locates the real header row in multi-row templates (handles the TLG template's banner on row 1, category bands on row 3, headers on row 4, REQUIRED/OPTIONAL markers on row 5, sample row on row 6).
+- `_looks_like_metadata_row()` skips REQUIRED/OPTIONAL marker rows and `B0XXXXXXXXX` sample rows.
+- `_pick_catalog_sheet()` / `_pick_sales_sheet()` pick the right sheet by name from a multi-sheet workbook (Catalog Snapshot / Monthly Performance).
+- Expanded `CATALOG_FIELD_MAP` to 50+ field aliases covering the full TLG template columns plus Vendor Central and Seller Central conventions.
+- Expanded `SALES_FIELD_MAP` to capture Monthly Performance's period, traffic, conversion, and advertising columns.
+
+### Layer 1 — Content completeness (0-100 per ASIN)
+Title 80-200 chars (15 pts), 5 bullets each ≥50 chars (15 pts, 3 per bullet), description ≥200 chars (10 pts), backend keywords ≤250 bytes (10 pts), main image (10 pts), 6+ additional images (10 pts), price > 0 (10 pts), brand (5 pts), color + size (5 pts), category (10 pts). Colors: green 90+, yellow 70-89, orange 50-69, red <50.
+
+### Layer 2 — Structural checks
+- **Orphan detection** — child ASINs whose parent isn't in the dataset
+- **Variation matrix gaps** — per-parent color×size grid; flags every missing cell with a specific `Add variant: Color=X, Size=Y` fix
+- **Duplicate children** — same color+size twice under one parent
+- **Wrong parent link** — child brand mismatches parent brand
+- **Single-child parents** — likely data-entry mistakes
+- **Broken variation theme** — empty color cell under a COLOR/SIZE parent
+
+### Dashboard UX
+- "Catalog Health" section in the sidebar with an "Upload & Analyze" nav item
+- Two upload zones: Catalog File (required) + Sales Data (optional)
+- Detection summary card with mapped/missing pills (`✓ asin → Child ASIN`)
+- 6 stat cards: Total ASINs / Parents / Children / Avg Health Score / Critical Issues / Total Issues
+- Priority-sorted issues table with severity badges (Critical / High / Medium / Low), per-row fix actions, and Export Fix File / Full Analysis buttons
+- Variation Matrix viewer — pick a parent, see Color×Size grid with ✓ (healthy) / ⚠ (incomplete) / ✗ (missing)
+
+### QA
+Built a populated Volcom test catalog with intentional issues in each category:
+- Orphan (`B0ORPHAN01` pointing at non-existent parent) → 1 Critical flag
+- Variation gaps (Pink sizes S/L/XL missing, Navy M missing, White sizes) → 7 High flags with exact color/size fixes
+- Duplicates (2 ASINs with Navy/S under same parent) → 2 Medium flags, each referencing the other
+- Brand mismatch (Roxy child under Volcom parent) → 1 Medium flag
+- Single-child parent → 1 Low flag
+- Bad content (short title, no bullets, no image) → content score 0, flagged across 3 categories
+- Broken variation theme (empty color under COLOR/SIZE parent) → caught by matrix
+
+Result: 66 issues detected across 36 test ASINs with zero false negatives on the injected failure modes. Fix-file CSV + Full Analysis CSV both export cleanly.
+
+Regression: NIS upload/generation + Phase 2 taxonomy UX still 100% clean (59 styles, 13 buckets, 0 errors).
+
+### Files touched
+- `app.py` — expanded CATALOG_FIELD_MAP/SALES_FIELD_MAP, added `_find_header_row`, `_looks_like_metadata_row`, `_pick_catalog_sheet`, `_pick_sales_sheet`, extended `read_file_to_rows` with `sheet_kind` parameter.
+- Templates already in place from prior work; this release makes them actually parse correctly.
+
+---
+
 ## 2026-04-22 — Phase 2 Taxonomy UX + NIS Row-Spacing Fix
 
 ### Phase 2 — Taxonomy UX on Dashboard

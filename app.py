@@ -6265,40 +6265,78 @@ catalog_health_state = {
 catalog_health_lock = threading.Lock()
 
 # ── Fuzzy column detection maps ───────────────────────────────────────────────
+# Candidates cover TLG Catalog Health Template labels AND common Amazon
+# Vendor/Seller Central export column names so the same detector handles both.
 CATALOG_FIELD_MAP = {
-    "asin":             ["asin", "asin1", "child asin", "child_asin"],
+    "asin":             ["child asin", "asin", "asin1", "child_asin"],
     "parent_asin":      ["parent asin", "parent_asin", "parent sku", "parent_sku"],
-    "sku":              ["sku", "seller-sku", "seller_sku", "vendor sku", "item_sku"],
+    "sku":              ["sku / vendor sku", "sku", "seller-sku", "seller_sku", "vendor sku", "item_sku"],
+    "vendor_code":      ["vendor code / seller id", "vendor code", "seller id"],
+    "upc":              ["upc / ean / gtin", "upc", "ean", "gtin"],
+    "model_number":     ["model number"],
+    "model_name":       ["model name"],
     "title":            ["title", "item_name", "item-name", "product title", "item name"],
     "brand":            ["brand", "brand_name", "brand name"],
     "color":            ["color", "color name", "color_name", "color map", "color_map"],
     "size":             ["size", "product - size", "size_name", "apparel size value", "apparel_size"],
+    "size_system":      ["size system"],
     "bullet_1":         ["bullet point 1", "bullet_point1", "key product features 1", "bullet1"],
     "bullet_2":         ["bullet point 2", "bullet_point2", "key product features 2", "bullet2"],
     "bullet_3":         ["bullet point 3", "bullet_point3", "key product features 3", "bullet3"],
     "bullet_4":         ["bullet point 4", "bullet_point4", "key product features 4", "bullet4"],
     "bullet_5":         ["bullet point 5", "bullet_point5", "key product features 5", "bullet5"],
-    "description":      ["description", "product_description", "product description"],
-    "backend_keywords": ["generic keywords", "generic_keywords", "search terms", "search_terms", "backend keywords"],
+    "description":      ["description / a+ content", "description", "product_description", "product description"],
+    "backend_keywords": ["backend keywords", "generic keywords", "generic_keywords", "search terms", "search_terms"],
     "main_image":       ["main image url", "main_image_url", "image-url", "main image"],
+    "image_count":      ["additional image count", "image count"],
     "other_images":     ["other image url", "other_image_url", "other_image_url1", "image url 2", "image-url-2"],
-    "price":            ["price", "list price", "standard_price", "your price"],
-    "quantity":         ["quantity", "amzn ioh", "fulfillable quantity", "quantity available"],
-    "category":         ["sub-class name", "sub_class_name", "product_type", "item_type", "category"],
-    "subcategory":      ["sub sub-class name", "sub_sub_class_name", "subcategory"],
-    "style":            ["style #", "style number", "model number", "style_num", "style_number"],
-    "parent_child":     ["parent_child", "parentage level", "parentage", "parent/child"],
-    "variation_theme":  ["variation_theme", "variation theme name", "variation theme"],
+    "aplus_status":     ["a+ / ebc status", "a+ status", "ebc status", "enhanced brand content"],
+    "video_count":      ["video count"],
+    "price":            ["list price", "price", "standard_price", "your price"],
+    "sale_price":       ["sale price"],
+    "buy_box_price":    ["buy box price"],
+    "buy_box_winner":   ["buy box winner"],
+    "quantity":         ["available quantity", "quantity", "amzn ioh", "fulfillable quantity", "quantity available"],
+    "category":         ["category / product type", "product type", "sub-class name", "sub_class_name", "item_type", "category"],
+    "subcategory":      ["subcategory", "sub sub-class name", "sub_sub_class_name"],
+    "item_type_keyword":["item type keyword"],
+    "fabric":           ["fabric content", "material"],
+    "coo":              ["country of origin"],
+    "care":             ["care instructions"],
+    "weight":           ["item weight"],
+    "package_dims":     ["package dimensions"],
+    "fulfillment":      ["fulfillment method"],
+    "inventory_status": ["inventory status"],
+    "hazmat":           ["hazmat status"],
+    "lqs":              ["listing quality score"],
+    "suppressed":       ["search suppressed", "suppression reason"],
     "status":           ["status", "listing status"],
-    "image_count":      ["image count"],
+    "review_count":     ["customer review count", "review count"],
+    "star_rating":      ["average star rating", "star rating"],
+    "style":            ["style #", "style number", "style_num", "style_number"],
+    "parent_child":     ["parentage level", "parent_child", "parentage", "parent/child"],
+    "variation_theme":  ["variation theme", "variation_theme", "variation theme name"],
+    "first_available":  ["first available date"],
+    "season_code":      ["season code"],
+    "last_updated":     ["last updated"],
 }
 
 SALES_FIELD_MAP = {
-    "asin":     ["asin", "child asin"],
-    "sessions": ["sessions", "glance views", "glance_views", "page views"],
-    "units":    ["units ordered", "shipped units", "shipped_units", "units"],
-    "revenue":  ["ordered product sales", "shipped revenue", "shipped_revenue", "revenue"],
-    "cvr":      ["unit session percentage", "conversion rate", "conversion_rate", "cvr"],
+    "asin":         ["child asin", "asin"],
+    "period_start": ["report period start", "period start", "start date"],
+    "period_end":   ["report period end", "period end", "end date"],
+    "month":        ["report month", "month"],
+    "sessions":     ["sessions", "glance views / page views", "glance views", "glance_views", "page views"],
+    "units":        ["ordered units", "shipped units", "units ordered", "shipped_units", "units"],
+    "revenue":      ["ordered revenue", "shipped revenue", "ordered product sales", "shipped_revenue", "revenue"],
+    "returns":      ["returns"],
+    "return_rate":  ["return rate"],
+    "cvr":          ["conversion rate", "unit session %", "unit session percentage", "conversion_rate", "cvr"],
+    "buy_box_pct":  ["buy box %", "buy box percentage"],
+    "ad_spend":     ["ad spend"],
+    "ad_revenue":   ["ad revenue (attributed)", "ad revenue", "attributed sales"],
+    "acos":         ["acos"],
+    "rank":         ["subcategory sales rank", "sales rank"],
 }
 
 SEVERITY_WEIGHTS = {
@@ -6362,21 +6400,119 @@ def detect_format(headers, detected_fields):
     return "Custom"
 
 
-def read_file_to_rows(file_storage):
-    """Read uploaded file (CSV, TSV, XLSX) into list of dicts. No pandas needed."""
+# Markers Amazon/TLG templates place in a row below the real header row to
+# annotate field criticality. Any row whose first few cells consist only of
+# these values is treated as a metadata row and skipped.
+_TEMPLATE_META_TOKENS = {
+    "required", "recommended", "optional",
+    "conditionally required", "cond. required", "cond required",
+    "required*", "optional*",
+}
+# Sample rows in the TLG template start with placeholders like "B0XXXXXXXXX".
+# Any row whose ASIN cell matches one of these patterns is also skipped.
+_SAMPLE_ASIN_PATTERNS = ("B0XXXXXXXXX", "B0XXXXXXXX", "B0XXXXXXXXX1")
+
+
+def _looks_like_metadata_row(row_vals, header_cells):
+    """True when the row appears to be a REQUIRED/OPTIONAL marker line or a
+    placeholder sample row, not real data."""
+    non_empty = [str(v).strip().lower() for v in row_vals if v not in (None, "")]
+    if not non_empty:
+        return True
+    # All non-empty values are REQUIRED/OPTIONAL markers
+    if all(v in _TEMPLATE_META_TOKENS for v in non_empty):
+        return True
+    # Sample ASIN placeholder row
+    for v in row_vals[:5]:
+        if v and isinstance(v, str) and v.strip().upper() in _SAMPLE_ASIN_PATTERNS:
+            return True
+    return False
+
+
+def _find_header_row(ws, max_scan=20):
+    """Scan the first N rows, return the 1-indexed row number that looks like
+    the real header row (most unique non-empty cells). Handles TLG Catalog
+    Health Template (headers on row 4) and simple CSVs (row 1)."""
+    best_row = 1
+    best_score = -1
+    for r in range(1, min(max_scan, (ws.max_row or 1)) + 1):
+        cells = [ws.cell(row=r, column=c).value for c in range(1, (ws.max_column or 1) + 1)]
+        names = [str(v).strip() for v in cells if v not in (None, "")]
+        if len(names) < 3:
+            continue
+        unique = len(set(names))
+        # Penalize rows that look like category bands (few wide labels)
+        if unique < len(names) * 0.6:
+            continue
+        # Penalize rows made entirely of REQUIRED/OPTIONAL markers
+        if all(n.lower() in _TEMPLATE_META_TOKENS for n in names):
+            continue
+        score = unique
+        if score > best_score:
+            best_score = score
+            best_row = r
+    return best_row
+
+
+def _pick_catalog_sheet(wb):
+    """Choose the best sheet in a workbook for catalog data. Prefers sheets
+    named 'Catalog Snapshot' (TLG template), then any sheet whose headers
+    include ASIN/child-ASIN indicators."""
+    # Preferred sheet names
+    preferred = ["catalog snapshot", "catalog", "listings", "products", "template-"]
+    for name in wb.sheetnames:
+        nl = name.lower()
+        for pref in preferred:
+            if pref in nl:
+                return wb[name]
+    # Fall back: first sheet containing an ASIN column within first 20 rows
+    for name in wb.sheetnames:
+        ws = wb[name]
+        for r in range(1, min(20, (ws.max_row or 1)) + 1):
+            for c in range(1, min(60, (ws.max_column or 1)) + 1):
+                v = ws.cell(row=r, column=c).value
+                if v and "asin" in str(v).lower():
+                    return ws
+    return wb.active
+
+
+def _pick_sales_sheet(wb):
+    """Pick the performance/sales sheet."""
+    preferred = ["monthly performance", "performance", "sales", "business report"]
+    for name in wb.sheetnames:
+        nl = name.lower()
+        for pref in preferred:
+            if pref in nl:
+                return wb[name]
+    return wb.active
+
+
+def read_file_to_rows(file_storage, sheet_kind="catalog"):
+    """Read uploaded file (CSV, TSV, XLSX/XLSM) into list of dicts.
+
+    Handles the TLG Catalog Health Template format (banner row, category
+    band, header row on row 4, REQUIRED/OPTIONAL row, sample row) as well
+    as plain CSVs with headers on row 1.
+
+    sheet_kind: "catalog" (default) picks the Catalog Snapshot-style sheet;
+                "sales" picks the Monthly Performance-style sheet.
+    """
     filename = file_storage.filename.lower()
     content = file_storage.read()
-    
+
     if filename.endswith(".xlsx") or filename.endswith(".xls") or filename.endswith(".xlsm"):
-        wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True, read_only=True)
-        ws = wb.active
-        rows_iter = ws.iter_rows(values_only=True)
-        raw_headers = next(rows_iter, None)
-        if not raw_headers:
-            return [], []
+        wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True, read_only=False)
+        ws = _pick_catalog_sheet(wb) if sheet_kind == "catalog" else _pick_sales_sheet(wb)
+        header_row = _find_header_row(ws)
+        max_col = ws.max_column or 1
+        max_row = ws.max_row or 0
+        raw_headers = [ws.cell(row=header_row, column=c).value for c in range(1, max_col + 1)]
         headers = [str(h).strip() if h else f"col_{i}" for i, h in enumerate(raw_headers)]
         records = []
-        for row_vals in rows_iter:
+        for r in range(header_row + 1, max_row + 1):
+            row_vals = [ws.cell(row=r, column=c).value for c in range(1, max_col + 1)]
+            if _looks_like_metadata_row(row_vals, headers):
+                continue
             row_dict = {}
             for i, val in enumerate(row_vals):
                 if i < len(headers):
@@ -6388,7 +6524,6 @@ def read_file_to_rows(file_storage):
     else:
         # CSV or TSV
         text = content.decode("utf-8", errors="replace")
-        # Detect separator
         first_line = text.split("\n")[0] if text else ""
         sep = "\t" if "\t" in first_line else ","
         reader = csv.DictReader(io.StringIO(text), delimiter=sep)
@@ -6396,6 +6531,8 @@ def read_file_to_rows(file_storage):
         records = []
         for row in reader:
             cleaned = {str(k).strip(): str(v).strip() if v else "" for k, v in row.items()}
+            if _looks_like_metadata_row(list(cleaned.values()), headers):
+                continue
             if any(v for v in cleaned.values()):
                 records.append(cleaned)
         return records, headers
@@ -6887,7 +7024,7 @@ def catalog_upload_sales():
         return jsonify({"error": "Empty filename"}), 400
     
     try:
-        rows, headers = read_file_to_rows(f)
+        rows, headers = read_file_to_rows(f, sheet_kind="sales")
         sales_fields = detect_columns(headers, SALES_FIELD_MAP)
         
         def sg(row, field):
