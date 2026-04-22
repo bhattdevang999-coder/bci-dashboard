@@ -2545,6 +2545,9 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
         color_map_val = normalize_color(first_color)
         category = SUBCLASS_CATEGORY_MAP.get(subclass, "")
         subcategory = SUBCLASS_SUBCATEGORY_MAP.get(subclass, "")
+        if not subcategory and (resolved_pt == "SWIMWEAR" or subclass in ("Rashguard","Trunk","Bikini Top","Bikini Bottom","Swim Bottom","One Piece Swim","Tankini","Short","Swim Set 2 pcs","Swim Set","Board Short","Cover Up","Swim Shirt")):
+            _cat_for_sub = _derive_amazon_product_category(subclass, gender=eff_gender_gen, product_type=resolved_pt, style_name=style_name)
+            subcategory = _derive_swim_product_subcategory(subclass, gender=eff_gender_gen, style_name=style_name, product_category=_cat_for_sub)
 
         opener_idx = DESCRIPTION_OPENERS_ROTATION.get(style_num, 0)
         bullet_whys = [
@@ -3522,8 +3525,18 @@ def _derive_item_type_name(sub_class, product_type="", gender="", style_name="")
         return "Two Piece Swimsuit"
     return base  # leave blank if unknown
 
-def _derive_item_length(sub_subclass, style_name):
-    """Derive item length description from sub_subclass / style name (Col 70)."""
+def _derive_item_length(sub_subclass, style_name, product_type="", sub_class=""):
+    """Derive item length description from sub_subclass / style name.
+    SWIMWEAR: return blank (field isn't on the Swimwear template; rashguards are torso
+    garments, not leg garments, and Amazon's 'Knee-Length' value doesn't apply).
+    DRESS/SKIRT: use MAXI/MINI/MIDI detection; default Knee-Length.
+    """
+    # Swimwear items don't have a meaningful item_length_description
+    if (product_type or "").upper() == "SWIMWEAR" or sub_class in (
+            "Rashguard","Rash Guard","Trunk","Swim Trunk","Bikini Top","Bikini Bottom",
+            "Swim Bottom","One Piece Swim","Tankini","Short","Swim Set 2 pcs","Swim Set",
+            "Board Short","Boardshort","Boardshorts","Cover Up","Swim Shirt"):
+        return ""
     combined = f"{sub_subclass or ''} {style_name or ''}".upper()
     if "MAXI" in combined:
         return "Long"
@@ -3532,6 +3545,71 @@ def _derive_item_length(sub_subclass, style_name):
     if "MIDI" in combined:
         return "Mid-Calf"
     return "Knee-Length"
+
+def _derive_swim_product_subcategory(sub_class, gender="", style_name="", product_category=""):
+    """Derive the correct Amazon product_subcategory value for a SWIMWEAR style.
+    Depends on product_category (Men's Swimwear | Women's Swimwear | Swim).
+    Falls back to '' (blank) rather than guessing when we can't match.
+    """
+    cat = (product_category or "").strip()
+    sc = (sub_class or "").strip()
+    sn = (style_name or "").lower()
+    is_baby = "baby" in sn or "infant" in sn
+
+    # Men's Swimwear sub-subcategories: Board Shorts | Trunks | Briefs | Misc
+    if cat == "Men's Swimwear":
+        if sc in ("Trunk", "Swim Trunk"):
+            if "board" in sn or "boardshort" in sn:
+                return "Board Shorts"
+            return "Trunks"
+        if sc in ("Board Short", "Boardshort", "Boardshorts", "Short"):
+            return "Board Shorts"
+        # Men's rashguards live under Athletic or Misc — Amazon has no Rashguards
+        # under Men's Swimwear. Use Misc for non-bottom items.
+        if sc in ("Rashguard", "Rash Guard", "Swim Shirt"):
+            return "Misc"
+        return "Misc"
+
+    # Women's Swimwear sub-subcategories
+    if cat == "Women's Swimwear":
+        if sc in ("Bikini Top",):
+            return "Bikini Top Separates"
+        if sc in ("Bikini Bottom", "Swim Bottom"):
+            return "Bikini Bottom Separates"
+        if sc in ("One Piece Swim", "One Piece"):
+            return "One-Piece Swimsuits"
+        if sc == "Tankini":
+            return "Tankini Top Separates"
+        if sc in ("Rashguard", "Rash Guard", "Swim Shirt"):
+            return "Rashguards"
+        if sc in ("Swim Set 2 pcs", "Swim Set"):
+            return "Two-Piece Swimsuit Sets"
+        if sc in ("Short", "Board Short", "Boardshort", "Boardshorts"):
+            return "Swim Shorts"
+        if sc == "Cover Up":
+            return "Cover-Ups"
+        return ""
+
+    # Swim (youth / boys / girls)
+    if cat == "Swim":
+        is_boys = "boys" in sn or "boy" in sn or (gender or "").lower() == "male"
+        is_girls = "girls" in sn or "girl" in sn or (gender or "").lower() == "female"
+        prefix = "Baby " if is_baby else ""
+        kind_boys = "Boys" if is_boys else ("Girls" if is_girls else "Boys")
+        if sc in ("Rashguard", "Rash Guard", "Swim Shirt"):
+            return f"{prefix}{kind_boys} Swim Rashguards" if is_boys else f"{prefix}{kind_boys} Rashguards"
+        if sc in ("Trunk", "Swim Trunk", "Board Short", "Boardshort", "Boardshorts", "Short"):
+            # Boys -> 'Boys Swim Bottoms'; Girls -> 'Girls Coverups & Boardshorts'
+            return f"{prefix}{kind_boys} Swim Bottoms" if is_boys else f"{prefix}{kind_boys} Coverups & Boardshorts"
+        if sc in ("Swim Set 2 pcs", "Swim Set"):
+            return f"{prefix}{kind_boys} Swim Sets"
+        if sc in ("Bikini Top", "Bikini Bottom", "Swim Bottom"):
+            return f"{prefix}{kind_boys} Two Piece Swim"
+        if sc in ("One Piece Swim", "One Piece"):
+            return f"{prefix}{kind_boys} One Piece Swim"
+        return ""
+
+    return ""
 
 def _derive_fabric_type(fabric):
     """Derive simplified fabric type for Col 59."""
@@ -3609,13 +3687,16 @@ def _build_preview_fields(brand, brand_cfg, vendor_code, style, content):
     # Always derive from dropdown-validated function, gender-aware
     category     = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=resolved_pt, style_name=style_name, department=eff_dept)
     subcategory  = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
+    # Swim-aware subcategory derivation (replaces blank fallback for all 59 swim styles)
+    if not subcategory and resolved_pt == "SWIMWEAR":
+        subcategory = _derive_swim_product_subcategory(sub_class, gender=eff_gender, style_name=style_name, product_category=category)
     fabric       = content.get("fabric", "") or style.get("fabric", "") or brand_cfg.get("default_fabric", "")
     care         = content.get("care", "") or style.get("care", "") or brand_cfg.get("default_care", "")
     upf          = content.get("upf", "") or style.get("upf", "") or brand_cfg.get("default_upf", "")
     coo          = normalize_coo(content.get("coo", "") or style.get("coo", "") or brand_cfg.get("default_coo", "")) or ""
     clean_brand  = clean_brand_name(brand)
     item_type_name = _derive_item_type_name(sub_class, product_type=resolved_pt, gender=eff_gender, style_name=style_name)
-    item_length    = _derive_item_length(sub_subclass, style_name)
+    item_length    = _derive_item_length(sub_subclass, style_name, product_type=resolved_pt, sub_class=sub_class)
     fabric_type    = _derive_fabric_type(fabric)
     itk_value      = _derive_item_type_keyword(sub_class, product_type=resolved_pt, gender=eff_gender, style_name=style_name)
     today_str      = datetime.now().strftime("%Y%m%d")
@@ -4238,6 +4319,8 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
     eff_dept   = style_dept or brand_cfg.get("department", "")
     category    = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=detected_product_type, style_name=style_name, department=eff_dept)
     subcategory = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, '')
+    if not subcategory and detected_product_type == "SWIMWEAR":
+        subcategory = _derive_swim_product_subcategory(sub_class, gender=eff_gender, style_name=style_name, product_category=category)
     fabric      = content.get("fabric", "")      or brand_cfg.get("default_fabric", "")
     care        = content.get("care", "")        or brand_cfg.get("default_care", "")
     upf         = content.get("upf", "")         or brand_cfg.get("default_upf", "")
@@ -4245,7 +4328,7 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
 
     clean_brand    = clean_brand_name(brand)
     item_type_name = _derive_item_type_name(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
-    item_length    = _derive_item_length(sub_subclass, style_name)
+    item_length    = _derive_item_length(sub_subclass, style_name, product_type=detected_product_type, sub_class=sub_class)
     fabric_type    = _derive_fabric_type(fabric)
     itk_value      = _derive_item_type_keyword(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
     sleeve_len     = _derive_sleeve_length(sleeve_type)
@@ -4609,7 +4692,7 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         sil        = content.get("silhouette", "") or derive_silhouette(sub_subclass)
         itk        = _derive_item_type_keyword(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
         itn        = _derive_item_type_name(sub_class, product_type=detected_product_type, gender=eff_gender, style_name=style_name)
-        ilen       = _derive_item_length(sub_subclass, style_name)
+        ilen       = _derive_item_length(sub_subclass, style_name, product_type=detected_product_type, sub_class=sub_class)
         ftype      = _derive_fabric_type(fabric)
         slvlen     = _derive_sleeve_length(sleeve)
         list_price = style.get("list_price", "") or content.get("list_price", "")
@@ -4617,6 +4700,8 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
         import_desig = "Imported" if coo.upper() not in ("US", "USA", "UNITED STATES") else "Domestic"
         cat_val    = _derive_amazon_product_category(sub_class, gender=eff_gender, product_type=detected_product_type, style_name=style_name, department=eff_dept)
         subcat_val = SUBCLASS_SUBCATEGORY_MAP.get(sub_class, "")
+        if not subcat_val and detected_product_type == "SWIMWEAR":
+            subcat_val = _derive_swim_product_subcategory(sub_class, gender=eff_gender, style_name=style_name, product_category=cat_val)
 
         # ── Shared-fields helper for this style ─────────────────────────────
         def write_shared_row(r, sku_val, _fabric=fabric, _care=care, _upf=upf,
