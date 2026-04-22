@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "updated_at": "2026-04-22T13:56:16.914408Z",
+  "updated_at": "2026-04-22T13:57:55.337695Z",
   "entries": {
     "SWIMWEAR|Rashguard|Mens": {
       "product_type": "SWIMWEAR",
       "product_category": "Men's Swimwear",
-      "product_subcategory": "Misc",
-      "item_type_keyword": "rash-guards",
-      "item_type_name": "Rash Guard Shirt",
-      "confirmed_by": "nate@thelevygroup.com",
-      "confirmed_at": "2026-04-22T13:56:16.914377Z",
+      "product_subcategory": "Board Shorts",
+      "item_type_keyword": "rash-guard-shirts",
+      "item_type_name": "Swim Shirt Set",
+      "confirmed_by": "test-override",
+      "confirmed_at": "2026-04-22T13:57:55.337607Z",
       "source": "manual",
       "notes": ""
     }
