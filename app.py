@@ -552,6 +552,68 @@ DESCRIPTION_OPENERS = [
     "Designed for the woman on the move, the {brand} {style_name} delivers style without sacrificing comfort.",
 ]
 
+# Swimwear openers rotate so 20+ rash guards don't share the same opening line.
+SWIM_DESCRIPTION_OPENERS = [
+    "The {brand} {style_name} is built for performance in and out of the water.",
+    "Dive into warm-weather adventures with the {brand} {style_name}.",
+    "Crafted for sun, surf, and everything in between, the {brand} {style_name} is your summer essential.",
+    "Meet the {brand} {style_name} — a water-ready staple engineered for comfort and durability.",
+    "From beach mornings to pool-side afternoons, the {brand} {style_name} has you covered.",
+    "The {brand} {style_name} balances beach style with all-day performance.",
+    "Whether you're paddling out or soaking up sun, the {brand} {style_name} keeps up.",
+    "Designed with {brand}'s water-sports DNA, the {style_name} is ready for any adventure.",
+]
+
+# Bullet 1 variation pool for swim UPF items so 20+ rash guards don't share one bullet.
+SWIM_UPF_B1_OPENERS = [
+    "UPF {upf} SUN PROTECTION",
+    "BLOCK HARMFUL UV RAYS",
+    "ALL-DAY SUN DEFENSE",
+    "UV PROTECTION BUILT IN",
+    "SUN-SAFE PERFORMANCE",
+    "FULL-COVERAGE UPF {upf}",
+]
+SWIM_UPF_B1_TAILS = [
+    "shields your skin from harmful UV rays. Ideal for surfing, swimming, and all-day outdoor wear.",
+    "delivers certified UV defense so you can stay in the water longer without worry.",
+    "keeps sunburns at bay during long beach days, pool sessions, and open-water swims.",
+    "provides lasting UV protection for active surfers, swimmers, and beach-goers.",
+    "gives you reliable sun coverage from first light to sundown.",
+]
+
+# Bullet 1 variation pool for non-UPF swim items (bikini tops/bottoms, one-pieces, trunks w/o UPF).
+SWIM_LIFESTYLE_B1_OPENERS = [
+    "SURF & BEACH READY",
+    "OCEAN-INSPIRED STYLE",
+    "WATER-TO-SAND VERSATILE",
+    "BEACH-DAY ESSENTIAL",
+    "POOLSIDE TO SHORELINE",
+]
+SWIM_LIFESTYLE_B1_TAILS = [
+    "combines ocean-inspired style with durable, quick-dry construction perfect for any beach day or pool session.",
+    "pairs effortless coastal style with performance fabric that moves with you in and out of the water.",
+    "brings classic surf aesthetics together with modern quick-dry performance.",
+    "blends laid-back beach style with the durability you need for real water days.",
+    "delivers easy swim-wear style that transitions seamlessly from shoreline to boardwalk.",
+]
+
+# Bullet 2 variation pool. Avoids stuffing the full style name into bullet 2.
+# Feature phrase is filled in per style.
+SWIM_B2_OPENERS = [
+    "DESIGNED FOR PERFORMANCE",
+    "PURPOSE-BUILT DETAILS",
+    "THOUGHTFUL CONSTRUCTION",
+    "STYLE MEETS FUNCTION",
+    "DIALED-IN FEATURES",
+]
+SWIM_B2_TEMPLATES = [
+    "This {itn_lower} features {feature_str} for lasting comfort and durability in the water.",
+    "Every detail of this {itn_lower} is built for real beach days: {feature_str}.",
+    "Purpose-built details — {feature_str} — give this {itn_lower} a technical edge.",
+    "This {itn_lower} brings together {feature_str} so you can focus on the swim, not the fit.",
+    "From fit to finish, this {itn_lower} delivers {feature_str}.",
+]
+
 DESCRIPTION_OPENERS_ROTATION = {}  # style_num -> opener_index
 
 # ── Helper utilities ───────────────────────────────────────────────────────────
@@ -905,7 +967,7 @@ def generate_title(brand_cfg, brand, style_name, product_type, color, size, upf=
     return title
 
 def generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, color, upf="",
-                     subclass="", gender="", product_type=""):
+                     subclass="", gender="", product_type="", style_num=""):
     """Generate 5 bullet points per brand + style context. Product-type-aware."""
     brand = clean_brand_name(brand)
     focus = brand_cfg.get("bullet_1_focus", "Style and quality")
@@ -924,13 +986,23 @@ def generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, c
         "One Piece Swim", "Tankini", "Short", "Swim Set 2 pcs", "Board Short")
     gender_word = "men's" if (gender or "").lower() == "male" else "women's" if (gender or "").lower() == "female" else ""
 
-    # ── Bullet 1: brand-specific focus ──
+    # ── Bullet 1: brand-specific focus, rotated per style to avoid duplicate content ──
+    # Hash style_name for a stable-but-varied index across 20+ styles of same subclass.
+    # Use style_num (unique) so 21 rashguards w/ same style_name still rotate through all variants
+    # Use two independent indices so opener*tail = OxT distinct combos across styles
+    _b1_seed = style_num or style_name or ""
+    _b1_idx_o = abs(hash(_b1_seed + "b1o"))
+    _b1_idx_t = abs(hash(_b1_seed + "b1t"))
     if actual_upf and ("upf" in focus.lower() or is_swim):
-        b1 = f"UPF {actual_upf} SUN PROTECTION — Built with UPF {actual_upf} ultraviolet protection factor fabric, this {itn_lower} shields your skin from harmful UV rays. Ideal for surfing, swimming, and all-day outdoor wear."
+        _opener = SWIM_UPF_B1_OPENERS[_b1_idx_o % len(SWIM_UPF_B1_OPENERS)].format(upf=actual_upf)
+        _tail = SWIM_UPF_B1_TAILS[_b1_idx_t % len(SWIM_UPF_B1_TAILS)]
+        b1 = f"{_opener} — Built with UPF {actual_upf} ultraviolet protection factor fabric, this {itn_lower} {_tail}"
     elif "butterlux" in focus.lower():
         b1 = f"BUTTERLUX FABRIC — Crafted from our signature Butterlux material, this {brand} {itn_lower} delivers an extraordinarily soft, silky touch for all-day luxurious comfort."
     elif "beach" in focus.lower() or "surf" in focus.lower() or is_swim:
-        b1 = f"SURF & BEACH READY — Designed with {brand}'s surf heritage in mind, this {itn_lower} combines ocean-inspired style with durable, quick-dry construction perfect for any beach day or pool session."
+        _opener = SWIM_LIFESTYLE_B1_OPENERS[_b1_idx_o % len(SWIM_LIFESTYLE_B1_OPENERS)]
+        _tail = SWIM_LIFESTYLE_B1_TAILS[_b1_idx_t % len(SWIM_LIFESTYLE_B1_TAILS)]
+        b1 = f"{_opener} — This {brand} {itn_lower} {_tail}"
     elif "nautical" in focus.lower():
         b1 = f"NAUTICAL INSPIRED — Rooted in {brand}'s rich maritime heritage, this {itn_lower} features classic nautical design elements that bring timeless style to every occasion."
     elif "british" in focus.lower() or "mod" in focus.lower():
@@ -970,7 +1042,16 @@ def generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, c
     if not style_features:
         style_features = ["thoughtfully designed details"]
     feature_str = ", ".join(style_features[:3])
-    b2 = f"DESIGNED FOR PERFORMANCE — This {style_name.title()} features {feature_str} that set it apart from the competition."
+    # Bullet 2: no style_name stuffing. Rotate headline + template per style.
+    _b2_seed = style_num or style_name or ""
+    _b2_idx_h = abs(hash(_b2_seed + "b2h"))
+    _b2_idx_t = abs(hash(_b2_seed + "b2t"))
+    if is_swim:
+        _b2_head = SWIM_B2_OPENERS[_b2_idx_h % len(SWIM_B2_OPENERS)]
+        _b2_body = SWIM_B2_TEMPLATES[_b2_idx_t % len(SWIM_B2_TEMPLATES)].format(itn_lower=itn_lower, feature_str=feature_str)
+        b2 = f"{_b2_head} — {_b2_body}"
+    else:
+        b2 = f"DESIGNED FOR PERFORMANCE — This {itn_lower} features {feature_str} for a look that stands apart."
 
     # ── Bullet 3: Fit & sizing ──
     fit_type = brand_cfg.get("default_fit_type", "")
@@ -1015,14 +1096,23 @@ def generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, 
 
     parts = []
     if is_swim:
-        parts.append(f"The {brand} {style_name.title()} is built for performance in and out of the water.")
+        # Rotate swim opener across 20+ styles so same-subclass products don't share line 1.
+        _sw_idx = abs(hash((style_num or "") + "swim")) if style_num else 0
+        _sw_opener = SWIM_DESCRIPTION_OPENERS[_sw_idx % len(SWIM_DESCRIPTION_OPENERS)]
+        parts.append(_sw_opener.format(brand=brand, style_name=_title_case_preserve_acronyms(style_name)))
         if actual_fabric:
             fp = f"Constructed from {actual_fabric}"
             if actual_upf:
                 fp += f" with UPF {actual_upf} sun protection"
             fp += ", this " + itn_lower + " dries quickly and resists chlorine and salt water."
             parts.append(fp)
-        parts.append(f"Designed for surfing, swimming, and beach days, it combines {brand}'s signature style with functional performance. {actual_care} for easy care after every session.")
+        _closers = [
+            f"Designed for surfing, swimming, and beach days, it combines {brand}'s signature style with functional performance. {actual_care} for easy care after every session.",
+            f"Whether you're chasing waves or lounging on the sand, this {itn_lower} delivers the durability and comfort you expect from {brand}. {actual_care} between sessions.",
+            f"From sunrise paddle-outs to sunset hangs, this {brand} {itn_lower} keeps up. {actual_care} after each use for long-lasting wear.",
+            f"Packable, quick-drying, and built to last — {brand}'s approach to warm-weather essentials shows in every detail. {actual_care} for easy upkeep.",
+        ]
+        parts.append(_closers[_sw_idx % len(_closers)])
     else:
         # Dress / general apparel
         global DESCRIPTION_OPENERS_ROTATION
@@ -1231,14 +1321,31 @@ def generate_backend_keywords(brand, style_name, sub_subclass, color, fabric, up
     if color:
         candidates.append(normalize_color(color).lower())
 
-    # Filter: no brand name, no empty, no duplicates
-    seen = set()
+    # Filter: no brand name, no empty, no duplicates, no stem-redundant phrases
+    # (e.g. drop "rash guard shirt" when "mens rash guard shirt" already covers all tokens)
+    def _stem(tok):
+        t = tok.strip().lower()
+        # normalize singular/plural
+        if len(t) > 3 and t.endswith("es") and not t.endswith("ses"):
+            t = t[:-2]
+        elif len(t) > 3 and t.endswith("s"):
+            t = t[:-1]
+        return t
+    seen_phrases = set()
+    covered_stems = set()
     result = []
     for kw in candidates:
         kw = kw.strip().lower()
-        if not kw or brand_lower in kw or kw in seen or len(kw) < 2:
+        if not kw or brand_lower in kw or kw in seen_phrases or len(kw) < 2:
             continue
-        seen.add(kw)
+        toks = kw.split()
+        stems = [_stem(t) for t in toks]
+        # Skip if every stem is already covered by an earlier phrase (pure redundancy)
+        if stems and all(s in covered_stems for s in stems):
+            continue
+        seen_phrases.add(kw)
+        for s in stems:
+            covered_stems.add(s)
         result.append(kw)
 
     # Join and cap at 250 bytes
@@ -2417,7 +2524,7 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
             eff_gender_gen = style_gender or brand_cfg.get("gender", "")
             title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf, style_gender=style_gender)
             bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf,
-                                       subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt)
+                                       subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt, style_num=style_num)
             description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf,
                                                subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt)
             backend_kw = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf,
@@ -5269,7 +5376,7 @@ def regenerate_style():
         pt_label = subclass or sub_subclass or resolved_pt.replace("_", " ").title() or "Dress"
         title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf, style_gender=style_gender)
         bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf,
-                                   subclass=subclass, gender=eff_gender, product_type=resolved_pt)
+                                   subclass=subclass, gender=eff_gender, product_type=resolved_pt, style_num=style_num)
         description = generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, fabric, care, first_color, upf,
                                            subclass=subclass, gender=eff_gender, product_type=resolved_pt)
         backend_kw = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf,
@@ -5455,7 +5562,7 @@ def regenerate_field():
             sg, _ = _derive_gender_department(style)
             eg = sg or brand_cfg.get("gender", "")
             bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf,
-                                       subclass=subclass, gender=eg, product_type=rpt)
+                                       subclass=subclass, gender=eg, product_type=rpt, style_num=style_num)
             # Rotate bullet labels for variation
             labels = ["OUTSTANDING FEATURE", "STYLE HIGHLIGHT", "DESIGN DETAIL", "FASHION FORWARD", "KEY BENEFIT"]
             if bullet_idx < len(bullets):
