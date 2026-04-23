@@ -1,5 +1,56 @@
 # Changelog
 
+## 2026-04-23 — Historical Bulksheet Snapshots (v0.6.0)
+
+Every bulksheet upload is now auto-saved as a dated snapshot. With ≥2 snapshots the Ad Readiness card renders a full trend view: ineligible-over-time line chart, since-prior deltas, newly blocked / newly recovered tables, chronic flippers, and per-reason deltas.
+
+### Backend (`app.py`)
+- `SNAPSHOTS_DIR = ./snapshots/` with 52-file retention (~1 year weekly).
+- `_save_snapshot(ad_truth_lookup, filename)` auto-writes a dated JSON on every bulksheet upload: `{id, timestamp, filename, total, ineligible, eligible, asins: {asin: {status, reasons, raw_reasons}}}`. Atomic tmp → rename.
+- `_list_snapshots()` / `_load_snapshot(id)` / `_prune_snapshots()`.
+- `_compute_trends(scored_rows, max_history=12)` — returns `None` with <2 snapshots; otherwise a full trends block:
+  - `series` (per-snapshot ineligible/total/pct) for the line chart
+  - `newly_blocked` + `newly_blocked_total` (current vs prior snapshot, enriched with title + category from catalog)
+  - `newly_recovered` + `newly_recovered_total` (with `was_blocked_for` reasons)
+  - `chronic_flippers` (ASINs with ≥3 state changes across the window)
+  - `reason_deltas` (current vs prior ineligible count per reason)
+- New endpoints:
+  - `GET  /api/catalog/snapshots` — list all saved snapshots
+  - `GET  /api/catalog/snapshots/<id>` — fetch a single snapshot's full ASIN map
+  - `DELETE /api/catalog/snapshots/<id>` — remove a snapshot
+- Bulksheet upload response now includes `snapshot_id` and `snapshot_count`; detection summary reads "Saved as snapshot #N".
+- `run_catalog_analysis()` response now always includes `trends` (or null) and `snapshot_count`.
+
+### Frontend (`templates/index.html`)
+- New "History & Trends" section inside the Ad Readiness card, with a snapshot-count badge that updates on every bulksheet upload.
+- Inline SVG line chart of ineligible ASINs over time: area fill + gridlines + per-point circles with hover tooltips showing exact values. No library; scales with container width.
+- 6 stat tiles: Currently blocked / Since prior (↑/↓ arrow + green/red) / Newly blocked / Newly recovered / Chronic flippers / Snapshots loaded.
+- Reason-deltas table with green/red delta coloring.
+- Newly blocked table: ASIN, title, category, Amazon reasons.
+- Newly recovered table: ASIN, title, category, previously-blocked-for reasons.
+- Chronic flippers table: ASIN, title, category, flip count, current status pill.
+
+### QA
+Built 3 dated bulksheet fixtures simulating a realistic trend: week 1 (2 blocked), week 2 (6 blocked, 4 newly blocked), week 3 (5 blocked, 2 newly blocked, 3 recovered).
+
+- Series correctly shows 2 → 6 → 5 on the line chart
+- Newly blocked: B0ADOOSTCK01 (Out of stock), B0ADNOIMG001 (Missing main image) — matches the plant
+- Newly recovered: B0ADLOSTBB01 (BB), B0ADLOWSTK01 (OOS), B0C01MENSM (BB) — all 3 caught
+- Reason deltas: Lost Buy Box −2 (green), Missing main image +1 (red) — exactly right
+- Since-prior tile: −1 with down-arrow (success green) because total dropped from 6 to 5
+- Reconciliation still renders side-by-side below the trends section
+- GET /api/catalog/snapshots returns 3 entries with distinct timestamps
+- DELETE endpoint works and retention enforced
+
+Regression: NIS + Phase 2 taxonomy still 100% clean (59 styles, 13 buckets, 0 errors).
+
+### Files touched
+- `app.py` — +~200 lines: snapshot storage helpers, `_compute_trends`, 3 new endpoints, auto-save on bulksheet upload, `trends` + `snapshot_count` in analysis response.
+- `templates/index.html` — +~180 lines: History & Trends section, `chRenderTrends` (inline SVG chart + 4 stat-summary tables), hydration hook in `chRenderAdReadiness`.
+- `.gitignore` — adds `snapshots/` (runtime data, not source).
+
+---
+
 ## 2026-04-23 — Step C: Tier-2 Ground Truth (v0.5.0)
 
 Adds a third upload slot for Amazon's Sponsored Products bulksheet. When present, Amazon's flag overrides the Ad Readiness proxy per ASIN, the PROXY badge flips to GROUND TRUTH, and a full predicted-vs-actual reconciliation is rendered.

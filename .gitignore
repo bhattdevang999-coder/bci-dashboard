@@ -8,3 +8,4 @@ uploads/output/*
 !uploads/output/.gitkeep
 *.zip
 feedback/taxonomy_history.jsonl
+snapshots/

@@ -6461,6 +6461,233 @@ def _normalize_ad_reason(raw):
     return None
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# Bulksheet snapshot history (trend tracking)
+# ═══════════════════════════════════════════════════════════════════════
+# Every bulksheet upload is automatically saved as a JSON snapshot under
+# ./snapshots/. With ≥2 snapshots we compute trends: ineligible-over-time,
+# newly blocked since prior snapshot, newly recovered, chronic flippers,
+# per-reason deltas. Retention is capped at 52 (≈ 1 year weekly).
+SNAPSHOTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "snapshots")
+SNAPSHOT_RETENTION = 52
+
+
+def _ensure_snapshots_dir():
+    os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
+
+
+def _list_snapshots(limit=None):
+    """Return snapshot metadata sorted oldest → newest."""
+    _ensure_snapshots_dir()
+    out = []
+    for fn in sorted(os.listdir(SNAPSHOTS_DIR)):
+        if not fn.endswith(".json"):
+            continue
+        try:
+            with open(os.path.join(SNAPSHOTS_DIR, fn), "r") as f:
+                d = json.load(f)
+            out.append({
+                "id":           d.get("id") or fn.replace(".json", ""),
+                "file":         fn,
+                "timestamp":    d.get("timestamp"),
+                "filename":     d.get("filename"),
+                "total":        d.get("total", 0),
+                "ineligible":   d.get("ineligible", 0),
+                "eligible":     d.get("eligible", 0),
+            })
+        except Exception:
+            continue
+    if limit:
+        out = out[-limit:]
+    return out
+
+
+def _load_snapshot(snap_id):
+    """Load a single snapshot's full ASIN map by id (filename without .json)."""
+    _ensure_snapshots_dir()
+    path = os.path.join(SNAPSHOTS_DIR, f"{snap_id}.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, "r") as f:
+        return json.load(f)
+
+
+def _save_snapshot(ad_truth_lookup, source_filename):
+    """Persist the just-uploaded bulksheet as a dated snapshot.
+    Returns the saved snapshot dict."""
+    _ensure_snapshots_dir()
+    now = datetime.now()
+    snap_id = now.strftime("%Y-%m-%d_%H%M%S")
+    ineligible = sum(1 for v in ad_truth_lookup.values() if v["status"] == "ineligible")
+    total = len(ad_truth_lookup)
+    snapshot = {
+        "id":          snap_id,
+        "timestamp":   now.isoformat(timespec="seconds"),
+        "filename":    source_filename or "",
+        "total":       total,
+        "ineligible":  ineligible,
+        "eligible":    total - ineligible,
+        "asins":       ad_truth_lookup,   # {asin: {status, reasons, raw_reasons}}
+    }
+    out_path = os.path.join(SNAPSHOTS_DIR, f"{snap_id}.json")
+    # Atomic write
+    tmp = out_path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(snapshot, f)
+    os.rename(tmp, out_path)
+
+    # Enforce retention
+    _prune_snapshots()
+    return snapshot
+
+
+def _prune_snapshots():
+    _ensure_snapshots_dir()
+    files = sorted(fn for fn in os.listdir(SNAPSHOTS_DIR) if fn.endswith(".json"))
+    extra = len(files) - SNAPSHOT_RETENTION
+    if extra > 0:
+        for fn in files[:extra]:
+            try:
+                os.remove(os.path.join(SNAPSHOTS_DIR, fn))
+            except OSError:
+                pass
+
+
+def _compute_trends(scored_rows=None, max_history=12):
+    """Compute trend stats across saved snapshots.
+
+    Returns None when fewer than 2 snapshots exist.
+    scored_rows (optional): list of row_result dicts so we can enrich
+    newly-blocked/recovered entries with titles + categories.
+    """
+    metas = _list_snapshots()
+    if len(metas) < 2:
+        return None
+
+    # Load full data for the most-recent window (cap history for response size)
+    recent_metas = metas[-max_history:]
+    full = []
+    for m in recent_metas:
+        snap = _load_snapshot(m["id"])
+        if snap:
+            full.append(snap)
+    if len(full) < 2:
+        return None
+
+    # Title / category lookup from current catalog
+    title_by_asin = {}
+    cat_by_asin = {}
+    if scored_rows:
+        for r in scored_rows:
+            title_by_asin[r["asin"]] = r.get("title", "")
+            cat_by_asin[r["asin"]]   = r.get("category", "")
+
+    # Time-series
+    series = [
+        {
+            "id":           s["id"],
+            "timestamp":    s["timestamp"],
+            "total":        s["total"],
+            "ineligible":   s["ineligible"],
+            "eligible":     s["eligible"],
+            "ineligible_pct": round(s["ineligible"] / max(1, s["total"]) * 100, 1),
+        }
+        for s in full
+    ]
+
+    # Current vs prior snapshot deltas
+    prev_snap = full[-2]
+    cur_snap  = full[-1]
+    prev_asins = prev_snap["asins"]
+    cur_asins  = cur_snap["asins"]
+
+    newly_blocked = []
+    newly_recovered = []
+    for asin, cur in cur_asins.items():
+        prev = prev_asins.get(asin)
+        if cur["status"] == "ineligible" and (not prev or prev.get("status") == "eligible"):
+            newly_blocked.append({
+                "asin":    asin,
+                "title":   title_by_asin.get(asin, ""),
+                "category":cat_by_asin.get(asin, ""),
+                "reasons": cur.get("reasons", []),
+                "raw_reasons": cur.get("raw_reasons", []),
+            })
+        elif cur["status"] == "eligible" and prev and prev.get("status") == "ineligible":
+            newly_recovered.append({
+                "asin":     asin,
+                "title":    title_by_asin.get(asin, ""),
+                "category": cat_by_asin.get(asin, ""),
+                "was_blocked_for": prev.get("reasons", []),
+            })
+
+    # Chronic flippers — ASINs that changed state at least flip_threshold times
+    # across the history window.
+    flip_threshold = 3
+    flip_counts = {}
+    for asin in set().union(*(s["asins"].keys() for s in full)):
+        prior = None
+        flips = 0
+        for s in full:
+            cur_state = s["asins"].get(asin, {}).get("status")
+            if cur_state and prior and cur_state != prior:
+                flips += 1
+            if cur_state:
+                prior = cur_state
+        if flips >= flip_threshold:
+            flip_counts[asin] = flips
+
+    chronic_flippers = [
+        {
+            "asin":    asin,
+            "title":   title_by_asin.get(asin, ""),
+            "category":cat_by_asin.get(asin, ""),
+            "flips":   n,
+            "current_status": cur_asins.get(asin, {}).get("status", "unknown"),
+        }
+        for asin, n in sorted(flip_counts.items(), key=lambda kv: -kv[1])[:25]
+    ]
+
+    # Reason-trend deltas (current vs prior snapshot)
+    def _count_reasons(snap):
+        out = {}
+        for v in snap["asins"].values():
+            if v.get("status") != "ineligible":
+                continue
+            for r in v.get("reasons", []):
+                out[r] = out.get(r, 0) + 1
+            if not v.get("reasons") and v.get("raw_reasons"):
+                # Use raw code bucket as fallback
+                out["(uncategorized)"] = out.get("(uncategorized)", 0) + 1
+        return out
+
+    prev_reasons = _count_reasons(prev_snap)
+    cur_reasons  = _count_reasons(cur_snap)
+    reason_deltas = []
+    for r in sorted(set(prev_reasons) | set(cur_reasons)):
+        reason_deltas.append({
+            "reason": r,
+            "prev":   prev_reasons.get(r, 0),
+            "current": cur_reasons.get(r, 0),
+            "delta":  cur_reasons.get(r, 0) - prev_reasons.get(r, 0),
+        })
+    reason_deltas.sort(key=lambda x: -abs(x["delta"]))
+
+    return {
+        "snapshot_count":   len(metas),
+        "history_window":   len(full),
+        "series":           series,
+        "current_id":       cur_snap["id"],
+        "previous_id":      prev_snap["id"],
+        "newly_blocked":    newly_blocked[:50],
+        "newly_blocked_total":   len(newly_blocked),
+        "newly_recovered":  newly_recovered[:50],
+        "newly_recovered_total": len(newly_recovered),
+        "chronic_flippers":  chronic_flippers,
+        "reason_deltas":     reason_deltas[:12],
+    }
+
+
 def _parse_ad_bulksheet(rows, headers):
     """Turn an uploaded bulksheet into a per-ASIN ground-truth lookup.
 
@@ -7369,6 +7596,16 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None, ad_truth_look
             "mismatch_examples":   mismatch_examples,
         }
     
+    # ── Snapshot trends ─────────────────────────────────────────────────────────
+    # Always try to compute trends so the UI can show the 'snapshot count'
+    # state even when only one has been taken. _compute_trends returns None
+    # with <2 snapshots.
+    try:
+        trends = _compute_trends(scored_rows=scored_rows)
+    except Exception:
+        trends = None
+    snapshot_count = len(_list_snapshots())
+
     return {
         "summary": {
             "total_asins": total,
@@ -7384,6 +7621,8 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None, ad_truth_look
             "subcategories": sorted(subcategories_seen),
         },
         "eligibility":       eligibility_summary,
+        "trends":            trends,
+        "snapshot_count":    snapshot_count,
         "issues": issues_list[:5000],  # cap for response size
         "scored_rows": scored_rows[:5000],
         "variation_matrix": variation_matrix,
@@ -7516,6 +7755,13 @@ def catalog_upload_ad_bulksheet():
         total_in = len(ad_truth_lookup)
         ineligible_in = sum(1 for v in ad_truth_lookup.values() if v["status"] == "ineligible")
 
+        # Auto-save snapshot for trend history
+        try:
+            snapshot = _save_snapshot(ad_truth_lookup, f.filename)
+        except Exception as se:
+            app.logger.warning(f"Snapshot save failed: {se}")
+            snapshot = None
+
         with catalog_health_lock:
             catalog_health_state["ad_bulksheet_rows"] = rows
             catalog_health_state["ad_bulksheet_fields"] = fields
@@ -7540,17 +7786,49 @@ def catalog_upload_ad_bulksheet():
                     catalog_health_state["analysis"] = result
             threading.Thread(target=run_analysis, daemon=True).start()
 
+        snap_count = len(_list_snapshots())
         return jsonify({
             "ok": True,
             "rows": total_in,
             "ineligible": ineligible_in,
             "eligible":   total_in - ineligible_in,
             "fields":     list(fields.keys()),
-            "detection_summary": f"Loaded {total_in} ASINs from Ad Bulksheet ({ineligible_in} ineligible, {total_in - ineligible_in} eligible)."
+            "snapshot_id":     (snapshot or {}).get("id"),
+            "snapshot_count":  snap_count,
+            "detection_summary": f"Loaded {total_in} ASINs from Ad Bulksheet ({ineligible_in} ineligible, {total_in - ineligible_in} eligible). Saved as snapshot #{snap_count}."
         })
 
     except Exception as e:
         return jsonify({"error": f"Failed to parse bulksheet: {str(e)}"}), 500
+
+
+# ── Snapshot management endpoints ─────────────────────────────────────────────
+@app.route("/api/catalog/snapshots", methods=["GET"])
+def catalog_list_snapshots():
+    return jsonify({
+        "snapshots": _list_snapshots(),
+    })
+
+
+@app.route("/api/catalog/snapshots/<snap_id>", methods=["GET"])
+def catalog_get_snapshot(snap_id):
+    if not all(c.isalnum() or c in "-_" for c in snap_id):
+        return jsonify({"error": "Invalid snapshot id"}), 400
+    snap = _load_snapshot(snap_id)
+    if not snap:
+        return jsonify({"error": "Snapshot not found"}), 404
+    return jsonify(snap)
+
+
+@app.route("/api/catalog/snapshots/<snap_id>", methods=["DELETE"])
+def catalog_delete_snapshot(snap_id):
+    if not all(c.isalnum() or c in "-_" for c in snap_id):
+        return jsonify({"error": "Invalid snapshot id"}), 400
+    path = os.path.join(SNAPSHOTS_DIR, f"{snap_id}.json")
+    if not os.path.exists(path):
+        return jsonify({"error": "Not found"}), 404
+    os.remove(path)
+    return jsonify({"ok": True, "remaining": len(_list_snapshots())})
 
 
 @app.route("/api/catalog/upload-sales", methods=["POST"])
