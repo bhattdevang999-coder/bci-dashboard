@@ -3673,6 +3673,46 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
     </div>
 
+    <!-- Section 3b: Ad Readiness -->
+    <div id="ch-adready-section" class="hidden">
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header" style="margin-bottom:14px;padding-bottom:12px;">
+          <div class="card-icon">📡</div>
+          <div style="flex:1;">
+            <div class="card-title">Ad Readiness — PPC Eligibility Audit</div>
+            <div class="card-desc" id="ch-adready-caption">Tier-1 proxy based on catalog fields. Upload an Ad Eligibility bulksheet for ground truth.</div>
+          </div>
+          <div id="ch-adready-badge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;background:#FFF3E0;color:#C0651B;border:1px solid #F4B860;">PROXY</div>
+        </div>
+
+        <div class="ch-stats-grid" id="ch-adready-stats"></div>
+
+        <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+          <div style="font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:10px;">Reasons ASINs are blocked or at-risk</div>
+          <div class="table-wrap" style="border-radius:8px;">
+            <table class="ch-issues-table" id="ch-adready-reasons-table">
+              <thead>
+                <tr>
+                  <th style="width:50px;">•</th>
+                  <th>Reason</th>
+                  <th style="width:80px;text-align:right;">ASINs</th>
+                  <th>Top Category</th>
+                  <th style="width:130px;text-align:right;">Revenue at Risk</th>
+                  <th>Fix</th>
+                </tr>
+              </thead>
+              <tbody id="ch-adready-reasons-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+          <div style="font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:10px;">Eligibility by Category</div>
+          <div id="ch-adready-cat-bars" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Section 4: Filters -->
     <div id="ch-filters-section" class="hidden">
       <div class="ch-filters">
@@ -3699,6 +3739,14 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
           </select>
         </div>
         <div class="ch-filter-group">
+          <label>View</label>
+          <select id="ch-filter-group" onchange="chApplyFilters()">
+            <option value="">All issues</option>
+            <option value="hygiene">Catalog hygiene only</option>
+            <option value="ad_readiness">Ad Readiness only</option>
+          </select>
+        </div>
+        <div class="ch-filter-group">
           <label>Issue Type</label>
           <select id="ch-filter-issue" onchange="chApplyFilters()">
             <option value="">All Issues</option>
@@ -3709,6 +3757,14 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
             <option value="Missing all bullet">Missing Bullets</option>
             <option value="Zero traffic">Zero Traffic</option>
             <option value="Duplicate">Duplicates</option>
+            <option value="Lost Buy Box">Lost Buy Box</option>
+            <option value="Out of stock">Out of Stock</option>
+            <option value="Listing suppressed">Suppressed Listings</option>
+            <option value="Listing inactive">Inactive Listings</option>
+            <option value="Price above Buy Box">Price above Buy Box</option>
+            <option value="Content weak for ads">Content weak for ads</option>
+            <option value="Restricted category">Restricted Category</option>
+            <option value="Low inventory">Low Inventory</option>
           </select>
         </div>
         <div class="ch-filter-group" style="justify-content:flex-end;margin-left:auto;">
@@ -7306,11 +7362,15 @@ async function chLoadResults() {
     chState.filteredIssues = [...chState.allIssues];
 
     chRenderSummary(data.analysis.summary);
+    chRenderAdReadiness(data.analysis.eligibility);
     chPopulateFilters(data.analysis.summary);
     chApplyFilters();
     chRenderMatrix();
 
     document.getElementById('ch-summary-section').classList.remove('hidden');
+    if (data.analysis.eligibility) {
+      document.getElementById('ch-adready-section').classList.remove('hidden');
+    }
     document.getElementById('ch-filters-section').classList.remove('hidden');
     document.getElementById('ch-issues-section').classList.remove('hidden');
     if (Object.keys(data.analysis.variation_matrix || {}).length > 0) {
@@ -7357,6 +7417,85 @@ function chRenderSummary(summary) {
 }
 
 // ── Populate Filters ─────────────────────────────────────────────
+function chEscapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function chRenderAdReadiness(elig) {
+  if (!elig) return;
+  const stats = [
+    { label: 'Ad-Ready',        val: elig.eligible.toLocaleString(),   sub: elig.eligible_pct + '%',   cls: 'success' },
+    { label: 'At Risk',         val: elig.at_risk.toLocaleString(),    sub: elig.at_risk_pct + '%',    cls: 'warn' },
+    { label: 'Blocked for Ads', val: elig.ineligible.toLocaleString(), sub: elig.ineligible_pct + '%', cls: 'error' },
+    { label: 'Fast-Fix ASINs',  val: elig.fast_fix_count.toLocaleString(), sub: '<1hr each', cls: '' },
+  ];
+  if (elig.revenue_at_risk > 0) {
+    stats.push({ label: 'Revenue at Risk', val: '$' + Math.round(elig.revenue_at_risk).toLocaleString(), sub: 'monthly', cls: 'error' });
+  }
+  document.getElementById('ch-adready-stats').innerHTML = stats.map(c => `
+    <div class="stat-card">
+      <div class="stat-num ${c.cls}">${c.val}</div>
+      <div class="stat-label">${c.label}</div>
+      ${c.sub ? `<div style="font-size:11px;color:var(--text-sec);margin-top:2px;">${c.sub}</div>` : ''}
+    </div>
+  `).join('');
+
+  const badge = document.getElementById('ch-adready-badge');
+  const caption = document.getElementById('ch-adready-caption');
+  if (elig.ground_truth) {
+    badge.textContent = 'GROUND TRUTH';
+    badge.style.background = '#E6F4EA'; badge.style.color = '#1A7A50'; badge.style.borderColor = '#1A7A50';
+    caption.textContent = 'Calibrated against Amazon Advertising Console bulksheet.';
+  } else {
+    badge.textContent = 'PROXY';
+    caption.textContent = 'Tier-1 proxy based on catalog fields. Upload an Ad Eligibility bulksheet for ground truth.';
+  }
+
+  const tbody = document.getElementById('ch-adready-reasons-tbody');
+  if (!elig.reasons || elig.reasons.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-sec);">All ASINs are ad-ready — no eligibility issues detected</td></tr>`;
+  } else {
+    tbody.innerHTML = elig.reasons.map(r => `
+      <tr>
+        <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${r.blocking ? '#C0392B' : '#D68910'};"></span></td>
+        <td style="font-weight:600;">${chEscapeHtml(r.reason)}</td>
+        <td style="text-align:right;font-weight:700;">${r.asin_count.toLocaleString()}</td>
+        <td><span style="font-size:12px;color:var(--text-sec);">${chEscapeHtml(r.top_category || '—')} <span style="opacity:.6;">(${r.top_category_count})</span></span></td>
+        <td style="text-align:right;color:${r.revenue_at_risk > 0 ? '#C0392B' : 'var(--text-sec)'};font-variant-numeric:tabular-nums;">${r.revenue_at_risk > 0 ? '$' + Math.round(r.revenue_at_risk).toLocaleString() : '—'}</td>
+        <td style="font-size:12px;color:var(--text-sec);">${chEscapeHtml(r.fix_action)}</td>
+      </tr>
+    `).join('');
+  }
+
+  const cats = elig.categories || [];
+  const maxTotal = Math.max(1, ...cats.map(c => c.total));
+  const barsEl = document.getElementById('ch-adready-cat-bars');
+  if (cats.length === 0) {
+    barsEl.innerHTML = '<div style="font-size:13px;color:var(--text-sec);">No category data available.</div>';
+  } else {
+    barsEl.innerHTML = cats.slice(0, 12).map(c => {
+      const ePct = c.eligible   / c.total * 100;
+      const rPct = c.at_risk    / c.total * 100;
+      const iPct = c.ineligible / c.total * 100;
+      const widthPct = (c.total / maxTotal * 100);
+      const flag = c.ineligible > 0 ? `<span style="color:#C0392B;font-weight:700;">${c.ineligible} blocked</span>` : '';
+      return `
+        <div style="display:grid;grid-template-columns:180px 1fr 170px;gap:12px;align-items:center;">
+          <div style="font-size:13px;font-weight:600;" title="${chEscapeHtml(c.category)}">${chEscapeHtml((c.category || '').slice(0, 26))}</div>
+          <div style="display:flex;height:18px;border-radius:4px;overflow:hidden;background:var(--bg);width:${widthPct}%;min-width:60px;">
+            <div style="background:#1A7A50;width:${ePct}%;" title="Eligible: ${c.eligible}"></div>
+            <div style="background:#D68910;width:${rPct}%;" title="At risk: ${c.at_risk}"></div>
+            <div style="background:#C0392B;width:${iPct}%;" title="Ineligible: ${c.ineligible}"></div>
+          </div>
+          <div style="font-size:12px;color:var(--text-sec);text-align:right;">
+            ${c.eligible_pct}% eligible${flag ? '&nbsp;·&nbsp;' + flag : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
 function chPopulateFilters(summary) {
   const brandSel = document.getElementById('ch-filter-brand');
   const catSel   = document.getElementById('ch-filter-category');
@@ -7390,6 +7529,7 @@ function chApplyFilters() {
   const subcat = document.getElementById('ch-filter-subcat').value;
   const score  = document.getElementById('ch-filter-score').value;
   const issue  = document.getElementById('ch-filter-issue').value;
+  const group  = document.getElementById('ch-filter-group')?.value || '';
 
   chState.filteredIssues = chState.allIssues.filter(iss => {
     if (brand  && iss.brand !== brand) return false;
@@ -7400,6 +7540,7 @@ function chApplyFilters() {
       if (asinData && asinData.score_color !== score) return false;
     }
     if (issue && !iss.issue.toLowerCase().includes(issue.toLowerCase())) return false;
+    if (group && iss.group !== group) return false;
     return true;
   });
 

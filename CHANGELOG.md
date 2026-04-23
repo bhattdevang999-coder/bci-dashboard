@@ -1,5 +1,71 @@
 # Changelog
 
+## 2026-04-23 — Ad Readiness (v0.4.0)
+
+Extends Catalog Health with a PPC eligibility audit. Predicts which ASINs Amazon would block from Sponsored Products, groups them by root cause, and gives per-reason fix actions. Ships as a new section inside the existing Catalog Health page — no new uploads, no new pages.
+
+### Backend (`app.py`)
+- `_eligibility_for_row()` — Tier-1 proxy with 8 rules ordered by severity:
+  1. Listing inactive
+  2. Search-suppressed (separate column)
+  3. Restricted category (adult, used/refurbished/renewed, firearms, tobacco/vape, Rx)
+  4. Out of stock (quantity ≤ 0) or Low inventory (≤ 5 → at-risk)
+  5. Lost Buy Box (Buy Box Winner = No)
+  6. Missing main image
+  7. Price > 10% above Buy Box Price
+  8. Content score < 70
+- Status classification: `eligible` | `at_risk` | `ineligible`. Blocking reasons (1–6 except low-inventory and price/content) flip status to ineligible; non-blocking reasons to at_risk.
+- `_eligibility_fix_action()` returns operator-facing fix guidance per reason.
+- `SEVERITY_WEIGHTS` extended with 9 eligibility reason codes.
+- `AD_READINESS_ISSUES` set for UI filtering (`group: "ad_readiness"` vs `"hygiene"` on each issue).
+- `AD_BLOCKING_ISSUES` set to distinguish blockers from at-risk reasons.
+- `RESTRICTED_AD_CATEGORIES` list of Amazon-policy-ineligible categories.
+- Response now includes `eligibility` block:
+  ```
+  {
+    total, eligible, at_risk, ineligible,
+    eligible_pct, at_risk_pct, ineligible_pct,
+    revenue_at_risk, fast_fix_count,
+    reasons: [{reason, asin_count, top_category, top_category_count, revenue_at_risk, fix_action, severity, blocking}, ...],
+    categories: [{category, total, eligible, at_risk, ineligible, eligible_pct}, ...],
+    ground_truth: false,
+  }
+  ```
+
+### Frontend (`templates/index.html`)
+- New "Ad Readiness — PPC Eligibility Audit" card between Summary and Filters sections.
+- 4 stat tiles: Ad-Ready / At Risk / Blocked for Ads / Fast-Fix ASINs (+ Revenue at Risk when sales data uploaded).
+- Reason breakdown table: one row per reason with color dot (red=blocking, amber=at-risk), ASIN count, top category, revenue at risk, concrete fix action.
+- Eligibility by Category: horizontal segmented bars (green/amber/red) per category, width proportional to category size, with eligibility % and "N blocked" flag.
+- PROXY / GROUND TRUTH badge (switches when Tier-2 Ad Bulksheet is uploaded, roadmapped for Step C).
+- New "View" filter in the issues table filter row: `All issues | Catalog hygiene only | Ad Readiness only`.
+- New Issue Type options: Lost Buy Box, Out of Stock, Suppressed, Inactive, Price above BB, Content weak, Restricted category, Low inventory.
+
+### QA
+Extended test catalog (`TLG_Catalog_test_data.xlsx`) with 7 additional rows, one per eligibility failure mode:
+- `B0ADLOSTBB01` Buy Box Winner = No → flagged Lost Buy Box ✓
+- `B0ADOOSTCK01` quantity 0 → flagged Out of Stock ✓
+- `B0ADSUPPRES1` Search Suppressed = Yes → flagged Listing Suppressed ✓
+- `B0ADINACT001` Status = Inactive → flagged Listing Inactive ✓
+- `B0ADPRICE001` List $79.95 vs BB $59.95 (+33%) → flagged Price above Buy Box ✓
+- `B0ADLOWSTK01` quantity = 3 → flagged Low inventory (at-risk) ✓
+- `B0ADNOIMG001` blank Main Image URL → flagged Missing main image (no ads) ✓
+
+Result: 6 blocked ASINs, 34 at-risk, 3 ad-ready. All 7 reason types appear in the breakdown table with correct severity coloring. Category bar shows 7% eligible with 6 blocked. View filter isolates 41 Ad Readiness issues vs 65 Hygiene issues.
+
+Regression: NIS + Phase 2 taxonomy still 100% clean (59 styles, 13 buckets, 0 errors).
+
+### Deferred to Step C
+- Tier-2 ground truth: upload Amazon Advertising Console SP bulksheet with `Eligibility Status` + reason codes; cross-check against proxy.
+- Amazon Business Report integration for real revenue-at-risk figures (today uses sibling-ASIN sales average when available).
+- Suppressed Listings Report integration for exact suppression reason codes.
+
+### Files touched
+- `app.py` — +~150 lines: severity map extensions, eligibility constants, `_eligibility_for_row`, `_eligibility_fix_action`, `_num`, `_bool_field`, wired into `run_catalog_analysis`, new `eligibility` block in response.
+- `templates/index.html` — +~130 lines: Ad Readiness section HTML, `chRenderAdReadiness`, `chEscapeHtml`, View filter, extended Issue Type options, hook in `chLoadResults`/`chApplyFilters`.
+
+---
+
 ## 2026-04-22 — Catalog Health Step A (v0.3.0)
 
 First production wiring of Catalog Health. The tab now runs Layer 1 (content completeness scoring) and Layer 2 (structural integrity checks) end-to-end against any Amazon catalog export or the TLG Catalog Health Template.

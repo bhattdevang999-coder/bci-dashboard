@@ -6340,6 +6340,7 @@ SALES_FIELD_MAP = {
 }
 
 SEVERITY_WEIGHTS = {
+    # Catalog hygiene (Layer 1 + Layer 2)
     "Orphan (no parent link)":         10,
     "Missing from variation matrix":    8,
     "Zero traffic / suppressed":        9,
@@ -6354,6 +6355,47 @@ SEVERITY_WEIGHTS = {
     "Wrong parent link (brand mismatch)": 6,
     "Broken variation theme":           5,
     "Content issue killing conversion": 8,
+    # Ad Readiness (PPC eligibility proxy)
+    "Lost Buy Box":                     10,
+    "Out of stock":                     10,
+    "Listing suppressed (search)":      10,
+    "Listing inactive":                 10,
+    "Restricted category (no ads)":     10,
+    "Price above Buy Box (>10%)":        7,
+    "Low inventory (at-risk)":           6,
+    "Content weak for ads (score <70)":  5,
+    "Missing main image (no ads)":       9,
+}
+
+# Which issue types belong to the Ad Readiness group (used for filtering).
+AD_READINESS_ISSUES = {
+    "Lost Buy Box",
+    "Out of stock",
+    "Listing suppressed (search)",
+    "Listing inactive",
+    "Restricted category (no ads)",
+    "Price above Buy Box (>10%)",
+    "Low inventory (at-risk)",
+    "Content weak for ads (score <70)",
+    "Missing main image (no ads)",
+}
+
+# Which reasons definitively block ads (as opposed to putting an ASIN at risk).
+AD_BLOCKING_ISSUES = {
+    "Lost Buy Box",
+    "Out of stock",
+    "Listing suppressed (search)",
+    "Listing inactive",
+    "Restricted category (no ads)",
+    "Missing main image (no ads)",
+}
+
+# Amazon categories/phrases that are ineligible for Sponsored Products.
+RESTRICTED_AD_CATEGORIES = {
+    "adult", "adult products", "sexual wellness",
+    "used", "refurbished", "renewed",
+    "firearms", "tobacco", "vaping",
+    "prescription", "rx",
 }
 
 
@@ -6648,6 +6690,139 @@ def score_color(score):
     return "red"
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# AD READINESS (Tier 1 proxy) — predicts PPC eligibility from catalog data.
+# This is intentionally a proxy, not ground truth: Amazon's authoritative
+# answer lives in the Advertising Console bulksheet. The proxy covers the
+# top-8 reasons Amazon makes an ASIN ineligible for Sponsored Products.
+# ═══════════════════════════════════════════════════════════════════════
+def _num(s):
+    """Parse a cell value into a float, tolerating $ and commas. Returns None
+    when the value is blank/unparseable."""
+    if s is None:
+        return None
+    t = str(s).strip().replace("$", "").replace(",", "").replace("%", "")
+    if not t:
+        return None
+    try:
+        return float(t)
+    except ValueError:
+        return None
+
+
+def _bool_field(s):
+    """Interpret a cell as a Yes/No boolean. Returns True for yes/y/1/true,
+    False for no/n/0/false, None for blank/unknown."""
+    if s is None:
+        return None
+    t = str(s).strip().lower()
+    if not t:
+        return None
+    if t in ("yes", "y", "1", "true", "active", "in stock"):
+        return True
+    if t in ("no", "n", "0", "false"):
+        return False
+    return None
+
+
+def _eligibility_for_row(row, detected_fields, content_score):
+    """Run Tier-1 PPC eligibility checks against a single row.
+
+    Returns (status, reasons) where:
+        status  ∈ {"eligible", "at_risk", "ineligible"}
+        reasons is a list of SEVERITY_WEIGHTS keys (issue labels)
+
+    Rules are ordered from most- to least-severe; the first blocking rule
+    decides status="ineligible" but all applicable reasons are returned so
+    the user sees the full fix list.
+    """
+    def g(field):
+        col = detected_fields.get(field)
+        return str(row.get(col, "")).strip() if col else ""
+
+    reasons = []
+
+    # 1. Listing inactive → no ads can run at all
+    status_val = g("status").lower()
+    if status_val and status_val not in ("active", "available", "in_stock", "listed"):
+        if status_val in ("inactive", "suppressed", "blocked", "removed", "stranded", "deleted"):
+            if "suppressed" in status_val:
+                reasons.append("Listing suppressed (search)")
+            else:
+                reasons.append("Listing inactive")
+
+    # 2. Search-suppressed flag (separate column)
+    suppressed = g("suppressed")
+    if suppressed and suppressed.lower() not in ("", "no", "false", "0", "none"):
+        if "Listing suppressed (search)" not in reasons:
+            reasons.append("Listing suppressed (search)")
+
+    # 3. Restricted category — hard block regardless of everything else
+    cat = g("category").lower()
+    subcat = g("subcategory").lower()
+    blob = f"{cat} {subcat}"
+    for phrase in RESTRICTED_AD_CATEGORIES:
+        if phrase in blob:
+            reasons.append("Restricted category (no ads)")
+            break
+
+    # 4. Out of stock — Amazon auto-pauses ads
+    qty = _num(g("quantity"))
+    inv_status = g("inventory_status").lower()
+    if qty is not None and qty <= 0:
+        reasons.append("Out of stock")
+    elif inv_status in ("out of stock", "oos", "0"):
+        reasons.append("Out of stock")
+    elif qty is not None and 0 < qty <= 5:
+        reasons.append("Low inventory (at-risk)")
+
+    # 5. Lost Buy Box (#1 real-world cause of ineligibility)
+    bb_winner = _bool_field(g("buy_box_winner"))
+    if bb_winner is False:
+        reasons.append("Lost Buy Box")
+
+    # 6. Missing main image — Amazon won't surface ads without a compliant hero
+    if detected_fields.get("main_image") and not g("main_image"):
+        reasons.append("Missing main image (no ads)")
+
+    # 7. Price above Buy Box by >10% (Buy Box often auto-suppressed after that)
+    bb_price = _num(g("buy_box_price"))
+    list_price = _num(g("price"))
+    if bb_price and bb_price > 0 and list_price and list_price > 0:
+        if list_price > bb_price * 1.10:
+            reasons.append("Price above Buy Box (>10%)")
+
+    # 8. Content too weak to convert ad clicks
+    if content_score is not None and content_score < 70:
+        reasons.append("Content weak for ads (score <70)")
+
+    # Decide status
+    blocking = [r for r in reasons if r in AD_BLOCKING_ISSUES]
+    if blocking:
+        status = "ineligible"
+    elif reasons:
+        status = "at_risk"
+    else:
+        status = "eligible"
+    return status, reasons
+
+
+def _eligibility_fix_action(issue):
+    """Concrete, operator-facing fix guidance for each eligibility reason."""
+    fixes = {
+        "Lost Buy Box":                    "Win back the Buy Box: match/undercut Buy Box price, verify FBA status and seller performance metrics",
+        "Out of stock":                    "Replenish inventory. If FBA inbound is slow, temporarily switch to FBM to keep ads serving",
+        "Listing suppressed (search)":     "Open Seller Central → Inventory → Manage All Inventory → Search Suppressed to see Amazon's exact fix",
+        "Listing inactive":                "Reactivate in Seller Central; confirm inventory is available and listing isn't policy-blocked",
+        "Restricted category (no ads)":    "This category is ineligible for Sponsored Products per Amazon policy — exclude from ad campaigns",
+        "Price above Buy Box (>10%)":      "Lower your price to within 10% of the current Buy Box price to regain eligibility",
+        "Low inventory (at-risk)":         "Replenish soon — inventory <5 units typically flips to OOS within days",
+        "Content weak for ads (score <70)":"Improve title/bullets/images/description (see Hygiene issues for this ASIN)",
+        "Missing main image (no ads)":     "Upload a compliant main image (white background, 1000px+, product fills frame)",
+    }
+    return fixes.get(issue, "Review and fix this field")
+
+
 def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
     """
     Full catalog health analysis. Returns structured result dict.
@@ -6696,6 +6871,11 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
     
     score_dist = {"green": 0, "yellow": 0, "orange": 0, "red": 0}
     
+    # Ad Readiness aggregators
+    elig_dist      = {"eligible": 0, "at_risk": 0, "ineligible": 0}
+    elig_by_reason = {}          # reason -> {"asins": set, "categories": Counter, "revenue": 0.0}
+    elig_by_cat    = {}          # category -> {"eligible":0,"at_risk":0,"ineligible":0,"total":0}
+    
     for i, row in enumerate(rows):
         asin = get(row, "asin") or get(row, "sku") or f"row_{i}"
         title = get(row, "title")
@@ -6715,6 +6895,18 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
         content_score, content_issues = score_content(row, detected_fields)
         color = score_color(content_score)
         score_dist[color] += 1
+        
+        # ── Ad Readiness (Tier 1 proxy) ─────────────────────────────────
+        elig_status, elig_reasons = _eligibility_for_row(row, detected_fields, content_score)
+        elig_dist[elig_status] += 1
+        cat_key = category or "(Uncategorized)"
+        ecat = elig_by_cat.setdefault(cat_key, {"eligible": 0, "at_risk": 0, "ineligible": 0, "total": 0})
+        ecat[elig_status] += 1
+        ecat["total"] += 1
+        for reason in elig_reasons:
+            slot = elig_by_reason.setdefault(reason, {"asins": set(), "categories": {}, "revenue": 0.0})
+            slot["asins"].add(asin)
+            slot["categories"][cat_key] = slot["categories"].get(cat_key, 0) + 1
         
         structural_issues = []
         
@@ -6777,7 +6969,12 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
                 if sibling_rev:
                     rev_impact = sum(sibling_rev) / len(sibling_rev)
         
-        all_issues = structural_issues + content_issues + revenue_issues
+        # Attribute sibling-revenue estimate to blocking Ad Readiness reasons
+        for reason in elig_reasons:
+            if reason in AD_BLOCKING_ISSUES:
+                elig_by_reason[reason]["revenue"] += rev_impact
+        
+        all_issues = structural_issues + content_issues + revenue_issues + elig_reasons
         
         row_result = {
             "asin": asin,
@@ -6791,6 +6988,8 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
             "parent_child": pc,
             "issues": all_issues,
             "revenue_impact": round(rev_impact, 2),
+            "ad_status": elig_status,
+            "ad_reasons": elig_reasons,
         }
         
         # Compute priority score for each issue
@@ -6808,7 +7007,10 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
                 "severity_label": _severity_label(severity),
                 "revenue_impact": round(rev_impact, 2),
                 "content_score": content_score,
-                "fix_action": _fix_action(issue),
+                "fix_action": (_eligibility_fix_action(issue)
+                               if issue in AD_READINESS_ISSUES
+                               else _fix_action(issue)),
+                "group": "ad_readiness" if issue in AD_READINESS_ISSUES else "hygiene",
             })
         
         scored_rows.append(row_result)
@@ -6899,6 +7101,63 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
     
     state["progress"] = {"status": "done", "processed": total, "total": total, "message": "Analysis complete"}
     
+    # ── Ad Readiness summary ────────────────────────────────────────────────
+    ad_ineligible_revenue = sum(s["revenue"] for s in elig_by_reason.values())
+    fast_fix_reasons = {
+        "Listing suppressed (search)",
+        "Listing inactive",
+        "Missing main image (no ads)",
+        "Price above Buy Box (>10%)",
+    }
+    fast_fix_asins = set()
+    for r in fast_fix_reasons:
+        if r in elig_by_reason:
+            fast_fix_asins.update(elig_by_reason[r]["asins"])
+    
+    reasons_summary = []
+    for reason, slot in elig_by_reason.items():
+        top_cat = max(slot["categories"].items(), key=lambda x: x[1]) if slot["categories"] else ("", 0)
+        reasons_summary.append({
+            "reason":      reason,
+            "asin_count":  len(slot["asins"]),
+            "top_category": top_cat[0],
+            "top_category_count": top_cat[1],
+            "revenue_at_risk": round(slot["revenue"], 2),
+            "fix_action": _eligibility_fix_action(reason),
+            "severity":   SEVERITY_WEIGHTS.get(reason, 5),
+            "blocking":   reason in AD_BLOCKING_ISSUES,
+        })
+    reasons_summary.sort(key=lambda x: (-x["asin_count"], -x["severity"]))
+    
+    # Category-level breakdown (sorted by ineligible count desc)
+    categories_list = []
+    for cat, stats in elig_by_cat.items():
+        pct = (stats["eligible"] / stats["total"] * 100) if stats["total"] else 0
+        categories_list.append({
+            "category":    cat,
+            "total":       stats["total"],
+            "eligible":    stats["eligible"],
+            "at_risk":     stats["at_risk"],
+            "ineligible":  stats["ineligible"],
+            "eligible_pct": round(pct, 1),
+        })
+    categories_list.sort(key=lambda x: (-x["ineligible"], -x["at_risk"]))
+    
+    eligibility_summary = {
+        "total":         total,
+        "eligible":      elig_dist["eligible"],
+        "at_risk":       elig_dist["at_risk"],
+        "ineligible":    elig_dist["ineligible"],
+        "eligible_pct":  round(elig_dist["eligible"] / max(1, total) * 100, 1),
+        "at_risk_pct":   round(elig_dist["at_risk"]  / max(1, total) * 100, 1),
+        "ineligible_pct":round(elig_dist["ineligible"]/ max(1, total) * 100, 1),
+        "revenue_at_risk":    round(ad_ineligible_revenue, 2),
+        "fast_fix_count":     len(fast_fix_asins),
+        "reasons":            reasons_summary,
+        "categories":         categories_list,
+        "ground_truth":       False,  # becomes True when an ad-bulksheet is uploaded (Tier 2)
+    }
+    
     return {
         "summary": {
             "total_asins": total,
@@ -6913,6 +7172,7 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
             "categories": sorted(categories_seen),
             "subcategories": sorted(subcategories_seen),
         },
+        "eligibility":       eligibility_summary,
         "issues": issues_list[:5000],  # cap for response size
         "scored_rows": scored_rows[:5000],
         "variation_matrix": variation_matrix,
