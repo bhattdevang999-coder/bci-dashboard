@@ -3620,6 +3620,25 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
             Needs columns: ASIN, Sessions (or Glance Views), Units Ordered, Revenue.
           </div>
         </div>
+
+        <!-- Ad Bulksheet Upload (Tier-2 ground truth) -->
+        <div>
+          <div class="form-label">Ad Eligibility Bulksheet <span class="optional-tag">Ground Truth</span></div>
+          <div class="upload-zone" id="ch-adbulk-zone">
+            <input type="file" id="ch-adbulk-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadAdBulksheet(this.files)">
+            <div class="upload-zone-icon">📡</div>
+            <div class="upload-zone-text"><strong>Click to upload</strong> or drag &amp; drop</div>
+            <div class="upload-zone-hint">Sponsored Products bulksheet — flips PROXY → GROUND TRUTH</div>
+          </div>
+          <div id="ch-adbulk-status" class="hidden mt-8">
+            <div class="upload-success"><span>✓</span><span id="ch-adbulk-status-msg"></span></div>
+          </div>
+          <span class="ch-help-toggle" onclick="toggleChHelp('ch-help-adbulk')">What report is this? Where to download it?</span>
+          <div id="ch-help-adbulk" class="ch-help-content">
+            <strong>Advertising Console:</strong> Bulk operations &gt; Create bulk download &gt; Sponsored Products &gt; check <em>Include ASIN eligibility status</em> &gt; Download.<br>
+            Needs columns: Advertised ASIN, Eligibility Status, Eligibility Reasons.
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3709,6 +3728,16 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
           <div style="font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:10px;">Eligibility by Category</div>
           <div id="ch-adready-cat-bars" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
+        <!-- Reconciliation (only shown when bulksheet uploaded) -->
+        <div id="ch-adready-reconciliation" class="hidden" style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+          <div style="font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+            Predicted vs Actual — proxy calibration
+            <span id="ch-recon-accuracy-pill" style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;background:#E6F4EA;color:#1A7A50;border:1px solid #1A7A50;">—% accurate</span>
+          </div>
+          <div class="ch-stats-grid" id="ch-recon-stats"></div>
+          <div id="ch-recon-mismatches" style="margin-top:16px;"></div>
         </div>
       </div>
     </div>
@@ -7298,6 +7327,26 @@ async function chUploadSales(files) {
   }
 }
 
+async function chUploadAdBulksheet(files) {
+  if (!files || !files[0]) return;
+  const file = files[0];
+  const fd = new FormData();
+  fd.append('file', file);
+  showToast('Uploading Ad Eligibility bulksheet...', 'info');
+  try {
+    const res = await fetch('/api/catalog/upload-ad-bulksheet', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+    document.getElementById('ch-adbulk-status').classList.remove('hidden');
+    document.getElementById('ch-adbulk-status-msg').textContent =
+      `${file.name} — ${data.rows.toLocaleString()} ASINs loaded (${data.ineligible.toLocaleString()} ineligible, ${data.eligible.toLocaleString()} eligible)`;
+    showToast('Ground truth loaded. Flipping proxy → Amazon-verified...', 'success');
+    chStartPolling();
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
 // ── Show Detection Summary ──────────────────────────────────────
 function chShowDetection(data) {
   const card = document.getElementById('ch-detection-card');
@@ -7465,6 +7514,72 @@ function chRenderAdReadiness(elig) {
         <td style="font-size:12px;color:var(--text-sec);">${chEscapeHtml(r.fix_action)}</td>
       </tr>
     `).join('');
+  }
+
+  // ── Reconciliation (Tier-2 only) ────────────────────────────────────
+  const reconSection = document.getElementById('ch-adready-reconciliation');
+  const rec = elig.reconciliation;
+  if (rec) {
+    reconSection.classList.remove('hidden');
+    // Accuracy pill color
+    const pill = document.getElementById('ch-recon-accuracy-pill');
+    pill.textContent = `${rec.accuracy}% accurate`;
+    if (rec.accuracy >= 90) {
+      pill.style.background='#E6F4EA'; pill.style.color='#1A7A50'; pill.style.borderColor='#1A7A50';
+    } else if (rec.accuracy >= 75) {
+      pill.style.background='#FFF3E0'; pill.style.color='#C0651B'; pill.style.borderColor='#F4B860';
+    } else {
+      pill.style.background='#FADBD8'; pill.style.color='#C0392B'; pill.style.borderColor='#C0392B';
+    }
+    const reconStats = [
+      { label: 'Matched', val: rec.matched.toLocaleString(), sub: 'in both', cls: '' },
+      { label: 'True Positives', val: rec.true_positives.toLocaleString(), sub: 'we caught', cls: 'success' },
+      { label: 'False Positives', val: rec.false_positives.toLocaleString(), sub: 'over-flagged', cls: rec.false_positives > 0 ? 'warn' : '' },
+      { label: 'False Negatives', val: rec.false_negatives.toLocaleString(), sub: 'we missed', cls: rec.false_negatives > 0 ? 'error' : '' },
+      { label: 'Catalog-only', val: rec.catalog_only.toLocaleString(), sub: 'not in ads', cls: '' },
+      { label: 'Bulksheet-only', val: rec.bulksheet_only.toLocaleString(), sub: 'not in catalog', cls: '' },
+    ];
+    document.getElementById('ch-recon-stats').innerHTML = reconStats.map(c => `
+      <div class="stat-card">
+        <div class="stat-num ${c.cls}">${c.val}</div>
+        <div class="stat-label">${c.label}</div>
+        ${c.sub ? `<div style="font-size:11px;color:var(--text-sec);margin-top:2px;">${c.sub}</div>` : ''}
+      </div>
+    `).join('');
+
+    const mm = rec.mismatch_examples || [];
+    const mmEl = document.getElementById('ch-recon-mismatches');
+    if (mm.length === 0) {
+      mmEl.innerHTML = '<div style="font-size:13px;color:var(--text-sec);padding:10px 0;">No mismatches in the matched set — the proxy agrees with Amazon on every ASIN.</div>';
+    } else {
+      mmEl.innerHTML = `
+        <div style="font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:8px;">Mismatches <span style="font-weight:400;color:var(--text-sec);">(proxy disagrees with Amazon)</span></div>
+        <div class="table-wrap" style="border-radius:8px;">
+          <table class="ch-issues-table">
+            <thead><tr>
+              <th style="width:60px;">Kind</th>
+              <th>ASIN</th>
+              <th>Title</th>
+              <th>Our Proxy Said</th>
+              <th>Amazon Says</th>
+            </tr></thead>
+            <tbody>
+              ${mm.map(m => `
+                <tr>
+                  <td><span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;background:${m.kind === 'false_positive' ? '#FFF3E0;color:#C0651B' : '#FADBD8;color:#C0392B'};">${m.kind === 'false_positive' ? 'FP' : 'FN'}</span></td>
+                  <td style="font-family:monospace;font-size:12px;">${chEscapeHtml(m.asin)}</td>
+                  <td style="font-size:12px;">${chEscapeHtml(m.title || '')}</td>
+                  <td style="font-size:12px;color:var(--text-sec);">Ineligible: ${chEscapeHtml((m.proxy_reasons || []).join(', ') || '—')}</td>
+                  <td style="font-size:12px;color:var(--text-sec);">${m.actual_status === 'ineligible' ? 'Ineligible: ' + chEscapeHtml((m.actual_reasons || []).join(', ') || '—') : 'Eligible'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+  } else {
+    reconSection.classList.add('hidden');
   }
 
   const cats = elig.categories || [];
@@ -7733,6 +7848,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   setupDZ('ch-catalog-zone', 'ch-catalog-input', chUploadCatalog);
   setupDZ('ch-sales-zone',   'ch-sales-input',   chUploadSales);
+  setupDZ('ch-adbulk-zone',  'ch-adbulk-input',  chUploadAdBulksheet);
 });
 
 

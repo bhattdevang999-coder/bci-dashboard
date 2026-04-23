@@ -6398,6 +6398,117 @@ RESTRICTED_AD_CATEGORIES = {
     "prescription", "rx",
 }
 
+# ── Ad Bulksheet (Tier-2 ground truth) ────────────────────────────────────────────────
+# Amazon Advertising Console → Bulk Operations → Sponsored Products bulksheet.
+# The bulksheet uses verbose column names; we fuzzy-match the essential ones.
+AD_BULKSHEET_FIELD_MAP = {
+    "asin":         ["advertised asin", "asin", "child asin", "sku asin"],
+    "sku":          ["advertised sku", "sku"],
+    "status":       ["eligibility status", "asin eligibility status", "status"],
+    "reasons":      ["eligibility reasons", "eligibility reason", "reason"],
+    "ad_type":      ["ad type", "campaign type", "product type"],
+    "campaign":     ["campaign name", "campaign"],
+}
+
+# Amazon's internal reason codes → our SEVERITY_WEIGHTS keys so the ground
+# truth reconciles cleanly against our proxy output.
+AMAZON_REASON_CODE_MAP = {
+    # Buy Box / offer
+    "asin_not_buyable":           "Lost Buy Box",
+    "not_buyable":                "Lost Buy Box",
+    "asin_not_featured_offer":    "Lost Buy Box",
+    "not_featured_offer":         "Lost Buy Box",
+    "featured_offer_ineligible":  "Lost Buy Box",
+    "buy_box_suppressed":         "Lost Buy Box",
+    # Inventory
+    "out_of_stock":               "Out of stock",
+    "no_inventory":               "Out of stock",
+    "asin_not_available":         "Out of stock",
+    # Suppression / listing status
+    "search_suppressed":          "Listing suppressed (search)",
+    "listing_suppressed":         "Listing suppressed (search)",
+    "suppressed":                 "Listing suppressed (search)",
+    "asin_inactive":              "Listing inactive",
+    "inactive":                   "Listing inactive",
+    # Policy / category
+    "ad_policy_violation":        "Restricted category (no ads)",
+    "restricted_category":        "Restricted category (no ads)",
+    "category_ineligible":        "Restricted category (no ads)",
+    "adult_product":              "Restricted category (no ads)",
+    "book_format_ineligible":     "Restricted category (no ads)",
+    # Pricing
+    "price_not_competitive":      "Price above Buy Box (>10%)",
+    "external_price_reference":   "Price above Buy Box (>10%)",
+    # Content
+    "missing_main_image":         "Missing main image (no ads)",
+    "image_missing":              "Missing main image (no ads)",
+}
+
+def _normalize_ad_reason(raw):
+    """Convert one Amazon reason code/phrase into our canonical reason label.
+    Returns None when the phrase doesn't map (caller should keep the raw
+    code as an informational note)."""
+    if not raw:
+        return None
+    t = str(raw).strip().lower().replace(" ", "_").replace("-", "_")
+    # Exact match first
+    if t in AMAZON_REASON_CODE_MAP:
+        return AMAZON_REASON_CODE_MAP[t]
+    # Substring match (bulksheet sometimes wraps codes in explanatory text)
+    for code, label in AMAZON_REASON_CODE_MAP.items():
+        if code in t:
+            return label
+    return None
+
+
+def _parse_ad_bulksheet(rows, headers):
+    """Turn an uploaded bulksheet into a per-ASIN ground-truth lookup.
+
+    Returns {asin: {"status": "eligible"|"ineligible", "raw_reasons": [str],
+                    "reasons": [canonical labels]}}
+    """
+    fields = detect_columns(headers, AD_BULKSHEET_FIELD_MAP)
+    asin_col    = fields.get("asin")
+    status_col  = fields.get("status")
+    reason_col  = fields.get("reasons")
+
+    lookup = {}
+    for r in rows:
+        asin = str(r.get(asin_col, "")).strip() if asin_col else ""
+        if not asin:
+            continue
+        status_raw = str(r.get(status_col, "")).strip().lower() if status_col else ""
+        reason_raw = str(r.get(reason_col, "")).strip() if reason_col else ""
+
+        # Normalize status. Anything except explicit "eligible" is treated
+        # as ineligible so we're conservative.
+        if status_raw in ("eligible", "active", "ok", "serving"):
+            status = "eligible"
+        elif status_raw in ("ineligible", "blocked", "not_eligible", "paused", "not eligible"):
+            status = "ineligible"
+        else:
+            # When status column is missing, infer from reasons: any reason = ineligible
+            status = "ineligible" if reason_raw else "eligible"
+
+        raw_list = []
+        canon = []
+        if reason_raw:
+            for piece in reason_raw.replace(";", "|").replace(",", "|").split("|"):
+                piece = piece.strip()
+                if not piece:
+                    continue
+                raw_list.append(piece)
+                mapped = _normalize_ad_reason(piece)
+                if mapped and mapped not in canon:
+                    canon.append(mapped)
+
+        lookup[asin] = {
+            "status":      status,
+            "raw_reasons": raw_list,
+            "reasons":     canon,
+        }
+    return lookup, fields
+
 
 def _norm(s):
     """Normalize a column header for fuzzy matching."""
@@ -6823,10 +6934,16 @@ def _eligibility_fix_action(issue):
     return fixes.get(issue, "Review and fix this field")
 
 
-def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
+def run_catalog_analysis(rows, detected_fields, sales_lookup=None, ad_truth_lookup=None):
     """
     Full catalog health analysis. Returns structured result dict.
     Progress is updated via catalog_health_state["progress"].
+
+    ad_truth_lookup (optional): {asin: {"status": "eligible"|"ineligible",
+                                        "reasons": [canonical labels],
+                                        "raw_reasons": [str]}}
+    When supplied, Amazon's ground-truth flag overrides the proxy for each
+    matched ASIN, and a reconciliation block is included in the response.
     """
     state = catalog_health_state
 
@@ -6897,7 +7014,31 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
         score_dist[color] += 1
         
         # ── Ad Readiness (Tier 1 proxy) ─────────────────────────────────
-        elig_status, elig_reasons = _eligibility_for_row(row, detected_fields, content_score)
+        proxy_status, proxy_reasons = _eligibility_for_row(row, detected_fields, content_score)
+        elig_status = proxy_status
+        elig_reasons = list(proxy_reasons)
+        elig_source = "proxy"
+        elig_raw_codes = []
+
+        # ── Tier-2 ground truth override ────────────────────────────────
+        if ad_truth_lookup and asin in ad_truth_lookup:
+            truth = ad_truth_lookup[asin]
+            # Amazon's flag wins
+            elig_status = "ineligible" if truth["status"] == "ineligible" else "eligible"
+            # Merge canonical reasons Amazon reported. Keep any at-risk hints
+            # from the proxy that Amazon doesn't surface (e.g. low inventory).
+            elig_reasons = list(truth["reasons"])
+            for pr in proxy_reasons:
+                if pr not in elig_reasons and pr not in AD_BLOCKING_ISSUES:
+                    elig_reasons.append(pr)
+            elig_source = "actual"
+            elig_raw_codes = truth["raw_reasons"]
+        elif ad_truth_lookup:
+            # Bulksheet uploaded but ASIN not present = Amazon likely hasn't
+            # encountered it (not in any campaign). Fall back to proxy but
+            # mark it so the UI can signal "Amazon hasn't ruled on this one".
+            elig_source = "proxy_only_not_in_bulksheet"
+
         elig_dist[elig_status] += 1
         cat_key = category or "(Uncategorized)"
         ecat = elig_by_cat.setdefault(cat_key, {"eligible": 0, "at_risk": 0, "ineligible": 0, "total": 0})
@@ -6990,6 +7131,10 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
             "revenue_impact": round(rev_impact, 2),
             "ad_status": elig_status,
             "ad_reasons": elig_reasons,
+            "ad_source":  elig_source,   # "proxy" | "actual" | "proxy_only_not_in_bulksheet"
+            "ad_raw_codes": elig_raw_codes,
+            "ad_proxy_status":  proxy_status,
+            "ad_proxy_reasons": proxy_reasons,
         }
         
         # Compute priority score for each issue
@@ -7155,8 +7300,74 @@ def run_catalog_analysis(rows, detected_fields, sales_lookup=None):
         "fast_fix_count":     len(fast_fix_asins),
         "reasons":            reasons_summary,
         "categories":         categories_list,
-        "ground_truth":       False,  # becomes True when an ad-bulksheet is uploaded (Tier 2)
+        "ground_truth":       ad_truth_lookup is not None,
     }
+
+    # ── Reconciliation (only when ground-truth bulksheet was supplied) ──────────
+    if ad_truth_lookup:
+        catalog_asins = {r["asin"] for r in scored_rows}
+        bulksheet_asins = set(ad_truth_lookup.keys())
+        matched_asins = catalog_asins & bulksheet_asins
+
+        tp = 0   # proxy said ineligible AND Amazon says ineligible
+        tn = 0   # proxy said eligible/at_risk AND Amazon says eligible
+        fp = 0   # proxy said ineligible BUT Amazon says eligible
+        fn = 0   # proxy said eligible/at_risk BUT Amazon says ineligible
+        mismatch_examples = []
+
+        for r in scored_rows:
+            if r["asin"] not in ad_truth_lookup:
+                continue
+            truth = ad_truth_lookup[r["asin"]]
+            proxy_ineligible = r["ad_proxy_status"] == "ineligible"
+            actual_ineligible = truth["status"] == "ineligible"
+            if proxy_ineligible and actual_ineligible:
+                tp += 1
+            elif not proxy_ineligible and not actual_ineligible:
+                tn += 1
+            elif proxy_ineligible and not actual_ineligible:
+                fp += 1
+                if len(mismatch_examples) < 20:
+                    mismatch_examples.append({
+                        "asin": r["asin"],
+                        "title": r["title"],
+                        "kind": "false_positive",
+                        "proxy_reasons": r["ad_proxy_reasons"],
+                        "actual_status": "eligible",
+                        "actual_reasons": [],
+                    })
+            else:  # fn
+                fn += 1
+                if len(mismatch_examples) < 20:
+                    mismatch_examples.append({
+                        "asin": r["asin"],
+                        "title": r["title"],
+                        "kind": "false_negative",
+                        "proxy_reasons": r["ad_proxy_reasons"],
+                        "actual_status": "ineligible",
+                        "actual_reasons": truth["reasons"] or truth["raw_reasons"],
+                    })
+
+        matched = len(matched_asins)
+        accuracy = round((tp + tn) / max(1, matched) * 100, 1) if matched else 0.0
+        precision = round(tp / max(1, tp + fp) * 100, 1) if (tp + fp) else 0.0
+        recall    = round(tp / max(1, tp + fn) * 100, 1) if (tp + fn) else 0.0
+
+        eligibility_summary["reconciliation"] = {
+            "bulksheet_rows":      len(ad_truth_lookup),
+            "catalog_rows":        len(catalog_asins),
+            "matched":             matched,
+            "catalog_only":        len(catalog_asins - bulksheet_asins),
+            "bulksheet_only":      len(bulksheet_asins - catalog_asins),
+            "true_positives":      tp,
+            "true_negatives":      tn,
+            "false_positives":     fp,
+            "false_negatives":     fn,
+            "accuracy":            accuracy,
+            "precision":           precision,
+            "recall":              recall,
+            "mismatch_examples":   mismatch_examples,
+        }
     
     return {
         "summary": {
@@ -7250,9 +7461,10 @@ def catalog_upload_catalog():
                 col = sales_fields.get(field)
                 return str(row.get(col, "")).strip() if col else ""
             sales_lookup = {sg(r, "asin"): r for r in sales_data if sg(r, "asin")}
+        ad_truth_lookup = catalog_health_state.get("ad_truth_lookup")
         
         def run_analysis():
-            result = run_catalog_analysis(rows, detected_fields, sales_lookup)
+            result = run_catalog_analysis(rows, detected_fields, sales_lookup, ad_truth_lookup)
             with catalog_health_lock:
                 catalog_health_state["analysis"] = result
         
@@ -7272,6 +7484,73 @@ def catalog_upload_catalog():
     
     except Exception as e:
         return jsonify({"error": f"Failed to parse file: {str(e)}"}), 500
+
+
+@app.route("/api/catalog/upload-ad-bulksheet", methods=["POST"])
+def catalog_upload_ad_bulksheet():
+    """Tier-2 ground truth: Amazon Advertising Console SP bulksheet with
+    `Eligibility Status` and `Eligibility Reasons` columns. When uploaded,
+    Amazon's flag overrides the proxy per ASIN and the analysis includes a
+    reconciliation block."""
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    f = request.files["file"]
+    if not f.filename:
+        return jsonify({"error": "Empty filename"}), 400
+
+    try:
+        rows, headers = read_file_to_rows(f)
+        ad_truth_lookup, fields = _parse_ad_bulksheet(rows, headers)
+
+        if not fields.get("asin"):
+            return jsonify({
+                "error": "Could not find an ASIN column. Expected one of: Advertised ASIN, ASIN, Child ASIN."
+            }), 400
+        if not (fields.get("status") or fields.get("reasons")):
+            return jsonify({
+                "error": "Could not find an Eligibility Status or Eligibility Reasons column. Make sure you downloaded the bulksheet with 'ASIN eligibility status' enabled."
+            }), 400
+
+        # Quick counts for the response
+        total_in = len(ad_truth_lookup)
+        ineligible_in = sum(1 for v in ad_truth_lookup.values() if v["status"] == "ineligible")
+
+        with catalog_health_lock:
+            catalog_health_state["ad_bulksheet_rows"] = rows
+            catalog_health_state["ad_bulksheet_fields"] = fields
+            catalog_health_state["ad_truth_lookup"] = ad_truth_lookup
+
+        # Re-run analysis if catalog is already loaded so the UI flips to ground truth
+        if catalog_health_state.get("catalog_data"):
+            catalog_rows  = catalog_health_state["catalog_data"]
+            detected_fields = catalog_health_state["detected_fields"]
+            sales_lookup = None
+            if catalog_health_state.get("sales_data"):
+                sales_data = catalog_health_state["sales_data"]
+                sales_fields = catalog_health_state.get("sales_fields", {})
+                def sg(row, field):
+                    col = sales_fields.get(field)
+                    return str(row.get(col, "")).strip() if col else ""
+                sales_lookup = {sg(r, "asin"): r for r in sales_data if sg(r, "asin")}
+
+            def run_analysis():
+                result = run_catalog_analysis(catalog_rows, detected_fields, sales_lookup, ad_truth_lookup)
+                with catalog_health_lock:
+                    catalog_health_state["analysis"] = result
+            threading.Thread(target=run_analysis, daemon=True).start()
+
+        return jsonify({
+            "ok": True,
+            "rows": total_in,
+            "ineligible": ineligible_in,
+            "eligible":   total_in - ineligible_in,
+            "fields":     list(fields.keys()),
+            "detection_summary": f"Loaded {total_in} ASINs from Ad Bulksheet ({ineligible_in} ineligible, {total_in - ineligible_in} eligible)."
+        })
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to parse bulksheet: {str(e)}"}), 500
 
 
 @app.route("/api/catalog/upload-sales", methods=["POST"])
@@ -7301,9 +7580,10 @@ def catalog_upload_sales():
         if catalog_health_state.get("catalog_data"):
             catalog_rows = catalog_health_state["catalog_data"]
             detected_fields = catalog_health_state["detected_fields"]
+            ad_truth_lookup = catalog_health_state.get("ad_truth_lookup")
             
             def run_analysis():
-                result = run_catalog_analysis(catalog_rows, detected_fields, sales_lookup)
+                result = run_catalog_analysis(catalog_rows, detected_fields, sales_lookup, ad_truth_lookup)
                 with catalog_health_lock:
                     catalog_health_state["analysis"] = result
             

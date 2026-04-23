@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-04-23 — Step C: Tier-2 Ground Truth (v0.5.0)
+
+Adds a third upload slot for Amazon's Sponsored Products bulksheet. When present, Amazon's flag overrides the Ad Readiness proxy per ASIN, the PROXY badge flips to GROUND TRUTH, and a full predicted-vs-actual reconciliation is rendered.
+
+### Backend (`app.py`)
+- `AD_BULKSHEET_FIELD_MAP` with fuzzy aliases for Advertising Console columns (Advertised ASIN, Eligibility Status, Eligibility Reasons, Campaign Name, etc.)
+- `AMAZON_REASON_CODE_MAP` maps 19 Amazon reason codes (ASIN_NOT_BUYABLE, NOT_FEATURED_OFFER, OUT_OF_STOCK, SEARCH_SUPPRESSED, AD_POLICY_VIOLATION, BOOK_FORMAT_INELIGIBLE, PRICE_NOT_COMPETITIVE, etc.) onto our canonical severity labels for clean reconciliation.
+- `_normalize_ad_reason()` — exact + substring matching, tolerates Amazon's occasional wrapped-in-prose reason text.
+- `_parse_ad_bulksheet(rows, headers)` — returns `{asin: {status, raw_reasons, reasons}}`. Splits multi-reason cells on `;`, `|`, `,`. Infers status from reasons when status column is missing.
+- `run_catalog_analysis()` now accepts `ad_truth_lookup`. When supplied:
+  - Amazon's flag overrides the proxy per matched ASIN; proxy at-risk hints preserved as additional context.
+  - Each scored row gets `ad_source` (`proxy` / `actual` / `proxy_only_not_in_bulksheet`) + `ad_raw_codes` + `ad_proxy_status` + `ad_proxy_reasons` for transparency.
+  - `eligibility.ground_truth` flips to `true`.
+  - `eligibility.reconciliation` block added: matched / catalog_only / bulksheet_only, TP/TN/FP/FN, accuracy, precision, recall, and up to 20 mismatch examples with both sides' reasons.
+- New endpoint: `POST /api/catalog/upload-ad-bulksheet` (parses bulksheet, stores lookup, re-runs analysis with ground truth).
+- Existing `upload-catalog` and `upload-sales` endpoints now pick up `ad_truth_lookup` from session state if present.
+
+### Frontend (`templates/index.html`)
+- Third upload zone "Ad Eligibility Bulksheet" (Ground Truth tag) alongside Catalog + Sales, with help text explaining exactly where to download it in Advertising Console.
+- `chUploadAdBulksheet()` wired into drag-and-drop and file-input handlers.
+- Ad Readiness badge auto-flips **PROXY** → **GROUND TRUTH** (caption text updates too) when the response's `ground_truth` flag is true.
+- New **Predicted vs Actual — proxy calibration** panel inside the Ad Readiness card. Only shown when a bulksheet is uploaded.
+  - Color-coded accuracy pill (green ≥90%, amber 75-89%, red <75%).
+  - 6 stat cards: Matched / True Positives / False Positives / False Negatives / Catalog-only / Bulksheet-only.
+  - Mismatches table with per-ASIN side-by-side reasons (FP vs FN labels).
+
+### QA (populated fixture)
+- `TLG_Ad_Bulksheet_test.xlsx` fixture — 18 rows: 5 proxy-confirms-Amazon agreements, 9 both-eligible agreements, 1 intentional false positive (B0BADCONTENT: proxy flagged missing image, Amazon says eligible), 1 intentional false negative seeded but out-of-catalog, 2 bulksheet-only ASINs (not in catalog).
+- End-to-end upload through the dashboard:
+  - Badge flipped to GROUND TRUTH; caption read "Calibrated against Amazon Advertising Console bulksheet."
+  - Stats: eligible 13 / at_risk 25 / ineligible 5 (down from proxy's 3/34/6 because Amazon confirmed one proxy call was wrong).
+  - Reconciliation: **93.3% accuracy**, precision 83.3%, recall 100%. Matched 15, TP 5, FP 1, FN 0, catalog-only 28, bulksheet-only 3.
+  - Mismatch table shows B0BADCONTENT as FP with both sides' reasons side by side.
+
+Regression: NIS + Phase 2 taxonomy still 100% clean (59 styles, 13 buckets, 0 errors).
+
+### Files touched
+- `app.py` — +~200 lines: bulksheet field map + reason-code map, `_normalize_ad_reason`, `_parse_ad_bulksheet`, new `/api/catalog/upload-ad-bulksheet` endpoint, `ad_truth_lookup` parameter on `run_catalog_analysis`, per-row override logic, reconciliation computation, session-state plumbing through existing upload endpoints.
+- `templates/index.html` — +~110 lines: third upload zone, `chUploadAdBulksheet`, reconciliation panel rendering with accuracy pill, stat cards, and mismatch table.
+
+---
+
 ## 2026-04-23 — Ad Readiness (v0.4.0)
 
 Extends Catalog Health with a PPC eligibility audit. Predicts which ASINs Amazon would block from Sponsored Products, groups them by root cause, and gives per-reason fix actions. Ships as a new section inside the existing Catalog Health page — no new uploads, no new pages.
