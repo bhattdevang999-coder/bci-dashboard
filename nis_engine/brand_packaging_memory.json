@@ -1,18 +1,6 @@
 {
   "_comment": "Operator-confirmed package dimensions per (brand, product_type, sub_class). Saved once, reused forever. Keyed as '<brand>|<product_type>|<sub_class>' (case-insensitive, spaces preserved).",
   "_version": 1,
-  "_updated_at": "2026-04-30T17:53:28.868765Z",
-  "entries": {
-    "Sage Collective|COAT|Puffer": {
-      "item_package_dimensions#1.length.value": "30",
-      "item_package_dimensions#1.length.unit": "inches",
-      "item_package_dimensions#1.width.value": "24",
-      "item_package_dimensions#1.width.unit": "inches",
-      "item_package_dimensions#1.height.value": "4",
-      "item_package_dimensions#1.height.unit": "inches",
-      "item_package_weight#1.value": "3",
-      "item_package_weight#1.unit": "pounds",
-      "_updated_at": "2026-04-30T17:53:28.868748Z"
-    }
-  }
+  "_updated_at": "",
+  "entries": {}
 }

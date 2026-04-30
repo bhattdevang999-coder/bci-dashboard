@@ -4129,9 +4129,16 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         </div>
         <div id="engine-coverage" style="flex:1; min-width:280px; font-size:13px; color:#444;"></div>
         <div style="display:flex; gap:8px;">
+          <label class="btn btn-primary btn-sm" style="cursor:pointer;">
+            ↑ Import Pre-Upload
+            <input type="file" accept=".xlsx,.xlsm" onchange="engineImportPreupload(this)" style="display:none;"/>
+          </label>
           <button class="btn btn-secondary btn-sm" onclick="engineRebuild()" title="Re-extract rules from all .xlsm templates in uploads/templates/">↻ Rebuild from templates</button>
         </div>
       </div>
+
+      <!-- Pre-Upload import results panel (hidden until an import runs) -->
+      <div id="engine-preupload-results" style="display:none; background:#fff; border:1px solid #e6e6ea; border-radius:10px; padding:16px; margin-bottom:16px;"></div>
 
       <!-- Form state entry panel -->
       <div style="background:#fff; border:1px solid #e6e6ea; border-radius:10px; padding:16px; margin-bottom:16px;">
@@ -4496,6 +4503,181 @@ async function engineOverride(col) {
   } catch (e) {
     alert('Override failed: ' + e.message);
   }
+}
+
+// ════════════════════════ PRE-UPLOAD IMPORT ════════════════════════
+async function engineImportPreupload(fileInput) {
+  const file = fileInput.files && fileInput.files[0];
+  if (!file) return;
+  const resultsEl = document.getElementById('engine-preupload-results');
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<em style="color:#666;">Parsing \u201c' + file.name + '\u201d\u2026</em>';
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch('/api/rule-engine/import-preupload', { method: 'POST', body: fd }).then(r => r.json());
+    if (!r.ok) throw new Error(r.error || 'import failed');
+    engineState.preupload = r;
+    engineRenderPreuploadResults(r);
+  } catch (e) {
+    resultsEl.innerHTML = '<span style="color:#c00;">Import failed: ' + e.message + '</span>';
+  }
+  fileInput.value = '';
+}
+
+function engineRenderPreuploadResults(r) {
+  const resultsEl = document.getElementById('engine-preupload-results');
+  const readyPct = r.total_styles ? Math.round(100 * r.ready_to_upload / r.total_styles) : 0;
+  const subClasses = Array.from(new Set(r.styles.map(s => s.sub_class).filter(Boolean))).sort();
+  let html = '';
+  html += '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; margin-bottom:16px;">';
+  html += '  <div>';
+  html += '    <div style="font-size:16px; font-weight:700; margin-bottom:4px;">Pre-Upload: ' + escHtml(r.file) + '</div>';
+  html += '    <div style="font-size:13px; color:#555;">Brand: <strong>' + escHtml(r.brand || '(unknown)') + '</strong> \u00b7 ' + r.total_styles + ' distinct styles</div>';
+  html += '  </div>';
+  html += '  <div style="display:flex; gap:12px;">';
+  html += '    <div style="padding:8px 14px; background:#e7f6ec; color:#1e7a3e; border-radius:8px; font-size:13px;"><strong>' + r.ready_to_upload + '</strong> ready</div>';
+  if (r.needs_attention > 0) html += '    <div style="padding:8px 14px; background:#fdecea; color:#c0392b; border-radius:8px; font-size:13px;"><strong>' + r.needs_attention + '</strong> need attention</div>';
+  html += '    <div style="padding:8px 14px; background:#f1f1f1; color:#333; border-radius:8px; font-size:13px;">' + readyPct + '% ready</div>';
+  html += '  </div>';
+  html += '</div>';
+
+  // Packaging memory section
+  html += '<div style="background:#fafbfc; border:1px solid #e6e6ea; border-radius:8px; padding:12px; margin-bottom:16px;">';
+  html += '  <div style="font-weight:700; font-size:13px; margin-bottom:6px;">Package dimensions \u2014 saved per sub-class for this brand</div>';
+  html += '  <div style="font-size:12px; color:#666; margin-bottom:10px;">Enter once per sub-class. Saved permanently and reused for every future ' + escHtml(r.brand || '') + ' upload.</div>';
+  subClasses.forEach(sc => {
+    html += engineRenderPackagingRow(r.brand, sc);
+  });
+  html += '</div>';
+
+  // Per-style table
+  html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+  html += '  <thead><tr style="background:#f1f5f9; text-align:left;">';
+  html += '    <th style="padding:8px; border-bottom:1px solid #cbd5e1;">Style</th>';
+  html += '    <th style="padding:8px; border-bottom:1px solid #cbd5e1;">Sub-class</th>';
+  html += '    <th style="padding:8px; border-bottom:1px solid #cbd5e1;">UPCs</th>';
+  html += '    <th style="padding:8px; border-bottom:1px solid #cbd5e1;">Colors/Sizes</th>';
+  html += '    <th style="padding:8px; border-bottom:1px solid #cbd5e1;">Engine Verdict</th>';
+  html += '    <th style="padding:8px; border-bottom:1px solid #cbd5e1;">Status</th>';
+  html += '  </tr></thead><tbody>';
+  r.styles.forEach(s => {
+    const ready = s.ready;
+    const statusBadge = ready
+      ? '<span style="padding:3px 8px; background:#e7f6ec; color:#1e7a3e; border-radius:10px; font-weight:600;">\u2713 Ready</span>'
+      : '<span style="padding:3px 8px; background:#fdecea; color:#c0392b; border-radius:10px; font-weight:600;">' + s.hard_missing.length + ' blocker' + (s.hard_missing.length===1?'':'s') + '</span>';
+    const rowBg = ready ? '#ffffff' : '#fffbea';
+    html += '<tr style="background:' + rowBg + '; border-bottom:1px solid #f1f5f9;">';
+    html += '  <td style="padding:8px; vertical-align:top;"><strong>' + escHtml(s.style_id) + '</strong><br/><span style="font-size:11px; color:#666;">' + escHtml((s.name || '').slice(0, 50)) + '</span></td>';
+    html += '  <td style="padding:8px; vertical-align:top;">' + escHtml(s.sub_class || '') + '<br/><span style="font-size:11px; color:#666;">' + escHtml(s.department || '') + '</span></td>';
+    html += '  <td style="padding:8px; vertical-align:top;">' + s.upcs_count + '</td>';
+    html += '  <td style="padding:8px; vertical-align:top; font-size:11px; color:#555;">' + (s.colors || []).length + ' colors \u00d7 ' + (s.sizes || []).length + ' sizes</td>';
+    html += '  <td style="padding:8px; vertical-align:top; font-size:11px;">';
+    html += '<span style="color:#1e7a3e;">' + (s.summary && s.summary.required_ok || 0) + ' OK</span>';
+    if (s.hard_missing.length) html += ' \u00b7 <span style="color:#c0392b;">' + s.hard_missing.length + ' hard</span>';
+    if (s.summary && s.summary.required_missing) html += ' \u00b7 <span style="color:#d68a00;">' + s.summary.required_missing + ' cond</span>';
+    html += '  </td>';
+    html += '  <td style="padding:8px; vertical-align:top;">' + statusBadge;
+    if (!ready) {
+      html += '<div style="font-size:11px; color:#c0392b; margin-top:4px;">Missing: ' + (s.hard_missing || []).slice(0, 2).map(h => escHtml(h)).join(', ') + '</div>';
+    }
+    html += '  </td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  resultsEl.innerHTML = html;
+}
+
+function engineRenderPackagingRow(brand, subClass) {
+  // Check if memory already has an entry
+  const key = 'pkg-' + (subClass || '').replace(/[^a-z0-9]/gi,'_');
+  const saved = (engineState.packagingCache && engineState.packagingCache[brand + '|COAT|' + (subClass || '')]) || null;
+  const vals = saved || {};
+  const dimField = (fk, placeholder, w) =>
+    '<input type="text" data-pkg-key="' + fk + '" value="' + escHtml(vals[fk] || '') + '" placeholder="' + placeholder + '" style="width:' + w + '; font-size:12px; padding:4px 6px; margin:0 4px 0 0;"/>';
+  let html = '<div id="' + key + '" data-sub-class="' + escHtml(subClass || '') + '" style="padding:8px 10px; border-top:1px solid #eee; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">';
+  html += '  <strong style="font-size:12px; min-width:160px;">' + escHtml(subClass || '(all)') + '</strong>';
+  html += '  <span style="font-size:11px; color:#666; min-width:40px;">LxWxH</span>';
+  html += dimField('item_package_dimensions#1.length.value', 'L', '50px');
+  html += dimField('item_package_dimensions#1.width.value',  'W', '50px');
+  html += dimField('item_package_dimensions#1.height.value', 'H', '50px');
+  html += '<select data-pkg-key="item_package_dimensions#1.length.unit" style="font-size:12px; padding:4px 6px;">'
+        + ['inches','centimeters','feet','meters'].map(u => '<option ' + (vals['item_package_dimensions#1.length.unit']===u?'selected':'') + '>' + u + '</option>').join('')
+        + '</select>';
+  html += '  <span style="font-size:11px; color:#666; margin-left:12px;">Weight</span>';
+  html += dimField('item_package_weight#1.value', 'W', '60px');
+  html += '<select data-pkg-key="item_package_weight#1.unit" style="font-size:12px; padding:4px 6px;">'
+        + ['pounds','ounces','kilograms','grams'].map(u => '<option ' + (vals['item_package_weight#1.unit']===u?'selected':'') + '>' + u + '</option>').join('')
+        + '</select>';
+  html += '  <button class="btn btn-primary btn-sm" onclick="engineSavePackaging(\'' + escHtml(brand) + '\', \'' + escHtml(subClass) + '\')" style="margin-left:auto; font-size:11px;">Save & Re-check</button>';
+  html += '  <span id="' + key + '-status" style="font-size:11px; color:#666;">' + (saved ? '\u2713 Saved' : '') + '</span>';
+  html += '</div>';
+  // sync sibling unit fields on the same row when length unit changes
+  return html;
+}
+
+async function engineSavePackaging(brand, subClass) {
+  const row = document.querySelector('[data-sub-class="' + subClass + '"]');
+  if (!row) return;
+  const dims = {};
+  row.querySelectorAll('[data-pkg-key]').forEach(el => {
+    const k = el.getAttribute('data-pkg-key');
+    if (el.value) dims[k] = el.value;
+  });
+  // Unit fields: sync width/height length units from the length unit select
+  const lu = dims['item_package_dimensions#1.length.unit'];
+  if (lu) {
+    dims['item_package_dimensions#1.width.unit']  = lu;
+    dims['item_package_dimensions#1.height.unit'] = lu;
+  }
+  const keyEl = row.id + '-status';
+  const statusEl = document.getElementById(keyEl);
+  if (statusEl) statusEl.textContent = 'Saving\u2026';
+  try {
+    const r = await fetch('/api/rule-engine/packaging', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brand, product_type: 'COAT', sub_class: subClass, dims }),
+    }).then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    if (statusEl) statusEl.textContent = '\u2713 Saved';
+    // Re-import to re-evaluate with fresh packaging memory
+    if (engineState.preupload) {
+      // Just re-call evaluate for each style using current state
+      engineReevaluatePreupload();
+    }
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'Failed: ' + e.message;
+  }
+}
+
+async function engineReevaluatePreupload() {
+  const r = engineState.preupload;
+  if (!r) return;
+  const updated = { ...r, styles: [...r.styles] };
+  for (let i = 0; i < updated.styles.length; i++) {
+    const s = updated.styles[i];
+    try {
+      const res = await fetch('/api/rule-engine/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_type: 'COAT', form_state: s.state,
+          brand: r.brand, sub_class: s.sub_class, apply_apparel_defaults: true,
+        }),
+      }).then(x => x.json());
+      if (res.ok) {
+        const hard = Object.values(res.result.fields).filter(f =>
+          f.verdict === 'required_missing' && f.base_requirement === 'REQUIRED').map(f => f.label);
+        updated.styles[i] = { ...s, summary: res.result.summary, hard_missing: hard, ready: hard.length === 0,
+                              packaging_applied: res.result.packaging_applied };
+      }
+    } catch(e) {}
+  }
+  updated.ready_to_upload = updated.styles.filter(x => x.ready).length;
+  updated.needs_attention = updated.styles.filter(x => !x.ready).length;
+  engineState.preupload = updated;
+  engineRenderPreuploadResults(updated);
 }
 
 async function engineRebuild() {

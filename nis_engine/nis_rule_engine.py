@@ -41,13 +41,93 @@ except ImportError:
 # In-memory cache of loaded bundles keyed by product_type.
 _BUNDLE_CACHE: Dict[str, dict] = {}
 _BUNDLE_DIR: Optional[str] = None
+_DEFAULTS_CACHE: Optional[dict] = None
+_PACKAGING_CACHE: Optional[dict] = None
 
 
 def set_bundle_dir(path: str) -> None:
     """Point the engine at the directory holding {TYPE}.json bundle files."""
-    global _BUNDLE_DIR
+    global _BUNDLE_DIR, _DEFAULTS_CACHE, _PACKAGING_CACHE
     _BUNDLE_DIR = path
     _BUNDLE_CACHE.clear()
+    _DEFAULTS_CACHE = None
+    _PACKAGING_CACHE = None
+
+
+def _engine_dir() -> str:
+    """Directory where this module lives — the JSON helper files sit alongside."""
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def _load_apparel_defaults() -> dict:
+    """Load apparel_defaults.json once and cache."""
+    global _DEFAULTS_CACHE
+    if _DEFAULTS_CACHE is not None:
+        return _DEFAULTS_CACHE
+    path = os.path.join(_engine_dir(), "apparel_defaults.json")
+    if not os.path.exists(path):
+        _DEFAULTS_CACHE = {"defaults": {}, "_applies_to": []}
+        return _DEFAULTS_CACHE
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            _DEFAULTS_CACHE = json.load(f)
+    except Exception as e:
+        print(f"[nis_engine] failed to load apparel_defaults.json: {e}")
+        _DEFAULTS_CACHE = {"defaults": {}, "_applies_to": []}
+    return _DEFAULTS_CACHE
+
+
+def _load_packaging_memory() -> dict:
+    """Load brand_packaging_memory.json (operator-confirmed package dims per brand+subclass)."""
+    global _PACKAGING_CACHE
+    if _PACKAGING_CACHE is not None:
+        return _PACKAGING_CACHE
+    path = os.path.join(_engine_dir(), "brand_packaging_memory.json")
+    if not os.path.exists(path):
+        _PACKAGING_CACHE = {"entries": {}}
+        return _PACKAGING_CACHE
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            _PACKAGING_CACHE = json.load(f)
+    except Exception:
+        _PACKAGING_CACHE = {"entries": {}}
+    return _PACKAGING_CACHE
+
+
+def _save_packaging_memory(data: dict) -> None:
+    global _PACKAGING_CACHE
+    path = os.path.join(_engine_dir(), "brand_packaging_memory.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    _PACKAGING_CACHE = data
+
+
+def get_packaging_for(brand: str, product_type: str, sub_class: str) -> Optional[dict]:
+    """Return the saved package dims for (brand, product_type, sub_class) or None."""
+    if not brand or not product_type:
+        return None
+    mem = _load_packaging_memory()
+    key = f"{brand}|{product_type.upper()}|{sub_class or ''}"
+    return (mem.get("entries") or {}).get(key)
+
+
+def save_packaging_for(brand: str, product_type: str, sub_class: str, dims: dict) -> dict:
+    """Save package dims and return the updated entry. dims should be a dict of field_key -> value."""
+    if not brand or not product_type:
+        raise ValueError("brand and product_type are required")
+    mem = _load_packaging_memory()
+    if "entries" not in mem:
+        mem["entries"] = {}
+    key = f"{brand}|{product_type.upper()}|{sub_class or ''}"
+    from datetime import datetime
+    mem["entries"][key] = {**dims, "_updated_at": datetime.utcnow().isoformat() + "Z"}
+    mem["_updated_at"] = datetime.utcnow().isoformat() + "Z"
+    _save_packaging_memory(mem)
+    return mem["entries"][key]
+
+
+def list_packaging_memory() -> dict:
+    return _load_packaging_memory()
 
 
 def load_bundle(product_type: str) -> Optional[dict]:
@@ -138,8 +218,17 @@ def evaluate_form(
     product_type: str,
     form_state: Dict[str, Any],
     include_dropdowns: bool = True,
+    apply_apparel_defaults: bool = True,
+    brand: Optional[str] = None,
+    sub_class: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Evaluate all rules for `product_type` against `form_state`.
+
+    `apply_apparel_defaults`: when True (default), merge the universal apparel defaults
+        from apparel_defaults.json into the form state before evaluation. Operator-supplied
+        values always win — defaults only fill in fields the operator left blank.
+    `brand`/`sub_class`: when provided, also merge the saved package dimensions for that
+        (brand, product_type, sub_class) tuple from brand_packaging_memory.json.
 
     Returns a dict keyed by column letter with verdict info for each field.
     """
@@ -147,7 +236,27 @@ def evaluate_form(
     if not bundle:
         return {"error": f"no rule bundle for product_type={product_type!r}"}
 
-    cell_state = _field_to_cell_state(bundle, form_state)
+    # Merge defaults into form_state. Operator values always win.
+    merged_state: Dict[str, Any] = {}
+    if apply_apparel_defaults:
+        defaults_doc = _load_apparel_defaults()
+        applies_to = defaults_doc.get("_applies_to") or []
+        if not applies_to or product_type.upper() in [a.upper() for a in applies_to]:
+            merged_state.update(defaults_doc.get("defaults") or {})
+    if brand:
+        pkg = get_packaging_for(brand, product_type, sub_class or "")
+        if pkg:
+            for k, v in pkg.items():
+                if k.startswith("_"):
+                    continue
+                merged_state[k] = v
+    # Operator-supplied state wins over both
+    for k, v in (form_state or {}).items():
+        if v is None or v == "":
+            continue
+        merged_state[k] = v
+
+    cell_state = _field_to_cell_state(bundle, merged_state)
     fields = bundle["fields"]
     rules  = bundle["rules"]
 
@@ -237,6 +346,8 @@ def evaluate_form(
         "data_row":     bundle.get("data_row", 7),
         "fields":       result,
         "summary":      _summarise(result),
+        "defaults_applied": apply_apparel_defaults,
+        "packaging_applied": bool(brand and get_packaging_for(brand, product_type, sub_class or "")),
     }
 
 

@@ -8667,10 +8667,18 @@ def rule_engine_evaluate():
     pt = (data.get("product_type") or "").upper().strip()
     state = data.get("form_state") or {}
     include_dd = data.get("include_dropdowns", True)
+    apply_defaults = data.get("apply_apparel_defaults", True)
+    brand = data.get("brand") or None
+    sub_class = data.get("sub_class") or None
     if not pt:
         return jsonify({"ok": False, "error": "product_type required"}), 400
     try:
-        result = _nis_engine.evaluate_form(pt, state, include_dropdowns=include_dd)
+        result = _nis_engine.evaluate_form(
+            pt, state,
+            include_dropdowns=include_dd,
+            apply_apparel_defaults=apply_defaults,
+            brand=brand, sub_class=sub_class,
+        )
         if "error" in result:
             return jsonify({"ok": False, "error": result["error"]}), 404
         return jsonify({"ok": True, "result": result})
@@ -8741,6 +8749,114 @@ def rule_engine_overrides():
                     continue
                 entries.append(e)
     return jsonify({"ok": True, "count": len(entries), "overrides": entries})
+
+
+@app.route("/api/rule-engine/packaging", methods=["GET"])
+def rule_engine_packaging_get():
+    """Return all saved packaging memory, or a single entry.
+    Query args: brand, product_type, sub_class.
+    """
+    brand = request.args.get("brand")
+    pt    = request.args.get("product_type")
+    sub   = request.args.get("sub_class", "")
+    if brand and pt:
+        entry = _nis_engine.get_packaging_for(brand, pt, sub)
+        return jsonify({"ok": True, "entry": entry})
+    return jsonify({"ok": True, "memory": _nis_engine.list_packaging_memory()})
+
+
+@app.route("/api/rule-engine/packaging", methods=["POST"])
+def rule_engine_packaging_save():
+    """Save operator-confirmed package dims for a (brand, product_type, sub_class).
+    Body: { brand, product_type, sub_class, dims: { field_key: value, ... } }
+    """
+    data = request.get_json(force=True) or {}
+    brand = data.get("brand") or ""
+    pt    = data.get("product_type") or ""
+    sub   = data.get("sub_class") or ""
+    dims  = data.get("dims") or {}
+    if not brand or not pt:
+        return jsonify({"ok": False, "error": "brand and product_type required"}), 400
+    try:
+        entry = _nis_engine.save_packaging_for(brand, pt, sub, dims)
+        # Git-commit so it survives Render redeploys (same pattern as taxonomy_overrides)
+        try:
+            import subprocess
+            subprocess.run(["git", "add", "nis_engine/brand_packaging_memory.json"],
+                           cwd=str(BASE_DIR), check=False, capture_output=True)
+            subprocess.run(["git", "commit", "-m", f"chore(packaging): save {brand}/{pt}/{sub}",
+                            "--author", "TLG Dashboard <noreply@tlg.local>"],
+                           cwd=str(BASE_DIR), check=False, capture_output=True)
+            subprocess.run(["git", "push", "origin", "master"],
+                           cwd=str(BASE_DIR), check=False, capture_output=True, timeout=10)
+        except Exception:
+            pass
+        return jsonify({"ok": True, "entry": entry})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/rule-engine/import-preupload", methods=["POST"])
+def rule_engine_import_preupload():
+    """Upload a pre-upload .xlsx/.xlsm and return per-style evaluation results.
+
+    multipart/form-data: file=<xlsx>
+    Response: { ok, brand, styles: [{style_id, name, sub_class, state, evaluation: {...}}] }
+    Each evaluation already has apparel_defaults + packaging memory applied.
+    """
+    if "file" not in request.files:
+        return jsonify({"ok": False, "error": "no file uploaded"}), 400
+    f = request.files["file"]
+    if not f.filename:
+        return jsonify({"ok": False, "error": "empty filename"}), 400
+
+    tmp = BASE_DIR / "uploads" / "preupload"
+    tmp.mkdir(parents=True, exist_ok=True)
+    dest = tmp / f.filename
+    f.save(str(dest))
+
+    try:
+        from nis_engine.preupload_importer import parse_preupload, style_to_form_state
+        parsed = parse_preupload(str(dest))
+        brand = parsed.get("brand") or ""
+        out_styles = []
+        for style_id, style in parsed.get("styles", {}).items():
+            state = style_to_form_state(style, brand)
+            evaluation = _nis_engine.evaluate_form(
+                "COAT", state,
+                apply_apparel_defaults=True,
+                brand=brand,
+                sub_class=style.get("sub_class") or "",
+            )
+            hard = [ff["label"] for ff in evaluation.get("fields", {}).values()
+                    if ff["verdict"] == "required_missing" and ff["base_requirement"] == "REQUIRED"]
+            out_styles.append({
+                "style_id":   style_id,
+                "name":       style.get("name"),
+                "sub_class":  style.get("sub_class"),
+                "department": style.get("department"),
+                "upcs_count": len(style.get("upcs") or []),
+                "colors":     style.get("colors"),
+                "sizes":      style.get("sizes"),
+                "state":      state,
+                "summary":    evaluation.get("summary"),
+                "hard_missing": hard,
+                "ready":      len(hard) == 0,
+                "defaults_applied":  evaluation.get("defaults_applied"),
+                "packaging_applied": evaluation.get("packaging_applied"),
+            })
+        return jsonify({
+            "ok":      True,
+            "brand":   brand,
+            "file":    f.filename,
+            "styles":  out_styles,
+            "total_styles":     len(out_styles),
+            "ready_to_upload":  sum(1 for s in out_styles if s["ready"]),
+            "needs_attention":  sum(1 for s in out_styles if not s["ready"]),
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.route("/api/rule-engine/rebuild", methods=["POST"])

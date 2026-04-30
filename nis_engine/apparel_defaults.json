@@ -1,0 +1,21 @@
+{
+  "_comment": "Universal NIS defaults that apply to every non-electronic apparel listing. The rule engine merges these in before evaluation, so the operator never has to type 'No' five times for battery flags or 'Adult' for the age range. Each entry is keyed by the bundle's canonical field_key — if Amazon changes a key in a future template, just rebuild the bundles and these defaults still resolve correctly.",
+  "_version": 1,
+  "_applies_to": ["COAT", "BLAZER", "DRESS", "SHIRT", "PANTS", "SHORTS", "SKIRT", "SWEATSHIRT", "SWIMWEAR", "ONE_PIECE_OUTFIT", "OVERALLS", "BRA", "SNOW_PANT", "SNOWSUIT", "HAT", "SANDAL"],
+  "defaults": {
+    "supplier_declared_dg_hz_regulation#1.value": "Not Applicable",
+    "child_parent_sku_relationship#1.child_relationship_type": "Variation",
+    "batteries_required#1.value": "No",
+    "contains_battery_or_cell#1.value": "No",
+    "are_batteries_included#1.value": "No",
+    "variation_theme#1.name": "Size/Color",
+    "apparel_size#1.size_system": "US",
+    "apparel_size#1.size_class": "Alpha",
+    "apparel_size#1.body_type": "All Body Types",
+    "apparel_size#1.height_type": "All Heights",
+    "age_range_description#1.value": "Adult",
+    "number_of_items#1.value": "1",
+    "import_designation#1.value": "Imported",
+    "product_lifecycle_supply_type#1.value": "new"
+  }
+}

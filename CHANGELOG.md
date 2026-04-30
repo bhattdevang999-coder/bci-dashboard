@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-04-30 — Zero-touch Sage Pre-Upload (v0.7.2)
+
+Any brand's pre-upload .xlsx now flows to **zero hard blockers** through the dashboard without operator field-by-field input. The operator drops the file, the engine reports per-style readiness, and the only per-brand setup is package dimensions once per sub-class (remembered forever).
+
+### Backend
+- `nis_engine/apparel_defaults.json` — 14 universal defaults that every non-electronic apparel listing inherits (batteries=No, dangerous_goods=Not Applicable, age_range=Adult, size_system=US, variation_theme=Size/Color, etc.). Operator values always win — defaults only fill in blanks.
+- `nis_engine/brand_packaging_memory.json` — operator-confirmed package dimensions per (brand, product_type, sub_class). Saved once, reused forever, git-committed after each save to survive Render redeploys.
+- `nis_engine/preupload_importer.py` — schema-tolerant parser for TLG-style pre-upload .xlsx files. Matches columns by name (lowercased, punctuation-stripped) so R0 vs R1 column shuffles don't break it. Auto-detects brand from TLGDIV NAME. Translates pre-upload rows into NIS form-state dicts using sub-class-to-taxonomy map.
+- `evaluate_form()` now accepts `apply_apparel_defaults=True`, `brand`, `sub_class` params. Merges defaults + packaging memory + operator state, then evaluates.
+
+### API endpoints
+- `POST /api/rule-engine/import-preupload` — multipart upload. Returns per-style readiness with hard-missing list.
+- `GET  /api/rule-engine/packaging` — read memory (all or by brand+PT+sub_class).
+- `POST /api/rule-engine/packaging` — save dims for a (brand, product_type, sub_class); git-commits.
+- `POST /api/rule-engine/evaluate` — now accepts `brand`, `sub_class`, `apply_apparel_defaults` for full packaging+defaults-aware evaluation.
+
+### Frontend
+- NIS Rules page: new **↱ Import Pre-Upload** button in the header. Uploading any pre-upload .xlsx renders:
+  - Top header: file name, auto-detected brand, count of styles, ready/needs-attention pills, % ready meter.
+  - **Package dimensions editor** grouped by sub-class. Enter LxWxH + weight once per sub-class. Saved permanently, re-applied to every style on save. Button re-evaluates the whole file instantly.
+  - Per-style table: style ID, sub-class, UPCs, colors/sizes, OK/hard/conditional counts, status badge (✓ Ready or N blockers).
+  - Hard-missing fields listed inline when a style isn't ready.
+
+### Verified on Sage Pre-Upload R1
+- 9 styles, 80 UPCs → **9 ready / 0 hard blockers** with zero operator input beyond picking the file.
+- After saving Puffer package dimensions once (4 numbers + units): Puffer styles climb from 38 → 46 required-OK. The same dims are used for all 6 future Puffer styles without re-entry.
+- Brand auto-detected: Sage Collective. Categories auto-mapped: Puffer → Women's Outerwear → Down and Parkas, Faux Wool Outerwear → Wool, etc.
+
+### Files added/modified
+- `nis_engine/apparel_defaults.json` (new, 22 lines)
+- `nis_engine/brand_packaging_memory.json` (new, seed empty)
+- `nis_engine/preupload_importer.py` (new, 295 lines)
+- `nis_engine/nis_rule_engine.py` (+110 lines: defaults/packaging loaders, evaluate_form params)
+- `app.py` (+110 lines: 3 new API endpoints, evaluate signature updated)
+- `templates/index.html` (+200 lines: Import button + results panel + packaging editor)
+
+
 ## 2026-04-30 — Engine-backed Taxonomy Cascade (v0.7.1)
 
 Fix for the "empty Item Type dropdowns" issue on COAT (and any product type whose `taxonomy_universe.json` was hand-curated and incomplete). Pulls cascade values directly from the universal NIS rule-engine bundles so every Amazon-defined Cat → Sub → Item Type Keyword path is selectable.
