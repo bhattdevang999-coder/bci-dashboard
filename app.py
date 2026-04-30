@@ -680,6 +680,19 @@ BRAND_CONFIGS = {
         "title_formula": "{brand} Women's {style_descriptor} {product_type}, {color}, {size}",
         "never_words": [],
     },
+    "Sage Collective": {
+        "vendor_code_prefix": "QT5G8",
+        "vendor_code_full":   "Sage Collective - Levy Group, us_apparel, QT5G8",
+        "default_upf":        "",
+        "default_fabric":     "",
+        "default_coo":        "",
+        "default_care":       "Machine Wash Cold, Tumble Dry Low",
+        "gender":             "Female",
+        "department":         "womens",
+        "bullet_1_focus":     "Quality and craftsmanship",
+        "title_formula":      "{brand} Women's {style_name}",
+        "never_words":        ["cheap", "fast fashion", "knockoff"],
+    },
 }
 
 # ── Color maps ─────────────────────────────────────────────────────────────────
@@ -1073,11 +1086,11 @@ def clean_brand_name(raw_brand):
     for suffix in [' PL Ladies SPTW', ' PL Ladies', ' PL Mens', ' SPTW', ' Sportswear',
                    ' us_apparel', ' Women\'s Swimwear', ', us_apparel']:
         b = b.replace(suffix, '')
-    # Remove anything after the last known brand word
-    # Known brands: keep only the first 1-3 proper words
-    known = {'Stella Parker', 'Volcom', 'Roxy', 'Novelle Fashion', 'Nautica', 
-             'Ben Sherman', 'Spyder', 'Tahari', 'Sage'}
-    for k in known:
+    # Known brands: keep the longest matching prefix so 'Sage Collective' wins over 'Sage'.
+    known = ['Sage Collective', 'Stella Parker', 'Novelle Fashion', 'Novelle',
+             'Volcom', 'Roxy', 'Nautica', 'Ben Sherman', 'Spyder', 'Tahari', 'Sage']
+    # Sort by length descending so 'Sage Collective' is checked before 'Sage'
+    for k in sorted(known, key=len, reverse=True):
         if b.startswith(k):
             return k
     return b.strip()
@@ -1700,41 +1713,90 @@ def generate_content_llm(brand_cfg, brand, style, feedback_history):
         audience = "all genders"
         gender_prefix = ""
 
-    prompt = f"""You are an Amazon listing content expert generating Vendor Central NIS content.
+    # ═══ v0.7.6: pull baseline rules + pre-upload bullets so AI fills only gaps ═══
+    pu_bullets = style.get("bullets_from_upload") or []
+    # Pad to 5 — each slot is either pre-upload text or empty (AI will fill empty slots)
+    pu_bullets = (list(pu_bullets) + [""] * 5)[:5]
+    pu_bullets_block = "\n".join(
+        f"  Bullet {i+1}: {('USE THIS — ' + b) if b and b.strip() else 'WRITE THIS — (operator did not provide)'}"
+        for i, b in enumerate(pu_bullets)
+    )
+    keywords_seed = style.get("keywords", "") or ""
+    addl = style.get("additional_details", "") or ""
+    closure = style.get("closure_type", "") or ""
+    neck    = style.get("neck_type", "") or ""
+    sleeve  = style.get("sleeve_type", "") or ""
+    fit     = style.get("fit_type", "") or ""
 
+    prompt = f"""You are an Amazon NIS (New Item Setup) content expert. You create SEO-healthy, buyer-focused content that converts on Amazon.com.
+
+=== BASELINE CONTENT RULES (apply to EVERY listing, every brand) ===
+TITLE — hard cap 120 chars (Vendor Central apparel). Target 100-118.
+  Format: {{Brand}} {{Women's|Men's}} {{Function/Use}} {{Item Type}} - {{Top Feature}}, {{Top Feature}}
+  - Front-load the top 3-5 search keywords inside the first 80 chars (mobile preview).
+  - Brand MUST be at position 0. Gender word ({gender_prefix or 'derived from department'}) MUST be present.
+  - NEVER include the style number as text. NEVER use #N/A. NEVER duplicate the item type.
+  - Item type is '{itn}', NOT 'dress'. Use '{itn}' (or its plural).
+
+BULLETS — 5 bullets, each max 256 chars. Target 220-250.
+  Format: HEADLINE — benefit sentence. Headline is 2-5 words, ALL CAPS, then ' — ' (em-dash with spaces).
+  Slot intent (in order):
+    1. FABRIC + FEEL (lead with fabric story + tactile benefit; UPF here for swim)
+    2. FIT + CONSTRUCTION (fit type, closure, neck/sleeve, pockets, length)
+    3. FUNCTION + USE (where/when/how it's worn; versatility, occasion)
+    4. CARE + DURABILITY (care instructions + longevity, no raw fiber percentages here)
+    5. SIZE RANGE + COMPLETE THE LOOK (size availability + brand call-to-action)
+  Lead with benefit, not feature. Weave 2-4 search keywords per bullet naturally.
+
+DESCRIPTION — max 2000 chars. Target 1300-1500. Plain text, no HTML.
+  Structure: brand-voice opener (2-3 sentences) -> THE FABRIC -> THE DESIGN -> THE FIT -> THE CARE/PROMISE.
+  Mention brand 2-3 times. Buyer-focused. No promotional words (best seller, limited time, free shipping).
+
+BACKEND KEYWORDS — max 249 bytes. Lowercase, space-separated, no commas.
+  No brand name. No words already in title or bullets. Include 1-2 misspellings, 1-2 Spanish terms (vestido, mallas, pantalones), synonyms, occasion + activity terms.
+
+=== BRAND CONTEXT ===
 BRAND: {clean_brand}
-BRAND VOICE: {clean_brand} is a {bullet_1_focus}-focused brand targeting {audience}. {brief or ''}
-HERO FEATURE: {bullet_1_focus}
-NEVER USE: {never_words_str}
+BRAND VOICE: {clean_brand} is a {bullet_1_focus}-focused brand for {audience}. {brief or ''}
+HERO FEATURE for bullet 1 if no override: {bullet_1_focus}
+NEVER USE these words: {never_words_str}
 
-PRODUCT:
-- Product Type: {itn} ({product_type})
-- Style: {style_name}
-- Style #: {style_num}
-- Sub-class: {subclass} / {sub_subclass}
-- Division: {division}
-- Gender: {gender or 'not specified'}
-- Fabric: {fabric or 'not specified'}
-- UPF: {upf or 'none'}
-- COO: {coo or 'not specified'}
-- Care: {care or 'not specified'}
-- Colors: {', '.join(colors[:8]) if colors else 'not specified'}
-- Sizes: {', '.join(sizes[:10]) if sizes else 'not specified'}
+=== THIS PRODUCT ===
+Item Type: {itn} (Amazon product type: {product_type})
+Style Name: {style_name}
+Style #: {style_num}    (NEVER print the style number in customer-facing text)
+Sub-class: {subclass} / {sub_subclass}
+Division: {division}
+Gender: {gender or 'derive from department'}
+Fabric: {fabric or 'not specified'}
+UPF: {upf or 'none'}
+COO: {coo or 'not specified'}
+Care: {care or 'not specified'}
+Closure: {closure or 'not specified'}
+Neck: {neck or 'not specified'}
+Sleeve: {sleeve or 'not specified'}
+Fit Type: {fit or 'not specified'}
+Colors available: {', '.join(colors[:8]) if colors else 'not specified'}
+Sizes available: {', '.join(sizes[:10]) if sizes else 'not specified'}
+Key selling points / additional details: {addl or 'none provided'}
+Operator-supplied keywords (use heavily for SEO): {keywords_seed or 'none'}
+
+=== OPERATOR-SUPPLIED BULLETS (file wins, AI fills gaps) ===
+{pu_bullets_block}
+Where a slot says 'USE THIS', return that bullet text VERBATIM (you may format the headline to ALL CAPS and add the em-dash if missing, but do not change the wording). Where a slot says 'WRITE THIS', generate per the slot intent.
 
 {f'PRODUCT BRIEF FROM OPERATOR: {brief}' if brief else ''}
 
 {feedback_section}
 
-RULES:
-- Title: max 120 characters. Format: {clean_brand} {gender_prefix + ' ' if gender_prefix else ''}[Style Descriptor] [Product Type], [Key Feature], [Color], [Size].
-- This is a {itn}, NOT a dress. Do not use the word "dress" unless the product is actually a dress.
-- 5 bullet points, each max 500 chars. Format: LABEL — description. Each bullet must be unique. Bullet 1 focuses on {bullet_1_focus}. Bullet 2 must describe THIS specific style's unique design features.
-- Description: max 2000 chars. Plain text, no HTML. Buyer-focused, mentions brand + product name.
-- Backend keywords: max 250 bytes. Lowercase, space-separated. No brand name, no words from title. Include product-type-specific search terms (e.g. for swimwear: swim, swimwear, beach, pool, rash guard, etc.).
-- No promotional language (best seller, limited time, on sale, guaranteed, free shipping).
-- No competitor brand names.
+=== HARD RULES (must follow) ===
+- Title len <=120, brand at pos 0, gender word present, item type present, no style number, no #N/A.
+- Bullets <=256 each, ALL-CAPS headline + ' — ' + sentence.
+- Description <=2000.
+- Backend keywords <=249 bytes, lowercase, space-sep, no commas, no brand name, no overlap with title/bullets.
+- No promotional language. No competitor brand names. No 'dress' for non-dress items.
 
-Respond in this exact JSON format (no other text, no markdown, just the JSON object):
+Respond in this exact JSON format (no other text, no markdown):
 {{"title": "...", "bullet_1": "...", "bullet_2": "...", "bullet_3": "...", "bullet_4": "...", "bullet_5": "...", "description": "...", "backend_keywords": "..."}}"""
 
     try:
@@ -1768,19 +1830,36 @@ Respond in this exact JSON format (no other text, no markdown, just the JSON obj
         raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE).strip()
         parsed = json.loads(raw)
 
+        # ═══ v0.7.6: enforce baseline content rules + merge pre-upload bullets ═══
+        from nis_engine import content_rules as _cr
+        ai_bullets = [str(parsed.get(f"bullet_{i}", ""))[:256] for i in range(1, 6)]
+        merged_bullets = _cr.merge_bullets(pu_bullets, ai_bullets)
+
+        # Title: hard cap 120, never the style number, never #N/A
+        title_raw = str(parsed.get("title", "")).strip()
+        if _cr.is_garbage_value(title_raw) or len(title_raw) > 120:
+            title_raw = _cr.compose_title(
+                brand=clean_brand,
+                gender_word=gender_prefix,
+                style_name=style_name,
+                item_type_name=itn,
+                feature_phrases=[fit, neck, sleeve, closure],
+            )
+        title_raw = title_raw[:120]
+
         content = {
-            "title": str(parsed.get("title", ""))[:120],
-            "bullet_1": str(parsed.get("bullet_1", ""))[:500],
-            "bullet_2": str(parsed.get("bullet_2", ""))[:500],
-            "bullet_3": str(parsed.get("bullet_3", ""))[:500],
-            "bullet_4": str(parsed.get("bullet_4", ""))[:500],
-            "bullet_5": str(parsed.get("bullet_5", ""))[:500],
+            "title": title_raw,
+            "bullet_1": merged_bullets[0],
+            "bullet_2": merged_bullets[1],
+            "bullet_3": merged_bullets[2],
+            "bullet_4": merged_bullets[3],
+            "bullet_5": merged_bullets[4],
             "description": str(parsed.get("description", ""))[:2000],
             "backend_keywords": str(parsed.get("backend_keywords", "")),
         }
-        # Cap backend keywords at 250 bytes
+        # Cap backend keywords at 249 bytes (per content_rules)
         kw = content["backend_keywords"]
-        while len(kw.encode("utf-8")) > 250 and kw:
+        while len(kw.encode("utf-8")) > 249 and kw:
             kw = kw.rsplit(" ", 1)[0]
         content["backend_keywords"] = kw
 
@@ -1859,8 +1938,11 @@ PRODUCT_HEADER_ALIASES = {
     "style#": "style_num",
     "style number": "style_num",
     "style name": "style_name",
+    "basic style name": "style_name",
+    "tlg style name": "style_name",
     "style description": "style_desc",
     "tlg style desc": "style_desc",
+    "related keywords": "keywords",
     "season code": "season_code",
     "season added to amzn": "season_added",
     # Color
@@ -1882,10 +1964,13 @@ PRODUCT_HEADER_ALIASES = {
     # Pricing
     "list price": "list_price",
     "amzn retail": "list_price",
+    "amazon list price": "list_price",
     "retail": "list_price",
     "retail price": "list_price",
+    "msrp": "list_price",
     "cost price": "cost_price",
     "amzn wholesale": "cost_price",
+    "amazon cost": "cost_price",
     "wholesale": "cost_price",
     "wholesale price": "cost_price",
     "case pack": "case_pack",
@@ -1944,35 +2029,115 @@ def fuzzy_match_headers(headers):
                 mapping[internal] = idx
     return mapping
 
+def _read_sheet_rows(ws):
+    """Find header row (>=5 non-empty cells with style/brand/color/upc/price keywords)
+    and return (headers, data_rows)."""
+    all_rows = list(ws.iter_rows(values_only=True))
+    header_row_idx = None
+    for i, row in enumerate(all_rows):
+        non_empty = sum(1 for c in row if c is not None)
+        if non_empty >= 5:
+            row_str = " ".join(str(c).lower() for c in row if c is not None)
+            if any(kw in row_str for kw in ["style", "brand", "color", "size", "upc", "price"]):
+                header_row_idx = i
+                break
+    if header_row_idx is None:
+        return None, []
+    headers = [str(c).strip() if c is not None else "" for c in all_rows[header_row_idx]]
+    data = [row for row in all_rows[header_row_idx + 1:] if any(c is not None for c in row)]
+    return headers, data
+
+
+def _build_preupload_style_index(file_path):
+    """Read the 'PreUpload Style' sheet (if present) and return a dict
+    keyed by Style # — contains style-level rich content (bullets, neck,
+    sleeve, fit, UPF, additional details, ship date) that is NOT in the
+    UPC sheet.
+
+    Files we've seen:
+      Sheet 1: 'PreUpload Style'    → 25 cols, style-level: name, COO, care, fabric,
+                                       neck, closure, sleeve, fit, pockets, 5 bullets,
+                                       UPF, additional details, ship date
+      Sheet 2: 'Upload Template UPC' → 28 cols, variant-level: UPC, color, size, prices
+    """
+    try:
+        wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
+    except Exception:
+        return {}
+    style_idx = {}
+    target_sheet = None
+    for sn in wb.sheetnames:
+        low = sn.lower()
+        if "preupload" in low.replace(" ", "") or ("style" in low and "upload" in low):
+            target_sheet = wb[sn]
+            break
+    if target_sheet is None:
+        wb.close()
+        return {}
+    headers, data = _read_sheet_rows(target_sheet)
+    if not headers:
+        wb.close()
+        return {}
+    cmap = fuzzy_match_headers(headers)
+    sn_idx = cmap.get("style_num")
+    if sn_idx is None:
+        wb.close()
+        return {}
+    for row in data:
+        if sn_idx >= len(row):
+            continue
+        sn = row[sn_idx]
+        if sn is None or sn == "":
+            continue
+        sn_str = str(sn).strip()
+        if not sn_str:
+            continue
+        rec = {}
+        for k, idx in cmap.items():
+            if idx < len(row) and row[idx] is not None and row[idx] != "":
+                rec[k] = row[idx]
+        style_idx[sn_str] = rec
+    wb.close()
+    return style_idx
+
+
 def parse_product_file(file_path):
-    """Parse product Excel/CSV file. Returns (rows, errors, warnings)."""
+    """Parse product Excel/CSV file. Returns (rows, errors, warnings).
+
+    For TLG Pre-Upload .xlsx files with two sheets (PreUpload Style + Upload
+    Template UPC), reads BOTH and merges style-level rich content (bullets,
+    neck/sleeve/fit, UPF, additional details, ship date) into each variant's
+    style record using Style # as the join key.
+    """
     ext = Path(file_path).suffix.lower()
     raw_rows = []
-    
+    style_index = {}  # Style # -> dict of rich style fields from PreUpload Style sheet
+
     if ext in [".xlsx", ".xls", ".xlsm"]:
+        # First, try to build a style index from the PreUpload Style sheet (if present)
+        try:
+            style_index = _build_preupload_style_index(file_path)
+        except Exception:
+            style_index = {}
+
         wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
-        ws = wb.active
-        all_rows = list(ws.iter_rows(values_only=True))
+        # Prefer the UPC sheet (variant-level) for the main pass
+        ws = None
+        for sn in wb.sheetnames:
+            low = sn.lower()
+            if ("upload" in low and "upc" in low) or "template upc" in low:
+                ws = wb[sn]
+                break
+        if ws is None:
+            ws = wb.active
+        headers, data_rows_local = _read_sheet_rows(ws)
         wb.close()
-        
-        # Find header row
-        header_row_idx = None
-        for i, row in enumerate(all_rows):
-            non_empty = sum(1 for c in row if c is not None)
-            # Look for a row that has many non-empty cells and contains typical headers
-            if non_empty >= 5:
-                row_str = " ".join(str(c).lower() for c in row if c is not None)
-                if any(kw in row_str for kw in ["style", "brand", "color", "size", "upc", "price"]):
-                    header_row_idx = i
-                    break
-        
-        if header_row_idx is None:
+
+        if headers is None:
             return [], ["Could not find header row in file"], []
-        
-        headers = [str(c).strip() if c is not None else "" for c in all_rows[header_row_idx]]
-        for row in all_rows[header_row_idx + 1:]:
-            if any(c is not None for c in row):
-                raw_rows.append(row)
+
+        for row in data_rows_local:
+            raw_rows.append(row)
         
     elif ext in [".csv", ".tsv"]:
         delimiter = "\t" if ext == ".tsv" else ","
@@ -2020,6 +2185,7 @@ def parse_product_file(file_path):
         upf = get("upf")
         coo = get("coo")
         sku = get("sku")
+        keywords = get("keywords")
         # New fields from pre-upload
         neck_type = get("neck_type")
         closure_type = get("closure_type")
@@ -2032,7 +2198,49 @@ def parse_product_file(file_path):
         bullet_4 = get("bullet_4")
         bullet_5 = get("bullet_5")
         additional_details = get("additional_details")
-        
+
+        # ═══ v0.7.6: merge in style-level rich content from PreUpload Style sheet ═══
+        # Style # is the join key. PreUpload Style has: name, COO, care, fabric,
+        # neck, closure, sleeve, fit, pockets, 5 bullets, UPF, additional details, ship date.
+        if style_num and str(style_num).strip() in style_index:
+            ridx = style_index[str(style_num).strip()]
+            def _take(rich, current):
+                v = rich
+                if v is None or v == "":
+                    return current
+                return current if current else _safe(v)
+            style_name = _take(ridx.get("style_name"), style_name)
+            model_name = _take(ridx.get("style_name"), model_name)
+            coo        = _take(ridx.get("coo"), coo)
+            care       = _take(ridx.get("care"), care)
+            fabric     = _take(ridx.get("fabric"), fabric)
+            neck_type  = _take(ridx.get("neck_type"), neck_type)
+            closure_type = _take(ridx.get("closure_type"), closure_type)
+            sleeve_type = _take(ridx.get("sleeve_type"), sleeve_type)
+            fit_type   = _take(ridx.get("fit_type"), fit_type)
+            upf        = _take(ridx.get("upf"), upf)
+            ship_date  = _take(ridx.get("ship_date"), ship_date)
+            additional_details = _take(ridx.get("additional_details"), additional_details)
+            bullet_1   = _take(ridx.get("bullet_1"), bullet_1)
+            bullet_2   = _take(ridx.get("bullet_2"), bullet_2)
+            bullet_3   = _take(ridx.get("bullet_3"), bullet_3)
+            bullet_4   = _take(ridx.get("bullet_4"), bullet_4)
+            bullet_5   = _take(ridx.get("bullet_5"), bullet_5)
+
+        # ═══ v0.7.6: infer brand from TLGDIV NAME when no Brand column ═══
+        if not brand and division_name:
+            dn_up = str(division_name).upper()
+            if "SAGE" in dn_up:
+                brand = "Sage Collective"
+            elif "VOLCOM" in dn_up:
+                brand = "Volcom"
+            elif "SPYDER" in dn_up:
+                brand = "Spyder"
+            elif "STELLA" in dn_up:
+                brand = "Stella Parker"
+            elif "NOVELLE" in dn_up:
+                brand = "Novelle"
+
         if not style_num:
             continue
         
@@ -2040,8 +2248,9 @@ def parse_product_file(file_path):
         row_errors = []
         row_warnings = []
         
-        if not style_name:
-            row_errors.append(f"Row {row_idx}: Missing style name for style {style_num}")
+        # Use the rich style_index for missing names where possible (already merged above).
+        if not style_name or str(style_name).strip() == str(style_num).strip():
+            row_warnings.append(f"Row {row_idx}: Missing style name for style {style_num}")
         
         # UPC validation
         if upc:
@@ -2094,8 +2303,9 @@ def parse_product_file(file_path):
                 "sleeve_type": sleeve_type,
                 "fit_type": fit_type,
                 "ship_date": ship_date,
-                "bullets_from_upload": [b for b in [bullet_1, bullet_2, bullet_3, bullet_4, bullet_5] if b],
+                "bullets_from_upload": [b or "" for b in [bullet_1, bullet_2, bullet_3, bullet_4, bullet_5]],
                 "additional_details": additional_details,
+                "keywords": keywords,
                 "variants": [],
                 "errors": [],
                 "warnings": [],
@@ -2800,6 +3010,36 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
                                                subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt)
             backend_kw = generate_backend_keywords(brand, style_name, subclass, first_color, fabric, upf,
                                                     subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt)
+
+            # ═══ v0.7.6: enforce baseline content rules + merge pre-upload bullets ═══
+            from nis_engine import content_rules as _cr
+            _itn = _derive_item_type_name(subclass, resolved_pt) or subclass or ""
+            _gw = _cr.gender_word_for(style.get("department") or "",
+                                       target_gender=eff_gender_gen)
+            # Re-validate title — if garbage, too long, or missing brand/gender, recompose
+            _cb = clean_brand_name(brand)
+            _needs_recompose = (
+                _cr.is_garbage_value(title)
+                or len(title) > 120
+                or (_cb and _cb not in title)
+                or (_gw and _gw not in title)
+            )
+            if _needs_recompose:
+                title = _cr.compose_title(
+                    brand=_cb,
+                    gender_word=_gw,
+                    style_name=style_name,
+                    item_type_name=_itn,
+                    feature_phrases=[
+                        style.get("fit_type") or "",
+                        style.get("neck_type") or "",
+                        style.get("sleeve_type") or "",
+                        style.get("closure_type") or "",
+                    ],
+                )
+            # Bullets: file wins, AI/rule-based fills gaps; normalize headline format on every slot
+            pu_bullets = (style.get("bullets_from_upload") or []) + [""] * 5
+            bullets = _cr.merge_bullets(pu_bullets[:5], bullets)
 
         content_progress["current_step"] = f"Crafting 5 unique bullet points..."
         time.sleep(0.2)
@@ -4546,17 +4786,39 @@ def _apply_long_text_alignment(cell, cached_alignment=None):
     )
 
 def _clear_row_heights_for_auto_fit(ws, start_row=7, end_row=None):
-    """Remove the fixed 12.75 customHeight on data rows so Excel auto-fits
-    wrapped bullet text. Preserves heights on header rows 1-6.
-    openpyxl derives customHeight from whether height is set, so clearing
-    the height alone is enough — the customHeight attribute has no setter."""
+    """v0.7.6: Set explicit 90pt row height on data rows so wrapped 256-char
+    bullets are fully visible regardless of Excel's auto-fit behavior.
+
+    Background: the Amazon templates ship with customHeight=True/height=12.75
+    on every data row. When 200-char bullets are written, openpyxl preserves
+    customHeight=True even after height=None is set, so Excel renders the
+    rows as a single 12.75pt line and clips the wrapped content.
+
+    Setting an explicit ~90pt height (≈5 lines at 12.75pt) gives bullets,
+    description, and item_name enough vertical space without leaving giant
+    empty gaps, and keeps the file readable when opened in Excel.
+    """
     end_row = end_row or (ws.max_row or 100)
+    # 90pt fits 5 wrapped lines comfortably; description/long item_name may need more,
+    # but Excel will autosize larger when the user clicks 'Format > AutoFit Row Height'.
+    DATA_ROW_HEIGHT = 90.0
+    HEADER_ROW_HEIGHT = 36.0
     for r in range(start_row, end_row + 1):
+        # Drop any pre-existing row dim from the template, then set a fresh height.
+        # Setting `.height` automatically toggles customHeight in openpyxl serialization.
         if r in ws.row_dimensions:
-            rd = ws.row_dimensions[r]
-            # Setting height to None releases the fixed row height and lets
-            # Excel auto-size based on wrapped content.
-            rd.height = None
+            try:
+                del ws.row_dimensions[r]
+            except Exception:
+                pass
+        ws.row_dimensions[r].height = DATA_ROW_HEIGHT
+    # Slightly taller header rows so the field-id row (4) and label row (3) are readable
+    for r in (1, 2, 3, 4, 5, 6):
+        try:
+            if r in ws.row_dimensions:
+                ws.row_dimensions[r].height = HEADER_ROW_HEIGHT
+        except Exception:
+            pass
 
 def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content):
     """
@@ -5852,20 +6114,45 @@ def session_state():
 
 
 # ── Brand config file helpers ──────────────────────────────────────────────────
+# Generic apparel defaults — used when a brand is unknown to BRAND_CONFIGS.
+# CRITICAL: never fall back to a different brand's config. UPF/Butterlux/etc are
+# brand-specific gimmicks that mis-tag content for new brands.
+_GENERIC_BRAND_DEFAULTS = {
+    "vendor_code_prefix": "",
+    "vendor_code_full":   "",
+    "default_upf":        "",
+    "default_fabric":     "",
+    "default_coo":        "",
+    "default_care":       "Machine Wash",
+    "gender":             "",
+    "department":         "",
+    "bullet_1_focus":     "Quality and craftsmanship",
+    "title_formula":      "{brand} {gender} {style_name}",
+    "never_words":        [],
+}
+
 def _load_brand_config_data(brand):
-    """Load brand config from file if saved, else from in-memory BRAND_CONFIGS."""
+    """Load brand config from file if saved, else from in-memory BRAND_CONFIGS.
+
+    NEVER falls back to another brand's defaults. If brand is unknown, use
+    a neutral apparel defaults dict so per-brand gimmicks (UPF, Butterlux,
+    etc.) don't leak into other brands' content.
+    """
     brand_file = BRAND_CONFIGS_DIR / f"{re.sub(r'[^\w]', '_', brand)}.json"
     if brand_file.exists():
         try:
             with open(str(brand_file), "r", encoding="utf-8") as f:
                 saved = json.load(f)
-            # Merge with in-memory (saved overrides in-memory defaults)
-            base = dict(BRAND_CONFIGS.get(brand, BRAND_CONFIGS.get("Stella Parker", {})))
+            # Start from neutral defaults, layer in-memory brand-specific cfg if present, then saved file.
+            base = dict(_GENERIC_BRAND_DEFAULTS)
+            base.update(BRAND_CONFIGS.get(brand, {}))
             base.update(saved)
             return base
         except Exception:
             pass
-    return dict(BRAND_CONFIGS.get(brand, BRAND_CONFIGS.get("Stella Parker", {})))
+    if brand in BRAND_CONFIGS:
+        return dict(BRAND_CONFIGS[brand])
+    return dict(_GENERIC_BRAND_DEFAULTS)
 
 
 @app.route("/api/save-brand-config", methods=["POST"])

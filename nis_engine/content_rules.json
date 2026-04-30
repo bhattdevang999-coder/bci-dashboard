@@ -1,0 +1,92 @@
+{
+  "_doc": "Permanent Amazon-NIS content rules. Applies across ALL brands and styles. Edits here change behavior everywhere. Title <=120 (Vendor Central apparel hard limit). Bullets <=256 each. Description <=2000. Backend keywords <=249 bytes. Front-load top keywords; first 80 chars of title are mobile-visible.",
+  "version": "v1.0",
+  "last_updated": "2026-04-30",
+
+  "title": {
+    "max_length": 120,
+    "target_min": 100,
+    "format": "{brand} {gender_word} {feature_phrase} {item_type_name}{tail}",
+    "tail_template": " - {tail_features}",
+    "rules": [
+      "Brand name MUST appear at position 0 (clean_brand_name applied).",
+      "Gender word: 'Women's' if department=womens, 'Men's' if mens, 'Boys'/'Girls' for youth (derived from age_range).",
+      "Item type name (e.g. 'Coat', 'Leggings') MUST appear once. Never duplicate.",
+      "Front-load top 3-5 keywords in first 80 chars (mobile preview).",
+      "NEVER include the style number as text. NEVER include #N/A.",
+      "NEVER repeat brand. NEVER use ALL CAPS for the whole title.",
+      "If a feature is in style_name, do not also append it as tail.",
+      "Truncate at last word boundary if exceeding 120 chars; strip trailing comma/dash."
+    ],
+    "feature_priority": [
+      "fit_type", "neck_type", "sleeve_type", "closure_type",
+      "upf", "fabric_marketing", "key_feature_1", "key_feature_2"
+    ]
+  },
+
+  "bullets": {
+    "count": 5,
+    "max_length_each": 256,
+    "target_length_each": 240,
+    "format": "{HEADLINE} \u2014 {sentence}",
+    "headline_caps": true,
+    "headline_max_words": 5,
+    "slot_intent": [
+      {"slot": 1, "topic": "fabric_feel",   "purpose": "Fabric story + tactile benefit. If 100% Polyester soft-hand, say so. If UPF, lead with UPF here for swim."},
+      {"slot": 2, "topic": "fit_construction", "purpose": "Fit type + key construction details (closure, neck, sleeve, pockets, length)."},
+      {"slot": 3, "topic": "function_use", "purpose": "How and where it's worn. Versatility, occasion, layering."},
+      {"slot": 4, "topic": "care_durability", "purpose": "Care instructions + longevity. Easy-care messaging. No raw percentages here."},
+      {"slot": 5, "topic": "size_complete_look", "purpose": "Size range + complete-the-look call to action. Reinforces brand."}
+    ],
+    "rules": [
+      "If pre_upload_bullets has content, USE THEM VERBATIM in matching slots; AI fills only empty slots.",
+      "Each bullet starts with a 2-5 word ALL-CAPS headline followed by ' \u2014 ' then the benefit sentence.",
+      "Lead with benefit, not a feature. Buyers read for value.",
+      "No raw fabric percentages in bullets 2-5; reserve those for bullet 1 or description.",
+      "Weave 2-4 keywords per bullet naturally (no keyword stuffing).",
+      "No #N/A. No placeholder text. No 'Lorem'. No mention of style number."
+    ]
+  },
+
+  "description": {
+    "max_length": 2000,
+    "target_length": 1400,
+    "structure_blocks": ["opener", "fabric", "design", "fit", "care_promise"],
+    "rules": [
+      "Opener: 2-3 brand-voice sentences. Not a feature dump.",
+      "Use line breaks (\\n) between blocks for plain-text PDP fallback.",
+      "Mention brand 2-3 times across the description.",
+      "Care + 'shape holds wash after wash' style longevity claim in final block."
+    ]
+  },
+
+  "backend_keywords": {
+    "max_bytes": 249,
+    "rules": [
+      "No commas. Lowercase. Space-separated.",
+      "Never repeat words already in title or bullets.",
+      "Include 2-3 common misspellings (e.g. 'legins', 'leggins').",
+      "Include 1-2 Spanish search terms when category has them (mallas, pantalones, vestido).",
+      "Include synonyms (compression for tummy control, opaque for squat-proof, jacket for coat).",
+      "Include occasion + activity keywords (yoga pilates barre crossfit weightlifting / weddings cocktail brunch)."
+    ]
+  },
+
+  "department_to_gender_word": {
+    "womens": "Women's",
+    "mens": "Men's",
+    "girls": "Girls'",
+    "boys": "Boys'",
+    "unisex_kids": "Kids'",
+    "unisex_adult": "Adult"
+  },
+
+  "item_name_anti_patterns": [
+    "^[0-9]+$",
+    "^style ?#?\\s*[0-9]+$",
+    "#N/A",
+    "#REF!",
+    "null",
+    "undefined"
+  ]
+}
