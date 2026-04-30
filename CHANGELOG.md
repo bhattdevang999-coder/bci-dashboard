@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-04-30 — NIS Rule Engine (v0.7.0)
+
+Universal Amazon NIS conditional-logic engine. Reads any `.xlsm` template, parses every CF + DV formula, evaluates against form state at runtime. Same engine works for all 31 templates; if Amazon ships a new one, operator clicks "Rebuild from templates" and it auto-adapts.
+
+### Backend
+- New package `nis_engine/`:
+  - `nis_formula_parser.py` — tokenizer + recursive-descent Excel formula parser. Handles `AND/OR/NOT/IF/COUNTIF/VLOOKUP/ISERROR/LEN/INDIRECT`, comparisons, `&` string concat, `'Sheet'!$A$1:$B$16000` sheet-qualified ranges, and `$A$1` absolute refs. AST is JSON-serialisable.
+  - `nis_rule_evaluator.py` — walks the AST against a form-state dict, returns Excel-accurate verdicts. Short-circuits IF/AND/OR, case-insensitive string comparison, proper `#N/A` / `#REF!` / `#VALUE!` propagation, ISERROR catches both.
+  - `nis_rule_extractor.py` — reads a `.xlsm`, writes `nis_rules/{PRODUCTTYPE}.json` with fields + rules + named ranges + VLOOKUP tables. Detects the template sheet via `workbook.xml` relationship map (handles both relative and absolute target paths). Merges multiple templates for the same product type (e.g. 7 sources -> DRESS.json).
+  - `nis_rule_engine.py` — high-level API the dashboard calls: `evaluate_form(product_type, form_state)` returns per-field verdicts, rule trail, dropdown source, trigger cells.
+- CF rule semantics are keyed off dxfId: dxf 0/3 = valid (green), dxf 1 = filled, dxf 2 = required-missing (red). Only dxf 2 rules fire the operator alert.
+- Pre-built bundles in `nis_rules/`: 16 product types covering 31 source templates, ~10K rules total, 0 needing review. Index at `nis_rules/__index__.json`.
+- New endpoints on `app.py`:
+  - `GET  /api/rule-engine/index` — product types + coverage
+  - `GET  /api/rule-engine/bundle/<PT>` — field definitions + coverage
+  - `POST /api/rule-engine/evaluate` — run rules against form state
+  - `POST /api/rule-engine/override` — log an operator override to `feedback/overrides_log.jsonl`
+  - `GET  /api/rule-engine/overrides` — browse logged overrides
+  - `POST /api/rule-engine/rebuild` — re-extract bundles from all uploaded templates
+
+### Frontend
+- New sidebar nav "NIS Rules" page at `#engine-page`:
+  - Product-type picker with live coverage header (fields / rules / needs-review / dropdowns / source count).
+  - Listing state entry grid, grouped by section (Listing Identity / Variations / Product Identity / ...).
+  - "Load Sage sample" button pre-fills Sage Collective's COAT listing state (vendor code QT5G8, parent, womens, China).
+  - "Evaluate" triggers backend evaluation; verdict pills + three-bucket review (Required-Missing expanded / Needs Review / Required-OK collapsed / Optional collapsed).
+  - Per-field card shows: field label + column, current value, trigger cells ("Depends on: D7, A7"), the CF rule source (first 60 chars), and an "Override & flag" button for red-verdict fields.
+  - "Rebuild from templates" button for the manual re-extract workflow.
+
+### Brand configs + taxonomy
+- `brand_configs/Sage_Collective.json` — Sage Collective brand profile (vendor code QT5G8, default COO China, Female gender, puffer / wool outerwear default styles, COAT primary product type).
+- `subclass_product_type_map.json` — sub-class → Amazon product type map covering Sage's 9 styles (Puffer / Faux Wool Outerwear / Wool Outerwear / 3/4 Coat → COAT) plus common blazer/swim/dress mappings.
+
+### Testing
+- 38 parser unit tests + 55 evaluator tests + 30 end-to-end engine tests — all pass.
+- Cross-template smoke test: 26,371 real formulas parsed across all 31 templates with zero unknowns.
+- Sage Pre-Upload spot-check: engine correctly flags 95 missing fields (Bullet Point, Style, Apparel Size System, etc.) for a parent listing with basic identity filled.
+
+### Files changed
+- `app.py` (+200 LoC engine init + 5 endpoints)
+- `templates/index.html` (+300 LoC: page + script + CSS)
+- `nis_engine/*.py` (4 new modules, ~1500 LoC)
+- `nis_engine/test_*.py` (3 test files)
+- `nis_rules/*.json` (16 bundle files + __index__.json, ~35MB)
+- `brand_configs/Sage_Collective.json`
+- `subclass_product_type_map.json`
+
+
 ## 2026-04-23 — Historical Bulksheet Snapshots (v0.6.0)
 
 Every bulksheet upload is now auto-saved as a dated snapshot. With ≥2 snapshots the Ad Readiness card renders a full trend view: ineligible-over-time line chart, since-prior deltas, newly blocked / newly recovered tables, chronic flippers, and per-reason deltas.

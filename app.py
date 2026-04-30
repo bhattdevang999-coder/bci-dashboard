@@ -343,6 +343,18 @@ CORS(app)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# NIS RULE ENGINE — universal Amazon NIS conditional-logic evaluator.
+# Reads .xlsm templates, parses every CF/DV formula, evaluates against form state.
+# All 31 templates produce 16 product-type bundles, ~10K rules, 0 needing review.
+# ═══════════════════════════════════════════════════════════════════════════════
+from nis_engine import nis_rule_engine as _nis_engine  # noqa: E402
+_NIS_RULES_DIR = BASE_DIR / "nis_rules"
+_nis_engine.set_bundle_dir(str(_NIS_RULES_DIR))
+OVERRIDES_LOG = BASE_DIR / "feedback" / "overrides_log.jsonl"
+OVERRIDES_LOG.parent.mkdir(parents=True, exist_ok=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # TEMPLATE DROPDOWN VALIDATION ENGINE (permanent infrastructure)
 #
 # Every Amazon .xlsm template has dropdown validations as named ranges.
@@ -8569,6 +8581,180 @@ def intel_dismiss():
             return jsonify({"error": "No recommendations loaded"}), 400
         intel_state["dismissed"].add(rec_id)
     return jsonify({"ok": True, "rec_id": rec_id})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NIS RULE ENGINE API
+# Exposes the universal rule engine to the dashboard frontend.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@app.route("/api/rule-engine/index", methods=["GET"])
+def rule_engine_index():
+    """Return the product-type index with rule / field counts."""
+    try:
+        idx = _nis_engine.get_index()
+        return jsonify({"ok": True, "index": idx, "product_types": _nis_engine.list_product_types()})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/rule-engine/bundle/<product_type>", methods=["GET"])
+def rule_engine_bundle(product_type):
+    """Return the fields + summary (NOT the full rule ASTs — those are large).
+    Use ?full=1 to include rule ASTs."""
+    bundle = _nis_engine.load_bundle(product_type)
+    if not bundle:
+        return jsonify({"ok": False, "error": f"no bundle for {product_type}"}), 404
+    if request.args.get("full") == "1":
+        return jsonify({"ok": True, "bundle": bundle})
+    # Slim version — fields + summary only
+    slim = {
+        "product_type":    bundle.get("product_type"),
+        "version":         bundle.get("version"),
+        "template_file":   bundle.get("template_file"),
+        "merged_from":     bundle.get("merged_from"),
+        "data_row":        bundle.get("data_row", 7),
+        "fields":          bundle.get("fields", {}),
+        "coverage":        bundle.get("coverage", {}),
+        "named_ranges_count": len(bundle.get("named_ranges") or {}),
+        "indirect_names_count": len(bundle.get("indirect_names") or []),
+    }
+    return jsonify({"ok": True, "bundle": slim})
+
+
+@app.route("/api/rule-engine/evaluate", methods=["POST"])
+def rule_engine_evaluate():
+    """Evaluate a form state against a product-type rule bundle.
+
+    Body JSON: { "product_type": "COAT", "form_state": { ... }, "include_dropdowns": true }
+
+    Returns per-field verdict info suitable for the review screen.
+    """
+    data = request.get_json(force=True) or {}
+    pt = (data.get("product_type") or "").upper().strip()
+    state = data.get("form_state") or {}
+    include_dd = data.get("include_dropdowns", True)
+    if not pt:
+        return jsonify({"ok": False, "error": "product_type required"}), 400
+    try:
+        result = _nis_engine.evaluate_form(pt, state, include_dropdowns=include_dd)
+        if "error" in result:
+            return jsonify({"ok": False, "error": result["error"]}), 404
+        return jsonify({"ok": True, "result": result})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/rule-engine/override", methods=["POST"])
+def rule_engine_override():
+    """Log an operator override of a rule verdict.
+
+    Body JSON: {
+      "product_type": "COAT", "brand": "Sage", "style": "Puffer-001",
+      "field_key": "rtip_vendor_code#1.value", "column": "A",
+      "rule_id": "cf_0001", "original_verdict": "required_missing",
+      "override_verdict": "optional", "reason": "Not applicable to this SKU",
+      "operator": "bhatt.devang999@gmail.com"
+    }
+    Stored to feedback/overrides_log.jsonl (append-only).
+    """
+    data = request.get_json(force=True) or {}
+    required = ["product_type", "field_key", "rule_id",
+                "original_verdict", "override_verdict", "reason"]
+    missing = [k for k in required if not data.get(k)]
+    if missing:
+        return jsonify({"ok": False, "error": f"missing fields: {missing}"}), 400
+    entry = {
+        "timestamp":        datetime.utcnow().isoformat() + "Z",
+        "product_type":     data["product_type"],
+        "brand":            data.get("brand", ""),
+        "style":            data.get("style", ""),
+        "field_key":        data["field_key"],
+        "column":           data.get("column", ""),
+        "rule_id":          data["rule_id"],
+        "original_verdict": data["original_verdict"],
+        "override_verdict": data["override_verdict"],
+        "reason":           data["reason"],
+        "operator":         data.get("operator", ""),
+    }
+    try:
+        with open(str(OVERRIDES_LOG), "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        return jsonify({"ok": True, "entry": entry})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/rule-engine/overrides", methods=["GET"])
+def rule_engine_overrides():
+    """Return all logged overrides. Optional query: ?product_type=COAT&brand=Sage."""
+    pt  = (request.args.get("product_type") or "").strip().upper()
+    brand = (request.args.get("brand") or "").strip().lower()
+    entries = []
+    if OVERRIDES_LOG.exists():
+        with open(str(OVERRIDES_LOG), "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    e = json.loads(line)
+                except Exception:
+                    continue
+                if pt and e.get("product_type", "").upper() != pt:
+                    continue
+                if brand and brand not in e.get("brand", "").lower():
+                    continue
+                entries.append(e)
+    return jsonify({"ok": True, "count": len(entries), "overrides": entries})
+
+
+@app.route("/api/rule-engine/rebuild", methods=["POST"])
+def rule_engine_rebuild():
+    """Rebuild the rule bundles from the .xlsm templates in uploads/templates/.
+    Manual trigger — the operator clicks a button to re-extract after Amazon ships a new template.
+    """
+    from nis_engine import nis_rule_extractor as _extractor
+    templates_dir = str(UPLOAD_TEMPLATES)
+    # Also look at the top-level workspace for any .xlsm templates uploaded directly
+    scan_dirs = [templates_dir, str(BASE_DIR.parent)]
+    bundles = []
+    errors  = []
+    seen = set()
+    try:
+        import glob
+        # Clear output dir first so stale bundles don't linger
+        for f in os.listdir(str(_NIS_RULES_DIR)):
+            if f.endswith(".json"):
+                os.remove(str(_NIS_RULES_DIR / f))
+        for d in scan_dirs:
+            if not os.path.isdir(d):
+                continue
+            for f in sorted(glob.glob(os.path.join(d, "*.xlsm"))):
+                if os.path.basename(f) in seen:
+                    continue
+                seen.add(os.path.basename(f))
+                try:
+                    b = _extractor.extract_rules(f)
+                    _extractor.write_bundle(b, str(_NIS_RULES_DIR))
+                    bundles.append({
+                        "file": os.path.basename(f),
+                        "product_type": b.get("product_type"),
+                        "rules": b["coverage"]["total_formulas"],
+                        "fields": b["coverage"]["field_count"],
+                        "needs_review": b["coverage"]["needs_review"],
+                    })
+                except Exception as e:
+                    errors.append({"file": os.path.basename(f), "error": str(e)})
+        _extractor.write_index([], str(_NIS_RULES_DIR))
+        # Refresh engine cache
+        _nis_engine.set_bundle_dir(str(_NIS_RULES_DIR))
+        return jsonify({"ok": True, "bundles": bundles, "errors": errors})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":

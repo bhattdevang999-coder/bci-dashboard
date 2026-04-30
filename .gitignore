@@ -9,3 +9,7 @@ uploads/output/*
 *.zip
 feedback/taxonomy_history.jsonl
 snapshots/
+
+# NIS Rule Engine
+nis_engine/__pycache__/
+feedback/overrides_log.jsonl

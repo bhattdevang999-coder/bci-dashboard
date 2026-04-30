@@ -1,0 +1,179 @@
+{
+  "BLAZER": {
+    "template_file": "Blazers.xlsm",
+    "merged_from": [
+      "Blazers.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 212,
+    "rule_count": 712,
+    "needs_review": 0,
+    "fields_with_rules": 212
+  },
+  "BRA": {
+    "template_file": "Bras.xlsm",
+    "merged_from": [
+      "Bras.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 220,
+    "rule_count": 730,
+    "needs_review": 0,
+    "fields_with_rules": 220
+  },
+  "COAT": {
+    "template_file": "Jackets_and_Coats.xlsm",
+    "merged_from": [
+      "Jackets_and_Coats.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 243,
+    "rule_count": 775,
+    "needs_review": 0,
+    "fields_with_rules": 243
+  },
+  "DRESS": {
+    "template_file": "Dresses-Training.xlsm",
+    "merged_from": [
+      "Dresses-Training.xlsm",
+      "Dresses.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 254,
+    "rule_count": 824,
+    "needs_review": 0,
+    "fields_with_rules": 254
+  },
+  "HAT": {
+    "template_file": "Hats.xlsm",
+    "merged_from": [
+      "Hats.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 228,
+    "rule_count": 753,
+    "needs_review": 0,
+    "fields_with_rules": 228
+  },
+  "ONE_PIECE_OUTFIT": {
+    "template_file": "One-piece_Outfits.xlsm",
+    "merged_from": [
+      "One-piece_Outfits.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 205,
+    "rule_count": 649,
+    "needs_review": 0,
+    "fields_with_rules": 205
+  },
+  "OVERALLS": {
+    "template_file": "Overalls.xlsm",
+    "merged_from": [
+      "Overalls.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 199,
+    "rule_count": 657,
+    "needs_review": 0,
+    "fields_with_rules": 199
+  },
+  "PANTS": {
+    "template_file": "Other_Pants.xlsm",
+    "merged_from": [
+      "Other_Pants.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 217,
+    "rule_count": 673,
+    "needs_review": 0,
+    "fields_with_rules": 217
+  },
+  "SANDAL": {
+    "template_file": "Sandals.xlsm",
+    "merged_from": [
+      "Sandals.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 261,
+    "rule_count": 887,
+    "needs_review": 0,
+    "fields_with_rules": 261
+  },
+  "SHIRT": {
+    "template_file": "Other_Shirts.xlsm",
+    "merged_from": [
+      "Other_Shirts.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 215,
+    "rule_count": 681,
+    "needs_review": 0,
+    "fields_with_rules": 215
+  },
+  "SHORTS": {
+    "template_file": "Shorts.xlsm",
+    "merged_from": [
+      "Shorts.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 242,
+    "rule_count": 796,
+    "needs_review": 0,
+    "fields_with_rules": 242
+  },
+  "SKIRT": {
+    "template_file": "Skirts.xlsm",
+    "merged_from": [
+      "Skirts.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 236,
+    "rule_count": 775,
+    "needs_review": 0,
+    "fields_with_rules": 236
+  },
+  "SNOWSUIT": {
+    "template_file": "Snowsuits.xlsm",
+    "merged_from": [
+      "Snowsuits.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 233,
+    "rule_count": 697,
+    "needs_review": 0,
+    "fields_with_rules": 233
+  },
+  "SNOW_PANT": {
+    "template_file": "Snow_Pants.xlsm",
+    "merged_from": [
+      "Snow_Pants.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 177,
+    "rule_count": 571,
+    "needs_review": 0,
+    "fields_with_rules": 177
+  },
+  "SWEATSHIRT": {
+    "template_file": "Sweatshirts.xlsm",
+    "merged_from": [
+      "Sweatshirts.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 195,
+    "rule_count": 615,
+    "needs_review": 0,
+    "fields_with_rules": 195
+  },
+  "SWIMWEAR": {
+    "template_file": "Swimwear.xlsm",
+    "merged_from": [
+      "Swimwear.xlsm"
+    ],
+    "version": "1.3",
+    "field_count": 243,
+    "rule_count": 793,
+    "needs_review": 0,
+    "fields_with_rules": 243
+  }
+}

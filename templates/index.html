@@ -254,6 +254,15 @@
   /* ── Merge + Intel shared module styles ──────────────── */
   #merge-page  { display: none; }
   #intel-page  { display: none; }
+  #engine-page { display: none; }
+  .nav-item-engine {
+    padding: 10px 18px; font-size: 13px; color: var(--ink-2, #444);
+    cursor: pointer; border-radius: 6px; margin: 2px 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-item-engine:hover { background: rgba(0,0,0,0.04); }
+  .nav-item-engine.active { background: rgba(46, 91, 255, 0.08); color: #2e5bff; font-weight: 600; }
+  .nav-engine-icon { font-size: 14px; }
 
   /* Summary stat cards */
   .module-summary-grid {
@@ -3006,6 +3015,12 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="nav-item-intel" id="nav-intel" onclick="showIntelPage()">
       <span class="nav-intel-icon">&#9670;</span> Recommendations
     </div>
+
+    <div class="nav-section-divider"></div>
+    <div class="nav-label">Rule Engine</div>
+    <div class="nav-item-engine" id="nav-engine" onclick="showEnginePage()">
+      <span class="nav-engine-icon">&#9881;</span> NIS Rules
+    </div>
   </nav>
 
   <div class="sidebar-footer">
@@ -4102,6 +4117,44 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
   </div><!-- /intel-page -->
 
+  <!-- ═════════════════════════ NIS RULE ENGINE PAGE ═══════════════════════ -->
+  <div id="engine-page" class="content content-wide">
+    <div style="max-width:1200px; margin:0 auto;">
+
+      <!-- Header row: product type picker + coverage summary -->
+      <div style="display:flex; gap:16px; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap;">
+        <div style="flex:0 0 260px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Product Type</label>
+          <select id="engine-pt" class="input" style="width:100%;" onchange="engineLoadBundle()"></select>
+        </div>
+        <div id="engine-coverage" style="flex:1; min-width:280px; font-size:13px; color:#444;"></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="engineRebuild()" title="Re-extract rules from all .xlsm templates in uploads/templates/">↻ Rebuild from templates</button>
+        </div>
+      </div>
+
+      <!-- Form state entry panel -->
+      <div style="background:#fff; border:1px solid #e6e6ea; border-radius:10px; padding:16px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="font-weight:700; font-size:14px;">Listing state (row 7)</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="engineClearState()">Clear</button>
+            <button class="btn btn-secondary btn-sm" onclick="engineLoadSageSample()">Load Sage sample</button>
+            <button class="btn btn-primary btn-sm" onclick="engineEvaluate()">Evaluate</button>
+          </div>
+        </div>
+        <div id="engine-form" style="max-height:360px; overflow:auto;"></div>
+      </div>
+
+      <!-- Verdict summary bar -->
+      <div id="engine-summary" style="margin-bottom:16px;"></div>
+
+      <!-- Three-bucket review -->
+      <div id="engine-buckets" style="display:flex; flex-direction:column; gap:16px;"></div>
+
+    </div>
+  </div><!-- /engine-page -->
+
 </div><!-- /main -->
 
 <script>
@@ -4122,7 +4175,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['nis-page', 'catalog-page', 'merge-page', 'intel-page'];
+const ALL_PAGES = ['nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -4160,6 +4213,303 @@ function showIntelPage() {
     'Data-driven opportunities to improve your catalog');
   document.getElementById('nav-intel').classList.add('active');
   intelSyncGate();
+}
+
+function showEnginePage() {
+  _showPage('engine-page', 'NIS Rule Engine',
+    'Live conditional-logic engine — required / optional / hidden across every Amazon NIS template');
+  const navEl = document.getElementById('nav-engine');
+  if (navEl) navEl.classList.add('active');
+  engineInit();
+}
+
+// ════════════════════════ NIS RULE ENGINE UI ════════════════════════
+const engineState = {
+  index: null,
+  bundle: null,
+  pt: null,
+  formState: {},
+  lastEvaluation: null,
+};
+
+async function engineInit() {
+  const ptSelect = document.getElementById('engine-pt');
+  if (engineState.index) { return; }
+  try {
+    const r = await fetch('/api/rule-engine/index').then(r => r.json());
+    if (!r.ok) throw new Error(r.error || 'Index fetch failed');
+    engineState.index = r.index;
+    const types = Object.keys(r.index).sort();
+    ptSelect.innerHTML = types.map(t => `<option value="${t}">${t}</option>`).join('');
+    if (types.includes('COAT')) ptSelect.value = 'COAT';
+    await engineLoadBundle();
+  } catch (e) {
+    ptSelect.innerHTML = '<option>(no bundles found)</option>';
+    document.getElementById('engine-coverage').innerHTML =
+      `<span style="color:#c00;">Rule bundles not available: ${e.message}</span>`;
+  }
+}
+
+async function engineLoadBundle() {
+  const pt = document.getElementById('engine-pt').value;
+  if (!pt) return;
+  engineState.pt = pt;
+  engineState.formState = {};
+  engineState.lastEvaluation = null;
+  document.getElementById('engine-summary').innerHTML = '';
+  document.getElementById('engine-buckets').innerHTML = '';
+  try {
+    const r = await fetch(`/api/rule-engine/bundle/${pt}`).then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    engineState.bundle = r.bundle;
+    engineRenderCoverage();
+    engineRenderForm();
+  } catch (e) {
+    document.getElementById('engine-coverage').innerHTML =
+      `<span style="color:#c00;">Failed to load ${pt}: ${e.message}</span>`;
+  }
+}
+
+function engineRenderCoverage() {
+  const b = engineState.bundle;
+  if (!b) return;
+  const c = b.coverage || {};
+  const sources = (b.merged_from || [b.template_file]).length;
+  document.getElementById('engine-coverage').innerHTML = `
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+      <div><strong>${c.field_count || 0}</strong> fields</div>
+      <div><strong>${c.total_formulas || 0}</strong> rules</div>
+      <div><strong>${c.needs_review || 0}</strong> need review</div>
+      <div><strong>${b.named_ranges_count || 0}</strong> dropdowns resolved</div>
+      <div style="color:#666;">Source: ${sources} .xlsm — ver ${b.version || '?'}</div>
+    </div>`;
+}
+
+function engineRenderForm() {
+  const b = engineState.bundle;
+  if (!b || !b.fields) return;
+  // Group fields by section, show first 12 fields per section with inputs
+  const bySection = {};
+  for (const [col, f] of Object.entries(b.fields)) {
+    const s = f.section || 'Other';
+    (bySection[s] = bySection[s] || []).push([col, f]);
+  }
+  const html = [];
+  const sectionOrder = ['Listing Identity','Variations','Product Identity','Descriptive','Compliance'];
+  const sectionsRendered = new Set();
+  const renderSection = (s, fields) => {
+    fields.sort((a,b) => a[0].length === b[0].length ? a[0].localeCompare(b[0]) : a[0].length - b[0].length);
+    html.push(`<div style="margin:8px 0 4px 0; font-size:11px; font-weight:700; color:#666; text-transform:uppercase;">${s}</div>`);
+    html.push('<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:8px 12px;">');
+    for (const [col, f] of fields.slice(0, 30)) {
+      const reqBadge = f.base_requirement === 'REQUIRED' ? ' <span style="color:#c00; font-weight:700;">*</span>' :
+                        (f.base_requirement === 'CONDITIONALLY REQUIRED' ? ' <span style="color:#d68a00;">○</span>' : '');
+      html.push(`
+        <div>
+          <label style="display:block; font-size:11px; color:#444; margin-bottom:2px;">
+            <span style="color:#999;">${col}</span> ${f.label}${reqBadge}
+          </label>
+          <input type="text" class="input" style="width:100%; font-size:12px; padding:4px 6px;"
+            data-engine-col="${col}"
+            placeholder="${f.base_requirement || ''}"
+            oninput="engineOnInput('${col}', this.value)">
+        </div>`);
+    }
+    if (fields.length > 30) {
+      html.push(`<div style="font-size:11px; color:#999; align-self:center;">… +${fields.length - 30} more fields in this section</div>`);
+    }
+    html.push('</div>');
+  };
+  // Render known sections first, then any others
+  for (const s of sectionOrder) {
+    if (bySection[s]) { renderSection(s, bySection[s]); sectionsRendered.add(s); }
+  }
+  for (const [s, fields] of Object.entries(bySection)) {
+    if (!sectionsRendered.has(s)) renderSection(s, fields);
+  }
+  document.getElementById('engine-form').innerHTML = html.join('');
+}
+
+function engineOnInput(col, value) {
+  engineState.formState[col] = value;
+}
+
+function engineClearState() {
+  engineState.formState = {};
+  document.querySelectorAll('[data-engine-col]').forEach(i => { i.value = ''; });
+  document.getElementById('engine-summary').innerHTML = '';
+  document.getElementById('engine-buckets').innerHTML = '';
+}
+
+function engineLoadSageSample() {
+  // Sage Collective sample state (from their pre-upload file)
+  const sample = {
+    A: 'QT5G8',                               // rtip_vendor_code
+    B: 'SAGE-PUFFER-001',                     // vendor_sku
+    C: 'COAT',                                // product_type
+    D: 'Parent',                              // parentage_level
+    G: 'Size/Color',                          // variation_theme
+    H: "Sage Collective Women's Puffer Coat", // item_name
+    I: 'Sage Collective',                     // brand
+    J: 'UPC',                                 // external_product_id_type
+    M: 'Outerwear',                           // product_category
+    N: 'Coats',                               // product_subcategory
+    O: 'puffer-coat',                         // item_type_keyword
+    AV: 'womens',                             // department
+    AW: 'Female',                             // target_gender
+    BQ: 'Black',                              // color
+    EP: 'China',                              // country_of_origin
+  };
+  engineState.formState = {...sample};
+  document.querySelectorAll('[data-engine-col]').forEach(i => {
+    const c = i.getAttribute('data-engine-col');
+    if (sample[c] !== undefined) i.value = sample[c];
+    else i.value = '';
+  });
+}
+
+async function engineEvaluate() {
+  if (!engineState.pt) { return; }
+  document.getElementById('engine-summary').innerHTML = '<em style="color:#666;">Evaluating…</em>';
+  try {
+    const r = await fetch('/api/rule-engine/evaluate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        product_type: engineState.pt,
+        form_state:   engineState.formState,
+      }),
+    }).then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    engineState.lastEvaluation = r.result;
+    engineRenderVerdicts(r.result);
+  } catch (e) {
+    document.getElementById('engine-summary').innerHTML =
+      `<span style="color:#c00;">Evaluation failed: ${e.message}</span>`;
+  }
+}
+
+function engineRenderVerdicts(result) {
+  const s = result.summary || {};
+  const pills = [
+    ['required_missing', 'Required — Missing', '#c0392b', '#fdecea'],
+    ['required_ok',      'Required — OK',      '#1e7a3e', '#e7f6ec'],
+    ['optional',         'Optional',            '#555',    '#f1f1f1'],
+    ['hidden',           'Hidden',              '#888',    '#eee'],
+    ['error',            'Error',               '#c0392b', '#fdecea'],
+    ['review',           'Needs Review',        '#8a6d00', '#fff4cc'],
+  ];
+  const bar = pills.filter(([k]) => s[k])
+    .map(([k, lbl, fg, bg]) =>
+      `<span style="display:inline-block; padding:4px 10px; margin-right:6px; border-radius:12px; background:${bg}; color:${fg}; font-size:12px; font-weight:600;">${lbl}: ${s[k]}</span>`
+    ).join('');
+  document.getElementById('engine-summary').innerHTML =
+    `<div style="padding:10px 14px; background:#fafafa; border:1px solid #e8e8e8; border-radius:8px;">${bar || 'No verdicts'}</div>`;
+
+  // Three-bucket review
+  const buckets = {
+    'required_missing': [],
+    'required_ok':      [],
+    'review':           [],
+    'error':            [],
+    'optional':         [],
+  };
+  for (const [col, info] of Object.entries(result.fields)) {
+    const v = info.verdict;
+    if (buckets[v] !== undefined) buckets[v].push([col, info]);
+  }
+
+  const bucketDefs = [
+    ['required_missing', 'Required — Missing', '#c0392b', true],
+    ['review',           'Needs Review',        '#8a6d00', true],
+    ['error',            'Errors',              '#c0392b', true],
+    ['required_ok',      'Required — Satisfied','#1e7a3e', false],
+    ['optional',         'Optional',            '#666',    false],
+  ];
+
+  const html = [];
+  for (const [key, label, color, openByDefault] of bucketDefs) {
+    const arr = buckets[key];
+    if (!arr || !arr.length) continue;
+    html.push(`
+      <details ${openByDefault ? 'open' : ''} style="background:#fff; border:1px solid #e6e6ea; border-radius:10px; padding:12px 16px;">
+        <summary style="cursor:pointer; font-weight:700; font-size:14px; color:${color};">
+          ${label} · ${arr.length}
+        </summary>
+        <div style="margin-top:10px; display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:8px 16px;">
+          ${arr.map(([col, info]) => engineRenderFieldCard(col, info, color)).join('')}
+        </div>
+      </details>`);
+  }
+  document.getElementById('engine-buckets').innerHTML = html.join('');
+}
+
+function engineRenderFieldCard(col, info, color) {
+  const triggerCells = (info.trigger_cells || []).join(', ');
+  const dd = info.dropdown_source;
+  const ddPreview = Array.isArray(dd) && dd.length
+    ? `<div style="font-size:11px; color:#666; margin-top:4px;">Dropdown: ${dd.slice(0,3).map(v => String(v).slice(0,20)).join(', ')}${dd.length>3 ? ', … +'+(dd.length-3) : ''}</div>`
+    : '';
+  const trail = (info.rule_trail || []).filter(t => t.verdict !== 'optional').slice(0, 2);
+  const trailHtml = trail.length
+    ? `<div style="font-size:11px; color:#666; margin-top:4px;">${trail.map(t =>
+        `<div>· ${t.kind}: <code style="background:#f0f0f0; padding:0 3px; border-radius:3px;">${(t.source || '').slice(0, 60)}…</code></div>`
+      ).join('')}</div>`
+    : '';
+  const overrideBtn = (info.verdict === 'required_missing' || info.verdict === 'error')
+    ? `<button class="btn btn-secondary btn-sm" style="margin-top:6px; font-size:11px; padding:2px 8px;" onclick="engineOverride('${col}')">Override & flag</button>`
+    : '';
+  return `
+    <div style="padding:8px 10px; border-left:3px solid ${color}; background:#fafafa; border-radius:4px;">
+      <div style="font-size:12px;"><strong>${info.label}</strong> <span style="color:#999;">(${col})</span></div>
+      <div style="font-size:11px; color:#555;">Value: <code>${info.value || '—'}</code></div>
+      ${triggerCells ? `<div style="font-size:11px; color:#777;">Depends on: ${triggerCells}</div>` : ''}
+      ${ddPreview}${trailHtml}${overrideBtn}
+    </div>`;
+}
+
+async function engineOverride(col) {
+  const info = engineState.lastEvaluation && engineState.lastEvaluation.fields[col];
+  if (!info) return;
+  const reason = prompt(`Override rule for "${info.label}"?\n\nEnter reason (required):`);
+  if (!reason) return;
+  const rule = (info.rule_trail || [])[0];
+  try {
+    const r = await fetch('/api/rule-engine/override', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        product_type:     engineState.pt,
+        brand:            state.brand || '',
+        style:            '',
+        field_key:        info.field_key,
+        column:           col,
+        rule_id:          (rule && rule.rule_id) || 'unknown',
+        original_verdict: info.verdict,
+        override_verdict: 'optional',
+        reason:           reason,
+        operator:         document.getElementById('operator-input') ? document.getElementById('operator-input').value : '',
+      }),
+    }).then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    alert('Override logged. This field is flagged yellow and visible in feedback/overrides_log.jsonl.');
+  } catch (e) {
+    alert('Override failed: ' + e.message);
+  }
+}
+
+async function engineRebuild() {
+  if (!confirm('Re-extract rules from every .xlsm template? This clears current bundles.')) return;
+  document.getElementById('engine-coverage').innerHTML = '<em>Rebuilding…</em>';
+  try {
+    const r = await fetch('/api/rule-engine/rebuild', { method: 'POST' }).then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    alert(`Rebuilt ${r.bundles.length} bundles, ${r.errors.length} errors.`);
+    engineState.index = null;
+    await engineInit();
+  } catch (e) {
+    alert('Rebuild failed: ' + e.message);
+  }
 }
 
 // ═══════════════════════ SECTION 1: PRODUCT UPLOAD ═══════════════════════
