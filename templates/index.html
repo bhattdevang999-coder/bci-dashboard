@@ -2993,15 +2993,15 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   </div>
 
   <nav class="sidebar-nav">
-    <div class="nav-label">NIS Creation</div>
+    <div class="nav-label">Create Listings</div>
     <div class="nav-item active" id="nav-nis" onclick="showNISPage()">
-      <span class="nav-icon">✦</span> Upload &amp; Generate
+      <span class="nav-icon">✦</span> Upload Pre-Upload
     </div>
 
     <div class="nav-section-divider"></div>
     <div class="nav-label">Catalog Health</div>
     <div class="nav-item-catalog" id="nav-catalog" onclick="showCatalogPage()">
-      <span class="nav-catalog-icon">&#10003;</span> Upload &amp; Analyze
+      <span class="nav-catalog-icon">&#10003;</span> Analyze Live Listings
     </div>
 
     <div class="nav-section-divider"></div>
@@ -3017,9 +3017,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
 
     <div class="nav-section-divider"></div>
-    <div class="nav-label">Rule Engine</div>
+    <div class="nav-label" style="opacity:0.6;">Admin</div>
     <div class="nav-item-engine" id="nav-engine" onclick="showEnginePage()">
-      <span class="nav-engine-icon">&#9881;</span> NIS Rules
+      <span class="nav-engine-icon">&#9881;</span> Inspect Rules
     </div>
   </nav>
 
@@ -3105,6 +3105,11 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
     <!-- Taxonomy banner (Phase 2) — populated by taxonomyInit() after upload -->
     <div id="taxonomy-banner" class="hidden" style="margin:14px 0; padding:14px 16px; border-radius:8px; background:#fff; border:1px solid #cbd5e1;"></div>
+
+    <!-- ════════════════════ v0.7.5 merged: Engine verdict + brand overrides ════════════════════ -->
+    <div id="engine-verdict-panel" class="hidden" style="margin-top:18px;"></div>
+    <div id="brand-override-panel" class="hidden" style="margin-top:14px;"></div>
+    <div id="past-uploads-panel" class="hidden" style="margin-top:14px;"></div>
 
     <!-- Legacy detection card + stats (kept for compatibility) -->
     <div id="detection-card" class="detection-card hidden"></div>
@@ -4508,7 +4513,175 @@ async function engineOverride(col) {
   }
 }
 
-// ════════════════════════ PRE-UPLOAD IMPORT ════════════════════════
+// ══════════════════ v0.7.5: MERGED PAGE PANELS ════════════════════
+async function renderEngineVerdictForUpload(data) {
+  const panel = document.getElementById('engine-verdict-panel');
+  if (!panel || !data.styles || !data.styles.length) return;
+  const brand = (data.styles[0] && data.styles[0].brand) || '';
+  const styleVerdicts = [];
+  for (const s of data.styles) {
+    const sub = s.subclass || '';
+    const formState = {};
+    if (s.color)        formState['color#1.value'] = s.color;
+    if (s.size)         formState['apparel_size#1.size'] = s.size;
+    if (s.upc)          formState['external_product_id#1.value'] = s.upc;
+    if (s.style_name || s.style_id) formState['item_name#1.value'] = s.style_name || s.style_id;
+    if (s.model_number) formState['model_number#1.value'] = s.model_number;
+    if (s.coo)          formState['country_of_origin#1.value'] = s.coo;
+    if (s.department)   formState['department#1.value'] = s.department;
+    if (s.care)         formState['care_instructions#1.value'] = s.care;
+    if (s.fabric)       formState['material#1.value'] = s.fabric;
+    if (s.closure)      formState['closure#1.type#1.value'] = s.closure;
+    if (s.list_price)   formState['list_price#1.value'] = String(s.list_price);
+    try {
+      const er = await fetch('/api/rule-engine/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_type: (s.product_type || 'COAT'),
+          form_state:   formState,
+          brand:        brand,
+          sub_class:    sub,
+          apply_apparel_defaults: true,
+        }),
+      }).then(r => r.json());
+      if (er.ok) {
+        const fields = er.result.fields || {};
+        const hard = Object.values(fields).filter(f => f.verdict==='required_missing' && f.base_requirement==='REQUIRED').map(f=>f.label);
+        const ok   = er.result.summary.required_ok || 0;
+        styleVerdicts.push({ style: s, hard, ok, ready: hard.length === 0 });
+      }
+    } catch(e) {}
+  }
+  const readyCount = styleVerdicts.filter(v=>v.ready).length;
+  const blockerCount = styleVerdicts.filter(v=>!v.ready).length;
+  const blockerTotal = styleVerdicts.reduce((a,v)=>a+v.hard.length, 0);
+  let html = '<div style="background:#fff; border:1px solid #e6e6ea; border-radius:10px; padding:16px;">';
+  html += '<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:14px;">';
+  html += '  <div><div style="font-weight:700; font-size:15px;">⚙️ Engine Verdict — ' + escHtml(brand || 'Unknown Brand') + '</div>';
+  html += '    <div style="font-size:12px; color:#666; margin-top:2px;">Each style checked against Amazon\u2019s universal NIS rules.</div></div>';
+  html += '  <div style="display:flex; gap:10px;">';
+  html += '    <div style="padding:6px 12px; background:#e7f6ec; color:#1e7a3e; border-radius:16px; font-size:12px; font-weight:600;">✓ ' + readyCount + ' ready</div>';
+  if (blockerCount > 0) html += '    <div style="padding:6px 12px; background:#fdecea; color:#c0392b; border-radius:16px; font-size:12px; font-weight:600;">⚠ ' + blockerCount + ' need attention (' + blockerTotal + ' hard blockers)</div>';
+  html += '  </div></div>';
+  if (blockerCount > 0) {
+    html += '<div style="padding:10px 12px; background:#fff8e1; border:1px solid #f5d98a; border-radius:6px; margin-bottom:12px; font-size:12px;">';
+    html += '<strong style="color:#856404;">Amazon will reject these listings</strong> unless missing fields are filled. Generate will still work (warn-only).</div>';
+  }
+  html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+  html += '<thead><tr style="background:#f7f7fb; text-align:left;"><th style="padding:8px;">Style</th><th style="padding:8px;">Sub-class</th>';
+  html += '<th style="padding:8px; text-align:right;">OK</th><th style="padding:8px;">Status</th></tr></thead><tbody>';
+  styleVerdicts.forEach(v => {
+    const sid = v.style.style_id || v.style.style_name || '?';
+    const bg = v.ready ? '#fff' : '#fffbea';
+    const badge = v.ready
+      ? '<span style="padding:2px 8px; background:#e7f6ec; color:#1e7a3e; border-radius:10px; font-weight:600;">✓ Ready</span>'
+      : '<span style="padding:2px 8px; background:#fdecea; color:#c0392b; border-radius:10px; font-weight:600;">' + v.hard.length + ' blocker' + (v.hard.length===1?'':'s') + '</span>';
+    html += '<tr style="background:' + bg + '; border-bottom:1px solid #f1f5f9;">';
+    html += '<td style="padding:8px; vertical-align:top;"><strong>' + escHtml(String(sid)) + '</strong></td>';
+    html += '<td style="padding:8px; vertical-align:top;">' + escHtml(v.style.subclass || '') + '</td>';
+    html += '<td style="padding:8px; vertical-align:top; text-align:right; color:#1e7a3e;">' + v.ok + '</td>';
+    html += '<td style="padding:8px; vertical-align:top;">' + badge;
+    if (!v.ready && v.hard.length) html += '<div style="font-size:11px; color:#c0392b; margin-top:4px;">Missing: ' + v.hard.slice(0,3).map(escHtml).join(', ') + (v.hard.length>3 ? ', \u2026' : '') + '</div>';
+    html += '</td></tr>';
+  });
+  html += '</tbody></table></div>';
+  panel.innerHTML = html;
+  panel.classList.remove('hidden');
+}
+
+async function renderBrandOverridePanel(data) {
+  const panel = document.getElementById('brand-override-panel');
+  if (!panel || !data.styles || !data.styles.length) return;
+  const brand = (data.styles[0] && data.styles[0].brand) || '';
+  if (!brand) return;
+  let status = null;
+  try { status = await fetch('/api/rule-engine/brand-config?brand=' + encodeURIComponent(brand)).then(r => r.json()); } catch(e) { return; }
+  if (!status || !status.ok) return;
+  const cfg = status.current_config || {};
+  const schema = status.schema || {};
+  const needsSetup = !!status.needs_setup;
+  let html = '<div style="background:#fff; border:1px solid #e6e6ea; border-radius:10px; padding:16px;">';
+  html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">';
+  html += '<div style="font-weight:700; font-size:15px;">🏢 Brand-Level Settings — applies to every style</div>';
+  if (needsSetup) html += '<span style="padding:4px 10px; background:#fff4cc; color:#8a6d00; border-radius:12px; font-size:12px; font-weight:600;">⚠ Setup required</span>';
+  else html += '<span style="padding:4px 10px; background:#e7f6ec; color:#1e7a3e; border-radius:12px; font-size:12px;">✓ Saved</span>';
+  html += '</div>';
+  html += '<div style="font-size:12px; color:#666; margin-bottom:12px;">Values here override AI-generated content for every style. Saved permanently per brand.</div>';
+  html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">';
+  Object.entries(schema).forEach(([key, meta]) => {
+    const cur = cfg[key] !== undefined ? cfg[key] : (meta.default_value || '');
+    html += '<div data-key="' + key + '">';
+    html += '<label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">' + escHtml(meta.label || key) + (meta.required ? ' <span style="color:#c00;">*</span>' : '') + '</label>';
+    if (meta.options) {
+      html += '<select data-override-key="' + key + '" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #ccc; border-radius:4px;">';
+      html += meta.options.map(o => '<option' + (o === cur ? ' selected' : '') + '>' + escHtml(o) + '</option>').join('');
+      html += '</select>';
+    } else {
+      html += '<input type="text" data-override-key="' + key + '" value="' + escHtml(cur) + '" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #ccc; border-radius:4px;"/>';
+    }
+    if (meta.hint) html += '<div style="font-size:10px; color:#999; margin-top:2px;">' + escHtml(meta.hint) + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div style="margin-top:14px;"><button class="btn btn-primary btn-sm" onclick="saveBrandOverridesFromPanel(\'' + escHtml(brand) + '\')">Save &amp; Re-evaluate</button>';
+  html += '<span id="brand-panel-status" style="margin-left:10px; font-size:12px; color:#666;"></span></div>';
+  html += '</div>';
+  panel.innerHTML = html;
+  panel.classList.remove('hidden');
+}
+
+async function saveBrandOverridesFromPanel(brand) {
+  const panel = document.getElementById('brand-override-panel');
+  if (!panel) return;
+  const config = {};
+  panel.querySelectorAll('[data-override-key]').forEach(el => {
+    if (el.value) config[el.getAttribute('data-override-key')] = el.value;
+  });
+  const statusEl = document.getElementById('brand-panel-status');
+  if (statusEl) statusEl.textContent = 'Saving\u2026';
+  try {
+    const r = await fetch('/api/rule-engine/brand-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brand, config }) }).then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    if (statusEl) statusEl.textContent = '✓ Saved — re-evaluating\u2026';
+    await renderEngineVerdictForUpload({ styles: state.styles });
+    if (statusEl) statusEl.textContent = '✓ Saved';
+  } catch(e) { if (statusEl) statusEl.textContent = 'Failed: ' + e.message; }
+}
+
+async function renderPastUploadsPanel() {
+  const panel = document.getElementById('past-uploads-panel');
+  if (!panel) return;
+  try {
+    const r = await fetch('/api/preupload/history').then(r => r.json());
+    if (!r.ok || !r.entries || !r.entries.length) { panel.classList.add('hidden'); return; }
+    let html = '<div style="background:#fff; border:1px solid #e6e6ea; border-radius:10px; padding:16px;">';
+    html += '<div style="font-weight:700; font-size:14px; margin-bottom:10px;">📚 Past Uploads</div>';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+    html += '<thead><tr style="background:#f7f7fb; text-align:left;"><th style="padding:6px;">Date</th><th style="padding:6px;">File</th><th style="padding:6px;">Brand</th>';
+    html += '<th style="padding:6px; text-align:right;">Styles</th><th style="padding:6px; text-align:right;">Variants</th><th style="padding:6px;">Generated</th></tr></thead><tbody>';
+    r.entries.slice(0, 10).forEach(e => {
+      const dt = new Date(e.timestamp || Date.now());
+      const dateStr = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      const genLink = e.generated_file
+        ? '<a href="/api/preupload/download/' + encodeURIComponent(e.generated_file) + '" style="color:#2e5bff;">⬇ Download</a>'
+        : '<span style="color:#999;">—</span>';
+      html += '<tr style="border-bottom:1px solid #f1f5f9;">';
+      html += '<td style="padding:6px; color:#666;">' + escHtml(dateStr) + '</td>';
+      html += '<td style="padding:6px;">' + escHtml(e.filename || '') + '</td>';
+      html += '<td style="padding:6px;">' + escHtml(e.brand || '') + '</td>';
+      html += '<td style="padding:6px; text-align:right;">' + (e.total_styles || 0) + '</td>';
+      html += '<td style="padding:6px; text-align:right;">' + (e.total_variants || 0) + '</td>';
+      html += '<td style="padding:6px;">' + genLink + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    panel.innerHTML = html;
+    panel.classList.remove('hidden');
+  } catch(e) {}
+}
+
+
+// ══════════════════════ PRE-UPLOAD IMPORT (legacy Inspect Rules) ════════════════════
 async function engineImportPreupload(fileInput) {
   const file = fileInput.files && fileInput.files[0];
   if (!file) return;
@@ -5070,10 +5243,35 @@ async function handleProductUpload(files) {
   const formData = new FormData();
   formData.append('file', file);
 
+  // ═══ v0.7.5: Boss Theater plays during parse ═══
+  if (window.bossTheater) {
+    window.bossTheater.show();
+  }
+
   try {
     const res = await fetch('/api/upload-product-data', { method: 'POST', body: formData });
     const data = await res.json();
     loadingEl.classList.add('hidden');
+
+    // Tell theater data is ready (it auto-closes once min-display elapses)
+    if (window.bossTheater) {
+      window.bossTheater.dataDone();
+    }
+
+    // Save this upload to history (best-effort, non-blocking)
+    if (file && file.name && data && !data.error) {
+      const detectedBrand = (data.styles && data.styles[0]) ? data.styles[0].brand : '';
+      fetch('/api/preupload/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          brand: detectedBrand,
+          total_styles: data.total_styles,
+          total_variants: data.total_variants,
+        }),
+      }).catch(()=>{});
+    }
 
     if (data.error) { showToast(data.error, 'error'); return; }
 
@@ -5092,6 +5290,17 @@ async function handleProductUpload(files) {
     // and hydrate the per-style taxonomy panels lazily.
     if (typeof taxonomyInit === 'function') {
       taxonomyInit(data).catch(e => console.error('taxonomy init failed', e));
+    }
+
+    // ═══ v0.7.5: Engine verdict + Brand override panels ═══
+    if (typeof renderEngineVerdictForUpload === 'function') {
+      renderEngineVerdictForUpload(data).catch(e => console.error('engine verdict failed', e));
+    }
+    if (typeof renderBrandOverridePanel === 'function') {
+      renderBrandOverridePanel(data).catch(e => console.error('brand panel failed', e));
+    }
+    if (typeof renderPastUploadsPanel === 'function') {
+      renderPastUploadsPanel().catch(e => console.error('history panel failed', e));
     }
 
     // Legacy detection card
@@ -7812,6 +8021,11 @@ async function generateNIS() {
   const countText = document.getElementById('nis-gen-count');
   const etaText = document.getElementById('nis-gen-eta');
 
+  // ═══ v0.7.5: Boss Theater plays during generate ═══
+  if (window.bossTheater) {
+    window.bossTheater.show();
+  }
+
   try {
     const startRes = await fetch('/api/generate-nis', {
       method: 'POST',
@@ -7846,9 +8060,34 @@ async function generateNIS() {
         if (loadingEl) loadingEl.classList.add('hidden');
         if (resultsEl) resultsEl.classList.remove('hidden');
 
+        // Tell theater work is done — it will close after min display time
+        if (window.bossTheater) { window.bossTheater.dataDone(); }
+
         state.nisResults = data.results || [];
         const successCount = (data.results || []).length;
         const errorCount = (data.errors || []).length;
+
+        // v0.7.5: log generated files into pre-upload history (best-effort)
+        try {
+          const firstFile = (data.results && data.results[0]) ? data.results[0].filename : '';
+          if (firstFile) {
+            fetch('/api/preupload/history', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                filename: 'generated:' + firstFile,
+                brand: state.brand || '',
+                total_styles: successCount,
+                generated_file: firstFile,
+                generated_files: (data.results || []).map(r => r.filename),
+              }),
+            }).catch(()=>{});
+            // Refresh the past uploads panel if it's visible
+            if (typeof renderPastUploadsPanel === 'function') {
+              setTimeout(()=>renderPastUploadsPanel(), 500);
+            }
+          }
+        } catch(e) { /* ignore */ }
         const summEl = document.getElementById('nis-result-summary');
         if (summEl) summEl.innerHTML = `<strong>${successCount}</strong> NIS files generated${errorCount > 0 ? `, <span style="color:var(--error)">${errorCount} failed</span>` : ''}`;
 

@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
 
-from flask import Flask, request, jsonify, render_template, send_file, abort
+from flask import Flask, request, jsonify, render_template, send_file, send_from_directory, abort
 from flask_cors import CORS
 import openpyxl
 from openpyxl.styles import PatternFill, Font, Border, Alignment
@@ -8960,6 +8960,70 @@ def rule_engine_rebuild():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# v0.7.5 — Pre-Upload History (merged Upload Pre-Upload flow)
+# ═══════════════════════════════════════════════════════════════════════════
+_PREUPLOAD_HISTORY_PATH = BASE_DIR / "preupload_history.json"
+
+def _load_preupload_history():
+    try:
+        if not _PREUPLOAD_HISTORY_PATH.exists():
+            return {"entries": []}
+        with open(_PREUPLOAD_HISTORY_PATH, "r") as f:
+            data = json.load(f)
+            if not isinstance(data, dict):
+                return {"entries": []}
+            data.setdefault("entries", [])
+            return data
+    except Exception:
+        return {"entries": []}
+
+def _save_preupload_history(data):
+    with open(_PREUPLOAD_HISTORY_PATH, "w") as f:
+        json.dump(data, f, indent=2)
+
+@app.route("/api/preupload/history", methods=["GET"])
+def preupload_history_get():
+    data = _load_preupload_history()
+    # Newest first, cap to last 50
+    entries = list(reversed(data.get("entries", [])))[:50]
+    return jsonify({"ok": True, "entries": entries})
+
+@app.route("/api/preupload/history", methods=["POST"])
+def preupload_history_post():
+    payload = request.get_json(force=True, silent=True) or {}
+    filename = (payload.get("filename") or "").strip()
+    if not filename:
+        return jsonify({"ok": False, "error": "filename required"}), 400
+    entry = {
+        "id": datetime.now().strftime("%Y%m%d-%H%M%S-") + str(_uuid.uuid4())[:8],
+        "filename": filename,
+        "brand": payload.get("brand") or "",
+        "total_styles": payload.get("total_styles"),
+        "total_variants": payload.get("total_variants"),
+        "generated_file": payload.get("generated_file") or "",
+        "generated_files": payload.get("generated_files") or [],
+        "timestamp": datetime.now().isoformat(),
+    }
+    data = _load_preupload_history()
+    data.setdefault("entries", []).append(entry)
+    # Cap at 200 to keep file small
+    if len(data["entries"]) > 200:
+        data["entries"] = data["entries"][-200:]
+    _save_preupload_history(data)
+    return jsonify({"ok": True, "entry": entry})
+
+@app.route("/api/preupload/download/<path:filename>", methods=["GET"])
+def preupload_download(filename):
+    """Serve a generated NIS file from UPLOAD_OUTPUT."""
+    # Strip any path components for safety
+    safe_name = os.path.basename(filename)
+    fpath = UPLOAD_OUTPUT / safe_name
+    if not fpath.exists():
+        return jsonify({"ok": False, "error": f"File not found: {safe_name}"}), 404
+    return send_from_directory(str(UPLOAD_OUTPUT), safe_name, as_attachment=True)
 
 
 if __name__ == "__main__":

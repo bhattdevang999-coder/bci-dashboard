@@ -28,11 +28,7 @@ BRAND_SETUP_SCHEMA: Dict[str, Dict[str, Any]] = {
         "hint":     "Exact public brand name. Example: 'Sage Collective'",
         "required": True,
     },
-    "default_coo": {
-        "label":    "Default Country of Origin",
-        "hint":     "Most common COO. Per-style values in the pre-upload override this.",
-        "required": True,
-    },
+
     "department": {
         "label":    "Default Department",
         "hint":     "Most styles in this brand are for: ",
@@ -52,6 +48,13 @@ BRAND_SETUP_SCHEMA: Dict[str, Dict[str, Any]] = {
         "required": False,
         "options":  ["US", "UK", "EU", "Alpha", "Numeric"],
         "default_value": "US",
+    },
+    "default_age_range": {
+        "label":    "Default Age Range",
+        "hint":     "Adult unless this is a kids/baby brand.",
+        "required": False,
+        "options":  ["Adult", "Big Kids", "Little Kids", "Toddler", "Baby"],
+        "default_value": "Adult",
     },
     # Suppression toggles \u2014 default to "no" (suppresses fields) for typical apparel
     "sells_licensed_sports": {
@@ -209,8 +212,9 @@ def brand_defaults_to_state(brand: str) -> Dict[str, Any]:
         out["rtip_vendor_code#1.value"] = cfg.get("vendor_code_prefix") or cfg.get("vendor_code")
     if cfg.get("brand_name"):
         out["brand#1.value"] = cfg["brand_name"]
-    if cfg.get("default_coo"):
-        out["country_of_origin#1.value"] = cfg["default_coo"]
+    # NOTE: country_of_origin is intentionally NOT in brand defaults.
+    # Per product owner decision (v0.7.5): COO is always per-product from the
+    # pre-upload file, never inherited from brand.
     if cfg.get("default_care"):
         out["care_instructions#1.value"] = cfg["default_care"]
     if cfg.get("department"):
@@ -221,6 +225,8 @@ def brand_defaults_to_state(brand: str) -> Dict[str, Any]:
         }.get(cfg["department"], "Female")
     if cfg.get("default_size_system"):
         out["apparel_size#1.size_system"] = cfg["default_size_system"]
+    if cfg.get("default_age_range"):
+        out["age_range_description#1.value"] = cfg["default_age_range"]
     return out
 
 

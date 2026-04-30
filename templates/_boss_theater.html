@@ -37,23 +37,7 @@
     margin-bottom: 20px;
     border: 1px solid rgba(180, 140, 255, 0.2);
   }
-  .boss-theater-caption {
-    font-size: 18px;
-    font-weight: 700;
-    min-height: 28px;
-    margin-bottom: 8px;
-    background: linear-gradient(90deg, #ffd700, #ff8a00, #ff4d8a);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: 0.3px;
-  }
-  .boss-theater-status {
-    font-size: 13px;
-    color: #b8b0d8;
-    min-height: 18px;
-    font-family: "SF Mono", Monaco, "Courier New", monospace;
-  }
+  /* Captions removed per design: animation only */
   .boss-theater-progress {
     height: 4px; width: 100%;
     background: rgba(255, 255, 255, 0.1);
@@ -131,11 +115,20 @@
   .bt-friend.bt-purple { --bt-stroke: #a050ff; }
   .bt-friend.bt-orange { --bt-stroke: #ff9900; }
 
-  /* ─── Scene 1: Yoga ─── */
-  .bt-scene-yoga .bt-arm-l { animation: yoga-arm-l 2s ease-in-out infinite; }
-  .bt-scene-yoga .bt-arm-r { animation: yoga-arm-r 2s ease-in-out infinite; }
-  @keyframes yoga-arm-l { 0%, 100% { transform: rotate(-90deg); } 50% { transform: rotate(-110deg); } }
-  @keyframes yoga-arm-r { 0%, 100% { transform: rotate(90deg);  } 50% { transform: rotate(110deg);  } }
+  /* ─── Scene 1: Yoga — TREE POSE (vrksasana) ─── */
+  /* Both arms up overhead in namaste, one leg straight, one foot tucked on opposite knee. */
+  .bt-scene-yoga .bt-arm-l,
+  .bt-scene-yoga .bt-arm-r { animation: yoga-namaste-sway 3s ease-in-out infinite; }
+  @keyframes yoga-namaste-sway {
+    0%, 100% { transform: rotate(-160deg); }
+    50%      { transform: rotate(-170deg); }
+  }
+  /* Right arm mirrored */
+  .bt-scene-yoga .bt-arm-r { animation-name: yoga-namaste-sway-r; }
+  @keyframes yoga-namaste-sway-r {
+    0%, 100% { transform: rotate(160deg); }
+    50%      { transform: rotate(170deg); }
+  }
   .bt-yoga-mat {
     position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
     width: 240px; height: 16px;
@@ -450,7 +443,7 @@
   <div class="boss-theater-stage">
     <button class="bt-skip" onclick="bossTheaterClose(true)">Skip</button>
 
-    <div class="boss-theater-canvas" id="boss-theater-canvas">
+    <div class="boss-theater-canvas" id="boss-theater-canvas" style="margin-bottom:0;">
 
       <!-- ─── SCENE 1: YOGA CLASS (Boss + 2 friends) ─── -->
       <div class="bt-scene bt-scene-yoga" data-scene="0">
@@ -461,36 +454,38 @@
         <div class="bt-chakra" style="background:#a050ff; left:15%; top:40%; animation-delay:0.6s;"></div>
         <div class="bt-chakra" style="background:#2ecc71; left:75%; top:50%; animation-delay:1.2s;"></div>
 
-        <!-- friend left -->
+        <!-- friend left — also tree pose, arms in namaste -->
         <div class="bt-friend bt-pink" style="left:18%; bottom:60px;">
           <div class="bt-head-blob"></div>
           <div class="bt-body">
-            <div class="bt-arm bt-arm-l" style="transform:rotate(-90deg);"></div>
-            <div class="bt-arm bt-arm-r" style="transform:rotate(90deg);"></div>
-            <div class="bt-leg bt-leg-l" style="transform:rotate(45deg);"></div>
-            <div class="bt-leg bt-leg-r" style="transform:rotate(-25deg);"></div>
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-160deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(160deg);"></div>
+            <div class="bt-leg bt-leg-l" style="transform:rotate(0deg);"></div>
+            <div class="bt-leg bt-leg-r" style="transform:rotate(-100deg); height:24px; bottom:-22px;"></div>
           </div>
         </div>
 
-        <!-- BOSS center -->
+        <!-- BOSS center — TREE POSE: arms in namaste overhead, right foot tucked on left knee -->
         <div class="bt-figure" style="position:absolute; left:50%; bottom:60px; transform:translateX(-50%);">
           <img src="/static/theater/boss_head.png" class="bt-head" alt=""/>
           <div class="bt-body">
             <div class="bt-arm bt-arm-l"></div>
             <div class="bt-arm bt-arm-r"></div>
-            <div class="bt-leg bt-leg-l" style="transform:rotate(45deg);"></div>
-            <div class="bt-leg bt-leg-r" style="transform:rotate(-25deg);"></div>
+            <!-- Standing leg straight down -->
+            <div class="bt-leg bt-leg-l" style="transform:rotate(0deg);"></div>
+            <!-- Tucked leg — bent up to rest on opposite knee -->
+            <div class="bt-leg bt-leg-r" style="transform:rotate(-100deg); height:24px; bottom:-22px;"></div>
           </div>
         </div>
 
-        <!-- friend right -->
+        <!-- friend right — also tree pose -->
         <div class="bt-friend bt-blue" style="right:18%; bottom:60px;">
           <div class="bt-head-blob"></div>
           <div class="bt-body">
-            <div class="bt-arm bt-arm-l" style="transform:rotate(-100deg);"></div>
-            <div class="bt-arm bt-arm-r" style="transform:rotate(100deg);"></div>
-            <div class="bt-leg bt-leg-l" style="transform:rotate(45deg);"></div>
-            <div class="bt-leg bt-leg-r" style="transform:rotate(-25deg);"></div>
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-160deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(160deg);"></div>
+            <div class="bt-leg bt-leg-l" style="transform:rotate(0deg);"></div>
+            <div class="bt-leg bt-leg-r" style="transform:rotate(-100deg); height:24px; bottom:-22px;"></div>
           </div>
         </div>
       </div>
@@ -701,9 +696,7 @@
 
     </div>
 
-    <div class="boss-theater-caption" id="boss-theater-caption">⚡ Booting the boss…</div>
-    <div class="boss-theater-status" id="boss-theater-status">Initializing engine</div>
-    <div class="boss-theater-progress"><div class="boss-theater-progress-fill" id="boss-theater-progress"></div></div>
+    <div class="boss-theater-progress" style="margin-top:18px;"><div class="boss-theater-progress-fill" id="boss-theater-progress"></div></div>
   </div>
 </div>
 
@@ -740,17 +733,12 @@ window.bossTheater = (function() {
   }
 
   function rotate() {
-    const total = SCENES.length;
+    const total = 8; // 8 scenes
     const scenes = document.querySelectorAll('.bt-scene');
     scenes.forEach(el => el.classList.remove('bt-active'));
     const idx = currentSceneIdx % total;
     const active = document.querySelector(`[data-scene="${idx}"]`);
     if (active) active.classList.add('bt-active');
-
-    const cap = document.getElementById('boss-theater-caption');
-    const stat = document.getElementById('boss-theater-status');
-    if (cap) cap.textContent = SCENES[idx].caption;
-    if (stat) stat.textContent = SCENES[idx].status;
 
     // Update progress bar based on min-display floor
     const elapsed = Date.now() - openedAt;
