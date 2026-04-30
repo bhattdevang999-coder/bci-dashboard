@@ -4770,55 +4770,37 @@ LONG_TEXT_FIELD_IDS = {
 }
 
 def _is_long_text_field(field_id):
+    # v0.7.6.1: keep the registry but DO NOT force wrap_text — Amazon's
+    # reference NIS files ship with wrap_text=None and let Excel overflow
+    # the cell visually. _apply_long_text_alignment is now a no-op.
     return field_id in LONG_TEXT_FIELD_IDS
 
 def _apply_long_text_alignment(cell, cached_alignment=None):
-    """Force wrap_text=True and top-vertical alignment on a long-text cell,
-    preserving any other alignment properties from the template's row-7 style."""
-    base = cached_alignment if cached_alignment is not None else cell.alignment
-    cell.alignment = Alignment(
-        horizontal=(base.horizontal if base is not None else None) or "left",
-        vertical="top",
-        wrap_text=True,
-        shrink_to_fit=False,
-        indent=base.indent if base is not None else 0,
-        text_rotation=base.text_rotation if base is not None else 0,
-    )
+    """v0.7.6.1: NO-OP. Amazon's reference NIS files (Stella Parker SPTW etc.)
+    ship with wrap_text=None on long-text cells — Excel overflows the cell
+    visually and the data row stays at default 16pt height. Forcing
+    wrap_text=True caused our generated files to look unlike real Amazon
+    output. We now leave the template's row-7 alignment as-is.
+    """
+    return
 
 def _clear_row_heights_for_auto_fit(ws, start_row=7, end_row=None):
-    """v0.7.6: Set explicit 90pt row height on data rows so wrapped 256-char
-    bullets are fully visible regardless of Excel's auto-fit behavior.
+    """v0.7.6.1: Match Amazon's reference behavior — leave data rows at default
+    height (~16pt) with no wrap_text. Reference NIS files (e.g. Stella Parker
+    SPTW) ship with no row_dim on data rows, default 16pt; bullets and
+    item_name overflow on a single visual line. Forcing tall rows + wrap_text
+    makes our output look unlike a real Amazon template.
 
-    Background: the Amazon templates ship with customHeight=True/height=12.75
-    on every data row. When 200-char bullets are written, openpyxl preserves
-    customHeight=True even after height=None is set, so Excel renders the
-    rows as a single 12.75pt line and clips the wrapped content.
-
-    Setting an explicit ~90pt height (≈5 lines at 12.75pt) gives bullets,
-    description, and item_name enough vertical space without leaving giant
-    empty gaps, and keeps the file readable when opened in Excel.
+    Strategy: drop any pre-existing customHeight on data rows so they fall
+    back to the sheet default. Hidden header rows (1, 4) are left alone.
     """
     end_row = end_row or (ws.max_row or 100)
-    # 90pt fits 5 wrapped lines comfortably; description/long item_name may need more,
-    # but Excel will autosize larger when the user clicks 'Format > AutoFit Row Height'.
-    DATA_ROW_HEIGHT = 90.0
-    HEADER_ROW_HEIGHT = 36.0
     for r in range(start_row, end_row + 1):
-        # Drop any pre-existing row dim from the template, then set a fresh height.
-        # Setting `.height` automatically toggles customHeight in openpyxl serialization.
         if r in ws.row_dimensions:
             try:
                 del ws.row_dimensions[r]
             except Exception:
                 pass
-        ws.row_dimensions[r].height = DATA_ROW_HEIGHT
-    # Slightly taller header rows so the field-id row (4) and label row (3) are readable
-    for r in (1, 2, 3, 4, 5, 6):
-        try:
-            if r in ws.row_dimensions:
-                ws.row_dimensions[r].height = HEADER_ROW_HEIGHT
-        except Exception:
-            pass
 
 def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content):
     """
