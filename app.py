@@ -73,16 +73,37 @@ GENDER_BUCKETS = [
 ]
 
 def _load_taxonomy_universe():
-    """Load the pre-computed valid-value universe from taxonomy_universe.json.
-    Structure: { PRODUCT_TYPE: { product_categories, subcategories_by_category, item_type_names } }
-    Returns {} if the file doesn't exist yet (universe builder hasn't run).
+    """Load the pre-computed valid-value universe.
+    Structure: { PRODUCT_TYPE: { product_categories, subcategories_by_category,
+                                 item_type_keywords_by_cat_sub, item_type_names } }
+
+    If the static file is missing OR a product type has no cascade data
+    (item_type_keywords_by_cat_sub), backfill from the rule-engine bundles
+    so the dropdown modal always shows the latest cascade values from Amazon's NIS templates.
     """
-    if not TAXONOMY_UNIVERSE_FILE.exists():
-        return {}
-    try:
-        return json.loads(TAXONOMY_UNIVERSE_FILE.read_text())
-    except Exception:
-        return {}
+    static = {}
+    if TAXONOMY_UNIVERSE_FILE.exists():
+        try:
+            static = json.loads(TAXONOMY_UNIVERSE_FILE.read_text())
+        except Exception:
+            static = {}
+
+    # Auto-enrich any product type that's missing cascade data
+    needs_enrich = False
+    for pt, data in (static or {}).items():
+        if not data.get("item_type_keywords_by_cat_sub"):
+            needs_enrich = True
+            break
+
+    if needs_enrich and (BASE_DIR / "nis_rules").is_dir():
+        try:
+            from nis_engine.taxonomy_builder import build_universe_from_engine, merge_universes
+            engine_universe = build_universe_from_engine(str(BASE_DIR / "nis_rules"))
+            return merge_universes(static, engine_universe)
+        except Exception as e:
+            print(f"[taxonomy] enrichment failed (using static only): {e}")
+            return static
+    return static
 
 def _load_taxonomy_overrides():
     """Load the operator-confirmed taxonomy store. Returns a dict with
@@ -253,12 +274,23 @@ def _validate_taxonomy_quadruple(pt, category, subcategory, itk, itn):
         errors.append({"field": "item_type_name", "value": itn,
                        "reason": "not in Amazon dropdown", "valid_options": valid_itns[:50]})
 
-    # item_type_keyword is free-text; just length-check
+    # item_type_keyword: validate against the cascade map if Amazon defines one for this Cat+Sub
+    itk_cascade = (universe.get("item_type_keywords_by_cat_sub", {}) or {}).get(category, {})
+    valid_itks = itk_cascade.get(subcategory, []) or []
+    if itk and valid_itks and itk not in valid_itks:
+        # Soft-warn (don't block save) since some operators legitimately use synonyms.
+        # Save will go through but the entry's `notes` will surface the warning.
+        errors.append({"field": "item_type_keyword", "value": itk,
+                       "reason": f"not in Amazon's cascade for {category} > {subcategory}",
+                       "valid_options": valid_itks,
+                       "severity": "warning"})
     if itk and len(itk) > 100:
         errors.append({"field": "item_type_keyword", "value": itk,
                        "reason": "exceeds 100 chars", "valid_options": []})
 
-    return (len(errors) == 0, errors)
+    # Filter out warnings — they don't block saving
+    blocking_errors = [e for e in errors if e.get("severity") != "warning"]
+    return (len(blocking_errors) == 0, errors)
 # ── End Taxonomy Overrides ────────────────────────────────────────────────────
 
 def _load_subclass_map():

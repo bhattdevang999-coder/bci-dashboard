@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-04-30 — Engine-backed Taxonomy Cascade (v0.7.1)
+
+Fix for the "empty Item Type dropdowns" issue on COAT (and any product type whose `taxonomy_universe.json` was hand-curated and incomplete). Pulls cascade values directly from the universal NIS rule-engine bundles so every Amazon-defined Cat → Sub → Item Type Keyword path is selectable.
+
+### Backend
+- `nis_engine/taxonomy_builder.py` — walks every product-type bundle, parses Amazon's encoded named-range paths (`COATproduct_category.value.<CAT>.product_subcategory.value.<SUB>.item_type_keyword1.value`), maps them back to human labels using the top-level category list, and emits an `item_type_keywords_by_cat_sub` map per product type.
+- `_load_taxonomy_universe()` now auto-enriches from the engine when the static file is missing cascade data. Static + engine universes are merged, engine wins on cascade ITKs, static wins on hand-curated ITN names.
+- `_validate_taxonomy_quadruple()` now soft-warns (doesn't block save) when an operator picks an `item_type_keyword` outside Amazon's published cascade list.
+- `taxonomy_universe.json` rebuilt with full cascade data: COAT now has 129 cascade ITKs (was 0), DRESS 86, SWIMWEAR 92, BLAZER 12.
+
+### Frontend
+- Bulk Taxonomy Confirmation modal: Item Type column now renders a real cascade dropdown when Amazon defines one for the chosen Category + Subcategory. Falls back to flat ITN list, then to a free-text input with a clear amber message ("No item type defined for this combo — free-text input is allowed") when neither exists.
+- Subcategory change triggers Item Type re-render via new `taxonomyBulkOnSubChange()`.
+- Modal banner now shows memory hint: "✓ N of M buckets were auto-matched from your previous uploads. Confirmed entries are saved permanently — next time you upload styles in the same sub-class, you won't see this prompt."
+- Action button label updated to "Confirm & Save" with a "Saved for future uploads" caption.
+
+### Memory persistence (already existed; now clearly surfaced)
+- Per-bucket overrides keyed by `(product_type, sub_class, gender_bucket)` in `taxonomy_overrides.json` — git-committed in a thread after every save so they survive Render redeploys.
+- Sub-class → product-type map in `subclass_product_type_map.json` (auto-learned + hand-curated fallback).
+
+### QA
+- Live verified end-to-end: pick `Women's Outerwear` → `Wool` on a fresh Sage Faux Wool bucket and the Item Type dropdown correctly shows `wool-outerwear-coats`. Combos without Amazon-defined ITKs surface the friendly fallback message instead of an empty dropdown.
+
+
 ## 2026-04-30 — NIS Rule Engine (v0.7.0)
 
 Universal Amazon NIS conditional-logic engine. Reads any `.xlsm` template, parses every CF + DV formula, evaluates against form state at runtime. Same engine works for all 31 templates; if Amazon ships a new one, operator clicks "Rebuild from templates" and it auto-adapts.

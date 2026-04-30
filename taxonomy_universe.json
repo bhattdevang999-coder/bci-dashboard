@@ -1,11 +1,5 @@
 {
   "BLAZER": {
-    "item_type_names": [
-      "Blazer",
-      "Business Casual Blazer",
-      "Casual Blazer",
-      "Sport Jacket"
-    ],
     "product_categories": [
       "Men's Contemporary Collections",
       "Men's Tailored",
@@ -54,23 +48,136 @@
       "Women's Traditional": [
         "Blazers and Fashion Jackets"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {
+      "Men's Contemporary Collections": {
+        "Tailored & Sportcoats": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Men's Tailored": {
+        "Blazers": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ],
+        "Suit Separate Jackets": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Men's Traditional Collections": {
+        "Sportcoats": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Women's Contemporary": {
+        "Blazers and Fashion Jackets": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Women's Everyday Sportswear": {
+        "Blazers and Fashion Jackets": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Women's Fast Fashion": {
+        "Blazers and Fashion Jackets": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Women's Juniors": {
+        "Blazers and Fashion Jackets": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Women's Maternity": {
+        "Blazers and Fashion Jackets": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Women's Private Label": {
+        "Blazers and Fashion Jackets": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Women's Special Sizes": {
+        "Blazers and Fashion Jackets": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      },
+      "Women's Traditional": {
+        "Blazers and Fashion Jackets": [
+          "blazers-and-sports-jackets",
+          "business-suit-jackets",
+          "handmade-suit-jackets-and-blazers",
+          "infant-and-toddler-sport-coats-and-blazers",
+          "maternity-business-suit-separates",
+          "tuxedo-jackets"
+        ]
+      }
+    },
+    "item_type_names": [
+      "Blazer",
+      "Business Casual Blazer",
+      "Casual Blazer",
+      "Sport Jacket"
+    ],
+    "source": "merged"
   },
   "BRA": {
-    "item_type_names": [
-      "Balconette Bra",
-      "Bra",
-      "Demi Bra",
-      "Full Coverage Bra",
-      "Minimizer Bra",
-      "Molded Bra",
-      "Padded Bra",
-      "Plunge Bra",
-      "Push Up Bra",
-      "Sports Bra",
-      "T-Shirt Bra",
-      "Training Bra"
-    ],
     "product_categories": [
       "Athletic Sports Apparel",
       "Girl's Private Label Active Apparel",
@@ -154,10 +261,25 @@
       "Women's Private Label Active Apparel": [
         "Sports Bras"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [
+      "Balconette Bra",
+      "Bra",
+      "Demi Bra",
+      "Full Coverage Bra",
+      "Minimizer Bra",
+      "Molded Bra",
+      "Padded Bra",
+      "Plunge Bra",
+      "Push Up Bra",
+      "Sports Bra",
+      "T-Shirt Bra",
+      "Training Bra"
+    ],
+    "source": "merged"
   },
   "COAT": {
-    "item_type_names": [],
     "product_categories": [
       "Athletic Sports Apparel",
       "Baby Private Label Apparel",
@@ -383,27 +505,577 @@
         "Denim",
         "Jackets/Vests"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {
+      "Athletic Sports Apparel": {
+        "Men's Hunting & Tactical": [
+          "athletic-apparel"
+        ],
+        "Outerwear": [
+          "3-in-1-hiking-jackets",
+          "athletic-warm-up-and-track-jackets",
+          "cycling-jackets",
+          "down-hiking-jackets",
+          "equestrian-tournament-jackets",
+          "fencing-sport-jackets",
+          "fleece-hiking-jackets",
+          "ice-skating-jackets",
+          "infant-and-toddler-sports-fan-jackets",
+          "jacket-and-pant-sets",
+          "life-jackets-and-vests",
+          "paddling-jackets",
+          "running-jackets",
+          "skiing-jackets",
+          "snowboarding-jackets",
+          "softshell-hiking-jackets",
+          "waterproof-hiking-jackets"
+        ],
+        "Women's Hunting & Tactical": [
+          "athletic-apparel"
+        ],
+        "Youth Hunting & Tactical": [
+          "athletic-apparel"
+        ]
+      },
+      "Baby Private Label Apparel": {
+        "Baby Boy Outerwear": [
+          "infant-and-toddler-hats"
+        ],
+        "Baby Girl Outerwear": [
+          "infant-and-toddler-hats"
+        ],
+        "Baby Unisex Outerwear": [
+          "infant-and-toddler-hats"
+        ]
+      },
+      "Boy's Private Label Active Apparel": {
+        "Active Jackets": [
+          "outerwear-jackets"
+        ],
+        "Outerwear Jackets": [
+          "outerwear-jackets"
+        ],
+        "Vests": [
+          "outerwear-vests"
+        ]
+      },
+      "Boys Private Label": {
+        "Baby Boys PL Outerwear": [
+          "infant-and-toddler-hats"
+        ],
+        "Boys PL Outerwear": [
+          "infant-and-toddler-hats"
+        ]
+      },
+      "Girl's Private Label Active Apparel": {
+        "Active Jackets": [
+          "outerwear-jackets"
+        ],
+        "Outerwear Jackets": [
+          "outerwear-jackets"
+        ],
+        "Vests": [
+          "outerwear-vests"
+        ]
+      },
+      "Girls Private Label": {
+        "Baby Girls PL Outerwear": [
+          "infant-and-toddler-hats"
+        ],
+        "Girls PL Outerwear": [
+          "infant-and-toddler-outerwear-jackets"
+        ]
+      },
+      "Hair Care and Beauty Appliances": {
+        "Salon Supplies": [
+          "spa-storage-sytems"
+        ]
+      },
+      "Kids & Baby Outerwear": {
+        "Baby Boys Heavyweight Outerwear": [
+          "infant-and-toddler-down-alternative-outerwear-coats",
+          "infant-and-toddler-down-outerwear-coats",
+          "infant-and-toddler-outerwear-jackets"
+        ],
+        "Baby Boys Lightweight Outerwear": [
+          "dress-coats"
+        ],
+        "Baby Boys Midweight Outerwear": [
+          "infant-and-toddler-dress-coats",
+          "infant-and-toddler-outerwear-jackets"
+        ],
+        "Baby Boys Wool Outerwear": [
+          "infant-and-toddler-dress-coats",
+          "infant-and-toddler-outerwear-jackets"
+        ],
+        "Baby Girls Heavyweight Outerwear": [
+          "infant-and-toddler-down-alternative-outerwear-coats",
+          "infant-and-toddler-down-outerwear-coats",
+          "infant-and-toddler-outerwear-jackets"
+        ],
+        "Baby Girls Lightweight Outerwear": [
+          "infant-and-toddler-dress-coats",
+          "infant-and-toddler-outerwear-jackets"
+        ],
+        "Baby Girls Midweight Outerwear": [
+          "infant-and-toddler-dress-coats",
+          "infant-and-toddler-outerwear-jackets"
+        ],
+        "Baby Girls Wool & Fur Outerwear": [
+          "infant-and-toddler-dress-coats",
+          "infant-and-toddler-outerwear-jackets"
+        ],
+        "Boys Heavyweight Outerwear": [
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats"
+        ],
+        "Boys Lightweight Outerwear": [
+          "dress-coats"
+        ],
+        "Boys Midweight Outerwear": [
+          "dress-coats"
+        ],
+        "Boys Wool Outerwear": [
+          "wool-outerwear-coats"
+        ],
+        "Girls Heavyweight Outerwear": [
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats"
+        ],
+        "Girls Lightweight Outerwear": [
+          "dress-coats"
+        ],
+        "Girls Midweight Outerwear": [
+          "dress-coats"
+        ],
+        "Girls Wool & Fur Outerwear": [
+          "fur-outerwear-coats",
+          "wool-outerwear-coats"
+        ]
+      },
+      "Men's Contemporary Collections": {
+        "Casual Jackets": [
+          "outerwear-jackets"
+        ],
+        "Denim": [
+          "denim-jackets"
+        ],
+        "Outerwear": [
+          "outerwear-jackets"
+        ]
+      },
+      "Men's Outerwear": {
+        "Down": [
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats"
+        ],
+        "Extreme Weather Sports": [
+          "athletic-insulated-jackets",
+          "athletic-shell-jackets"
+        ],
+        "Wool Coats": [
+          "wool-outerwear-coats"
+        ]
+      },
+      "Men's Private Label": {
+        "Lab Coats": [
+          "medical-lab-coats"
+        ],
+        "Outerwear": [
+          "outerwear-jackets"
+        ]
+      },
+      "Men's Private Label Active Apparel": {
+        "Active Jackets": [
+          "outerwear-jackets"
+        ],
+        "Outerwear Jackets": [
+          "outerwear-jackets"
+        ],
+        "Vests": [
+          "outerwear-vests"
+        ]
+      },
+      "Men's Traditional Collections": {
+        "Denim": [
+          "denim-jackets"
+        ],
+        "Outerwear": [
+          "outerwear-jackets"
+        ]
+      },
+      "Men's Uniform": {
+        "Lab Coats": [
+          "medical-lab-coats"
+        ]
+      },
+      "Men's Workwear": {
+        "Flame Resistant Outerwear": [
+          "work-utility-outerwear"
+        ],
+        "High Visibility Outerwear": [
+          "work-utility-outerwear"
+        ],
+        "Outerwear": [
+          "work-utility-outerwear"
+        ],
+        "Performance Outerwear": [
+          "work-utility-outerwear"
+        ]
+      },
+      "OUTDOORS - Apparel": {
+        "Cycling Tops": [
+          "cycling-jackets",
+          "cycling-vests"
+        ],
+        "Hunting Tops": [
+          "hunting-jackets"
+        ],
+        "Outdoor Lifestyle Tops": [
+          "rock-climbing-jackets"
+        ],
+        "Outerwear": [
+          "athletic-insulated-jackets",
+          "athletic-shell-jackets",
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats",
+          "fleece-outerwear-jackets",
+          "outerwear-vests"
+        ],
+        "Rainwear Tops": [
+          "outerwear-jackets",
+          "raincoats"
+        ],
+        "Snow & Ski Tops": [
+          "skiing-jackets",
+          "snowboarding-jackets"
+        ],
+        "Workwear Bottoms": [
+          "work-utility-outerwear"
+        ]
+      },
+      "Occupational Health & Safety": {
+        "Personal Protective Equipment & Safety Apparel": [
+          "protective-work-jackets"
+        ]
+      },
+      "SPORTS Licensed Fan Shop": {
+        "5014 Formula 1 Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5017 Formula 1 Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5033 MLB Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5036 MLB Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5043 MLS Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5046 MLS Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5053 NASCAR Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5056 NASCAR Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5063 NBA Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5066 NBA Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5073 NCAA Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5076 NCAA Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5083 NFL Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5086 NFL Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5093 NHL Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5096 NHL Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5100 International Rugby Apparel & Accessories": [
+          "infant-and-toddler-sports-fan-jackets",
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5113 International Soccer Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5116 International Soccer Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5124 WNBA Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5127 WNBA Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5130 UFC Apparel & Accessories": [
+          "infant-and-toddler-sports-fan-jackets",
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5220 PGA Apparel & Accessories": [
+          "infant-and-toddler-sports-fan-jackets",
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5230 LPGA Apparel & Accessories": [
+          "infant-and-toddler-sports-fan-jackets",
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5240 Minor League Baseball Apparel & Accessories": [
+          "infant-and-toddler-sports-fan-jackets",
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5250 World Baseball Classic Apparel & Accessories": [
+          "infant-and-toddler-sports-fan-jackets",
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5300 Olympics Apparel & Accessories": [
+          "infant-and-toddler-sports-fan-jackets",
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5450 WUSA Apparel & Accessories": [
+          "infant-and-toddler-sports-fan-jackets",
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5713 X Games Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5716 X Games Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5913 NWSL Infant & Baby Apparel": [
+          "infant-and-toddler-sports-fan-jackets"
+        ],
+        "5916 NWSL Outerwear & Jackets": [
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ],
+        "5999 Uncategorized": [
+          "infant-and-toddler-sports-fan-jackets",
+          "sports-fan-jackets",
+          "sports-fan-outerwear",
+          "sports-fan-outerwear-jackets"
+        ]
+      },
+      "Team Sports": {
+        "Fencing": [
+          "fencing-sport-jackets"
+        ]
+      },
+      "Women's Contemporary": {
+        "Denim": [
+          "denim-jackets"
+        ],
+        "Outerwear and Vests": [
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats",
+          "fur-outerwear-coats",
+          "trenchcoats",
+          "wool-outerwear-coats"
+        ]
+      },
+      "Women's Fast Fashion": {
+        "Denim": [
+          "denim-jackets"
+        ],
+        "Outerwear and Vests": [
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats",
+          "fur-outerwear-coats",
+          "trenchcoats",
+          "windbreaker-jackets",
+          "wool-outerwear-coats"
+        ]
+      },
+      "Women's Juniors": {
+        "Denim": [
+          "denim-jackets"
+        ],
+        "Outerwear and Vests": [
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats",
+          "fur-outerwear-coats",
+          "trenchcoats",
+          "windbreaker-jackets",
+          "wool-outerwear-coats"
+        ]
+      },
+      "Women's Maternity": {
+        "Outerwear and Vests": [
+          "fashion-maternity-outerwear"
+        ]
+      },
+      "Women's Outerwear": {
+        "Down and Parkas": [
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats"
+        ],
+        "Fur and Faux Fur": [
+          "fur-outerwear-coats"
+        ],
+        "Lightweight Jackets and Windbreakers": [
+          "windbreaker-jackets"
+        ],
+        "Raincoats and Trenchcoats": [
+          "trenchcoats"
+        ],
+        "Wool": [
+          "wool-outerwear-coats"
+        ]
+      },
+      "Women's Petite Sportswear": {
+        "Petite Denim": [
+          "denim-jackets"
+        ],
+        "Petite Outerwear": [
+          "outerwear-jackets"
+        ]
+      },
+      "Women's Private Label": {
+        "Active Jackets": [
+          "outerwear-jackets"
+        ],
+        "Denim": [
+          "denim-jackets"
+        ],
+        "Down & Parkas": [
+          "down-outerwear-coats"
+        ],
+        "Fleece Outerwear": [
+          "fleece-outerwear-jackets"
+        ],
+        "Fur & Faux Fur Outerwear": [
+          "faux-leather-outerwear-jackets"
+        ],
+        "Leather/Suede Outerwear": [
+          "leather-outerwear-jackets"
+        ],
+        "Outerwear and Vests": [
+          "outerwear-jackets"
+        ],
+        "Trenches/Windbreakers": [
+          "trenchcoats"
+        ],
+        "Vests": [
+          "outerwear-vests"
+        ]
+      },
+      "Women's Private Label Active Apparel": {
+        "Active Jackets": [
+          "outerwear-jackets"
+        ],
+        "Outerwear Jackets": [
+          "outerwear-jackets"
+        ],
+        "Vests": [
+          "outerwear-vests"
+        ]
+      },
+      "Women's Special Sizes": {
+        "Denim": [
+          "denim-jackets"
+        ],
+        "Outerwear and Vests": [
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats",
+          "fur-outerwear-coats",
+          "trenchcoats",
+          "windbreaker-jackets",
+          "wool-outerwear-coats"
+        ]
+      },
+      "Women's Traditional": {
+        "Denim": [
+          "denim-jackets"
+        ],
+        "Outerwear and Vests": [
+          "down-alternative-outerwear-coats",
+          "down-outerwear-coats",
+          "fur-outerwear-coats",
+          "trenchcoats",
+          "windbreaker-jackets",
+          "wool-outerwear-coats"
+        ]
+      },
+      "Women's Workwear & Uniforms": {
+        "Industrial": [
+          "work-utility-outerwear"
+        ],
+        "Jackets and Outerwear": [
+          "work-utility-outerwear"
+        ],
+        "Medical": [
+          "medical-lab-coats"
+        ]
+      },
+      "Young Men's": {
+        "Denim": [
+          "denim-jackets",
+          "denim-shorts"
+        ],
+        "Jackets/Vests": [
+          "outerwear-jackets"
+        ]
+      }
+    },
+    "item_type_names": [],
+    "source": "merged"
   },
   "DRESS": {
-    "item_type_names": [
-      "Bridesmaid Dress",
-      "Business Casual Dress",
-      "Casual Dress",
-      "Casual Night Out Dress",
-      "Christening Dress",
-      "Cocktail Dress",
-      "Dress",
-      "Formal Dress",
-      "Formal Night Out Dress",
-      "Homecoming Dress",
-      "Mother Of The Bride Dress",
-      "Playwear Dress",
-      "Prom Dress",
-      "Special Occasion Dress",
-      "Tennis Dress",
-      "Wedding Dress"
-    ],
     "product_categories": [
       "Artist Merch Apparel",
       "Athletic Sports Apparel",
@@ -458,9 +1130,6 @@
         "Baby Girl Dresses",
         "Girl Dresses"
       ],
-      "Girl's Private Label Active Apparel": [
-        "Dresses/Tunics"
-      ],
       "Girls": [
         "Active",
         "Casual Dresses",
@@ -470,11 +1139,14 @@
         "Baby Girls PL Dresses",
         "Girls PL Dresses"
       ],
-      "Kid's & Baby Print On-Demand": [
-        "Dresses"
+      "Girl's Private Label Active Apparel": [
+        "Dresses/Tunics"
       ],
       "Kids Athletic": [
         "Girl Dresses"
+      ],
+      "Kid's & Baby Print On-Demand": [
+        "Dresses"
       ],
       "Kids Uniforms": [
         "Girls Uniform Dresses"
@@ -586,30 +1258,2930 @@
       "Women's Traditional": [
         "Dresses"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {
+      "Artist Merch Apparel": {
+        "Dress": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Athletic Sports Apparel": {
+        "Women's Golf": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Youth Golf": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Baby Apparel": {
+        "Baby Christening Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Baby Girl Casual Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Baby Girl Special Occasion Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Baby Private Label Apparel": {
+        "Baby Girl Casual Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Baby Girl Special Occasion Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Character": {
+        "Baby Girl Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Girl Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Girls": {
+        "Active": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Casual Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Special Occasion Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Girls Private Label": {
+        "Baby Girls PL Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Girls PL Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Girl's Private Label Active Apparel": {
+        "Dresses/Tunics": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Kids Athletic": {
+        "Girl Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Kid's & Baby Print On-Demand": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Kids Uniforms": {
+        "Girls Uniform Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "OUTDOORS - Apparel": {
+        "Outdoor Lifestyle One Piece": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Professional Dental": {
+        "Professional Apparel - Disposable": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Professional Apparel - Reusable": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Professional Medical": {
+        "Professional Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "SPORTS Licensed Fan Shop": {
+        "5010 Formula 1 Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5014 Formula 1 Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5033 MLB Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5039 MLB Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5043 MLS Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5049 MLS Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5053 NASCAR Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5059 NASCAR Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5063 NBA Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5069 NBA Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5073 NCAA Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5079 NCAA Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5083 NFL Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5089 NFL Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5093 NHL Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5099 NHL Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5100 International Rugby Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5113 International Soccer Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5119 International Soccer Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5120 WNBA Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5124 WNBA Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5130 UFC Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5220 PGA Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5230 LPGA Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5240 Minor League Baseball Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5250 World Baseball Classic Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5300 Olympics Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5450 WUSA Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5713 X Games Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5719 X Games Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5913 NWSL Infant & Baby Apparel": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5919 NWSL Other Apparel & Accessories": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "5999 Uncategorized": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Unisex Print On-Demand": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Active": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Contemporary": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Denim": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Dresses": {
+        "Cardigan": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Casual and Day Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Night Out and Cocktail Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Special Occasion Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Sweater Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Wear to Work Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Everyday Sportswear": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Exotic Clothing": {
+        "Clubwear/Ravewear": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Fast Fashion": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Juniors": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Maternity": {
+        "Active": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Petite Sportswear": {
+        "Petite Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Petite Suit Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Print On-Demand": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Private Label": {
+        "A-Line Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Maxi Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Sheath Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Shift Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Sweater Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ],
+        "Wrap Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Private Label Active Apparel": {
+        "Dresses/Tunics": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Special Sizes": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      },
+      "Women's Traditional": {
+        "Dresses": [
+          "adult-exotic-dresses",
+          "athletic-cheerleading-dresses",
+          "athletic-dance-dresses",
+          "athletic-dresses",
+          "casual-dresses",
+          "cheongsams-and-qipao",
+          "club-and-night-out-dresses",
+          "cocktail-dresses",
+          "dresses",
+          "erotic-leather-latex-dresses",
+          "formal-dresses",
+          "handmade-dresses",
+          "handmade-wedding-dresses",
+          "ice-skating-dresses",
+          "infant-and-toddler-christening-apparel",
+          "infant-and-toddler-dresses",
+          "infant-and-toddler-playwear-dresses",
+          "infant-and-toddler-special-occasion-dresses",
+          "maternity-dresses",
+          "maternity-nursing-dresses",
+          "medical-scrubs-dresses",
+          "netball-dresses",
+          "novelty-dresses",
+          "playwear-dresses",
+          "school-uniform-dresses",
+          "special-occasion-dresses",
+          "tennis-dresses",
+          "trachten-dirndl-dresses",
+          "traditional-latin-american-dresses",
+          "wear-to-work-dresses",
+          "wedding-dresses"
+        ]
+      }
+    },
+    "item_type_names": [
+      "Bridesmaid Dress",
+      "Business Casual Dress",
+      "Casual Dress",
+      "Casual Night Out Dress",
+      "Christening Dress",
+      "Cocktail Dress",
+      "Dress",
+      "Formal Dress",
+      "Formal Night Out Dress",
+      "Homecoming Dress",
+      "Mother Of The Bride Dress",
+      "Playwear Dress",
+      "Prom Dress",
+      "Special Occasion Dress",
+      "Tennis Dress",
+      "Wedding Dress"
+    ],
+    "source": "merged"
   },
   "HAT": {
-    "item_type_names": [
-      "Balaclava",
-      "Baseball Cap",
-      "Beanie Hat",
-      "Beret",
-      "Bomber Hat",
-      "Bucket Hat",
-      "Cap",
-      "Chef Hat",
-      "Cold Weather Hat",
-      "Cold Weather Headband",
-      "Cowboy Hat",
-      "Fascinator",
-      "Fedora",
-      "Hat",
-      "Newsie Cap",
-      "Panama Hat",
-      "Rain Hat",
-      "Sun Hat",
-      "Visor"
-    ],
     "product_categories": [
       "Artist Merch Apparel",
       "Athletic Sports Apparel",
@@ -741,10 +4313,32 @@
         "Cold Weather Accessories",
         "Hats"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [
+      "Balaclava",
+      "Baseball Cap",
+      "Beanie Hat",
+      "Beret",
+      "Bomber Hat",
+      "Bucket Hat",
+      "Cap",
+      "Chef Hat",
+      "Cold Weather Hat",
+      "Cold Weather Headband",
+      "Cowboy Hat",
+      "Fascinator",
+      "Fedora",
+      "Hat",
+      "Newsie Cap",
+      "Panama Hat",
+      "Rain Hat",
+      "Sun Hat",
+      "Visor"
+    ],
+    "source": "merged"
   },
   "ONE_PIECE_OUTFIT": {
-    "item_type_names": [],
     "product_categories": [
       "Artist Merch Apparel",
       "Baby Apparel",
@@ -850,10 +4444,12 @@
       "Women's Workwear & Uniforms": [
         "Bottoms and Overalls"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [],
+    "source": "merged"
   },
   "OVERALLS": {
-    "item_type_names": [],
     "product_categories": [
       "Athletic Sports Apparel",
       "Baby Apparel",
@@ -973,42 +4569,12 @@
       "Women's Workwear & Uniforms": [
         "Bottoms and Overalls"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [],
+    "source": "merged"
   },
   "PANTS": {
-    "item_type_names": [
-      "Baby & Toddler Footie",
-      "Baby & Toddler Layette Set",
-      "Bodystocking",
-      "Business Casual Pants",
-      "Casual Pants",
-      "Chefs Pants",
-      "Compression Pants",
-      "Corduroys",
-      "Dress Pants",
-      "Golf Pants",
-      "Hiking Pants",
-      "Jeans",
-      "Jumpsuit",
-      "Khakis",
-      "Leggings",
-      "Medical Scrubs Pants",
-      "Medical Scrubs Set",
-      "Overalls",
-      "Pants",
-      "Pants Set",
-      "Slacks",
-      "Suit Pants",
-      "Sweatpants",
-      "Sweatsuit",
-      "Tennis Pants",
-      "Track Pants",
-      "Tracksuit",
-      "Work Utility Coveralls",
-      "Work Utility Pants",
-      "Work Utility Set",
-      "Yoga Pants"
-    ],
     "product_categories": [
       "Artist Merch Apparel",
       "Athletic Sports Apparel",
@@ -1386,21 +4952,44 @@
         "Cold Weather Base Layers",
         "Snowboarding Pants"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [
+      "Baby & Toddler Footie",
+      "Baby & Toddler Layette Set",
+      "Bodystocking",
+      "Business Casual Pants",
+      "Casual Pants",
+      "Chefs Pants",
+      "Compression Pants",
+      "Corduroys",
+      "Dress Pants",
+      "Golf Pants",
+      "Hiking Pants",
+      "Jeans",
+      "Jumpsuit",
+      "Khakis",
+      "Leggings",
+      "Medical Scrubs Pants",
+      "Medical Scrubs Set",
+      "Overalls",
+      "Pants",
+      "Pants Set",
+      "Slacks",
+      "Suit Pants",
+      "Sweatpants",
+      "Sweatsuit",
+      "Tennis Pants",
+      "Track Pants",
+      "Tracksuit",
+      "Work Utility Coveralls",
+      "Work Utility Pants",
+      "Work Utility Set",
+      "Yoga Pants"
+    ],
+    "source": "merged"
   },
   "SANDAL": {
-    "item_type_names": [
-      "Espadrille Wedge Sandal",
-      "Fisherman Sandal",
-      "Flat Sandal",
-      "Flip-Flop",
-      "Geta & Zori Sandal",
-      "Heeled Sandal",
-      "Sandal",
-      "Slide Sandal",
-      "Sport Sandal",
-      "Wedge Sandal"
-    ],
     "product_categories": [
       "Athletic",
       "Classics",
@@ -1485,10 +5074,23 @@
         "5917 NWSL Footwear",
         "5999 Uncategorized"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [
+      "Espadrille Wedge Sandal",
+      "Fisherman Sandal",
+      "Flat Sandal",
+      "Flip-Flop",
+      "Geta & Zori Sandal",
+      "Heeled Sandal",
+      "Sandal",
+      "Slide Sandal",
+      "Sport Sandal",
+      "Wedge Sandal"
+    ],
+    "source": "merged"
   },
   "SHIRT": {
-    "item_type_names": [],
     "product_categories": [
       "Artist Merch Apparel",
       "Athletic Sports Apparel",
@@ -1960,27 +5562,12 @@
         "Tees",
         "Woven"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [],
+    "source": "merged"
   },
   "SHORTS": {
-    "item_type_names": [
-      "Bermuda Shorts",
-      "Cargo Shorts",
-      "Casual Shorts",
-      "Corduroy Shorts",
-      "Denim Shorts",
-      "Dress Shorts",
-      "Golf Shorts",
-      "Hiking Shorts",
-      "Khaki Shorts",
-      "Rompers",
-      "Shorts",
-      "Shorts Set",
-      "Skateboarding Shorts",
-      "Tennis Shorts",
-      "Work Utility Shorts",
-      "Yoga Shorts"
-    ],
     "product_categories": [
       "Artist Merch Apparel",
       "Athletic Sports Apparel",
@@ -2228,18 +5815,29 @@
       "Young Men's": [
         "Shorts"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [
+      "Bermuda Shorts",
+      "Cargo Shorts",
+      "Casual Shorts",
+      "Corduroy Shorts",
+      "Denim Shorts",
+      "Dress Shorts",
+      "Golf Shorts",
+      "Hiking Shorts",
+      "Khaki Shorts",
+      "Rompers",
+      "Shorts",
+      "Shorts Set",
+      "Skateboarding Shorts",
+      "Tennis Shorts",
+      "Work Utility Shorts",
+      "Yoga Shorts"
+    ],
+    "source": "merged"
   },
   "SKIRT": {
-    "item_type_names": [
-      "Business Casual Skirt",
-      "Scooter Skirt",
-      "Skirt",
-      "Skirt Set",
-      "Skort",
-      "Tennis Skirt",
-      "Tennis Skort"
-    ],
     "product_categories": [
       "Athletic Sports Apparel",
       "Girls",
@@ -2355,10 +5953,20 @@
       "Women's Traditional": [
         "Skirts"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [
+      "Business Casual Skirt",
+      "Scooter Skirt",
+      "Skirt",
+      "Skirt Set",
+      "Skort",
+      "Tennis Skirt",
+      "Tennis Skort"
+    ],
+    "source": "merged"
   },
   "SNOWSUIT": {
-    "item_type_names": [],
     "product_categories": [
       "Boys Basics Accessories and Sleep",
       "Kids & Baby Outerwear",
@@ -2384,42 +5992,12 @@
         "Down and Parkas",
         "Lightweight Jackets and Windbreakers"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [],
+    "source": "merged"
   },
   "SNOW_PANT": {
-    "item_type_names": [
-      "Baby & Toddler Footie",
-      "Baby & Toddler Layette Set",
-      "Bodystocking",
-      "Business Casual Pants",
-      "Casual Pants",
-      "Chefs Pants",
-      "Compression Pants",
-      "Corduroys",
-      "Dress Pants",
-      "Golf Pants",
-      "Hiking Pants",
-      "Jeans",
-      "Jumpsuit",
-      "Khakis",
-      "Leggings",
-      "Medical Scrubs Pants",
-      "Medical Scrubs Set",
-      "Overalls",
-      "Pants",
-      "Pants Set",
-      "Slacks",
-      "Suit Pants",
-      "Sweatpants",
-      "Sweatsuit",
-      "Tennis Pants",
-      "Track Pants",
-      "Tracksuit",
-      "Work Utility Coveralls",
-      "Work Utility Pants",
-      "Work Utility Set",
-      "Yoga Pants"
-    ],
     "product_categories": [
       "Kids & Baby Outerwear",
       "Men's Athletic",
@@ -2467,21 +6045,44 @@
       "Women's Contemporary": [
         "Pants and Jumpsuits"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [
+      "Baby & Toddler Footie",
+      "Baby & Toddler Layette Set",
+      "Bodystocking",
+      "Business Casual Pants",
+      "Casual Pants",
+      "Chefs Pants",
+      "Compression Pants",
+      "Corduroys",
+      "Dress Pants",
+      "Golf Pants",
+      "Hiking Pants",
+      "Jeans",
+      "Jumpsuit",
+      "Khakis",
+      "Leggings",
+      "Medical Scrubs Pants",
+      "Medical Scrubs Set",
+      "Overalls",
+      "Pants",
+      "Pants Set",
+      "Slacks",
+      "Suit Pants",
+      "Sweatpants",
+      "Sweatsuit",
+      "Tennis Pants",
+      "Track Pants",
+      "Tracksuit",
+      "Work Utility Coveralls",
+      "Work Utility Pants",
+      "Work Utility Set",
+      "Yoga Pants"
+    ],
+    "source": "merged"
   },
   "SWEATSHIRT": {
-    "item_type_names": [
-      "Cardigan Sweater",
-      "Hooded Sweatshirt",
-      "Polo Sweater",
-      "Pullover Sweater",
-      "Shrug Sweater",
-      "Skateboarding Hoodie",
-      "Sunsuit",
-      "Sweater",
-      "Sweater Vest",
-      "Sweatshirt"
-    ],
     "product_categories": [
       "Artist Merch Apparel",
       "Athletic Sports Apparel",
@@ -2628,32 +6229,23 @@
       "Young Men's": [
         "Sweatshirts"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {},
+    "item_type_names": [
+      "Cardigan Sweater",
+      "Hooded Sweatshirt",
+      "Polo Sweater",
+      "Pullover Sweater",
+      "Shrug Sweater",
+      "Skateboarding Hoodie",
+      "Sunsuit",
+      "Sweater",
+      "Sweater Vest",
+      "Sweatshirt"
+    ],
+    "source": "merged"
   },
   "SWIMWEAR": {
-    "item_type_names": [
-      "Baby & Toddler Swim Diaper",
-      "Baby & Toddler Two Piece Bikini",
-      "Bikini",
-      "Bikini Bottoms",
-      "Bikini Set",
-      "Bikini Top",
-      "Board Shorts",
-      "One Piece Swimsuit",
-      "Rash Guard Set",
-      "Rash Guard Shirt",
-      "Sunsuit",
-      "Swim Briefs",
-      "Swim Shirt Set",
-      "Swim Trunks",
-      "Swimsuit Separates",
-      "Swimwear Cover Up",
-      "Swimwear Cover Up Set",
-      "Tankini Set",
-      "Tankini Swimsuit",
-      "Tankini Top",
-      "Two Piece Swimsuit"
-    ],
     "product_categories": [
       "Athletic Sports Apparel",
       "Baby Private Label Apparel",
@@ -2815,6 +6407,602 @@
         "Boardshorts",
         "Rashguards"
       ]
-    }
+    },
+    "item_type_keywords_by_cat_sub": {
+      "Athletic Sports Apparel": {
+        "Accessories": [
+          "swim-belts"
+        ],
+        "Men's Swim": [
+          "athletic-rash-guard-shirts",
+          "athletic-swim-briefs",
+          "athletic-swim-jammers",
+          "athletic-technical-swimsuits",
+          "fashion-board-shorts",
+          "fashion-swim-briefs",
+          "fashion-swim-trunks",
+          "rash-guard-sets",
+          "rash-guard-shirts"
+        ],
+        "Women's Swim": [
+          "athletic-one-piece-swimsuits",
+          "athletic-rash-guard-shirts",
+          "athletic-technical-swimsuits",
+          "athletic-two-piece-swimsuits",
+          "fashion-bikini-sets",
+          "fashion-bikini-tops",
+          "fashion-board-shorts",
+          "fashion-one-piece-swimsuits",
+          "fashion-swimsuit-bottoms-separates",
+          "fashion-tankini-sets",
+          "fashion-tankini-tops",
+          "rash-guard-sets",
+          "rash-guard-shirts"
+        ],
+        "Youth Swim": [
+          "athletic-one-piece-swimsuits",
+          "athletic-rash-guard-shirts",
+          "athletic-swim-briefs",
+          "athletic-swim-jammers",
+          "athletic-technical-swimsuits",
+          "athletic-two-piece-swimsuits",
+          "fashion-bikini-sets",
+          "fashion-bikini-tops",
+          "fashion-board-shorts",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-briefs",
+          "fashion-swim-trunks",
+          "fashion-swimsuit-bottoms-separates",
+          "fashion-tankini-sets",
+          "fashion-tankini-tops",
+          "rash-guard-sets",
+          "rash-guard-shirts"
+        ]
+      },
+      "Baby Private Label Apparel": {
+        "Baby Boy Swimwear": [
+          "novelty-swimwear"
+        ],
+        "Baby Girl Swimwear": [
+          "novelty-swimwear"
+        ]
+      },
+      "Boy's Private Label Active Apparel": {
+        "Swimwear": [
+          "novelty-swimwear"
+        ]
+      },
+      "Boys Private Label": {
+        "Baby Boys PL Swimwear": [
+          "novelty-swimwear"
+        ],
+        "Boys PL Swimwear": [
+          "novelty-swimwear"
+        ]
+      },
+      "Girl's Private Label Active Apparel": {
+        "Swimwear": [
+          "novelty-swimwear"
+        ]
+      },
+      "Girls Private Label": {
+        "Baby Girls PL Swimwear": [
+          "novelty-swimwear"
+        ],
+        "Girls PL Swimwear": [
+          "novelty-swimwear"
+        ]
+      },
+      "Men's Contemporary Collections": {
+        "Swim": [
+          "fashion-board-shorts",
+          "fashion-swim-briefs",
+          "fashion-swim-trunks",
+          "rash-guard-shirts"
+        ]
+      },
+      "Men's Private Label": {
+        "Swimwear": [
+          "novelty-swimwear"
+        ]
+      },
+      "Men's Private Label Active Apparel": {
+        "Swimwear": [
+          "novelty-swimwear"
+        ]
+      },
+      "Men's Swimwear": {
+        "Board Shorts": [
+          "fashion-board-shorts"
+        ],
+        "Briefs": [
+          "fashion-swim-briefs"
+        ],
+        "Misc": [
+          "rash-guard-shirts"
+        ],
+        "Trunks": [
+          "fashion-swim-trunks"
+        ]
+      },
+      "Men's Traditional Collections": {
+        "Swim": [
+          "fashion-board-shorts",
+          "fashion-swim-briefs",
+          "fashion-swim-trunks",
+          "rash-guard-shirts"
+        ]
+      },
+      "OUTDOORS - Apparel": {
+        "Outdoor Lifestyle Bottoms": [
+          "athletic-swim-briefs",
+          "athletic-swim-jammers",
+          "fashion-board-shorts",
+          "fashion-swim-briefs",
+          "fashion-swim-trunks",
+          "fashion-swimsuit-bottoms-separates"
+        ],
+        "Outdoor Lifestyle One Piece": [
+          "athletic-one-piece-swimsuits",
+          "athletic-technical-swimsuits",
+          "athletic-two-piece-swimsuits",
+          "fashion-bikini-sets",
+          "fashion-one-piece-swimsuits",
+          "fashion-tankini-sets"
+        ],
+        "Outdoor Lifestyle Tops": [
+          "fashion-bikini-tops",
+          "fashion-tankini-tops"
+        ],
+        "Rash Guards": [
+          "athletic-rash-guard-shirts",
+          "rash-guard-sets",
+          "rash-guard-shirts"
+        ],
+        "Wetsuit Accessories": [
+          "diving-booties",
+          "surfing-booties"
+        ]
+      },
+      "SPORTS Licensed Fan Shop": {
+        "5010 Formula 1 Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5012 Formula 1 Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5031 MLB Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5039 MLB Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5041 MLS Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5049 MLS Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5051 NASCAR Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5059 NASCAR Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5061 NBA Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5069 NBA Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5071 NCAA Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5079 NCAA Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5081 NFL Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5089 NFL Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5091 NHL Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5099 NHL Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5100 International Rugby Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5111 International Soccer Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5119 International Soccer Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5120 WNBA Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5122 WNBA Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5130 UFC Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5220 PGA Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5230 LPGA Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5240 Minor League Baseball Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5250 World Baseball Classic Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5300 Olympics Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5450 WUSA Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5711 X Games Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5719 X Games Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5911 NWSL Pants & Shorts": [
+          "fashion-swim-trunks"
+        ],
+        "5919 NWSL Other Apparel & Accessories": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ],
+        "5999 Uncategorized": [
+          "athletic-two-piece-swimsuits",
+          "fashion-one-piece-swimsuits",
+          "fashion-swim-trunks",
+          "novelty-swimwear",
+          "sports-fan-apparel",
+          "sports-fan-bath-accessories",
+          "sports-fan-shorts",
+          "sports-fan-sleepwear",
+          "sports-fan-tank-tops"
+        ]
+      },
+      "Swim": {
+        "Baby Boys Swim Bottoms": [
+          "infant-and-toddler-swim-trunks"
+        ],
+        "Baby Boys Swim Rashguards": [
+          "infant-and-toddler-sun-protective-swimwear"
+        ],
+        "Baby Boys Swim Sets": [
+          "infant-and-toddler-rash-guard-sets",
+          "infant-and-toddler-swimwear-cover-up-sets"
+        ],
+        "Baby Girls Coverups & Boardshorts": [
+          "infant-and-toddler-swimwear-cover-up-sets"
+        ],
+        "Baby Girls One Piece Swim": [
+          "infant-and-toddler-one-piece-swimsuits"
+        ],
+        "Baby Girls Rashguards": [
+          "infant-and-toddler-sun-protective-swimwear"
+        ],
+        "Baby Girls Swim Sets": [
+          "infant-and-toddler-rash-guard-sets",
+          "infant-and-toddler-swimwear-cover-up-sets"
+        ],
+        "Baby Girls Two Piece Swim": [
+          "infant-and-toddler-swimwear-bikini-sets"
+        ],
+        "Baby Swim Diapers": [
+          "infant-and-toddler-reusable-swim-diapers"
+        ],
+        "Boys Swim Bottoms": [
+          "fashion-board-shorts",
+          "fashion-swim-trunks"
+        ],
+        "Boys Swim Rashguards": [
+          "rash-guard-shirts"
+        ],
+        "Boys Swim Sets": [
+          "rash-guard-sets",
+          "swimwear-cover-up-sets",
+          "swimwear-t-shirt-sets"
+        ],
+        "Girls Coverups & Boardshorts": [
+          "fashion-board-shorts",
+          "fashion-swimwear-cover-ups"
+        ],
+        "Girls One Piece Swim": [
+          "fashion-one-piece-swimsuits"
+        ],
+        "Girls Rashguards": [
+          "rash-guard-shirts",
+          "swimwear-sunsuits"
+        ],
+        "Girls Swim Sets": [
+          "fashion-bikini-sets",
+          "rash-guard-sets",
+          "swimwear-cover-up-sets"
+        ],
+        "Girls Two Piece Swim": [
+          "fashion-bikini-sets",
+          "fashion-tankini-sets",
+          "fashion-two-piece-swimsuits"
+        ]
+      },
+      "Women's Exotic Clothing": {
+        "Swimwear": [
+          "novelty-swimwear"
+        ]
+      },
+      "Women's Maternity": {
+        "Swim": [
+          "maternity-bikini-sets",
+          "maternity-bikini-tops",
+          "maternity-nursing-one-piece-swimsuits",
+          "maternity-nursing-tankini-swimsuits",
+          "maternity-rash-guard-shirts",
+          "maternity-swimsuit-bottoms-separates"
+        ]
+      },
+      "Women's Petite Sportswear": {
+        "Petite Swim": [
+          "novelty-swimwear"
+        ]
+      },
+      "Women's Private Label": {
+        "Swim": [
+          "novelty-swimwear"
+        ]
+      },
+      "Women's Private Label Active Apparel": {
+        "Swimwear": [
+          "novelty-swimwear"
+        ]
+      },
+      "Women's Special Sizes": {
+        "Swim": [
+          "fashion-bikini-tops",
+          "fashion-board-shorts",
+          "fashion-one-piece-swimsuits",
+          "fashion-swimsuit-bottoms-separates",
+          "fashion-swimwear-cover-ups",
+          "fashion-tankini-tops",
+          "rash-guard-shirts"
+        ]
+      },
+      "Women's Swimwear": {
+        "Active": [
+          "fashion-bikini-tops",
+          "fashion-one-piece-swimsuits",
+          "fashion-swimsuit-bottoms-separates",
+          "fashion-tankini-tops"
+        ],
+        "Bikini Bottom Separates": [
+          "fashion-swimsuit-bottoms-separates"
+        ],
+        "Bikini Top Separates": [
+          "fashion-bikini-tops"
+        ],
+        "Cover-Ups": [
+          "fashion-swimwear-cover-ups"
+        ],
+        "One-Piece Swimsuits": [
+          "fashion-one-piece-swimsuits"
+        ],
+        "Rashguards": [
+          "rash-guard-shirts"
+        ],
+        "Swim Shorts": [
+          "fashion-board-shorts"
+        ],
+        "Tankini Top Separates": [
+          "fashion-tankini-tops"
+        ],
+        "Two-Piece Swimsuit Sets": [
+          "fashion-two-piece-swimsuits"
+        ]
+      },
+      "Young Men's": {
+        "Boardshorts": [
+          "fashion-board-shorts",
+          "fashion-swim-trunks"
+        ],
+        "Rashguards": [
+          "rash-guard-shirts"
+        ]
+      }
+    },
+    "item_type_names": [
+      "Baby & Toddler Swim Diaper",
+      "Baby & Toddler Two Piece Bikini",
+      "Bikini",
+      "Bikini Bottoms",
+      "Bikini Set",
+      "Bikini Top",
+      "Board Shorts",
+      "One Piece Swimsuit",
+      "Rash Guard Set",
+      "Rash Guard Shirt",
+      "Sunsuit",
+      "Swim Briefs",
+      "Swim Shirt Set",
+      "Swim Trunks",
+      "Swimsuit Separates",
+      "Swimwear Cover Up",
+      "Swimwear Cover Up Set",
+      "Tankini Set",
+      "Tankini Swimsuit",
+      "Tankini Top",
+      "Two Piece Swimsuit"
+    ],
+    "source": "merged"
   }
 }
