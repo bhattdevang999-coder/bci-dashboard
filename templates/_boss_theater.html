@@ -1,0 +1,795 @@
+{# ─────────────────────────────────────────────────────────────────────
+   BOSS & FRIENDS THEATER — included via Jinja2 in index.html
+   8 animated SVG scenes, rotating every 3s, min 15s display.
+   No images required (boss head is rendered via <img src="/static/theater/boss_head.png">).
+   ───────────────────────────────────────────────────────────────────── #}
+<style>
+  /* ═══ Theater container ═══ */
+  .boss-theater-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15, 15, 25, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 99999;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .boss-theater-overlay.active { display: flex; animation: theater-fadein 0.4s ease; }
+  @keyframes theater-fadein { from { opacity: 0; } to { opacity: 1; } }
+
+  .boss-theater-stage {
+    width: min(620px, 92vw);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 24px;
+    padding: 32px 28px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(120, 80, 220, 0.25);
+    color: #fff;
+    text-align: center;
+    border: 2px solid rgba(140, 100, 240, 0.3);
+  }
+  .boss-theater-canvas {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    background: linear-gradient(180deg, #2a1f4e 0%, #0f0820 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    border: 1px solid rgba(180, 140, 255, 0.2);
+  }
+  .boss-theater-caption {
+    font-size: 18px;
+    font-weight: 700;
+    min-height: 28px;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, #ffd700, #ff8a00, #ff4d8a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.3px;
+  }
+  .boss-theater-status {
+    font-size: 13px;
+    color: #b8b0d8;
+    min-height: 18px;
+    font-family: "SF Mono", Monaco, "Courier New", monospace;
+  }
+  .boss-theater-progress {
+    height: 4px; width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px; overflow: hidden;
+    margin-top: 14px;
+  }
+  .boss-theater-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6e44ff 0%, #ff44a0 50%, #ffd700 100%);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  /* ═══ Scene base ═══ */
+  .bt-scene {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  .bt-scene.bt-active { opacity: 1; }
+
+  /* ═══ Boss head sprite ═══ */
+  .bt-head {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    background: #fff;
+    object-fit: cover;
+    display: block;
+  }
+  .bt-head-large { width: 72px; height: 72px; border-width: 4px; }
+
+  /* ═══ Stick body ═══ */
+  .bt-body {
+    width: 4px; height: 70px;
+    background: var(--bt-stroke, #fff);
+    border-radius: 2px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .bt-arm {
+    position: absolute; width: 4px; height: 36px;
+    background: var(--bt-stroke, #fff); border-radius: 2px;
+    top: 6px; left: 0; transform-origin: top center;
+  }
+  .bt-arm-l { left: -2px; }
+  .bt-arm-r { left: 2px; }
+  .bt-leg {
+    position: absolute; width: 4px; height: 40px;
+    background: var(--bt-stroke, #fff); border-radius: 2px;
+    bottom: -38px; left: 0; transform-origin: top center;
+  }
+  .bt-leg-l { transform: rotate(15deg); }
+  .bt-leg-r { transform: rotate(-15deg); }
+
+  /* Friend stick figures (smaller, colored) */
+  .bt-friend {
+    position: absolute;
+    display: flex; flex-direction: column; align-items: center;
+    transform: scale(0.7);
+  }
+  .bt-friend .bt-head-blob {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--bt-stroke, #fff);
+    margin-bottom: -4px;
+    border: 3px solid var(--bt-stroke, #fff);
+  }
+  .bt-friend.bt-pink   { --bt-stroke: #ff44a0; }
+  .bt-friend.bt-blue   { --bt-stroke: #44a0ff; }
+  .bt-friend.bt-yellow { --bt-stroke: #ffd700; }
+  .bt-friend.bt-green  { --bt-stroke: #2ecc71; }
+  .bt-friend.bt-purple { --bt-stroke: #a050ff; }
+  .bt-friend.bt-orange { --bt-stroke: #ff9900; }
+
+  /* ─── Scene 1: Yoga ─── */
+  .bt-scene-yoga .bt-arm-l { animation: yoga-arm-l 2s ease-in-out infinite; }
+  .bt-scene-yoga .bt-arm-r { animation: yoga-arm-r 2s ease-in-out infinite; }
+  @keyframes yoga-arm-l { 0%, 100% { transform: rotate(-90deg); } 50% { transform: rotate(-110deg); } }
+  @keyframes yoga-arm-r { 0%, 100% { transform: rotate(90deg);  } 50% { transform: rotate(110deg);  } }
+  .bt-yoga-mat {
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    width: 240px; height: 16px;
+    background: linear-gradient(90deg, #a050ff, #ff44a0);
+    border-radius: 8px;
+  }
+  .bt-chakra {
+    position: absolute; width: 24px; height: 24px; border-radius: 50%;
+    animation: chakra-pulse 2s ease-in-out infinite;
+  }
+  @keyframes chakra-pulse {
+    0%, 100% { transform: scale(0.8); opacity: 0.7; }
+    50%      { transform: scale(1.4); opacity: 1; }
+  }
+
+  /* ─── Scene 2: Meditation ─── */
+  .bt-scene-meditate .bt-head {
+    animation: meditate-bob 4s ease-in-out infinite;
+  }
+  @keyframes meditate-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  .bt-halo {
+    position: absolute; width: 90px; height: 18px;
+    border: 3px solid #ffd700;
+    border-radius: 50%;
+    animation: halo-spin 3s linear infinite;
+    transform-origin: center;
+  }
+  @keyframes halo-spin { from { transform: rotateX(60deg) rotate(0); } to { transform: rotateX(60deg) rotate(360deg); } }
+  .bt-sparkle {
+    position: absolute; font-size: 22px;
+    animation: sparkle-rise 3s ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes sparkle-rise {
+    0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-120px) scale(1.3); }
+  }
+  .bt-smoke {
+    position: absolute; width: 14px; height: 14px;
+    background: rgba(200, 200, 220, 0.6);
+    border-radius: 50%; filter: blur(3px);
+    animation: smoke-rise 2.5s ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes smoke-rise {
+    0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+    30%  { opacity: 0.7; }
+    100% { opacity: 0; transform: translateY(-90px) scale(2); }
+  }
+
+  /* ─── Scene 3: Moonwalk ─── */
+  .bt-scene-moonwalk .bt-figure {
+    animation: moonwalk-slide 3s ease-in-out infinite;
+  }
+  @keyframes moonwalk-slide {
+    0%, 100% { transform: translateX(-100px); }
+    50%      { transform: translateX(100px); }
+  }
+  .bt-scene-moonwalk .bt-leg-l { animation: leg-walk-l 0.5s linear infinite; }
+  .bt-scene-moonwalk .bt-leg-r { animation: leg-walk-r 0.5s linear infinite; }
+  @keyframes leg-walk-l { 0%, 100% { transform: rotate(15deg); } 50% { transform: rotate(-10deg); } }
+  @keyframes leg-walk-r { 0%, 100% { transform: rotate(-15deg); } 50% { transform: rotate(10deg); } }
+  .bt-music-note {
+    position: absolute; font-size: 24px; color: #ffd700;
+    animation: note-float 2s ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes note-float {
+    0%   { opacity: 0; transform: translate(0, 0) rotate(0); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(40px, -60px) rotate(20deg); }
+  }
+  .bt-stage-floor {
+    position: absolute; bottom: 30px; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, #888, transparent);
+  }
+
+  /* ─── Scene 4: Mars Landing ─── */
+  .bt-mars-planet {
+    position: absolute; right: 40px; bottom: 20px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle at 30% 30%, #ff7e3a, #c4391a 60%, #8b1a07);
+    border-radius: 50%;
+    box-shadow: inset -10px -10px 30px rgba(0,0,0,0.4), 0 0 30px rgba(255, 100, 50, 0.3);
+  }
+  .bt-mars-planet::after {
+    content: ''; position: absolute; top: 30%; left: 20%;
+    width: 30%; height: 18%; background: rgba(0,0,0,0.2); border-radius: 50%;
+  }
+  .bt-rocket {
+    position: absolute; left: -100px; top: 30%;
+    font-size: 48px;
+    animation: rocket-fly 3s ease-out forwards;
+  }
+  .bt-scene-mars.bt-active .bt-rocket { animation: rocket-fly 3s ease-out forwards; }
+  @keyframes rocket-fly {
+    0%   { left: -100px; top: 80%; transform: rotate(20deg); }
+    60%  { left: 60%; top: 30%; transform: rotate(-15deg); }
+    100% { left: 30%; top: 50%; transform: rotate(0); opacity: 0; }
+  }
+  .bt-mars-flag {
+    position: absolute; left: 50%; bottom: 60px;
+    font-size: 28px;
+    transform: translateX(-50%);
+    animation: flag-plant 0.8s ease-out 1s both;
+  }
+  @keyframes flag-plant {
+    0%   { transform: translate(-50%, -100px) scale(0); opacity: 0; }
+    50%  { transform: translate(-50%, 0) scale(1.3); opacity: 1; }
+    100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  }
+  .bt-amazon-orbit {
+    position: absolute; right: 80px; bottom: 100px;
+    font-size: 36px; color: #ff9900;
+    font-weight: 900;
+    animation: amazon-orbit 4s linear infinite;
+  }
+  @keyframes amazon-orbit {
+    0%   { transform: translate(0, 0) rotate(0); }
+    100% { transform: translate(0, 0) rotate(360deg) translateX(60px) rotate(-360deg); }
+  }
+  .bt-stars {
+    position: absolute; inset: 0; pointer-events: none;
+  }
+  .bt-stars::before, .bt-stars::after {
+    content: '✦ ✧ ✦ ✧ ✦  ✧ ✦ ✧';
+    position: absolute; top: 12px; left: 20px;
+    color: #fff; font-size: 14px; opacity: 0.6;
+    letter-spacing: 30px;
+  }
+  .bt-stars::after { top: 60px; left: 40px; opacity: 0.4; }
+
+  /* ─── Scene 5: Desk Flex ─── */
+  .bt-monitor {
+    position: absolute;
+    width: 130px; height: 80px;
+    background: #0a0a1a;
+    border: 4px solid #444;
+    border-radius: 6px;
+    box-shadow: 0 6px 0 #222;
+    display: flex; align-items: center; justify-content: center;
+    font-family: monospace; font-size: 11px;
+    color: #00ff66;
+    overflow: hidden;
+  }
+  .bt-monitor-l { left: 60px; top: 60px; }
+  .bt-monitor-r { right: 60px; top: 60px; }
+  .bt-ticker {
+    white-space: nowrap;
+    animation: ticker-scroll 4s linear infinite;
+  }
+  @keyframes ticker-scroll {
+    from { transform: translateX(120px); }
+    to   { transform: translateX(-120px); }
+  }
+  .bt-coffee {
+    position: absolute; left: 50%; bottom: 50px;
+    font-size: 28px; transform: translateX(-50%);
+  }
+  .bt-coffee-steam {
+    position: absolute; left: 50%; bottom: 80px;
+    font-size: 16px; opacity: 0.6;
+    transform: translateX(-50%);
+    animation: smoke-rise 2s ease-out infinite;
+  }
+  .bt-cash {
+    position: absolute; font-size: 22px; color: #2ecc71;
+    animation: cash-rain 2s ease-in infinite;
+    opacity: 0;
+  }
+  @keyframes cash-rain {
+    0%   { opacity: 0; transform: translateY(-20px) rotate(0); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(280px) rotate(720deg); }
+  }
+
+  /* ─── Scene 6: Parade ─── */
+  .bt-confetti {
+    position: absolute; width: 8px; height: 12px;
+    animation: confetti-fall 3s linear infinite;
+  }
+  @keyframes confetti-fall {
+    0%   { transform: translateY(-30px) rotate(0); opacity: 0; }
+    10%  { opacity: 1; }
+    100% { transform: translateY(320px) rotate(720deg); opacity: 0.6; }
+  }
+  .bt-parade-letters {
+    position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+    font-size: 38px; font-weight: 900;
+    background: linear-gradient(90deg, #ffd700, #ff44a0, #44a0ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: parade-bounce 0.6s ease-in-out infinite;
+  }
+  @keyframes parade-bounce {
+    0%, 100% { transform: translate(-50%, 0) scale(1); }
+    50%      { transform: translate(-50%, -8px) scale(1.05); }
+  }
+  .bt-scene-parade .bt-arm-l { animation: parade-wave 1s ease-in-out infinite; transform-origin: top center; }
+  .bt-scene-parade .bt-arm-r { animation: parade-wave 1s ease-in-out infinite reverse; }
+  @keyframes parade-wave {
+    0%, 100% { transform: rotate(-30deg); }
+    50%      { transform: rotate(-130deg); }
+  }
+
+  /* ─── Scene 7: Amazon HQ ─── */
+  .bt-bezos-silhouette {
+    position: absolute; left: 100px; top: 80px;
+    width: 80px; height: 100px;
+    background: radial-gradient(ellipse at top, #aaa 30%, #555);
+    border-radius: 40px 40px 8px 8px;
+    box-shadow: inset -6px 0 12px rgba(0,0,0,0.4);
+  }
+  .bt-bezos-silhouette::before {
+    content: '😎'; position: absolute; top: 18px; left: 50%;
+    transform: translateX(-50%); font-size: 28px;
+  }
+  .bt-amazon-logo {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px; font-weight: 900;
+    color: #ff9900;
+    text-shadow: 0 0 20px rgba(255, 153, 0, 0.6);
+    animation: amazon-bounce 2s ease-in-out infinite;
+  }
+  @keyframes amazon-bounce {
+    0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(-5deg); }
+    50%      { transform: translate(-50%, -60%) scale(1.15) rotate(5deg); }
+  }
+  .bt-amazon-smile {
+    position: absolute; top: 56%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px; color: #ff9900;
+    letter-spacing: -2px;
+  }
+  .bt-handshake {
+    position: absolute; bottom: 60px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 36px;
+    animation: shake 0.4s ease-in-out infinite;
+  }
+  @keyframes shake { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-4px); } }
+
+  /* Friend bopping on the dance floor */
+  @keyframes bt-bop {
+    0%, 100% { transform: scale(0.7) translateY(0); }
+    50%      { transform: scale(0.7) translateY(-8px); }
+  }
+
+  /* ─── Scene 8: Vault ─── */
+  .bt-vault-coins {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 100px;
+    background: linear-gradient(180deg, transparent 0%, #ffd700 30%, #d4a017 100%);
+  }
+  .bt-vault-coins::before {
+    content: '💰💰💰💰💰💰';
+    position: absolute; bottom: 5px; left: 0; right: 0;
+    text-align: center; font-size: 38px; letter-spacing: 4px;
+  }
+  .bt-coin-rain {
+    position: absolute; font-size: 24px;
+    animation: coin-rain 2s ease-in infinite;
+    opacity: 0;
+  }
+  @keyframes coin-rain {
+    0%   { opacity: 0; transform: translateY(-30px) rotate(0); }
+    10%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(280px) rotate(540deg); }
+  }
+  .bt-vault-walls {
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 38px, rgba(255,215,0,0.08) 38px 40px),
+      linear-gradient(180deg, #2a1f0e 0%, #1a1308 100%);
+  }
+  .bt-laugh-bubble {
+    position: absolute; top: 30px; right: 60px;
+    background: #fff; color: #000;
+    padding: 6px 14px; border-radius: 20px;
+    font-weight: 900; font-size: 16px;
+    animation: laugh-bounce 0.8s ease-in-out infinite;
+  }
+  @keyframes laugh-bounce {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.15) rotate(-3deg); }
+  }
+  .bt-laugh-bubble::after {
+    content: ''; position: absolute; bottom: -8px; left: 30%;
+    border: 6px solid transparent; border-top-color: #fff;
+  }
+
+  /* ═══ Scene-specific positioning helpers ═══ */
+  .bt-figure {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+  }
+
+  /* Skip button */
+  .bt-skip {
+    position: absolute; top: 14px; right: 16px;
+    background: rgba(255,255,255,0.1);
+    color: #fff; border: 1px solid rgba(255,255,255,0.2);
+    padding: 4px 12px; border-radius: 12px;
+    font-size: 11px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .bt-skip:hover { background: rgba(255,255,255,0.2); }
+</style>
+
+<div class="boss-theater-overlay" id="boss-theater">
+  <div class="boss-theater-stage">
+    <button class="bt-skip" onclick="bossTheaterClose(true)">Skip</button>
+
+    <div class="boss-theater-canvas" id="boss-theater-canvas">
+
+      <!-- ─── SCENE 1: YOGA CLASS (Boss + 2 friends) ─── -->
+      <div class="bt-scene bt-scene-yoga" data-scene="0">
+        <div class="bt-yoga-mat" style="width:380px; bottom:24px;"></div>
+        <div class="bt-chakra" style="background:#ff44a0; left:30%; top:20%;"></div>
+        <div class="bt-chakra" style="background:#44a0ff; left:60%; top:25%; animation-delay:0.4s;"></div>
+        <div class="bt-chakra" style="background:#ffd700; left:45%; top:15%; animation-delay:0.8s;"></div>
+        <div class="bt-chakra" style="background:#a050ff; left:15%; top:40%; animation-delay:0.6s;"></div>
+        <div class="bt-chakra" style="background:#2ecc71; left:75%; top:50%; animation-delay:1.2s;"></div>
+
+        <!-- friend left -->
+        <div class="bt-friend bt-pink" style="left:18%; bottom:60px;">
+          <div class="bt-head-blob"></div>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-90deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(90deg);"></div>
+            <div class="bt-leg bt-leg-l" style="transform:rotate(45deg);"></div>
+            <div class="bt-leg bt-leg-r" style="transform:rotate(-25deg);"></div>
+          </div>
+        </div>
+
+        <!-- BOSS center -->
+        <div class="bt-figure" style="position:absolute; left:50%; bottom:60px; transform:translateX(-50%);">
+          <img src="/static/theater/boss_head.png" class="bt-head" alt=""/>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l"></div>
+            <div class="bt-arm bt-arm-r"></div>
+            <div class="bt-leg bt-leg-l" style="transform:rotate(45deg);"></div>
+            <div class="bt-leg bt-leg-r" style="transform:rotate(-25deg);"></div>
+          </div>
+        </div>
+
+        <!-- friend right -->
+        <div class="bt-friend bt-blue" style="right:18%; bottom:60px;">
+          <div class="bt-head-blob"></div>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-100deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(100deg);"></div>
+            <div class="bt-leg bt-leg-l" style="transform:rotate(45deg);"></div>
+            <div class="bt-leg bt-leg-r" style="transform:rotate(-25deg);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SCENE 2: MEDITATION ─── -->
+      <div class="bt-scene bt-scene-meditate" data-scene="1">
+        <div class="bt-sparkle" style="left:30%; top:50%; animation-delay:0s;">✨</div>
+        <div class="bt-sparkle" style="left:55%; top:60%; animation-delay:0.6s;">✨</div>
+        <div class="bt-sparkle" style="left:70%; top:55%; animation-delay:1.2s;">⭐</div>
+        <div class="bt-sparkle" style="left:40%; top:65%; animation-delay:1.8s;">✨</div>
+        <div class="bt-smoke" style="left:50%; top:45%; animation-delay:0s;"></div>
+        <div class="bt-smoke" style="left:53%; top:50%; animation-delay:0.8s;"></div>
+        <div class="bt-smoke" style="left:48%; top:48%; animation-delay:1.6s;"></div>
+        <div class="bt-figure">
+          <div class="bt-halo" style="position:absolute; top:-12px; left:50%; transform:translateX(-50%);"></div>
+          <img src="/static/theater/boss_head.png" class="bt-head bt-head-large" alt=""/>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-60deg); top:14px;"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(60deg); top:14px;"></div>
+            <div class="bt-leg bt-leg-l" style="transform:rotate(70deg); bottom:-25px;"></div>
+            <div class="bt-leg bt-leg-r" style="transform:rotate(-70deg); bottom:-25px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SCENE 3: MOONWALK (Boss + dancing friends) ─── -->
+      <div class="bt-scene bt-scene-moonwalk" data-scene="2">
+        <div class="bt-stage-floor"></div>
+        <div class="bt-music-note" style="left:60%; top:30%; animation-delay:0s;">♪</div>
+        <div class="bt-music-note" style="left:30%; top:50%; animation-delay:0.6s;">♫</div>
+        <div class="bt-music-note" style="left:75%; top:40%; animation-delay:1.2s;">♪</div>
+        <div class="bt-music-note" style="left:20%; top:25%; animation-delay:0.3s;">♬</div>
+
+        <!-- dancing friend behind -->
+        <div class="bt-friend bt-yellow" style="left:25%; bottom:60px; animation: bt-bop 0.5s ease-in-out infinite;">
+          <div class="bt-head-blob"></div>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-130deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(130deg);"></div>
+            <div class="bt-leg bt-leg-l"></div>
+            <div class="bt-leg bt-leg-r"></div>
+          </div>
+        </div>
+
+        <!-- BOSS moonwalking -->
+        <div class="bt-figure">
+          <img src="/static/theater/boss_head.png" class="bt-head" alt=""/>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-45deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(45deg);"></div>
+            <div class="bt-leg bt-leg-l"></div>
+            <div class="bt-leg bt-leg-r"></div>
+          </div>
+        </div>
+
+        <!-- another dancing friend -->
+        <div class="bt-friend bt-green" style="right:18%; bottom:60px; animation: bt-bop 0.6s ease-in-out infinite reverse;">
+          <div class="bt-head-blob"></div>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-90deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(90deg);"></div>
+            <div class="bt-leg bt-leg-l"></div>
+            <div class="bt-leg bt-leg-r"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SCENE 4: MARS LANDING ─── -->
+      <div class="bt-scene bt-scene-mars" data-scene="3">
+        <div class="bt-stars"></div>
+        <div class="bt-mars-planet"></div>
+        <div class="bt-amazon-orbit">a</div>
+        <div class="bt-rocket">🚀</div>
+        <div class="bt-mars-flag">🇺🇸</div>
+      </div>
+
+      <!-- ─── SCENE 5: DESK FLEX ─── -->
+      <div class="bt-scene bt-scene-desk" data-scene="4">
+        <div class="bt-monitor bt-monitor-l">
+          <div class="bt-ticker">$AMZN +12% $SAGE +∞%</div>
+        </div>
+        <div class="bt-monitor bt-monitor-r">
+          <div class="bt-ticker">SKUs ▲ 9 / 9 READY</div>
+        </div>
+        <div class="bt-coffee-steam">≋</div>
+        <div class="bt-coffee">☕</div>
+        <div class="bt-cash" style="left:10%; animation-delay:0s;">💵</div>
+        <div class="bt-cash" style="left:30%; animation-delay:0.5s;">💵</div>
+        <div class="bt-cash" style="left:70%; animation-delay:1s;">💵</div>
+        <div class="bt-cash" style="left:90%; animation-delay:1.5s;">💵</div>
+        <div class="bt-figure" style="margin-top:130px;">
+          <img src="/static/theater/boss_head.png" class="bt-head" alt=""/>
+          <div class="bt-body" style="height:40px;">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-110deg); height:24px;"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(110deg); height:24px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SCENE 6: PARADE (Boss + cheering friends) ─── -->
+      <div class="bt-scene bt-scene-parade" data-scene="5">
+        <div class="bt-parade-letters">BOSS!</div>
+        <div class="bt-confetti" style="background:#ff44a0; left:10%; animation-delay:0s;"></div>
+        <div class="bt-confetti" style="background:#ffd700; left:25%; animation-delay:0.2s;"></div>
+        <div class="bt-confetti" style="background:#44a0ff; left:40%; animation-delay:0.4s;"></div>
+        <div class="bt-confetti" style="background:#2ecc71; left:55%; animation-delay:0.6s;"></div>
+        <div class="bt-confetti" style="background:#ff44a0; left:70%; animation-delay:0.8s;"></div>
+        <div class="bt-confetti" style="background:#ffd700; left:85%; animation-delay:1s;"></div>
+        <div class="bt-confetti" style="background:#44a0ff; left:15%; animation-delay:1.2s;"></div>
+        <div class="bt-confetti" style="background:#2ecc71; left:50%; animation-delay:1.4s;"></div>
+        <div class="bt-confetti" style="background:#ff44a0; left:80%; animation-delay:1.6s;"></div>
+
+        <!-- Cheering friend left -->
+        <div class="bt-friend bt-purple" style="left:14%; bottom:50px; animation: bt-bop 0.6s ease-in-out infinite;">
+          <div class="bt-head-blob"></div>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-150deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(150deg);"></div>
+            <div class="bt-leg bt-leg-l"></div>
+            <div class="bt-leg bt-leg-r"></div>
+          </div>
+        </div>
+
+        <!-- BOSS waving -->
+        <div class="bt-figure" style="margin-top:50px;">
+          <img src="/static/theater/boss_head.png" class="bt-head" alt=""/>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l"></div>
+            <div class="bt-arm bt-arm-r"></div>
+            <div class="bt-leg bt-leg-l"></div>
+            <div class="bt-leg bt-leg-r"></div>
+          </div>
+        </div>
+
+        <!-- Cheering friend right -->
+        <div class="bt-friend bt-orange" style="right:14%; bottom:50px; animation: bt-bop 0.5s ease-in-out infinite reverse;">
+          <div class="bt-head-blob"></div>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-150deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(150deg);"></div>
+            <div class="bt-leg bt-leg-l"></div>
+            <div class="bt-leg bt-leg-r"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SCENE 7: AMAZON HQ ─── -->
+      <div class="bt-scene bt-scene-amazon" data-scene="6">
+        <div class="bt-bezos-silhouette"></div>
+        <div class="bt-amazon-logo">a</div>
+        <div class="bt-amazon-smile">⌣</div>
+        <div class="bt-handshake">🤝</div>
+        <div class="bt-figure" style="position:absolute; right:100px; top:80px;">
+          <img src="/static/theater/boss_head.png" class="bt-head" alt=""/>
+          <div class="bt-body">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-100deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(20deg);"></div>
+            <div class="bt-leg bt-leg-l"></div>
+            <div class="bt-leg bt-leg-r"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SCENE 8: VAULT (Boss + friends celebrating) ─── -->
+      <div class="bt-scene bt-scene-vault" data-scene="7">
+        <div class="bt-vault-walls"></div>
+        <div class="bt-vault-coins"></div>
+        <div class="bt-coin-rain" style="left:15%; animation-delay:0s;">🪙</div>
+        <div class="bt-coin-rain" style="left:30%; animation-delay:0.3s;">💰</div>
+        <div class="bt-coin-rain" style="left:55%; animation-delay:0.6s;">🪙</div>
+        <div class="bt-coin-rain" style="left:75%; animation-delay:0.9s;">💰</div>
+        <div class="bt-coin-rain" style="left:90%; animation-delay:1.2s;">🪙</div>
+        <div class="bt-laugh-bubble">YAY!</div>
+
+        <!-- Friend cheering left -->
+        <div class="bt-friend bt-pink" style="left:18%; bottom:90px; animation: bt-bop 0.6s ease-in-out infinite;">
+          <div class="bt-head-blob"></div>
+          <div class="bt-body" style="height:50px;">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-150deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(150deg);"></div>
+            <div class="bt-leg bt-leg-l"></div>
+            <div class="bt-leg bt-leg-r"></div>
+          </div>
+        </div>
+
+        <!-- BOSS center -->
+        <div class="bt-figure" style="margin-top:50px;">
+          <img src="/static/theater/boss_head.png" class="bt-head" alt=""/>
+          <div class="bt-body" style="height:50px;">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-150deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(150deg);"></div>
+            <div class="bt-leg bt-leg-l" style="transform:rotate(45deg);"></div>
+            <div class="bt-leg bt-leg-r" style="transform:rotate(-45deg);"></div>
+          </div>
+        </div>
+
+        <!-- Friend cheering right -->
+        <div class="bt-friend bt-blue" style="right:18%; bottom:90px; animation: bt-bop 0.5s ease-in-out infinite reverse;">
+          <div class="bt-head-blob"></div>
+          <div class="bt-body" style="height:50px;">
+            <div class="bt-arm bt-arm-l" style="transform:rotate(-150deg);"></div>
+            <div class="bt-arm bt-arm-r" style="transform:rotate(150deg);"></div>
+            <div class="bt-leg bt-leg-l"></div>
+            <div class="bt-leg bt-leg-r"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="boss-theater-caption" id="boss-theater-caption">⚡ Booting the boss…</div>
+    <div class="boss-theater-status" id="boss-theater-status">Initializing engine</div>
+    <div class="boss-theater-progress"><div class="boss-theater-progress-fill" id="boss-theater-progress"></div></div>
+  </div>
+</div>
+
+<script>
+// ════════════ Boss Theater Controller ════════════
+window.bossTheater = (function() {
+  const SCENES = [
+    { caption: "🧘 Yoga class with the whole team — everyone’s aligned", status: "Reading the pre-upload…" },
+    { caption: "🩷 Boss meditates — perfect calm, perfect data",         status: "Mapping columns to NIS keys…" },
+    { caption: "🎵 Dance party! Everyone’s moonwalking on beat",         status: "Loading rule bundles…" },
+    { caption: "🚀 Boss lands on Mars — one small step for SKUs!",        status: "Applying apparel defaults…" },
+    { caption: "💼 Boss types with the biggest smile — love for clean data!", status: "Resolving cascade dropdowns…" },
+    { caption: "🎉 Parade! The team cheers every single style home",      status: "Cross-checking conditional rules…" },
+    { caption: "🤝 Boss and Bezos fist-bump over a job well done",         status: "Verifying battery & hazmat logic…" },
+    { caption: "💫 Boss and friends celebrate — your listings shine!",    status: "Finalizing per-style verdicts…" },
+  ];
+  const SCENE_DURATION = 1800;        // ms per scene — quick rotations
+  const MIN_DISPLAY = 15000;          // never close before 15s (≈ 8 scenes)
+  let timer = null;
+  let openedAt = 0;
+  let onCloseCallback = null;
+  let dataReady = false;
+  let currentSceneIdx = 0;
+
+  function show(onClose) {
+    onCloseCallback = onClose || null;
+    dataReady = false;
+    openedAt = Date.now();
+    currentSceneIdx = 0;
+    const overlay = document.getElementById('boss-theater');
+    if (!overlay) return;
+    overlay.classList.add('active');
+    rotate();
+  }
+
+  function rotate() {
+    const total = SCENES.length;
+    const scenes = document.querySelectorAll('.bt-scene');
+    scenes.forEach(el => el.classList.remove('bt-active'));
+    const idx = currentSceneIdx % total;
+    const active = document.querySelector(`[data-scene="${idx}"]`);
+    if (active) active.classList.add('bt-active');
+
+    const cap = document.getElementById('boss-theater-caption');
+    const stat = document.getElementById('boss-theater-status');
+    if (cap) cap.textContent = SCENES[idx].caption;
+    if (stat) stat.textContent = SCENES[idx].status;
+
+    // Update progress bar based on min-display floor
+    const elapsed = Date.now() - openedAt;
+    const pct = Math.min(100, (elapsed / MIN_DISPLAY) * 100);
+    const bar = document.getElementById('boss-theater-progress');
+    if (bar) bar.style.width = pct + '%';
+
+    currentSceneIdx++;
+    timer = setTimeout(rotate, SCENE_DURATION);
+    maybeClose();
+  }
+
+  function dataDone() {
+    dataReady = true;
+    maybeClose();
+  }
+
+  function maybeClose() {
+    if (!dataReady) return;
+    const elapsed = Date.now() - openedAt;
+    if (elapsed >= MIN_DISPLAY) {
+      close();
+    } else {
+      setTimeout(maybeClose, 200);
+    }
+  }
+
+  function close(skipped) {
+    if (timer) clearTimeout(timer);
+    const overlay = document.getElementById('boss-theater');
+    if (overlay) overlay.classList.remove('active');
+    const cb = onCloseCallback;
+    onCloseCallback = null;
+    if (cb) cb(skipped);
+  }
+
+  return { show, dataDone, close };
+})();
+
+// Expose to global scope for onclick
+window.bossTheaterClose = function(skipped) { window.bossTheater.close(skipped); };
+</script>

@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-04-30 — Boss & Friends Theater (v0.7.4) 🎭
+
+Pre-upload parse now plays an **8-scene stick-figure animation** starring Boss (with his real cropped face) and colorful friends. Scenes rotate every 1.8 seconds; total loop is ~14s, and the theater stays up for a minimum of 15 seconds so nobody misses the show. Every scene is pure CSS + SVG — no video files, no big assets, runs instantly on Render.
+
+### The 8 scenes
+1. 🧘 **Yoga class** with the whole team — chakras pulsing, arms swaying
+2. 🩷 **Meditation** — halo spinning, sparkles rising, perfect calm
+3. 🎵 **Dance party** — Boss moonwalking, friends bopping to music notes
+4. 🚀 **Mars landing** — rocket flies in, flag plants, Amazon logo orbits
+5. 💼 **Desk flex** — dual monitors with $AMZN ticker, coffee steam, cash rain
+6. 🎉 **Parade** — "BOSS!" bouncing in rainbow gradient, confetti, friends cheering
+7. 🤝 **Amazon HQ** — Boss and a Bezos silhouette fist-bump under the orange "a"
+8. 💫 **Vault** — gold coin rain, vault walls, Boss and friends celebrating with "YAY!"
+
+### Captions (all wholesome)
+- "🧘 Yoga class with the whole team — everyone's aligned"
+- "🎵 Dance party! Everyone's moonwalking on beat"
+- "🚀 Boss lands on Mars — one small step for SKUs!"
+- ... etc.
+
+### Under the hood
+- `templates/_boss_theater.html` — self-contained component (1 file, CSS + SVG + controller).
+- `static/theater/boss_head.png` — the real face cropped to a circle (128x128).
+- Theater exposes `window.bossTheater.show(onClose)` + `.dataDone()` + `.close()` API.
+- Integrated into the pre-upload import flow: opens when upload starts, closes when data's ready **and** the 15-second floor has elapsed (whichever is later).
+- Same theater can be reused for NIS generation later — just call `.show()` from that flow.
+- Skip button in the top-right for anyone in a hurry.
+
+
 ## 2026-04-30 — Brand Setup + Smart Suppressions (v0.7.3)
 
 Three big unlocks: the operator is now prompted to set up brand-level constants on first upload, pre-upload's Cost Price + Ship Date are wired to NIS, and 19 battery false-alarms plus 6 license/government/hazmat flags are suppressed for brands that don't sell those goods. Dropping a Sage file now gives you 49 required_ok / 0 hard blockers with 30 irrelevant fields auto-silenced.

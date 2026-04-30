@@ -4164,6 +4164,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
 </div><!-- /main -->
 
+{# ════════════════════ BOSS THEATER (overlay, hidden by default) ════════════════════ #}
+{% include '_boss_theater.html' %}
+
 <script>
 // ═══════════════════ GLOBAL STATE & NAV ═══════════════════
 // ═══════════════════════ STATE ═══════════════════════
@@ -4514,18 +4517,46 @@ async function engineImportPreupload(fileInput) {
   resultsEl.innerHTML = '<em style="color:#666;">Parsing \u201c' + file.name + '\u201d\u2026</em>';
   const fd = new FormData();
   fd.append('file', file);
+
+  // Show theater while we parse — stays open at least 15s, even if API returns faster
+  let importResult = null;
+  let importError = null;
+  let theaterClosed = false;
+  if (window.bossTheater) {
+    window.bossTheater.show(function() {
+      theaterClosed = true;
+      // After theater closes, render whatever the API returned
+      if (importError) {
+        resultsEl.innerHTML = '<span style="color:#c00;">Import failed: ' + importError + '</span>';
+      } else if (importResult) {
+        if (importResult.brand_setup && importResult.brand_setup.needs_setup) {
+          engineShowBrandSetup(importResult.brand_setup, () => engineRenderPreuploadResults(importResult));
+        } else {
+          engineRenderPreuploadResults(importResult);
+        }
+      }
+    });
+  }
+
   try {
     const r = await fetch('/api/rule-engine/import-preupload', { method: 'POST', body: fd }).then(r => r.json());
     if (!r.ok) throw new Error(r.error || 'import failed');
     engineState.preupload = r;
-    // If the brand needs setup, show the setup modal first
-    if (r.brand_setup && r.brand_setup.needs_setup) {
-      engineShowBrandSetup(r.brand_setup, () => engineRenderPreuploadResults(r));
-    } else {
-      engineRenderPreuploadResults(r);
-    }
+    importResult = r;
   } catch (e) {
-    resultsEl.innerHTML = '<span style="color:#c00;">Import failed: ' + e.message + '</span>';
+    importError = e.message;
+  }
+  // Tell theater the data is ready; it'll close once min-display has elapsed
+  if (window.bossTheater) {
+    window.bossTheater.dataDone();
+  } else if (importError) {
+    resultsEl.innerHTML = '<span style="color:#c00;">Import failed: ' + importError + '</span>';
+  } else if (importResult) {
+    if (importResult.brand_setup && importResult.brand_setup.needs_setup) {
+      engineShowBrandSetup(importResult.brand_setup, () => engineRenderPreuploadResults(importResult));
+    } else {
+      engineRenderPreuploadResults(importResult);
+    }
   }
   fileInput.value = '';
 }
