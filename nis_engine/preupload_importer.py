@@ -71,9 +71,9 @@ _HEADER_ALIASES = {
     "upc":             ["upccode", "upc"],
     "asin":            ["childasin"],
     "sku":             ["sku"],
-    "due_date":        ["duedateearliestshipdate", "duedate"],
-    "amazon_cost":     ["amazoncost", "amznwholesale", "wholesale", "cost"],
-    "list_price":      ["amazonlistprice", "amznretail", "retail", "listprice"],
+    "due_date":        ["duedateearliestshipdate", "duedate", "earliestshipdate", "shipdate"],
+    "amazon_cost":     ["amazoncost", "amznwholesale", "wholesale", "cost", "costprice"],
+    "list_price":      ["amazonlistprice", "amznretail", "retail", "listprice", "msrp"],
     "department":      ["department"],
     "type_jacket":     ["typeofjacket", "typeofjacket"],
     "coo":             ["coo", "countryoforigin"],
@@ -283,9 +283,23 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
         "rtip_product_description#1.value":
             ((s.get("addl") or "") + " " + (s.get("keywords") or "")).strip(),
         "list_price#1.value":            str(s.get("list_price") or ""),
+        "list_price#1.currency":         "USD",
         "item_length_description#1.value":
             f"{s.get('length')}-inch" if s.get("length") else "",
     }
+    # Wire cost price + ship/booking date from pre-upload (previously unmapped)
+    due = s.get("due_date")
+    if due is not None:
+        try:
+            date_str = due.strftime("%Y-%m-%dT%H:%M:%SZ") if hasattr(due, "strftime") else str(due)
+            state["rtip_earliest_shipping_date#1.value"] = date_str
+            state["merchant_release_date#1.value"] = date_str
+            state["item_booking_date#1.value"] = date_str
+        except Exception:
+            pass
+    cost = s.get("amazon_cost")
+    if cost is not None:
+        state["cost_price#1.value"] = str(cost)
     # Clean blanks
     return {k: v for k, v in state.items() if v not in (None, "", " ")}
 

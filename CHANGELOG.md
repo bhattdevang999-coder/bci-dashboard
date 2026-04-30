@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-04-30 — Brand Setup + Smart Suppressions (v0.7.3)
+
+Three big unlocks: the operator is now prompted to set up brand-level constants on first upload, pre-upload's Cost Price + Ship Date are wired to NIS, and 19 battery false-alarms plus 6 license/government/hazmat flags are suppressed for brands that don't sell those goods. Dropping a Sage file now gives you 49 required_ok / 0 hard blockers with 30 irrelevant fields auto-silenced.
+
+### Backend
+- `nis_engine/brand_setup.py` (new)
+  - `BRAND_SETUP_SCHEMA`: 10 keys the dashboard can prompt for — 4 required (vendor_code, brand_name, default_coo, department), 6 optional (care, size_system + 4 yes/no toggles).
+  - `SUPPRESSION_RULES`: 4 rules that hide entire categories of false-positive verdicts when the brand's config says those categories don't apply (battery fields when `products_contain_batteries=No`, license fields when `sells_licensed_sports=No`, government fields when `is_government_contractor=No`, hazmat fields when `requires_hazmat_disclosure=No`).
+  - `needs_setup()` / `load_brand_config()` / `save_brand_config()` — one-line API for the dashboard.
+- `nis_engine/preupload_importer.py`
+  - Header aliases extended: `shipdate`, `costprice`, `msrp` etc. now recognized.
+  - `style_to_form_state()` now wires Cost Price (col Q → `cost_price#1.value`) and Due Date (col P → `rtip_earliest_shipping_date#1.value` + `merchant_release_date#1.value` + `item_booking_date#1.value`).
+- `nis_engine/nis_rule_engine.evaluate_form()` now layers state in strict precedence: universal defaults ← brand defaults (from brand_configs/*.json) ← brand packaging memory ← operator-supplied form_state. Post-evaluation, suppressed fields are flipped from `required_missing` to `suppressed` with a reason tag — NEVER applied to `REQUIRED` fields (safety net).
+- Response now returns `suppressed_count`, `brand_applied`, plus the existing `defaults_applied` and `packaging_applied`.
+
+### API endpoints
+- `GET  /api/rule-engine/brand-config?brand=...` — return current config + setup status + schema.
+- `POST /api/rule-engine/brand-config` — save config (merges with existing, git-commits).
+- `POST /api/rule-engine/import-preupload` — response now includes `brand_setup` status so frontend can prompt on first upload.
+
+### Frontend
+- NIS Rules page: import flow now checks `brand_setup.needs_setup`. If true, a setup modal appears before the per-style table with exactly the fields from the backend schema — prompts marked with a red ☆ for required, defaults pre-filled, dropdowns where the schema specifies options.
+- After save, the file is re-evaluated immediately so the operator sees the impact.
+- For known brands, a `✓ Brand config loaded — edit settings` hint appears, letting the operator re-open the modal to adjust (e.g. add batteries if a new line includes electronics).
+
+### Numbers
+Sage Pre-Upload R1 baseline vs. each feature:
+| Config state                        | required_ok | conditional missing | suppressed |
+|-------------------------------------|-----------:|-------------------:|----------:|
+| Raw (no defaults)                   | 37         | 73                  | 0         |
+| + apparel defaults (v0.7.2)         | 38         | 72                  | 0         |
+| + packaging memory (v0.7.2, Puffer) | 46         | 64                  | 0         |
+| + v0.7.3 cost/ship wiring           | 49         | 42                  | 0         |
+| + v0.7.3 suppressions               | 49         | 31                  | 30        |
+
+Net: **same file, 9 styles, 0 hard blockers, 30 fields auto-silenced**.
+
+### Files changed
+- New: `nis_engine/brand_setup.py` (254 lines)
+- Modified: `nis_engine/nis_rule_engine.py` (+35 lines), `nis_engine/preupload_importer.py` (+20 lines), `app.py` (+60 lines, 2 new endpoints), `templates/index.html` (+100 lines, brand setup modal), `brand_configs/Sage_Collective.json` (upgraded with suppression flags)
+
+
 ## 2026-04-30 — Zero-touch Sage Pre-Upload (v0.7.2)
 
 Any brand's pre-upload .xlsx now flows to **zero hard blockers** through the dashboard without operator field-by-field input. The operator drops the file, the engine reports per-style readiness, and the only per-brand setup is package dimensions once per sub-class (remembered forever).

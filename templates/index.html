@@ -4518,11 +4518,95 @@ async function engineImportPreupload(fileInput) {
     const r = await fetch('/api/rule-engine/import-preupload', { method: 'POST', body: fd }).then(r => r.json());
     if (!r.ok) throw new Error(r.error || 'import failed');
     engineState.preupload = r;
-    engineRenderPreuploadResults(r);
+    // If the brand needs setup, show the setup modal first
+    if (r.brand_setup && r.brand_setup.needs_setup) {
+      engineShowBrandSetup(r.brand_setup, () => engineRenderPreuploadResults(r));
+    } else {
+      engineRenderPreuploadResults(r);
+    }
   } catch (e) {
     resultsEl.innerHTML = '<span style="color:#c00;">Import failed: ' + e.message + '</span>';
   }
   fileInput.value = '';
+}
+
+// ══════════════ BRAND SETUP MODAL ══════════════
+function engineShowBrandSetup(status, onDone) {
+  const brand = status.brand || '(Unknown Brand)';
+  const schema = status.schema || {};
+  const current = status.current_config || {};
+  const missing = new Set(status.missing_fields || []);
+  // Build modal
+  const backdrop = document.createElement('div');
+  backdrop.id = 'brand-setup-backdrop';
+  backdrop.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;';
+  backdrop.innerHTML = `
+    <div style="background:#fff; max-width:640px; width:90%; max-height:85vh; overflow-y:auto; border-radius:12px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+        <div>
+          <div style="font-size:18px; font-weight:700;">Set up ${escHtml(brand)}</div>
+          <div style="font-size:13px; color:#666; margin-top:4px;">New brand detected. We\u2019ll remember these settings for every future upload.</div>
+        </div>
+        <button onclick="engineCloseBrandSetup()" style="background:transparent; border:none; font-size:20px; cursor:pointer; color:#999;">\u00d7</button>
+      </div>
+      <form id="brand-setup-form" style="display:grid; gap:14px;">
+        ${Object.entries(schema).map(([key, meta]) => {
+          const isReq = meta.required && missing.has(key);
+          const currentVal = current[key] !== undefined ? current[key] : (meta.default_value || '');
+          const labelHtml = '<label style="font-size:13px; font-weight:600;">' + escHtml(meta.label || key) +
+            (isReq ? ' <span style="color:#c00;">*</span>' : '') + '</label>' +
+            (meta.hint ? '<div style="font-size:11px; color:#888; margin-top:2px;">' + escHtml(meta.hint) + '</div>' : '');
+          if (meta.options) {
+            return '<div data-key="' + key + '">' + labelHtml +
+              '<select name="' + key + '" style="width:100%; padding:6px 8px; font-size:13px; border:1px solid #ccc; border-radius:4px; margin-top:4px;">' +
+              meta.options.map(o => '<option' + (o === currentVal ? ' selected' : '') + '>' + escHtml(o) + '</option>').join('') +
+              '</select></div>';
+          }
+          return '<div data-key="' + key + '">' + labelHtml +
+            '<input type="text" name="' + key + '" value="' + escHtml(currentVal) + '" style="width:100%; padding:6px 8px; font-size:13px; border:1px solid #ccc; border-radius:4px; margin-top:4px;"/></div>';
+        }).join('')}
+      </form>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:18px;">
+        <button class="btn btn-secondary" onclick="engineCloseBrandSetup()">Cancel</button>
+        <button class="btn btn-primary" onclick="engineSaveBrandSetup()">Save &amp; Evaluate</button>
+      </div>
+    </div>`;
+  document.body.appendChild(backdrop);
+  // Stash callback
+  window.__brandSetupDone = onDone;
+  window.__brandSetupBrand = brand;
+}
+
+function engineCloseBrandSetup() {
+  const el = document.getElementById('brand-setup-backdrop');
+  if (el) el.remove();
+}
+
+async function engineSaveBrandSetup() {
+  const form = document.getElementById('brand-setup-form');
+  if (!form) return;
+  const config = {};
+  Array.from(form.elements).forEach(el => {
+    if (el.name) config[el.name] = el.value;
+  });
+  try {
+    const r = await fetch('/api/rule-engine/brand-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brand: window.__brandSetupBrand, config }),
+    }).then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    engineCloseBrandSetup();
+    // Re-import to re-evaluate with saved brand config
+    if (engineState.preupload) {
+      await engineReevaluatePreupload();
+      engineRenderPreuploadResults(engineState.preupload);
+    } else if (window.__brandSetupDone) {
+      window.__brandSetupDone();
+    }
+  } catch (e) {
+    alert('Failed to save brand config: ' + e.message);
+  }
 }
 
 function engineRenderPreuploadResults(r) {
@@ -4534,6 +4618,10 @@ function engineRenderPreuploadResults(r) {
   html += '  <div>';
   html += '    <div style="font-size:16px; font-weight:700; margin-bottom:4px;">Pre-Upload: ' + escHtml(r.file) + '</div>';
   html += '    <div style="font-size:13px; color:#555;">Brand: <strong>' + escHtml(r.brand || '(unknown)') + '</strong> \u00b7 ' + r.total_styles + ' distinct styles</div>';
+  // Brand setup status indicator
+  if (r.brand_setup && !r.brand_setup.needs_setup) {
+    html += '    <div style="font-size:11px; color:#1e7a3e; margin-top:4px;">\u2713 Brand config loaded \u2014 <a href="#" onclick="engineEditBrandConfig(\'' + escHtml(r.brand) + '\'); return false;" style="color:#2e5bff;">edit settings</a></div>';
+  }
   html += '  </div>';
   html += '  <div style="display:flex; gap:12px;">';
   html += '    <div style="padding:8px 14px; background:#e7f6ec; color:#1e7a3e; border-radius:8px; font-size:13px;"><strong>' + r.ready_to_upload + '</strong> ready</div>';
@@ -4678,6 +4766,20 @@ async function engineReevaluatePreupload() {
   updated.needs_attention = updated.styles.filter(x => !x.ready).length;
   engineState.preupload = updated;
   engineRenderPreuploadResults(updated);
+}
+
+async function engineEditBrandConfig(brand) {
+  // Re-open the setup modal for editing existing config
+  try {
+    const r = await fetch('/api/rule-engine/brand-config?brand=' + encodeURIComponent(brand)).then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    // Force the modal open by setting needs_setup=true so the schema renders
+    engineShowBrandSetup({ ...r, needs_setup: true }, () => {
+      if (engineState.preupload) engineReevaluatePreupload();
+    });
+  } catch (e) {
+    alert('Failed to load brand config: ' + e.message);
+  }
 }
 
 async function engineRebuild() {

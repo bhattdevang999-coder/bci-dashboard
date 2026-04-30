@@ -236,7 +236,8 @@ def evaluate_form(
     if not bundle:
         return {"error": f"no rule bundle for product_type={product_type!r}"}
 
-    # Merge defaults into form_state. Operator values always win.
+    # Merge state in increasing precedence: universal defaults ← brand defaults
+    # ← brand packaging ← operator-supplied form_state. Later wins.
     merged_state: Dict[str, Any] = {}
     if apply_apparel_defaults:
         defaults_doc = _load_apparel_defaults()
@@ -244,13 +245,20 @@ def evaluate_form(
         if not applies_to or product_type.upper() in [a.upper() for a in applies_to]:
             merged_state.update(defaults_doc.get("defaults") or {})
     if brand:
+        # Brand-level defaults (vendor code, COO, department, etc.)
+        try:
+            from .brand_setup import brand_defaults_to_state
+        except ImportError:
+            from brand_setup import brand_defaults_to_state
+        merged_state.update(brand_defaults_to_state(brand))
+        # Saved packaging dims for this sub-class
         pkg = get_packaging_for(brand, product_type, sub_class or "")
         if pkg:
             for k, v in pkg.items():
                 if k.startswith("_"):
                     continue
                 merged_state[k] = v
-    # Operator-supplied state wins over both
+    # Operator-supplied state wins over everything
     for k, v in (form_state or {}).items():
         if v is None or v == "":
             continue
@@ -340,6 +348,24 @@ def evaluate_form(
     for col, info in result.items():
         info["verdict"] = _final_verdict(info, fields[col])
 
+    # Apply brand-level suppressions (battery fields when batteries=No, etc.)
+    suppressed_field_keys = set()
+    if brand:
+        try:
+            from .brand_setup import get_suppressed_field_keys
+        except ImportError:
+            from brand_setup import get_suppressed_field_keys
+        suppressed_field_keys = set(get_suppressed_field_keys(brand, fields))
+    if suppressed_field_keys:
+        for col, info in list(result.items()):
+            if info.get("field_key") in suppressed_field_keys:
+                # Only suppress conditional-missing flags; don't hide hard-required
+                # (safety net in case a real issue hides behind a label match).
+                if info["verdict"] == "required_missing" and \
+                   info.get("base_requirement") != "REQUIRED":
+                    info["verdict"] = "suppressed"
+                    info["suppressed_reason"] = "brand config indicates this field does not apply"
+
     return {
         "product_type": bundle.get("product_type"),
         "version":      bundle.get("version"),
@@ -348,6 +374,8 @@ def evaluate_form(
         "summary":      _summarise(result),
         "defaults_applied": apply_apparel_defaults,
         "packaging_applied": bool(brand and get_packaging_for(brand, product_type, sub_class or "")),
+        "brand_applied":     bool(brand and load_bundle(product_type)),
+        "suppressed_count":  len(suppressed_field_keys),
     }
 
 

@@ -8796,6 +8796,54 @@ def rule_engine_packaging_save():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+@app.route("/api/rule-engine/brand-config", methods=["GET"])
+def rule_engine_brand_config_get():
+    """Return the saved config for a brand plus whether it needs setup.
+    Query: ?brand=Sage Collective
+    """
+    brand = request.args.get("brand")
+    if not brand:
+        return jsonify({"ok": False, "error": "brand required"}), 400
+    try:
+        from nis_engine.brand_setup import needs_setup, load_brand_config
+        status = needs_setup(brand)
+        return jsonify({"ok": True, **status})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/rule-engine/brand-config", methods=["POST"])
+def rule_engine_brand_config_save():
+    """Save brand config. Body: { brand: str, config: {...} }"""
+    data = request.get_json(force=True) or {}
+    brand = data.get("brand")
+    config = data.get("config") or {}
+    if not brand or not config:
+        return jsonify({"ok": False, "error": "brand and config required"}), 400
+    try:
+        from nis_engine.brand_setup import save_brand_config, load_brand_config
+        # Merge with existing so operator partial saves don't blow away fields
+        existing = load_brand_config(brand) or {}
+        existing.update(config)
+        path = save_brand_config(brand, existing)
+        # Best-effort git commit
+        try:
+            import subprocess
+            rel = os.path.relpath(path, str(BASE_DIR))
+            subprocess.run(["git", "add", rel], cwd=str(BASE_DIR), check=False, capture_output=True)
+            subprocess.run(["git", "commit", "-m", f"chore(brand): update {brand}",
+                            "--author", "TLG Dashboard <noreply@tlg.local>"],
+                           cwd=str(BASE_DIR), check=False, capture_output=True)
+            subprocess.run(["git", "push", "origin", "master"],
+                           cwd=str(BASE_DIR), check=False, capture_output=True, timeout=10)
+        except Exception:
+            pass
+        return jsonify({"ok": True, "path": path, "config": existing})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 @app.route("/api/rule-engine/import-preupload", methods=["POST"])
 def rule_engine_import_preupload():
     """Upload a pre-upload .xlsx/.xlsm and return per-style evaluation results.
@@ -8817,8 +8865,16 @@ def rule_engine_import_preupload():
 
     try:
         from nis_engine.preupload_importer import parse_preupload, style_to_form_state
+        from nis_engine.brand_setup import needs_setup as _brand_needs_setup
         parsed = parse_preupload(str(dest))
         brand = parsed.get("brand") or ""
+        # Check brand setup before evaluating — if absolute-required fields are
+        # missing, return the schema so the dashboard can prompt before showing styles.
+        setup_status = _brand_needs_setup(brand) if brand else {
+            "brand": brand, "needs_setup": True,
+            "missing_fields": ["brand_name", "vendor_code_prefix", "default_coo", "department"],
+            "schema": {}, "current_config": {},
+        }
         out_styles = []
         for style_id, style in parsed.get("styles", {}).items():
             state = style_to_form_state(style, brand)
@@ -8853,6 +8909,7 @@ def rule_engine_import_preupload():
             "total_styles":     len(out_styles),
             "ready_to_upload":  sum(1 for s in out_styles if s["ready"]),
             "needs_attention":  sum(1 for s in out_styles if not s["ready"]),
+            "brand_setup":      setup_status,
         })
     except Exception as e:
         traceback.print_exc()
