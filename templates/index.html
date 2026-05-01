@@ -4658,11 +4658,11 @@ async function renderPastUploadsPanel() {
     let html = '<div style="background:#fff; border:1px solid #e6e6ea; border-radius:10px; padding:16px;">';
     html += '<div style="font-weight:700; font-size:14px; margin-bottom:10px;">📚 Past Uploads</div>';
     html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
-    html += '<thead><tr style="background:#f7f7fb; text-align:left;"><th style="padding:6px;">Date</th><th style="padding:6px;">File</th><th style="padding:6px;">Brand</th>';
+    html += '<thead><tr style="background:#f7f7fb; text-align:left;"><th style="padding:6px;">Date (ET)</th><th style="padding:6px;">File</th><th style="padding:6px;">Brand</th>';
     html += '<th style="padding:6px; text-align:right;">Styles</th><th style="padding:6px; text-align:right;">Variants</th><th style="padding:6px;">Generated</th></tr></thead><tbody>';
     r.entries.slice(0, 10).forEach(e => {
-      const dt = new Date(e.timestamp || Date.now());
-      const dateStr = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      // v0.7.7: render past-uploads timestamps in ET (America/New_York). Backend stores UTC with Z suffix.
+      const dateStr = formatDateET(e.timestamp || e.id);
       const genLink = e.generated_file
         ? '<a href="/api/preupload/download/' + encodeURIComponent(e.generated_file) + '" style="color:#2e5bff;">⬇ Download</a>'
         : '<span style="color:#999;">—</span>';
@@ -5057,6 +5057,36 @@ function escHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// ═════ v0.7.7: All dashboard timestamps render in Eastern Time (America/New_York). ═════
+// Backend stores ISO-8601 UTC with 'Z' suffix; this helper converts to ET regardless
+// of the operator's local browser zone. Falls back to a parseable id timestamp
+// (format YYYYMMDD-HHMMSS-xxxxxxxx, treated as UTC) if `value` is missing/invalid.
+const DASHBOARD_TZ = 'America/New_York';
+function _parseIdAsUtc(id) {
+  if (!id) return null;
+  const m = String(id).match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})/);
+  if (!m) return null;
+  return new Date(Date.UTC(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]));
+}
+function formatDateET(value, opts) {
+  let d = null;
+  if (value instanceof Date) d = value;
+  else if (typeof value === 'string' && value) {
+    // Auto-add Z if it looks ISO without timezone (legacy entries)
+    let v = value;
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v) && !/[Z+-]\d?/.test(v.slice(10))) v += 'Z';
+    const tmp = new Date(v);
+    d = isNaN(tmp.getTime()) ? _parseIdAsUtc(value) : tmp;
+  }
+  if (!d || isNaN(d.getTime())) return '';
+  const o = Object.assign({
+    timeZone: DASHBOARD_TZ, year: 'numeric', month: 'short', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  }, opts || {});
+  // 'Apr 30, 2026, 03:45 PM ET'
+  return d.toLocaleString('en-US', o).replace(',', '') + ' ET';
 }
 
 function toggleAccordion(id) {

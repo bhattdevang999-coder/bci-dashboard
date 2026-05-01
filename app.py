@@ -9267,14 +9267,15 @@ def preupload_history_post():
     if not filename:
         return jsonify({"ok": False, "error": "filename required"}), 400
     entry = {
-        "id": datetime.now().strftime("%Y%m%d-%H%M%S-") + str(_uuid.uuid4())[:8],
+        "id": datetime.utcnow().strftime("%Y%m%d-%H%M%S-") + str(_uuid.uuid4())[:8],
         "filename": filename,
         "brand": payload.get("brand") or "",
         "total_styles": payload.get("total_styles"),
         "total_variants": payload.get("total_variants"),
         "generated_file": payload.get("generated_file") or "",
         "generated_files": payload.get("generated_files") or [],
-        "timestamp": datetime.now().isoformat(),
+        # ISO 8601 UTC with explicit Z suffix — frontend converts to ET (America/New_York).
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
     data = _load_preupload_history()
     data.setdefault("entries", []).append(entry)
