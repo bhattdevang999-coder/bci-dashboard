@@ -3093,6 +3093,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   <!-- Results -->
   <div id="product-results" class="hidden mt-16">
 
+    <!-- Template-coverage Health card (PT-aware: shows which products get trained how) -->
+    <div id="template-coverage-card" class="nis-summary-card hidden" style="margin-bottom:12px;"></div>
+
     <!-- Style summary card -->
     <div id="style-summary-card" class="nis-summary-card hidden"></div>
 
@@ -3246,7 +3249,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         <span style="font-size:18px;">📋</span>
         <div>
           <div class="accordion-title">Amazon NIS Template <span class="optional-tag">Optional</span></div>
-          <div class="accordion-meta" id="acc-template-meta">Required for .xlsm output. Dresses template pre-loaded.</div>
+          <div class="accordion-meta" id="acc-template-meta">Required for .xlsm output. Templates auto-route by product type.</div>
         </div>
       </div>
       <span class="accordion-chevron">▼</span>
@@ -3255,7 +3258,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       <div class="form-group">
         <label class="form-label">Category Template</label>
         <select id="template-select" onchange="onTemplateSelectChange()">
-          <option value="dresses">Dresses (pre-loaded)</option>
+          <option value="auto">Auto (route by product type)</option>
           <option value="upload">Upload custom template...</option>
         </select>
       </div>
@@ -3275,7 +3278,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
       <div class="alert alert-info mt-16" style="margin-bottom:0;">
         <span class="alert-icon">ℹ</span>
-        <div id="template-hint-text">Using pre-loaded Dresses template. Output will include .xlsm files.</div>
+        <div id="template-hint-text">Templates auto-resolve per product type after you upload a pre-upload file. The Dashboard Health card above shows which categories are wired.</div>
       </div>
       <div id="loaded-templates-section" class="hidden" style="margin-top:14px;">
         <div style="font-size:12px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;">Loaded Templates</div>
@@ -5190,6 +5193,7 @@ const wsState = {
   fieldOverrides: {},          // styleNum -> { field_id: value } — mirrors server overrides
   raliQaSummary: null,        // last /api/nis-qa-summary response
   approvalGate: {},            // styleNum -> boolean
+  fieldDropdowns: {},          // field_id -> [valid values]  (populated by template-coverage / validation)
 };
 
 // ════════════════════════════════════════════════════════════
@@ -5313,6 +5317,9 @@ async function handleProductUpload(files) {
 
     // Show summary card (new design)
     showStyleSummary(data);
+
+    // PT-aware Health card — shows which products get trained how (template/rules/dropdowns)
+    renderTemplateCoverage();
 
     // ── Phase 2: Taxonomy UX ─────────────────────────────────────────────────
     // Load the universe + overrides once per upload so cascading dropdowns
@@ -5513,6 +5520,141 @@ async function handleProductUpload(files) {
 setupDropzoneOnce('product-dropzone', 'product-file-input', handleProductUpload);
 
 // ── Style summary card ──────────────────────────────────────
+// PT-aware Health card. Calls /api/template-coverage and paints a 1-line-per-PT
+// table: green tick when the template + rule bundle + dropdown cache are all
+// present, yellow when something is missing. Also stores coverage on window so
+// the per-style PT table can show small "rules ✓ • dropdowns ✓ • template ✓" chips.
+async function renderTemplateCoverage() {
+  const card = document.getElementById('template-coverage-card');
+  if (!card) return;
+  try {
+    const res = await fetch('/api/template-coverage');
+    const cov = await res.json();
+    window._coverage = cov;
+
+    if (!cov.pts || !cov.pts.length) {
+      card.classList.add('hidden');
+      return;
+    }
+
+    const allReady = (cov.summary && cov.summary.unready_styles === 0);
+    const headerColor = allReady ? '#0f766e' : '#b45309';
+    const headerBg = allReady ? '#f0fdfa' : '#fef3c7';
+    const headerLabel = allReady
+      ? 'All product types ready'
+      : `${cov.summary.unready_styles} style${cov.summary.unready_styles === 1 ? '' : 's'} need attention`;
+
+    let html = '';
+    html += `<div style="font-size:15px; font-weight:700; margin-bottom:4px; color:${headerColor};">✨ Dashboard Health: ${escHtml(cov.summary.session_label || 'no styles')}</div>`;
+    html += `<div style="font-size:12px; color:var(--text-sec); margin-bottom:10px;">${escHtml(headerLabel)}. The dashboard auto-routes each style to its Amazon NIS template.</div>`;
+
+    html += '<table class="ws-fields-table" style="font-size:12px;"><thead><tr>';
+    html += '<th style="width:140px;">Product Type</th>';
+    html += '<th style="width:80px;">Styles</th>';
+    html += '<th>Template</th>';
+    html += '<th>Rule bundle</th>';
+    html += '<th>Dropdown cache</th>';
+    html += '<th style="width:80px;">Status</th>';
+    html += '</tr></thead><tbody>';
+
+    cov.pts.forEach(p => {
+      const tick = (ok) => ok ? '<span style="color:var(--success);">✓</span>' : '<span style="color:var(--error);">✗</span>';
+      html += '<tr>';
+      html += `<td style="font-weight:700;">${escHtml(p.product_type)}</td>`;
+      html += `<td>${escHtml(p.label)}</td>`;
+      html += `<td>${tick(p.template.present)} <span style="color:var(--text-sec);font-size:11px;">${escHtml(p.template.file || 'missing')}</span></td>`;
+      html += `<td>${tick(p.rules.present)} <span style="color:var(--text-sec);font-size:11px;">${p.rules.present ? p.rules.rule_count + ' fields' : 'missing'}</span></td>`;
+      html += `<td>${tick(p.dropdowns.present)} <span style="color:var(--text-sec);font-size:11px;">${p.dropdowns.present ? p.dropdowns.field_count + ' fields' : 'missing'}</span></td>`;
+      const status = p.ready
+        ? '<span style="color:var(--success);font-weight:600;">Ready</span>'
+        : '<span style="color:var(--warn);font-weight:600;">Needs setup</span>';
+      html += `<td>${status}</td>`;
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+
+    // Skip-parent-row toggle (Sage feedback: brands w/o self-service variations skip parent row).
+    html += `<div style="margin-top:10px; font-size:12px; padding:8px 10px; background:#fff; border:1px solid #e2e8f0; border-radius:6px;">`
+          + `<label style="display:flex; align-items:center; gap:8px; cursor:pointer;">`
+          + `<input type="checkbox" id="toggle-skip-parent" onchange="toggleSkipParent(this.checked)">`
+          + `<span><strong>Skip parent rows</strong> — emit variants only (no parentage_level / parent_sku / variation_theme).</span>`
+          + `</label></div>`;
+
+    card.style.background = headerBg;
+    card.style.borderLeft = `4px solid ${headerColor}`;
+    card.innerHTML = html;
+    card.classList.remove('hidden');
+
+    // Sync the accordion-meta line so it reflects active product types instead of "Dresses template"
+    const metaEl = document.getElementById('acc-template-meta');
+    if (metaEl) metaEl.textContent = `${cov.summary.session_label} — .xlsm output enabled`;
+    const hintEl = document.getElementById('template-hint-text');
+    if (hintEl) hintEl.textContent = `Active templates: ${cov.summary.session_label}. The Health card above shows the wiring.`;
+
+    // Stamp per-style trace chips into the Confirm Product Type table once it's rendered
+    setTimeout(() => stampPerStyleTraceChips(cov), 50);
+
+    // Pull dropdown cache for every PT in the session so the All Fields editor can show
+    // recommended-value suggestions (Fit Type, Department, Closure Type, etc.) while still
+    // allowing freeform typing. Sage feedback P2-P.
+    try {
+      const ddRes = await fetch('/api/dropdowns-for-session');
+      const ddData = await ddRes.json();
+      // Flatten all PTs into a single fieldId -> [values] map. If two PTs both validate the
+      // same field with different values, we union them — the user can still pick valid for their PT.
+      const merged = {};
+      Object.values(ddData.dropdowns || {}).forEach(byField => {
+        Object.entries(byField).forEach(([fid, vals]) => {
+          if (!Array.isArray(vals) || !vals.length) return;
+          if (!merged[fid]) merged[fid] = [];
+          vals.forEach(v => { if (!merged[fid].includes(v)) merged[fid].push(v); });
+        });
+      });
+      wsState.fieldDropdowns = merged;
+    } catch (e) {
+      console.error('[dropdowns] failed', e);
+    }
+  } catch (e) {
+    console.error('[coverage] failed', e);
+    card.classList.add('hidden');
+  }
+}
+
+// Toggle the skip-parent preference (sent to the server so .xlsm generation respects it).
+async function toggleSkipParent(checked) {
+  try {
+    await fetch('/api/set-skip-parent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skip: !!checked }),
+    });
+    showToast(checked ? 'Skip parent rows enabled' : 'Skip parent rows disabled', 'success');
+  } catch (e) {
+    showToast('Could not update preference', 'error');
+  }
+}
+
+// Stamp small "rules ✓ • dropdowns ✓ • template ✓" chips next to each style row in the
+// Confirm Product Type per Style table. Re-runs whenever the table is re-rendered.
+function stampPerStyleTraceChips(cov) {
+  if (!cov || !cov.per_style) return;
+  Object.keys(cov.per_style).forEach(sn => {
+    const ps = cov.per_style[sn];
+    const cell = document.getElementById(`pt-status-${sn}`);
+    if (!cell) return;
+    const tick = (ok) => ok ? '<span style="color:var(--success);">✓</span>' : '<span style="color:var(--error);">✗</span>';
+    const chip = `<div style="font-size:10px; color:var(--text-sec); margin-top:2px;">`
+      + `template ${tick(ps.template)} · rules ${tick(ps.rules)} · dropdowns ${tick(ps.dropdowns)}`
+      + `</div>`;
+    if (!cell.querySelector('.pt-trace-chip')) {
+      const wrap = document.createElement('div');
+      wrap.className = 'pt-trace-chip';
+      wrap.innerHTML = chip;
+      cell.appendChild(wrap);
+    }
+  });
+}
+
 async function showStyleSummary(data) {
   const card = document.getElementById('style-summary-card');
   const fbWrap = document.getElementById('summary-feedback-wrap');
@@ -5954,7 +6096,7 @@ function onTemplateSelectChange() {
     if (xlsmBtn) xlsmBtn.style.display = 'none';
   } else {
     zone.classList.add('hidden');
-    hint.textContent = 'Using pre-loaded Dresses template. Output will include .xlsm files.';
+    hint.textContent = 'Templates auto-resolve per product type. Upload a pre-upload file to see active categories.';
     loadDefaultTemplate();
   }
 }
@@ -5976,7 +6118,9 @@ async function loadDefaultTemplate() {
     const statusEl = document.getElementById('template-status');
     if (statusEl) statusEl.classList.remove('hidden');
     const metaEl = document.getElementById('acc-template-meta');
-    if (metaEl) metaEl.textContent = 'Dresses template loaded — .xlsm output enabled';
+    // After upload of styles, the Health card replaces this label dynamically.
+    // For the legacy default-template branch, just say we're auto-routing.
+    if (metaEl) metaEl.textContent = 'Templates auto-route by product type — .xlsm output enabled';
   } catch(e) {
     console.error('Template load error:', e);
   }
@@ -7130,11 +7274,21 @@ function wsEditField(styleNum, fieldId, fieldName, col, currentVal) {
   const displayEl = document.getElementById(`wsfi-display-${col}-${styleNum}`);
   if (!displayEl) return;
 
+  // Sage feedback: fields like Fit Type / Department should show recommended dropdown values
+  // BUT also let the user type their own. <input list=...> + <datalist> is exactly that pattern.
+  const suggestions = (wsState.fieldDropdowns && wsState.fieldDropdowns[fieldId]) || [];
+  const datalistId = `wsfi-dl-${col}-${styleNum}`;
+  const datalistHtml = suggestions.length > 0
+    ? `<datalist id="${datalistId}">${suggestions.map(s => `<option value="${escHtml(s)}">`).join('')}</datalist>`
+    : '';
+
   const wrapper = displayEl.parentElement;
   wrapper.innerHTML = `
     <input class="ws-fields-edit-input" id="wsfi-${col}-${styleNum}"
+           ${suggestions.length > 0 ? `list="${datalistId}"` : ''}
            value="${escHtml(currentVal)}"
            onkeydown="if(event.key==='Enter') wsSaveField('${escHtml(styleNum)}','${escHtml(fieldId)}','${escHtml(fieldName)}',${col},this.value); if(event.key==='Escape') wsRenderFieldsTab('${escHtml(styleNum)}');">
+    ${datalistHtml}
     <button class="ws-fields-edit-btn" style="color:var(--success);"
             onclick="wsSaveField('${escHtml(styleNum)}','${escHtml(fieldId)}','${escHtml(fieldName)}',${col},document.getElementById('wsfi-${col}-${escHtml(styleNum)}').value)" title="Save">✓</button>
     <button class="ws-fields-edit-btn" style="color:var(--error);"
@@ -7145,6 +7299,12 @@ function wsEditField(styleNum, fieldId, fieldName, col, currentVal) {
 }
 
 async function wsSaveField(styleNum, fieldId, fieldName, col, value) {
+  // Sage feedback: "When you save a change in All Fields, it scrolls you back up the page."
+  // Capture scroll position + the row anchor BEFORE the re-render, then restore after.
+  const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  const fieldRowEl = document.getElementById('wsfi-' + col + '-' + styleNum)
+                  || document.getElementById('wsf-row-' + col + '-' + styleNum);
+  const fieldOffsetTop = fieldRowEl ? fieldRowEl.getBoundingClientRect().top : null;
   try {
     const res = await fetch('/api/update-field', {
       method: 'POST',
@@ -7154,14 +7314,20 @@ async function wsSaveField(styleNum, fieldId, fieldName, col, value) {
     const d = await res.json();
     if (d.ok) {
       showToast('Field saved', 'success');
-      // Track override locally (for sync-before-download)
       if (!wsState.fieldOverrides[styleNum]) wsState.fieldOverrides[styleNum] = {};
       wsState.fieldOverrides[styleNum][fieldId] = value.trim();
-      // Invalidate cache and re-render
       delete wsState.fieldsCache[styleNum];
-      wsRenderFieldsTab(styleNum);
-      // Refresh QA
+      await wsRenderFieldsTab(styleNum);
       fetchQaSummaryAndUpdate();
+      // Restore scroll: try by-element first (more accurate if rows shift), then raw scrollY.
+      const newRow = document.getElementById('wsf-row-' + col + '-' + styleNum)
+                  || document.querySelector('[data-field-id="' + fieldId + '"]');
+      if (newRow && fieldOffsetTop !== null) {
+        const newTop = newRow.getBoundingClientRect().top;
+        window.scrollTo({ top: window.scrollY + (newTop - fieldOffsetTop), behavior: 'auto' });
+      } else {
+        window.scrollTo({ top: scrollY, behavior: 'auto' });
+      }
       wsSendFeedback('field_override', 'review',
         { scope: 'field', field_id: fieldId, field_name: fieldName, style_num: styleNum },
         { updated: value.trim() }
@@ -9820,17 +9986,44 @@ function taxonomyRenderForStyle(styleNum) {
   validSubs.forEach(sv => { h += '<option value="' + escHtml(sv) + '"' + (sv === sub ? ' selected' : '') + '>' + escHtml(sv) + '</option>'; });
   h += '</select></div>';
 
-  // Item Type Keyword (free-text with suggestion datalist)
+  // Item Type Keyword — cascading dropdown driven by Category + Subcategory.
+  // Sage feedback: arrow click did not open dropdown (was an input+datalist).
+  // Now uses a real <select> populated from item_type_keywords_by_cat_sub.
+  // Falls back to a free-text input only when the cascade has no entries (rare — unconfigured PT/cat).
+  const itkMapForCat = ((u.item_type_keywords_by_cat_sub || {})[cat] || {});
+  const validItks = itkMapForCat[sub] || [];
   h += '<div><label style="font-weight:700; color:#475569; display:block; margin-bottom:3px;">Item Type Keyword</label>';
-  h += '<input type="text" id="tax-itk-' + escHtml(styleNum) + '" value="' + escHtml(itk) + '" oninput="taxonomyOnChange(\'' + escHtml(styleNum) + '\')" list="tax-itk-suggest" style="width:100%; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
+  if (validItks.length > 0) {
+    h += '<select id="tax-itk-' + escHtml(styleNum) + '" onchange="taxonomyOnChange(\'' + escHtml(styleNum) + '\')" style="width:100%; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
+    h += '<option value="">\u2014 pick \u2014</option>';
+    validItks.forEach(v => { h += '<option value="' + escHtml(v) + '"' + (v === itk ? ' selected' : '') + '>' + escHtml(v) + '</option>'; });
+    // If current itk isn't in cascade, include it so it's preserved
+    if (itk && !validItks.includes(itk)) {
+      h += '<option value="' + escHtml(itk) + '" selected>' + escHtml(itk) + ' (custom)</option>';
+    }
+    h += '</select>';
+  } else {
+    // Cascade unavailable — fall back to free-text input with suggestion datalist
+    h += '<input type="text" id="tax-itk-' + escHtml(styleNum) + '" value="' + escHtml(itk) + '" oninput="taxonomyOnChange(\'' + escHtml(styleNum) + '\')" list="tax-itk-suggest" placeholder="item-type-keyword (free text)" style="width:100%; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
+  }
   h += '</div>';
 
-  // Item Type Name dropdown
-  h += '<div><label style="font-weight:700; color:#475569; display:block; margin-bottom:3px;">Item Type Name</label>';
-  h += '<select id="tax-itn-' + escHtml(styleNum) + '" onchange="taxonomyOnChange(\'' + escHtml(styleNum) + '\')" style="width:100%; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
-  h += '<option value="">\u2014 pick \u2014</option>';
-  itns.forEach(n => { h += '<option value="' + escHtml(n) + '"' + (n === itn ? ' selected' : '') + '>' + escHtml(n) + '</option>'; });
-  h += '</select></div>';
+  // Item Type Name — only render when the PT actually validates an ITN dropdown.
+  // COAT (for example) has no ITN dropdown; Amazon validates Item Type Keyword instead.
+  // Showing an empty select for those PTs misled the team into thinking it was broken.
+  if (itns.length > 0) {
+    h += '<div><label style="font-weight:700; color:#475569; display:block; margin-bottom:3px;">Item Type Name</label>';
+    h += '<select id="tax-itn-' + escHtml(styleNum) + '" onchange="taxonomyOnChange(\'' + escHtml(styleNum) + '\')" style="width:100%; font-size:11px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
+    h += '<option value="">\u2014 pick \u2014</option>';
+    itns.forEach(n => { h += '<option value="' + escHtml(n) + '"' + (n === itn ? ' selected' : '') + '>' + escHtml(n) + '</option>'; });
+    h += '</select></div>';
+  } else {
+    // PT has no ITN — hide field with helpful note + carry the value through hidden input
+    h += '<div><label style="font-weight:700; color:#94a3b8; display:block; margin-bottom:3px;">Item Type Name</label>';
+    h += '<div style="font-size:10px; color:#64748b; padding:6px 4px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:4px;">Not used for ' + escHtml(pt) + ' — Amazon validates via Item Type Keyword for this category.</div>';
+    h += '<input type="hidden" id="tax-itn-' + escHtml(styleNum) + '" value="' + escHtml(itn) + '">';
+    h += '</div>';
+  }
 
   h += '</div>';
 
@@ -9857,13 +10050,15 @@ function taxonomyEnsureITKDatalist() {
 }
 
 function taxonomyOnChange(styleNum) {
-  // Recalibrate: when Category changes, rebuild Subcategory dropdown.
+  // Recalibrate cascading dropdowns: Category → Subcategory → ITK.
   const meta = taxonomyState.styleMeta[styleNum];
   if (!meta) return;
   const u = (taxonomyState.universe || {})[meta.product_type] || {};
   const subsByCat = u.subcategories_by_category || {};
+  const itkByCatSub = u.item_type_keywords_by_cat_sub || {};
   const catEl = document.getElementById('tax-cat-' + styleNum);
   const subEl = document.getElementById('tax-sub-' + styleNum);
+  const itkEl = document.getElementById('tax-itk-' + styleNum);
   if (!catEl || !subEl) return;
   const selectedCat = catEl.value;
   const prevSub = subEl.value;
@@ -9872,15 +10067,29 @@ function taxonomyOnChange(styleNum) {
   // Rebuild subcategory options
   subEl.innerHTML = '<option value="">\u2014 pick \u2014</option>' +
     validSubs.map(s => '<option value="' + escHtml(s) + '">' + escHtml(s) + '</option>').join('');
-  // Preserve previous subcategory if still valid; otherwise clear
   if (validSubs.includes(prevSub)) subEl.value = prevSub;
   else if (prevSub) {
-    // Show a transient notice that the prev subcategory was cleared
     const val = document.getElementById('tax-validation-' + styleNum);
     if (val) {
       val.textContent = '"' + prevSub + '" is not valid under "' + selectedCat + '" \u2014 pick a new subcategory';
       setTimeout(() => { if (val) val.textContent = ''; }, 4000);
     }
+  }
+
+  // Rebuild ITK select if it's a <select> (cascading mode); leave alone if free-text fallback
+  if (itkEl && itkEl.tagName === 'SELECT') {
+    const cat = catEl.value;
+    const sub = subEl.value;
+    const validItks = (itkByCatSub[cat] || {})[sub] || [];
+    const prevItk = itkEl.value;
+    let html = '<option value="">\u2014 pick \u2014</option>';
+    validItks.forEach(v => { html += '<option value="' + escHtml(v) + '">' + escHtml(v) + '</option>'; });
+    // Preserve previously chosen ITK if it's no longer in the cascade
+    if (prevItk && !validItks.includes(prevItk)) {
+      html += '<option value="' + escHtml(prevItk) + '" selected>' + escHtml(prevItk) + ' (custom)</option>';
+    }
+    itkEl.innerHTML = html;
+    if (validItks.includes(prevItk)) itkEl.value = prevItk;
   }
 }
 

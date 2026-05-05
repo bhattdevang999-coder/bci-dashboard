@@ -20,12 +20,16 @@ _BRAND_VENDOR_CODES = {
 }
 
 
-# Color-code -> Amazon standardized color
+# Color-code -> Amazon standardized color (last-resort fallback used only if the
+# importer is called without a brand/PT context). The main app.py.normalize_color
+# function is now PT-aware (snaps results to dropdown_cache/{PT}.json) and is the
+# single source of truth used by the rule engine and template-writer. This local
+# map exists for the rare case where preupload_importer is invoked standalone.
 _COLOR_MAP = {
     "BEIGE": "Beige", "BLACK": "Black", "BROWN": "Brown", "BLUE": "Blue",
-    "RED": "Red", "GREEN": "Green", "GRAY": "Gray", "GREY": "Gray",
+    "RED": "Red", "GREEN": "Green", "GRAY": "Grey", "GREY": "Grey",
     "WHITE": "White", "IVORY": "Off White", "NAVY": "Blue", "TAN": "Brown",
-    "CAMEL": "Brown", "OLIVE": "Green", "CREAM": "Off White", "CHARCOAL": "Gray",
+    "CAMEL": "Brown", "OLIVE": "Green", "CREAM": "Off White", "CHARCOAL": "Grey",
     "BURGUNDY": "Red", "WINE": "Red", "PINK": "Pink", "PURPLE": "Purple",
     "TAUPE": "Brown", "COGNAC": "Brown", "TRUFFLE": "Brown", "BEG": "Beige",
     "BLK": "Black", "NVY": "Blue",
@@ -228,9 +232,12 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
     """Convert one parsed pre-upload style row into an NIS form_state dict."""
     s = style
     dept_raw = (s.get("department") or "").strip()
-    dept = "womens" if "women" in dept_raw.lower() else (
-           "mens"   if "men"   in dept_raw.lower() else "womens")
-    gender = "Female" if dept == "womens" else "Male"
+    # Amazon validates titlecase 'Womens'/'Mens' for COAT/SHIRT/SWIMWEAR/PANTS dropdowns
+    # (DRESS/SHORTS use lowercase). Use titlecase — the fuzzy-matcher in the writer will
+    # snap to whichever case the active PT's dropdown expects.
+    dept = "Womens" if "women" in dept_raw.lower() else (
+           "Mens"   if "men"   in dept_raw.lower() else "Womens")
+    gender = "Female" if dept.lower() == "womens" else "Male"
 
     primary_color = s["colors"][0] if s.get("colors") else ""
     color_value = primary_color.title()
@@ -251,6 +258,7 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
 
     vendor_code = _BRAND_VENDOR_CODES.get(brand, "")
 
+    pockets_val = s.get("raw", {}).get("pockets")
     state = {
         "rtip_vendor_code#1.value":      vendor_code,
         "vendor_sku#1.value":            str(s.get("model") or s.get("style") or ""),
@@ -300,6 +308,12 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
     cost = s.get("amazon_cost")
     if cost is not None:
         state["cost_price#1.value"] = str(cost)
+    # Number of pockets — wire from pre-upload (Sage feedback: was missing on template)
+    if pockets_val is not None and str(pockets_val).strip():
+        try:
+            state["number_of_pockets#1.value"] = int(pockets_val)
+        except (ValueError, TypeError):
+            state["number_of_pockets#1.value"] = str(pockets_val)
     # Clean blanks
     return {k: v for k, v in state.items() if v not in (None, "", " ")}
 
