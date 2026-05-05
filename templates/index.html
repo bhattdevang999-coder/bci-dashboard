@@ -10006,10 +10006,49 @@ function toggleImgIntel(styleNum) {
   if (caret) caret.textContent = visible ? '\u25be' : '\u25b4';
 }
 
-function confirmImgIntel(styleNum, confirmed) {
-  // Local-only feedback for now — future: persist to server for learned-map
+async function confirmImgIntel(styleNum, confirmed) {
   const status = document.getElementById('img-intel-confirm-status-' + styleNum);
-  if (status) status.textContent = confirmed ? '\u2713 confirmed' : 'flagged \u2014 vision read will be ignored';
+  if (status) {
+    status.textContent = 'Saving\u2026';
+    status.style.color = '#64748b';
+  }
+  // Find the buttons to disable them after click
+  const wrap = status ? status.parentElement : null;
+  if (wrap) {
+    wrap.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.5'; b.style.cursor = 'default'; });
+  }
+  // Persist via the feedback endpoint when this is a beta session.
+  // styleNum starts with 'beta-' for Beta sessions, raw style numbers otherwise.
+  if (String(styleNum).startsWith('beta-')) {
+    try {
+      await fetch('/api/beta-image-nis/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: styleNum,
+          kind: confirmed ? 'pt_correct' : 'pt_wrong',
+        }),
+      });
+    } catch(e) { /* non-blocking */ }
+  }
+  // Update status text + color
+  if (status) {
+    if (confirmed) {
+      status.innerHTML = '<span style="color:#065f46;font-weight:600;">\u2713 Confirmed</span>';
+    } else {
+      status.innerHTML = '<span style="color:#991b1b;font-weight:600;">\u2717 Flagged \u2014 we\u2019ll ignore vision\u2019s read</span>';
+    }
+  }
+  // Visually mark the parent detection card so the user can SEE the state changed
+  const panel = document.getElementById('img-intel-panel-' + styleNum);
+  if (panel) {
+    const headerCard = panel.querySelector('div'); // first child div is the detection card
+    if (headerCard) {
+      headerCard.style.transition = 'opacity 200ms';
+      if (!confirmed) headerCard.style.opacity = '0.55';
+      headerCard.dataset.confirmed = confirmed ? 'true' : 'false';
+    }
+  }
 }
 
 // ── Standalone Test Image dropzone (no pre-upload required) ──
