@@ -37,6 +37,9 @@ except Exception as _anthro_err:
     _anthropic_client = None
     print(f"[LLM] Anthropic client failed to initialize ({_anthro_err}). Will use rule-based generation.")
 
+# Last vision-pass error reason (set by analyze_style_image on failure)
+_last_vision_error = None
+
 BASE_DIR = Path(__file__).parent
 
 # Progress tracking for NIS generation
@@ -7029,9 +7032,12 @@ def analyze_style_image(style_num, img_path):
       - cached in session_data["style_image_intel"][style_num] to avoid re-billing
 
     Returns dict {observations:[], field_suggestions:[], image_quality:[], summary:""} or None.
+    On None return, _last_vision_error holds a human-readable reason.
     """
-    global _anthropic_client
+    global _anthropic_client, _last_vision_error
+    _last_vision_error = None
     if _anthropic_client is None:
+        _last_vision_error = "ANTHROPIC_API_KEY not configured on the server. Vision is unavailable until the key is set in Render env."
         return None
 
     # Cache check
@@ -7062,6 +7068,7 @@ def analyze_style_image(style_num, img_path):
                       "gif": "image/gif"}.get(ext, "image/jpeg")
     except Exception as e:
         print(f"[image-intel] could not encode {img_path}: {e}")
+        _last_vision_error = f"Could not read the image file: {e}"
         return None
 
     pt_enum_list = ", ".join([p["id"] for p in ALL_PRODUCT_TYPES])
@@ -7125,7 +7132,21 @@ Return JSON only, no prose, no markdown:
         raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE).strip()
         parsed = json.loads(raw)
     except Exception as e:
-        print(f"[image-intel] vision pass failed for {style_num}: {e}")
+        msg = str(e)
+        print(f"[image-intel] vision pass failed for {style_num}: {msg}")
+        # Categorize common failure modes
+        if "authentication" in msg.lower() or "api_key" in msg.lower() or "x-api-key" in msg.lower():
+            _last_vision_error = "Anthropic API key is missing or invalid on the server."
+        elif "rate" in msg.lower() and "limit" in msg.lower():
+            _last_vision_error = "Anthropic rate limit hit. Wait a few seconds and retry."
+        elif "too large" in msg.lower() or "image_too_large" in msg.lower():
+            _last_vision_error = "Image is too large for the vision API. Try a smaller image (\u22645MB)."
+        elif "json" in msg.lower() and "decode" in msg.lower():
+            _last_vision_error = "Vision returned an invalid response format. Retry once."
+        elif "connection" in msg.lower() or "timeout" in msg.lower():
+            _last_vision_error = "Network problem reaching Anthropic. Retry."
+        else:
+            _last_vision_error = f"Vision API error: {msg[:160]}"
         return None
 
     # Normalize + sanity-clip
@@ -7192,7 +7213,7 @@ def api_analyze_style_image():
         cache.pop(style_num, None)
     intel = analyze_style_image(style_num, img_path)
     if intel is None:
-        return jsonify({"error": "Vision pass unavailable"}), 503
+        return jsonify({"error": _last_vision_error or "Vision pass unavailable", "reason": _last_vision_error}), 503
     return jsonify({"ok": True, "style_num": style_num, "intel": intel})
 
 
@@ -7216,8 +7237,22 @@ def api_test_image_intel():
     # Run analyze with no style context (standalone classification)
     intel = analyze_style_image("_test", str(save_path))
     if intel is None:
-        return jsonify({"error": "Vision pass unavailable"}), 503
+        return jsonify({"error": _last_vision_error or "Vision pass unavailable", "reason": _last_vision_error}), 503
     return jsonify({"ok": True, "intel": intel, "path": f"/uploads/{test_dir.name}/{save_path.name}"})
+
+
+@app.route("/api/vision-status", methods=["GET"])
+def api_vision_status():
+    """Diagnostic: tells you whether vision is configured + the last error reason."""
+    import os as _os
+    has_key = bool(_os.environ.get("ANTHROPIC_API_KEY"))
+    return jsonify({
+        "client_initialized":  _anthropic_client is not None,
+        "api_key_in_env":      has_key,
+        "last_error":          _last_vision_error,
+        "model":               "claude-sonnet-4-5",
+        "hint":                ("Vision is ready." if _anthropic_client is not None else "Set ANTHROPIC_API_KEY in Render env to enable vision."),
+    })
 
 
 @app.route("/api/style-image-intel/<style_num>", methods=["GET"])
@@ -10307,7 +10342,7 @@ def api_beta_image_nis_analyze():
     # Run vision — standalone (no expected PT, force classification)
     vision_intel = analyze_style_image(f"_beta_{session_id}", str(img_path))
     if vision_intel is None:
-        return jsonify({"error": "Vision pass unavailable. Check ANTHROPIC_API_KEY."}), 503
+        return jsonify({"error": _last_vision_error or "Vision pass unavailable", "reason": _last_vision_error}), 503
 
     # Collect operator hints
     hints = {
