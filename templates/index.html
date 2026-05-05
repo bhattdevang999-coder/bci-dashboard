@@ -4972,15 +4972,131 @@ function renderBetaDraftCard(data) {
   return html;
 }
 
-// Render the Step 04 build panel — lightweight today, full operator-fill in Step 8
+// Render the Step 04 build panel — inline operator-fill form
 function renderBetaBuildPanel(data) {
-  let html = '<div style="padding:14px 16px; background:#fffbeb; border:1px solid #fcd34d; border-radius:8px; font-size:13px; color:#7c2d12; line-height:1.6; margin-bottom:14px;">';
-  html += '<strong>Last-mile fields you fill (Step 8 in development):</strong> UPC, list price, cost price, real size grid, real style number. Once filled, click Build to download an Amazon-ready .xlsm.';
+  const v = data.vision || {};
+  const detectedColor = v.detected_color || 'Black';
+  const sessionHints = (data.style && data.style.style_num !== 'BETA-DRAFT') ? data.style.style_num : '';
+  let html = '';
+
+  // Intro
+  html += '<div style="padding:12px 14px; background:#f8fafc; border-left:3px solid #14b8a6; border-radius:0 6px 6px 0; font-size:12px; color:#475569; line-height:1.5; margin-bottom:18px;">';
+  html += 'These are the fields the photo can\u2019t tell us. Fill what you have, then build. Anything left blank shows up as a warning on the output \u2014 you can still download but Amazon will reject the listing until those are real.';
   html += '</div>';
-  html += '<button onclick="betaBuildXlsm()" style="padding:12px 24px; background:linear-gradient(135deg,#0c4e54,#14b8a6); color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">'
-    + 'Build Amazon .xlsm (placeholder UPC/price/size) \u2192</button>';
-  html += '<div id="beta-build-result" style="margin-top:14px;"></div>';
+
+  // Form grid
+  html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:16px;">';
+  // UPC
+  html += '<div class="beta-field">';
+  html += '<label class="beta-label">UPC <span class="beta-req">required</span></label>';
+  html += '<input id="beta-fill-upc" class="beta-input" placeholder="012345678905" maxlength="14">';
+  html += '<div style="font-size:10px;color:#94a3b8;margin-top:2px;">12 digits. Required by Amazon.</div>';
+  html += '</div>';
+  // Color
+  html += '<div class="beta-field">';
+  html += '<label class="beta-label">Color name <span class="beta-opt">override</span></label>';
+  html += '<input id="beta-fill-color" class="beta-input" placeholder="Black" value="' + escHtml(detectedColor) + '">';
+  html += '<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Pre-filled from vision — edit if wrong.</div>';
+  html += '</div>';
+  // Style number
+  html += '<div class="beta-field">';
+  html += '<label class="beta-label">Style # <span class="beta-opt">override</span></label>';
+  html += '<input id="beta-fill-style" class="beta-input" placeholder="12345" value="' + escHtml(sessionHints) + '">';
+  html += '<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Internal style code. Combined with season for the SKU.</div>';
+  html += '</div>';
+  // Size
+  html += '<div class="beta-field">';
+  html += '<label class="beta-label">Size <span class="beta-req">required</span></label>';
+  html += '<div id="beta-fill-size-pills" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">';
+  ['XS','S','M','L','XL','XXL'].forEach(s => {
+    html += '<button type="button" data-size="' + s + '" onclick="betaPickSize(this)" '
+         + 'style="padding:5px 12px;font-size:12px;background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:6px;cursor:pointer;font-weight:600;">'
+         + s + '</button>';
+  });
+  html += '<input id="beta-fill-size-custom" placeholder="or custom" style="font-size:12px;padding:5px 8px;width:100px;border:1px solid #cbd5e1;border-radius:6px;" oninput="betaClearSizePills()">';
+  html += '</div>';
+  html += '<input type="hidden" id="beta-fill-size" value="">';
+  html += '</div>';
+  // List price
+  html += '<div class="beta-field">';
+  html += '<label class="beta-label">List price (USD) <span class="beta-req">required</span></label>';
+  html += '<input id="beta-fill-list-price" class="beta-input" placeholder="79.00" type="number" step="0.01" min="0">';
+  html += '<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Two decimals. The MSRP shown on Amazon.</div>';
+  html += '</div>';
+  // Cost price
+  html += '<div class="beta-field">';
+  html += '<label class="beta-label">Cost price (USD) <span class="beta-opt">optional</span></label>';
+  html += '<input id="beta-fill-cost-price" class="beta-input" placeholder="32.00" type="number" step="0.01" min="0">';
+  html += '<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Wholesale / vendor cost. For internal margin tracking.</div>';
+  html += '</div>';
+  html += '</div>';  // /grid
+
+  // Build button
+  html += '<button id="beta-build-submit" onclick="betaSubmitBuild()" '
+       + 'style="padding:14px 28px; background:linear-gradient(135deg,#0c4e54,#14b8a6); color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">'
+       + '<span>Build Amazon .xlsm</span><span style="font-size:16px;">\u2192</span></button>';
+  html += '<div id="beta-build-result" style="margin-top:16px;"></div>';
   return html;
+}
+
+function betaPickSize(btn) {
+  // Toggle: clicked button selected, others reset; clears the custom input
+  const wrap = btn.parentElement;
+  wrap.querySelectorAll('button[data-size]').forEach(b => {
+    b.style.background = '#fff';
+    b.style.borderColor = '#cbd5e1';
+    b.style.color = '#475569';
+  });
+  btn.style.background = '#0c4e54';
+  btn.style.borderColor = '#0c4e54';
+  btn.style.color = '#fff';
+  document.getElementById('beta-fill-size').value = btn.dataset.size;
+  document.getElementById('beta-fill-size-custom').value = '';
+}
+
+function betaClearSizePills() {
+  // If user types a custom size, deselect any picked pill
+  document.querySelectorAll('#beta-fill-size-pills button[data-size]').forEach(b => {
+    b.style.background = '#fff';
+    b.style.borderColor = '#cbd5e1';
+    b.style.color = '#475569';
+  });
+  document.getElementById('beta-fill-size').value = '';
+}
+
+async function betaSubmitBuild() {
+  // Collect operator fields from form
+  const upc      = (document.getElementById('beta-fill-upc')?.value || '').trim();
+  const color    = (document.getElementById('beta-fill-color')?.value || '').trim();
+  const styleNum = (document.getElementById('beta-fill-style')?.value || '').trim();
+  const sizePill = (document.getElementById('beta-fill-size')?.value || '').trim();
+  const sizeCust = (document.getElementById('beta-fill-size-custom')?.value || '').trim();
+  const size     = sizePill || sizeCust;
+  const listPx   = (document.getElementById('beta-fill-list-price')?.value || '').trim();
+  const costPx   = (document.getElementById('beta-fill-cost-price')?.value || '').trim();
+
+  // Soft validation — highlight missing required fields without blocking
+  // (operator can still build with placeholders; warnings will surface)
+  const missingRequired = [];
+  if (!upc)    missingRequired.push('UPC');
+  if (!size)   missingRequired.push('Size');
+  if (!listPx) missingRequired.push('List price');
+  if (missingRequired.length) {
+    if (!confirm(
+      'You haven\u2019t filled: ' + missingRequired.join(', ') + '.\n\n'
+      + 'Build anyway? You\u2019ll get a draft .xlsm with warnings flagging the missing fields. '
+      + 'Useful for previewing, but Amazon will reject until you fill these.'
+    )) return;
+  }
+
+  betaBuildXlsm({
+    color_name:   color || undefined,
+    size:         size || undefined,
+    upc:          upc || undefined,
+    list_price:   listPx || undefined,
+    cost_price:   costPx || undefined,
+    sku_override: styleNum || undefined,
+  });
 }
 
 async function betaBuildXlsm(opFields) {
