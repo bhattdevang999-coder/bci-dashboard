@@ -4696,9 +4696,9 @@ async function betaAnalyze() {
     if (status) { status.className = 'beta-status error'; status.textContent = 'Pick a brand and drop a photo first.'; }
     return;
   }
-  // Disable button + show working
+  // Disable button + show vision ticker
   btn.disabled = true;
-  if (status) { status.className = 'beta-status working'; status.textContent = 'Reading the image\u2026'; }
+  betaStartVisionTicker(status, 'analyze');
 
   // Build form
   const fd = new FormData();
@@ -4723,8 +4723,9 @@ async function betaAnalyze() {
     httpError = e.message;
   }
 
+  betaStopVisionTicker();
   if (httpError) {
-    if (status) { status.className = 'beta-status error'; status.textContent = httpError; }
+    if (status) { status.className = 'beta-status error'; status.textContent = httpError; status.innerHTML = '<span style="color:#991b1b">' + escHtml(httpError) + '</span>'; }
     btn.disabled = false;
     return;
   }
@@ -4744,6 +4745,70 @@ async function betaAnalyze() {
   if (out)  out.innerHTML = renderBetaVisionCard(data);
   // Scroll to vision card
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ═════════ Vision ticker — cycles through 'what we're doing' lines + elapsed timer ═════════
+let _betaTickerHandle = null;
+function betaStartVisionTicker(targetEl, mode) {
+  betaStopVisionTicker();
+  if (!targetEl) return;
+  const tickers = {
+    analyze: [
+      { t: 0,    text: 'Sending image to vision\u2026' },
+      { t: 1500, text: 'Reading the photo\u2026' },
+      { t: 3500, text: 'Classifying product type\u2026' },
+      { t: 5500, text: 'Picking out features and color\u2026' },
+      { t: 7500, text: 'Checking image quality\u2026' },
+      { t: 10000, text: 'Almost there\u2026' },
+      { t: 14000, text: 'Still working \u2014 large images take longer\u2026' },
+    ],
+    draft: [
+      { t: 0,    text: 'Vision read confirmed. Drafting your listing\u2026' },
+      { t: 1800, text: 'Composing title under 120 chars\u2026' },
+      { t: 3500, text: 'Writing 5 bullets in HEADLINE \u2014 sentence format\u2026' },
+      { t: 6500, text: 'Drafting the full description\u2026' },
+      { t: 9000, text: 'Tuning backend keywords for SEO\u2026' },
+      { t: 12000, text: 'Mapping fields to Amazon dropdowns\u2026' },
+      { t: 15000, text: 'Almost done \u2014 finalizing\u2026' },
+    ],
+  };
+  const lines = tickers[mode] || tickers.analyze;
+  const start = Date.now();
+
+  // Two-line component: live status + ticking elapsed time
+  const render = (text) => {
+    const elapsed = Math.floor((Date.now() - start) / 1000);
+    targetEl.innerHTML =
+      '<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;'
+      + 'background:linear-gradient(135deg,#0a1929 0%,#0e2436 100%);'
+      + 'border:1px solid rgba(20,184,166,0.35);border-radius:10px;'
+      + 'font-family:ui-monospace,Menlo,Consolas,monospace;color:#5eead4;'
+      + 'box-shadow:0 4px 14px rgba(20,184,166,0.12);">'
+      + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;'
+      + 'background:#14b8a6;flex-shrink:0;'
+      + 'box-shadow:0 0 0 0 rgba(20,184,166,0.7);animation:beta-pulse 1.4s infinite;"></span>'
+      + '<span style="flex:1;font-size:12px;letter-spacing:0.3px;">' + escHtml(text) + '</span>'
+      + '<span style="font-size:11px;color:#0d9488;font-variant-numeric:tabular-nums;'
+      + 'background:rgba(20,184,166,0.12);padding:3px 8px;border-radius:4px;'
+      + 'border:1px solid rgba(20,184,166,0.25);">'
+      + (elapsed < 10 ? '0' + elapsed : elapsed) + 's</span>'
+      + '</div>';
+  };
+
+  // Initial render + tick each second
+  let currentText = lines[0].text;
+  render(currentText);
+  _betaTickerHandle = setInterval(() => {
+    const ms = Date.now() - start;
+    // Pick the latest line whose threshold has passed
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (ms >= lines[i].t) { currentText = lines[i].text; break; }
+    }
+    render(currentText);
+  }, 500);
+}
+function betaStopVisionTicker() {
+  if (_betaTickerHandle) { clearInterval(_betaTickerHandle); _betaTickerHandle = null; }
 }
 
 function betaSetStage(n) {
@@ -4856,9 +4921,7 @@ async function betaGenerateDraft() {
   const out  = document.getElementById('beta-draft-out');
   if (!card || !out) return;
   card.style.display = 'block';
-  out.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;font-size:13px;color:#0f766e;">'
-    + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#14b8a6;animation:beta-pulse 1.4s infinite;flex-shrink:0;"></span>'
-    + '<span>Drafting title, bullets, and description \u2014 this takes 8\u201312 seconds\u2026</span></div>';
+  betaStartVisionTicker(out, 'draft');
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   let data = null, err = null;
@@ -4872,6 +4935,7 @@ async function betaGenerateDraft() {
     if (!r.ok) err = data.error || ('HTTP ' + r.status);
   } catch(e) { err = e.message; }
 
+  betaStopVisionTicker();
   if (err) {
     out.innerHTML = '<div style="padding:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:13px; color:#991b1b;">'
       + '<strong>Could not generate draft:</strong> ' + escHtml(err)
@@ -10379,10 +10443,11 @@ async function uploadStyleImage(styleNum, files) {
   formData.append('file', files[0]);
   // Show "reading…" placeholder before request returns
   const intelEl = document.getElementById('style-img-intel-' + styleNum);
-  if (intelEl) intelEl.innerHTML = renderImgIntelChip({ status: 'reading' }, styleNum);
+  if (intelEl) betaStartVisionTicker(intelEl, 'analyze');
   try {
     const resp = await fetch('/api/upload-style-image', { method: 'POST', body: formData });
     const d = await resp.json();
+    betaStopVisionTicker();
     if (d.ok) {
       const preview = document.getElementById('style-img-preview-' + styleNum);
       if (preview) {
@@ -10397,6 +10462,7 @@ async function uploadStyleImage(styleNum, files) {
       showToast(d.error || 'Upload failed', 'error');
     }
   } catch(e) {
+    betaStopVisionTicker();
     if (intelEl) intelEl.innerHTML = '';
     showToast('Image upload failed: ' + e.message, 'error');
   }
@@ -10566,12 +10632,13 @@ async function testImageIntel(files) {
   if (!files || !files.length) return;
   const out = document.getElementById('test-image-intel-out');
   if (!out) return;
-  out.innerHTML = renderImgIntelChip({ status: 'reading' }, '_test');
+  betaStartVisionTicker(out, 'analyze');
   const formData = new FormData();
   formData.append('file', files[0]);
   try {
     const resp = await fetch('/api/test-image-intel', { method: 'POST', body: formData });
     const d = await resp.json();
+    betaStopVisionTicker();
     if (d.ok && d.intel) {
       out.innerHTML = renderImgIntelChip({ status: 'read', intel: d.intel }, '_test');
       // auto-expand the panel for standalone test
