@@ -7009,9 +7009,11 @@ def upload_style_image():
     session_data["style_images"][style_num] = str(save_path)
 
     # Auto-fire vision analysis (cached per style; ~$0.01 per image)
+    # Use the active session brand if known so the prompt is tailored to it.
     intel = None
     try:
-        intel = analyze_style_image(style_num, str(save_path))
+        sess_brand = session_data.get("brand") or ""
+        intel = analyze_style_image(style_num, str(save_path), brand_override=sess_brand)
     except Exception as e:
         print(f"[image-intel] auto-analyze failed for {style_num}: {e}")
 
@@ -7023,13 +7025,17 @@ def upload_style_image():
     })
 
 
-def analyze_style_image(style_num, img_path):
+def analyze_style_image(style_num, img_path, brand_override=None):
     """Run a vision pass on a style image and return structured JSON observations.
 
     This is the 'Image Intel' secondary advisory layer:
       - never overwrites a structured field automatically
       - returns observations the operator can review and selectively apply
       - cached in session_data["style_image_intel"][style_num] to avoid re-billing
+
+    brand_override: optional brand name. When supplied (or when the resolved
+      style is associated with a brand), the prompt is tailored to that brand's
+      voice / focus / never-words so vision looks for what that brand cares about.
 
     Returns dict {observations:[], field_suggestions:[], image_quality:[], summary:""} or None.
     On None return, _last_vision_error holds a human-readable reason.
@@ -7072,6 +7078,30 @@ def analyze_style_image(style_num, img_path):
         return None
 
     pt_enum_list = ", ".join([p["id"] for p in ALL_PRODUCT_TYPES])
+
+    # Resolve brand context: explicit override > style.brand > nothing
+    resolved_brand = (brand_override or "").strip() or (style or {}).get("brand", "") if style else (brand_override or "")
+    brand_block = ""
+    if resolved_brand:
+        try:
+            bc = _load_brand_config_data(resolved_brand) or {}
+        except Exception:
+            bc = {}
+        focus       = bc.get("bullet_1_focus") or ""
+        voice       = bc.get("brand_voice") or ""
+        never_words = bc.get("never_words") or []
+        gender      = bc.get("gender") or ""
+        dept        = bc.get("department") or ""
+        bits = []
+        if focus:       bits.append(f"  Top brand focus: {focus} \u2014 prioritize observations that support this story")
+        if voice:       bits.append(f"  Brand voice: {voice}")
+        if gender:      bits.append(f"  Audience: {gender} ({dept})")
+        if never_words: bits.append(f"  Avoid these words in observations: {', '.join(never_words)}")
+        if bits:
+            brand_block = "BRAND CONTEXT:\n  Brand: " + resolved_brand + "\n" + "\n".join(bits) + "\n\n"
+        else:
+            brand_block = f"BRAND CONTEXT: {resolved_brand} (no extra config; describe neutrally)\n\n"
+
     expected_block = (
         f"PRODUCT CONTEXT (from pre-upload):\n"
         f"  Expected product type: {pt or 'unknown'}\n"
@@ -7082,7 +7112,7 @@ def analyze_style_image(style_num, img_path):
 
     prompt = f"""You are a product photo analyst for Amazon NIS listings. Look at the photo and return STRUCTURED JSON.
 
-{expected_block}
+{brand_block}{expected_block}
 YOUR JOB — return JSON only, no prose, no markdown.
 
   detected_subject: 4-12 words. The plain-English description of what is in the photo.
@@ -10340,7 +10370,7 @@ def api_beta_image_nis_analyze():
     f.save(str(img_path))
 
     # Run vision — standalone (no expected PT, force classification)
-    vision_intel = analyze_style_image(f"_beta_{session_id}", str(img_path))
+    vision_intel = analyze_style_image(f"_beta_{session_id}", str(img_path), brand_override=brand)
     if vision_intel is None:
         return jsonify({"error": _last_vision_error or "Vision pass unavailable", "reason": _last_vision_error}), 503
 
