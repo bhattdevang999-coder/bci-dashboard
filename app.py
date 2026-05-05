@@ -1971,9 +1971,12 @@ Respond in this exact JSON format (no other text, no markdown):
         else:
             msg_content.append({"type": "text", "text": prompt})
 
+        # max_tokens needs headroom: title(~150) + 5 bullets(~1500) + description(~2000) +
+        # keywords(~250) + JSON overhead = comfortably 4000. Bumped from 2000 which was
+        # truncating description and backend_keywords on long generations.
         message = _anthropic_client.messages.create(
             model="claude-sonnet-4-5",
-            max_tokens=2000,
+            max_tokens=4000,
             messages=[{"role": "user", "content": msg_content}],
         )
         raw = message.content[0].text.strip()
