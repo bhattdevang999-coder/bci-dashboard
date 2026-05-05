@@ -4489,8 +4489,18 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
             <div class="beta-card-sub">JPG / PNG / WebP · vision runs in 3–5 seconds</div>
           </div>
         </div>
+
+        <!-- Photo guidance hint — helps vision focus -->
+        <div style="display:flex; gap:10px; align-items:flex-start; padding:10px 14px; background:#f0f9ff; border-left:3px solid #0ea5e9; border-radius:0 6px 6px 0; margin-bottom:14px; font-size:12px; color:#0c4a6e; line-height:1.5;">
+          <span style="font-size:16px; line-height:1; margin-top:1px;">ℹ</span>
+          <div>
+            <strong>Best results:</strong> upload a full-product hero shot — ideally on a clean background, single item, model facing forward. The system reads attributes from the photo, so detail shots, packaging shots, swatches, or partial crops give weaker results.
+          </div>
+        </div>
+
         <div class="beta-input-grid">
-          <div class="beta-dropzone" id="beta-dropzone" onclick="document.getElementById('beta-file-input').click();">
+          <div class="beta-dropzone" id="beta-dropzone" onclick="document.getElementById('beta-file-input').click();"
+               ondragover="betaDragOver(event)" ondragleave="betaDragLeave(event)" ondrop="betaDrop(event)">
             <input type="file" id="beta-file-input" accept="image/*" style="display:none;" onchange="betaOnFile(this.files)">
             <div class="beta-dropzone-icon">△</div>
             <div class="beta-dropzone-text"><strong>Drop a product photo</strong></div>
@@ -4657,6 +4667,44 @@ async function betaLoadBrands() {
     const status = document.getElementById('beta-status');
     if (status) { status.className = 'beta-status error'; status.textContent = 'Could not load brand list: ' + e.message; }
   }
+}
+
+function betaDragOver(e) {
+  e.preventDefault();
+  const dz = document.getElementById('beta-dropzone');
+  if (dz) {
+    dz.style.borderColor = '#14b8a6';
+    dz.style.background = '#f0fdfa';
+    dz.style.transform = 'scale(1.01)';
+    dz.style.transition = 'all 120ms';
+  }
+}
+function betaDragLeave(e) {
+  e.preventDefault();
+  const dz = document.getElementById('beta-dropzone');
+  if (dz) {
+    dz.style.borderColor = '#cbd5e1';
+    dz.style.background = '#f8fafc';
+    dz.style.transform = 'scale(1)';
+  }
+}
+function betaDrop(e) {
+  e.preventDefault();
+  betaDragLeave(e);
+  const files = (e.dataTransfer && e.dataTransfer.files) ? e.dataTransfer.files : null;
+  if (!files || !files.length) return;
+  // Only accept the first image dropped
+  const f = files[0];
+  if (!f.type || !f.type.startsWith('image/')) {
+    showToast('Please drop an image file (JPG / PNG / WebP).', 'error');
+    return;
+  }
+  // Push into the hidden input so analyze picks it up
+  const dt = new DataTransfer();
+  dt.items.add(f);
+  const input = document.getElementById('beta-file-input');
+  if (input) input.files = dt.files;
+  betaOnFile([f]);
 }
 
 function betaOnFile(files) {
