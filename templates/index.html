@@ -4174,6 +4174,40 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
     </div>
 
+    <!-- Empty-state preview: shown by default, hidden once results render -->
+    <div id="merge-preview" style="margin-top:16px;">
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:16px;">
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; border-top:3px solid #f59e0b; padding:14px 16px;">
+          <div style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase; font-weight:700; color:#b45309; margin-bottom:6px;">Common issue · 1</div>
+          <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Split families</div>
+          <div style="font-size:12px; color:#64748b; line-height:1.5;">Same product line scattered across multiple parent ASINs. Buyers see fragmented variations and Amazon ranks each parent independently.</div>
+        </div>
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; border-top:3px solid #dc2626; padding:14px 16px;">
+          <div style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase; font-weight:700; color:#991b1b; margin-bottom:6px;">Common issue · 2</div>
+          <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Orphaned ASINs</div>
+          <div style="font-size:12px; color:#64748b; line-height:1.5;">Child variations with no valid parent link. Show up as standalone products instead of folding into a family.</div>
+        </div>
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; border-top:3px solid #14b8a6; padding:14px 16px;">
+          <div style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase; font-weight:700; color:#0d9488; margin-bottom:6px;">Common issue · 3</div>
+          <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Category mismatches</div>
+          <div style="font-size:12px; color:#64748b; line-height:1.5;">Child ASINs in a different Amazon category than their parent. Breaks variations entirely.</div>
+        </div>
+      </div>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:18px 22px;">
+        <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">How Merge fixes it</div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13px; color:#334155;">
+          <span style="background:#fff; padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-weight:600;">1 · Catalog Health uploaded</span>
+          <span style="color:#94a3b8;">→</span>
+          <span style="background:#fff; padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-weight:600;">2 · Analyze for Merge Issues</span>
+          <span style="color:#94a3b8;">→</span>
+          <span style="background:#fff; padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-weight:600;">3 · Approve / reject each fix</span>
+          <span style="color:#94a3b8;">→</span>
+          <span style="background:#fff; padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-weight:600;">4 · Download CSV → Vendor Central</span>
+        </div>
+        <div style="margin-top:12px; font-size:11px; color:#64748b; font-style:italic;">Output is a Vendor Central-ready bulksheet. Approve everything or cherry-pick — each row is independent.</div>
+      </div>
+    </div>
+
     <div id="merge-ready" class="merge-step-status step-ready" style="display:none;">
       <span style="font-size:20px;">&#10003;</span>
       <div style="flex:1;">
@@ -10141,6 +10175,8 @@ async function runMergeAnalysis() {
     mergeState.summary = data.summary;
     renderMergePlan(data.plan, data.summary);
     document.getElementById('merge-results').style.display = 'block';
+    const prev = document.getElementById('merge-preview');
+    if (prev) prev.style.display = 'none';
     showToast('Merge analysis complete', 'success');
   } catch(e) {
     showToast('Network error: ' + e.message, 'error');
