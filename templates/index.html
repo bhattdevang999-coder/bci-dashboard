@@ -4547,8 +4547,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
 </div><!-- /main -->
 
-{# ════════════════════ BOSS THEATER (overlay, hidden by default) ════════════════════ #}
-{% include '_boss_theater.html' %}
+{# Boss theater retired — reverted to the simpler in-place status indicators below #}
 
 <script>
 // ═══════════════════ GLOBAL STATE & NAV ═══════════════════
@@ -5149,26 +5148,17 @@ async function engineImportPreupload(fileInput) {
   const fd = new FormData();
   fd.append('file', file);
 
-  // Show theater while we parse — stays open at least 15s, even if API returns faster
+  // Inline status — simple rotating lines while we parse
+  const stopStatus = startStatusRotation(resultsEl, [
+    'Reading the pre-upload spreadsheet\u2026',
+    'Detecting product type per style\u2026',
+    'Matching subclasses to learned routing rules\u2026',
+    'Validating headers and column map\u2026',
+    'Almost there \u2014 applying rule engine\u2026',
+  ]);
+
   let importResult = null;
   let importError = null;
-  let theaterClosed = false;
-  if (window.bossTheater) {
-    window.bossTheater.show(function() {
-      theaterClosed = true;
-      // After theater closes, render whatever the API returned
-      if (importError) {
-        resultsEl.innerHTML = '<span style="color:#c00;">Import failed: ' + importError + '</span>';
-      } else if (importResult) {
-        if (importResult.brand_setup && importResult.brand_setup.needs_setup) {
-          engineShowBrandSetup(importResult.brand_setup, () => engineRenderPreuploadResults(importResult));
-        } else {
-          engineRenderPreuploadResults(importResult);
-        }
-      }
-    });
-  }
-
   try {
     const r = await fetch('/api/rule-engine/import-preupload', { method: 'POST', body: fd }).then(r => r.json());
     if (!r.ok) throw new Error(r.error || 'import failed');
@@ -5177,10 +5167,8 @@ async function engineImportPreupload(fileInput) {
   } catch (e) {
     importError = e.message;
   }
-  // Tell theater the data is ready; it'll close once min-display has elapsed
-  if (window.bossTheater) {
-    window.bossTheater.dataDone();
-  } else if (importError) {
+  stopStatus();
+  if (importError) {
     resultsEl.innerHTML = '<span style="color:#c00;">Import failed: ' + importError + '</span>';
   } else if (importResult) {
     if (importResult.brand_setup && importResult.brand_setup.needs_setup) {
@@ -5190,6 +5178,23 @@ async function engineImportPreupload(fileInput) {
     }
   }
   fileInput.value = '';
+}
+
+// Lightweight rotating-status indicator. Returns a stop() function.
+function startStatusRotation(targetEl, lines, intervalMs) {
+  if (!targetEl || !lines || !lines.length) return function() {};
+  intervalMs = intervalMs || 1800;
+  let i = 0;
+  const render = function() {
+    targetEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;font-size:13px;color:#0f766e;">'
+      + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#14b8a6;animation:beta-pulse 1.4s infinite;flex-shrink:0;"></span>'
+      + '<span>' + lines[i % lines.length] + '</span>'
+      + '</div>';
+    i++;
+  };
+  render();
+  const handle = setInterval(render, intervalMs);
+  return function() { clearInterval(handle); };
 }
 
 // ══════════════ BRAND SETUP MODAL ══════════════
@@ -5732,20 +5737,10 @@ async function handleProductUpload(files) {
   const formData = new FormData();
   formData.append('file', file);
 
-  // ═══ v0.7.5: Boss Theater plays during parse ═══
-  if (window.bossTheater) {
-    window.bossTheater.show();
-  }
-
   try {
     const res = await fetch('/api/upload-product-data', { method: 'POST', body: formData });
     const data = await res.json();
     loadingEl.classList.add('hidden');
-
-    // Tell theater data is ready (it auto-closes once min-display elapses)
-    if (window.bossTheater) {
-      window.bossTheater.dataDone();
-    }
 
     // Save this upload to history (best-effort, non-blocking)
     if (file && file.name && data && !data.error) {
@@ -8673,11 +8668,6 @@ async function generateNIS() {
   const countText = document.getElementById('nis-gen-count');
   const etaText = document.getElementById('nis-gen-eta');
 
-  // ═══ v0.7.5: Boss Theater plays during generate ═══
-  if (window.bossTheater) {
-    window.bossTheater.show();
-  }
-
   try {
     const startRes = await fetch('/api/generate-nis', {
       method: 'POST',
@@ -8712,8 +8702,6 @@ async function generateNIS() {
         if (loadingEl) loadingEl.classList.add('hidden');
         if (resultsEl) resultsEl.classList.remove('hidden');
 
-        // Tell theater work is done — it will close after min display time
-        if (window.bossTheater) { window.bossTheater.dataDone(); }
 
         state.nisResults = data.results || [];
         const successCount = (data.results || []).length;
