@@ -4652,13 +4652,177 @@ function betaSyncButton() {
   btn.disabled = !(betaState.fileSelected && betaState.brandSelected);
 }
 
-// Step 6–9 stubs — implemented later. For Step 5 the button just shows status.
-function betaAnalyze() {
-  const status = document.getElementById('beta-status');
-  if (status) {
-    status.className = 'beta-status working';
-    status.textContent = 'Wiring is live but Steps 6\u20139 (vision UI + draft + build) ship next.';
+// ═════════ Step 6: Wire Analyze button → real /analyze call ═════════
+async function betaAnalyze() {
+  const fileInput = document.getElementById('beta-file-input');
+  const brandSel  = document.getElementById('beta-brand');
+  const status    = document.getElementById('beta-status');
+  const btn       = document.getElementById('beta-analyze-btn');
+  if (!fileInput.files || !fileInput.files.length || !brandSel.value) {
+    if (status) { status.className = 'beta-status error'; status.textContent = 'Pick a brand and drop a photo first.'; }
+    return;
   }
+  // Disable button + show working
+  btn.disabled = true;
+  if (status) { status.className = 'beta-status working'; status.textContent = 'Reading the image\u2026'; }
+
+  // Build form
+  const fd = new FormData();
+  fd.append('file',  fileInput.files[0]);
+  fd.append('brand', brandSel.value);
+  const styleNumEl = document.getElementById('beta-style-num');
+  const seasonEl   = document.getElementById('beta-season');
+  const cooEl      = document.getElementById('beta-coo');
+  const fabricEl   = document.getElementById('beta-fabric');
+  if (styleNumEl && styleNumEl.value) fd.append('style_num', styleNumEl.value.trim());
+  if (seasonEl   && seasonEl.value)   fd.append('season_code', seasonEl.value.trim());
+  if (cooEl      && cooEl.value)      fd.append('coo', cooEl.value.trim());
+  if (fabricEl   && fabricEl.value)   fd.append('fabric', fabricEl.value.trim());
+
+  let data = null;
+  let httpError = null;
+  try {
+    const r = await fetch('/api/beta-image-nis/analyze', { method: 'POST', body: fd });
+    data = await r.json();
+    if (!r.ok) httpError = data.error || data.reason || ('HTTP ' + r.status);
+  } catch(e) {
+    httpError = e.message;
+  }
+
+  if (httpError) {
+    if (status) { status.className = 'beta-status error'; status.textContent = httpError; }
+    btn.disabled = false;
+    return;
+  }
+
+  // Stash session id; advance stage 01 → 02
+  betaState.sessionId = data.session_id;
+  betaState.vision    = data.vision;
+  betaState.draft     = data;
+  betaSetStage(2);
+  if (status) { status.className = 'beta-status'; status.textContent = ''; }
+  btn.disabled = false;
+
+  // Render the vision card
+  const card = document.getElementById('beta-vision-card');
+  const out  = document.getElementById('beta-vision-out');
+  if (card) card.style.display = 'block';
+  if (out)  out.innerHTML = renderBetaVisionCard(data);
+  // Scroll to vision card
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function betaSetStage(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('beta-stage-' + i);
+    if (el) el.classList.toggle('active', i <= n);
+  }
+}
+
+function renderBetaVisionCard(data) {
+  const v = data.vision || {};
+  const subj = escHtml(v.detected_subject || '');
+  const pt   = escHtml(v.detected_pt || 'UNKNOWN');
+  const col  = escHtml(v.detected_color || '');
+  const sum  = escHtml(v.summary || '');
+  // Image preview pulled from /api/beta-image-nis/image/<sid>
+  const imgUrl = data.image_url || '';
+  let html = '<div style="display:grid; grid-template-columns:240px 1fr; gap:24px; align-items:start;">';
+  // Left: image preview
+  html += '<div><img src="' + escHtml(imgUrl) + '" style="width:100%; border-radius:8px; border:1px solid #e2e8f0;" alt="uploaded image"></div>';
+  // Right: detection block
+  html += '<div>';
+  html += '<div style="font-size:10px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">What we see</div>';
+  html += '<div style="font-size:20px; font-weight:700; color:#0f172a; line-height:1.3; margin-bottom:8px;">' + subj + '</div>';
+  html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">';
+  html += '  <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; border-radius:14px; font-size:11px; font-weight:600;">Type: ' + pt + '</span>';
+  if (col) html += '  <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#eff6ff; color:#1e3a8a; border:1px solid #bfdbfe; border-radius:14px; font-size:11px; font-weight:600;">Color: ' + col + '</span>';
+  html += '</div>';
+  if (sum) html += '<div style="font-size:13px; color:#334155; line-height:1.5; margin-bottom:14px; padding:10px 12px; background:#f8fafc; border-left:3px solid #14b8a6; border-radius:0 6px 6px 0;">' + sum + '</div>';
+  // PT match status (when this beta has expected_pt; standalone won\'t)
+  // — here always 'no_expectation' since beta sessions don\'t set expected_pt
+  // Confirm / Wrong buttons + status
+  html += '<div style="display:flex; gap:8px; align-items:center; margin-bottom:14px;">';
+  html += '  <button id="beta-confirm-btn" onclick="betaConfirmVision(true)" style="padding:8px 16px; background:#10b981; color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">\u2713 Looks right \u2014 Continue</button>';
+  html += '  <button id="beta-wrong-btn" onclick="betaConfirmVision(false)" style="padding:8px 16px; background:#fff; color:#991b1b; border:1px solid #fecaca; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">\u2717 This is wrong</button>';
+  html += '  <span id="beta-confirm-status" style="font-size:12px; color:#64748b;"></span>';
+  html += '</div>';
+  // Observations + suggestions + quality — collapsible details
+  const obs = v.observations || [];
+  const sug = v.field_suggestions || [];
+  const qa  = v.image_quality || [];
+  if (obs.length || sug.length || qa.length) {
+    html += '<details style="margin-top:6px;"><summary style="cursor:pointer; font-size:12px; font-weight:600; color:#0f766e;">Show all ' + (obs.length + sug.length + qa.length) + ' details</summary>';
+    html += '<div style="margin-top:10px; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:12px;">';
+    if (obs.length) {
+      html += '<div style="font-size:10px; font-weight:700; color:#475569; text-transform:uppercase; margin-bottom:4px;">Visual callouts</div>';
+      html += '<ul style="margin:0 0 10px 18px; padding:0;">';
+      obs.forEach(o => { html += '<li style="margin-bottom:3px; color:#334155;">' + escHtml(o) + '</li>'; });
+      html += '</ul>';
+    }
+    if (sug.length) {
+      html += '<div style="font-size:10px; font-weight:700; color:#475569; text-transform:uppercase; margin-bottom:4px;">Field suggestions <span style="color:#94a3b8; text-transform:none; font-weight:400;">(advisory)</span></div>';
+      html += '<div style="margin-bottom:10px;">';
+      sug.forEach(s => {
+        html += '<div style="padding:6px 8px; background:#fff; border:1px solid #e2e8f0; border-radius:4px; margin-bottom:4px;">';
+        html += '<span style="font-family:ui-monospace,Menlo,Consolas,monospace; font-size:10px; color:#0f766e;">' + escHtml(s.field) + '</span> ';
+        html += '<span style="font-weight:700; color:#0f172a;">' + escHtml(s.value) + '</span>';
+        if (s.why) html += '<div style="font-size:10px; color:#64748b; margin-top:2px;">' + escHtml(s.why) + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    if (qa.length) {
+      html += '<div style="font-size:10px; font-weight:700; color:#991b1b; text-transform:uppercase; margin-bottom:4px;">Image quality flags</div>';
+      html += '<ul style="margin:0 0 6px 18px; padding:0;">';
+      qa.forEach(q => { html += '<li style="margin-bottom:3px; color:#7f1d1d;"><strong>' + escHtml(String(q.issue||'').replace(/_/g," ")) + ':</strong> ' + escHtml(q.detail||'') + '</li>'; });
+      html += '</ul>';
+    }
+    html += '</div></details>';
+  }
+  html += '</div>';  // /right column
+  html += '</div>';  // /grid
+  return html;
+}
+
+async function betaConfirmVision(confirmed) {
+  const status = document.getElementById('beta-confirm-status');
+  const okBtn  = document.getElementById('beta-confirm-btn');
+  const wrBtn  = document.getElementById('beta-wrong-btn');
+  if (status) { status.textContent = 'Saving\u2026'; status.style.color = '#64748b'; }
+  if (okBtn) { okBtn.disabled = true; okBtn.style.opacity = '0.5'; okBtn.style.cursor = 'default'; }
+  if (wrBtn) { wrBtn.disabled = true; wrBtn.style.opacity = '0.5'; wrBtn.style.cursor = 'default'; }
+
+  // Persist feedback
+  if (betaState.sessionId) {
+    try {
+      await fetch('/api/beta-image-nis/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: betaState.sessionId, kind: confirmed ? 'pt_correct' : 'pt_wrong' }),
+      });
+    } catch(e) { /* non-blocking */ }
+  }
+
+  if (confirmed) {
+    if (status) status.innerHTML = '<span style="color:#065f46;font-weight:600;">\u2713 Confirmed \u2014 generating draft\u2026</span>';
+    // Auto-advance: trigger /generate next (Step 7 wires the actual UI)
+    betaSetStage(3);
+    if (typeof betaGenerateDraft === 'function') {
+      betaGenerateDraft();
+    }
+  } else {
+    if (status) status.innerHTML = '<span style="color:#991b1b;font-weight:600;">\u2717 Flagged \u2014 we\u2019ll ignore vision\u2019s read.</span> <span style="color:#64748b;">Try a different photo, or correct fields manually below.</span>';
+  }
+}
+
+// Step 7 placeholder — will be wired next
+async function betaGenerateDraft() {
+  const card = document.getElementById('beta-draft-card');
+  const out  = document.getElementById('beta-draft-out');
+  if (card) card.style.display = 'block';
+  if (out)  out.innerHTML = '<div style="padding:14px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; font-size:12px; color:#64748b;">Step 7 (draft generation UI) ships next. For now the vision read above is captured and the session is ready for /api/beta-image-nis/generate.</div>';
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function showNISPage() {
