@@ -3082,6 +3082,16 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div style="margin-top:8px;"><a href="/api/download-sample-template" style="font-size:12px; color:var(--accent);">Download sample pre-upload template</a></div>
   </div>
 
+  <!-- ===== Standalone Image Intel test (no pre-upload required) ===== -->
+  <details style="margin-top:16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px;">
+    <summary style="cursor:pointer; font-size:12px; font-weight:600; color:#0f766e;">Test image without uploading a template &middot; classify any photo + see what vision picks up</summary>
+    <div style="margin-top:10px;">
+      <input type="file" accept="image/*" onchange="testImageIntel(this.files)" style="font-size:12px;">
+      <div style="font-size:10px; color:#94a3b8; margin-top:4px;">JPG/PNG &middot; vision returns detected product type, color, observations, image-quality flags</div>
+      <div id="test-image-intel-out" style="margin-top:10px;"></div>
+    </div>
+  </details>
+
   <!-- Loading state -->
   <div id="product-loading" class="hidden mt-16">
     <div class="alert alert-info">
@@ -9466,17 +9476,57 @@ function renderImgIntelChip(state, styleNum) {
   const qualCount = (intel.image_quality || []).length;
   const total     = obsCount + sugCount + qualCount;
   const hasQual   = qualCount > 0;
-  const pillBg = hasQual ? '#fef2f2' : '#ecfdf5';
-  const pillFg = hasQual ? '#991b1b' : '#065f46';
-  const pillBd = hasQual ? '#fecaca' : '#a7f3d0';
-  const dot    = hasQual ? '#dc2626' : '#10b981';
+  const ptMatch   = intel.pt_match || 'no_expectation';
+  const isMismatch = ptMatch === 'mismatch';
+  const isMatch    = ptMatch === 'match';
+  // Pill colour: red on PT mismatch, red on quality issues, green otherwise
+  const dangerStyle = isMismatch || hasQual;
+  const pillBg = dangerStyle ? '#fef2f2' : '#ecfdf5';
+  const pillFg = dangerStyle ? '#991b1b' : '#065f46';
+  const pillBd = dangerStyle ? '#fecaca' : '#a7f3d0';
+  const dot    = dangerStyle ? '#dc2626' : '#10b981';
   let chip = '<div style="display:flex; flex-direction:column; gap:6px;">';
-  chip += '<div onclick="toggleImgIntel(\'' + sn + '\')" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; padding:4px 8px; background:' + pillBg + '; color:' + pillFg + '; border:1px solid ' + pillBd + '; border-radius:12px; user-select:none; width:fit-content;">'
-    + '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:' + dot + ';"></span>'
-    + 'Image read \u00b7 ' + total + ' observation' + (total === 1 ? '' : 's')
+  // Main chip text — detected_subject leads when present
+  let chipText = 'Image read \u00b7 ' + total + ' observation' + (total === 1 ? '' : 's');
+  if (isMismatch) chipText = '\u26a0 PT mismatch \u00b7 looks like ' + (intel.detected_pt || '?');
+  else if (intel.detected_subject) chipText = 'Looks like: ' + intel.detected_subject;
+  chip += '<div onclick="toggleImgIntel(\'' + sn + '\')" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; padding:4px 10px; background:' + pillBg + '; color:' + pillFg + '; border:1px solid ' + pillBd + '; border-radius:12px; user-select:none; max-width:100%;">'
+    + '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:' + dot + '; flex-shrink:0;"></span>'
+    + '<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escHtml(chipText) + '</span>'
     + '<span id="img-intel-caret-' + sn + '" style="margin-left:4px; font-size:9px;">\u25be</span>'
     + '</div>';
-  chip += '<div id="img-intel-panel-' + sn + '" style="display:none; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; font-size:11px; line-height:1.5; max-height:380px; overflow-y:auto;">';
+  chip += '<div id="img-intel-panel-' + sn + '" style="display:none; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; font-size:11px; line-height:1.5; max-height:420px; overflow-y:auto;">';
+  // ── DETECTION HEADER ──
+  if (intel.detected_subject || intel.detected_pt) {
+    const headerBg = isMismatch ? '#fef2f2' : (isMatch ? '#ecfdf5' : '#f8fafc');
+    const headerBd = isMismatch ? '#fecaca' : (isMatch ? '#a7f3d0' : '#e2e8f0');
+    chip += '<div style="background:' + headerBg + '; border:1px solid ' + headerBd + '; border-radius:6px; padding:8px 10px; margin-bottom:8px;">';
+    chip += '<div style="font-size:10px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">What we see</div>';
+    chip += '<div style="font-size:13px; font-weight:700; color:#0f172a;">' + escHtml(intel.detected_subject || '\u2014') + '</div>';
+    let metaBits = [];
+    if (intel.detected_pt && intel.detected_pt !== 'UNKNOWN') metaBits.push('PT: <strong>' + escHtml(intel.detected_pt) + '</strong>');
+    if (intel.detected_color) metaBits.push('Color: <strong>' + escHtml(intel.detected_color) + '</strong>');
+    if (metaBits.length) chip += '<div style="font-size:10px; color:#64748b; margin-top:3px;">' + metaBits.join(' \u00b7 ') + '</div>';
+    // PT match status
+    if (ptMatch === 'match') {
+      chip += '<div style="font-size:11px; color:#065f46; margin-top:5px;">\u2713 Matches expected product type (' + escHtml(intel.expected_pt || '') + ')</div>';
+    } else if (ptMatch === 'mismatch') {
+      chip += '<div style="font-size:11px; color:#991b1b; margin-top:5px; font-weight:600;">\u26a0 Mismatch: pre-upload says <strong>' + escHtml(intel.expected_pt || '') + '</strong> but the photo looks like <strong>' + escHtml(intel.detected_pt || '?') + '</strong>. Did you upload the right image?</div>';
+    } else if (ptMatch === 'unknown') {
+      chip += '<div style="font-size:11px; color:#92400e; margin-top:5px;">Could not classify the photo. Quality check below if applicable.</div>';
+    } else if (ptMatch === 'no_expectation') {
+      chip += '<div style="font-size:11px; color:#475569; margin-top:5px; font-style:italic;">Standalone test \u2014 no pre-upload to compare against.</div>';
+    }
+    // Confirm / Wrong buttons (per-style only)
+    if (styleNum && styleNum !== '_test') {
+      chip += '<div style="display:flex; gap:6px; margin-top:8px;">';
+      chip += '<button class="btn btn-sm" onclick="event.stopPropagation(); confirmImgIntel(\'' + sn + '\', true)" style="font-size:11px; padding:3px 10px; background:#10b981; color:#fff; border:none; border-radius:4px; cursor:pointer;">\u2713 Confirm</button>';
+      chip += '<button class="btn btn-sm" onclick="event.stopPropagation(); confirmImgIntel(\'' + sn + '\', false)" style="font-size:11px; padding:3px 10px; background:#fff; color:#991b1b; border:1px solid #fecaca; border-radius:4px; cursor:pointer;">\u2717 This is wrong</button>';
+      chip += '<span id="img-intel-confirm-status-' + sn + '" style="font-size:11px; color:#64748b; align-self:center;"></span>';
+      chip += '</div>';
+    }
+    chip += '</div>';
+  }
   if (intel.summary) {
     chip += '<div style="font-weight:700; color:#0f172a; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #f1f5f9;">' + escHtml(intel.summary) + '</div>';
   }
@@ -9521,6 +9571,38 @@ function toggleImgIntel(styleNum) {
   const visible = panel.style.display !== 'none';
   panel.style.display = visible ? 'none' : 'block';
   if (caret) caret.textContent = visible ? '\u25be' : '\u25b4';
+}
+
+function confirmImgIntel(styleNum, confirmed) {
+  // Local-only feedback for now — future: persist to server for learned-map
+  const status = document.getElementById('img-intel-confirm-status-' + styleNum);
+  if (status) status.textContent = confirmed ? '\u2713 confirmed' : 'flagged \u2014 vision read will be ignored';
+}
+
+// ── Standalone Test Image dropzone (no pre-upload required) ──
+async function testImageIntel(files) {
+  if (!files || !files.length) return;
+  const out = document.getElementById('test-image-intel-out');
+  if (!out) return;
+  out.innerHTML = renderImgIntelChip({ status: 'reading' }, '_test');
+  const formData = new FormData();
+  formData.append('file', files[0]);
+  try {
+    const resp = await fetch('/api/test-image-intel', { method: 'POST', body: formData });
+    const d = await resp.json();
+    if (d.ok && d.intel) {
+      out.innerHTML = renderImgIntelChip({ status: 'read', intel: d.intel }, '_test');
+      // auto-expand the panel for standalone test
+      const panel = document.getElementById('img-intel-panel-_test');
+      const caret = document.getElementById('img-intel-caret-_test');
+      if (panel) panel.style.display = 'block';
+      if (caret) caret.textContent = '\u25b4';
+    } else {
+      out.innerHTML = '<div style="font-size:12px; color:#991b1b; padding:8px; background:#fef2f2; border:1px solid #fecaca; border-radius:4px;">' + escHtml(d.error || 'Test failed') + '</div>';
+    }
+  } catch(e) {
+    out.innerHTML = '<div style="font-size:12px; color:#991b1b; padding:8px; background:#fef2f2; border:1px solid #fecaca; border-radius:4px;">' + escHtml(e.message) + '</div>';
+  }
 }
 
 // ── Per-style training ──────────────────────────────────────────

@@ -7064,20 +7064,35 @@ def analyze_style_image(style_num, img_path):
         print(f"[image-intel] could not encode {img_path}: {e}")
         return None
 
-    prompt = f"""You are a product photo analyst for Amazon NIS listings. Look at the photo and report observations the operator may want to act on.
+    pt_enum_list = ", ".join([p["id"] for p in ALL_PRODUCT_TYPES])
+    expected_block = (
+        f"PRODUCT CONTEXT (from pre-upload):\n"
+        f"  Expected product type: {pt or 'unknown'}\n"
+        f"  Sub-class: {subclass or 'unknown'}\n"
+        f"  Style name: {style_name or 'unknown'}\n"
+        f"  Fabric (declared): {fabric or 'unknown'}\n"
+    ) if pt else "PRODUCT CONTEXT: none provided \u2014 classify the photo from scratch.\n"
 
-PRODUCT CONTEXT (from pre-upload):
-  Amazon product type: {pt or 'unknown'}
-  Sub-class: {subclass or 'unknown'}
-  Style name: {style_name or 'unknown'}
-  Fabric (declared): {fabric or 'unknown'}
+    prompt = f"""You are a product photo analyst for Amazon NIS listings. Look at the photo and return STRUCTURED JSON.
 
-YOUR JOB — return STRUCTURED JSON only, no prose, no markdown.
+{expected_block}
+YOUR JOB — return JSON only, no prose, no markdown.
+
+  detected_subject: 4-12 words. The plain-English description of what is in the photo.
+    Examples: "Black mid-rise leggings, ankle length", "Faux-wool double-breasted coat with belt",
+              "One-piece swimsuit, deep V-neck, navy blue".
+    Lead with item type + dominant color + 1-2 most defining features.
+
+  detected_pt: ONE of these Amazon product type enum values that best matches the photo —
+    [{pt_enum_list}].
+    If the photo is not a wearable apparel product (e.g. a screenshot, a person without product visible),
+    return "UNKNOWN".
+
+  detected_color: 1-3 word color description (e.g. "Black", "Navy Blue", "Off White").
 
   observations: 3-6 short, factual visual callouts an operator may want in the listing copy.
     Each must be something the photo shows that the pre-upload likely didn't capture.
-    Examples: "Hood is fur-trimmed", "Visible quilted diamond stitching", "Asymmetric front zipper",
-              "Side seam pockets at hip level", "Drawstring waist", "Logo embroidery on left chest".
+    Examples: "Hood is fur-trimmed", "Visible quilted diamond stitching", "Drawstring waist".
     Skip the obvious (e.g. don't say 'It is a coat' if the PT is COAT).
 
   field_suggestions: 0-5 advisory dropdown picks. Each item:
@@ -7094,7 +7109,7 @@ YOUR JOB — return STRUCTURED JSON only, no prose, no markdown.
   summary: one sentence, <=120 chars. The single most useful thing the operator should know.
 
 Return JSON only, no prose, no markdown:
-{{"observations":["..."],"field_suggestions":[],"image_quality":[],"summary":"..."}}"""
+{{"detected_subject":"...","detected_pt":"...","detected_color":"...","observations":["..."],"field_suggestions":[],"image_quality":[],"summary":"..."}}"""
 
     try:
         msg = _anthropic_client.messages.create(
@@ -7114,7 +7129,26 @@ Return JSON only, no prose, no markdown:
         return None
 
     # Normalize + sanity-clip
+    detected_pt = str(parsed.get("detected_pt", "")).strip().upper()
+    valid_pts = {p["id"] for p in ALL_PRODUCT_TYPES} | {"UNKNOWN"}
+    if detected_pt and detected_pt not in valid_pts:
+        detected_pt = "UNKNOWN"
+    expected_pt = (pt or "").strip().upper()
+    if not expected_pt:
+        pt_match_status = "no_expectation"  # standalone test, nothing to compare
+    elif detected_pt == "UNKNOWN":
+        pt_match_status = "unknown"
+    elif detected_pt == expected_pt:
+        pt_match_status = "match"
+    else:
+        pt_match_status = "mismatch"
+
     intel = {
+        "detected_subject": str(parsed.get("detected_subject", ""))[:160],
+        "detected_pt": detected_pt,
+        "detected_color": str(parsed.get("detected_color", ""))[:60],
+        "expected_pt": expected_pt,
+        "pt_match": pt_match_status,
         "observations": [str(o)[:200] for o in (parsed.get("observations") or [])][:6],
         "field_suggestions": [
             {
@@ -7160,6 +7194,30 @@ def api_analyze_style_image():
     if intel is None:
         return jsonify({"error": "Vision pass unavailable"}), 503
     return jsonify({"ok": True, "style_num": style_num, "intel": intel})
+
+
+@app.route("/api/test-image-intel", methods=["POST"])
+def api_test_image_intel():
+    """Standalone image-intel test — no pre-upload, no style_num required.
+    Useful for QA, exploration, and seeing what vision picks up on a raw image.
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "No file"}), 400
+    f = request.files["file"]
+    ext = Path(f.filename or "").suffix.lower()
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+        return jsonify({"error": f"Unsupported image type: {ext}"}), 400
+    # Save to a temp slot under uploads/style_images/_test_<ts>/
+    import time
+    test_dir = UPLOAD_IMAGES / f"_test_{int(time.time()*1000)}"
+    test_dir.mkdir(parents=True, exist_ok=True)
+    save_path = test_dir / f"product{ext}"
+    f.save(str(save_path))
+    # Run analyze with no style context (standalone classification)
+    intel = analyze_style_image("_test", str(save_path))
+    if intel is None:
+        return jsonify({"error": "Vision pass unavailable"}), 503
+    return jsonify({"ok": True, "intel": intel, "path": f"/uploads/{test_dir.name}/{save_path.name}"})
 
 
 @app.route("/api/style-image-intel/<style_num>", methods=["GET"])
