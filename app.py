@@ -7273,15 +7273,43 @@ def api_test_image_intel():
 
 @app.route("/api/vision-status", methods=["GET"])
 def api_vision_status():
-    """Diagnostic: tells you whether vision is configured + the last error reason."""
+    """Diagnostic: tells you whether vision is configured + the last error reason.
+    Note: the Anthropic SDK does NOT validate the API key at construction time.
+    The only honest health check is to make a tiny test call.
+    """
     import os as _os
     has_key = bool(_os.environ.get("ANTHROPIC_API_KEY"))
+    healthy = False
+    health_error = None
+    if _anthropic_client is not None:
+        try:
+            # Cheapest possible call: 1 token, no image
+            _anthropic_client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1,
+                messages=[{"role": "user", "content": "hi"}],
+            )
+            healthy = True
+        except Exception as e:
+            health_error = str(e)[:200]
+
+    if healthy:
+        hint = "Vision is ready."
+    elif _anthropic_client is None:
+        hint = "Anthropic SDK never initialized. Set ANTHROPIC_API_KEY in Render env."
+    elif not has_key:
+        hint = "ANTHROPIC_API_KEY env var is not set. Add it in Render → Environment."
+    else:
+        hint = f"API key present but live call failed: {health_error}"
+
     return jsonify({
         "client_initialized":  _anthropic_client is not None,
         "api_key_in_env":      has_key,
-        "last_error":          _last_vision_error,
+        "healthy":             healthy,
+        "health_error":        health_error,
+        "last_call_error":     _last_vision_error,
         "model":               "claude-sonnet-4-5",
-        "hint":                ("Vision is ready." if _anthropic_client is not None else "Set ANTHROPIC_API_KEY in Render env to enable vision."),
+        "hint":                hint,
     })
 
 
