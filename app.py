@@ -7005,7 +7005,171 @@ def upload_style_image():
         session_data["style_images"] = {}
     session_data["style_images"][style_num] = str(save_path)
 
-    return jsonify({"ok": True, "style_num": style_num, "path": f"/api/style-image/{style_num}"})
+    # Auto-fire vision analysis (cached per style; ~$0.01 per image)
+    intel = None
+    try:
+        intel = analyze_style_image(style_num, str(save_path))
+    except Exception as e:
+        print(f"[image-intel] auto-analyze failed for {style_num}: {e}")
+
+    return jsonify({
+        "ok": True,
+        "style_num": style_num,
+        "path": f"/api/style-image/{style_num}",
+        "intel": intel,
+    })
+
+
+def analyze_style_image(style_num, img_path):
+    """Run a vision pass on a style image and return structured JSON observations.
+
+    This is the 'Image Intel' secondary advisory layer:
+      - never overwrites a structured field automatically
+      - returns observations the operator can review and selectively apply
+      - cached in session_data["style_image_intel"][style_num] to avoid re-billing
+
+    Returns dict {observations:[], field_suggestions:[], image_quality:[], summary:""} or None.
+    """
+    global _anthropic_client
+    if _anthropic_client is None:
+        return None
+
+    # Cache check
+    cache = session_data.setdefault("style_image_intel", {})
+    cached = cache.get(str(style_num))
+    if cached and cached.get("img_path") == img_path:
+        return cached["intel"]
+
+    # Resolve style context (PT, sub-class) so the prompt is grounded
+    style = None
+    for s in (session_data.get("styles") or []):
+        if str(s.get("style_num", "")) == str(style_num):
+            style = s
+            break
+    pt = _resolve_style_product_type(style) if style else ""
+    subclass = (style or {}).get("subclass", "") if style else ""
+    fabric = (style or {}).get("fabric", "") if style else ""
+    style_name = (style or {}).get("style_name", "") if style else ""
+
+    # Encode image
+    try:
+        import base64 as _b64
+        with open(img_path, "rb") as _f:
+            img_b64 = _b64.b64encode(_f.read()).decode("utf-8")
+        ext = Path(img_path).suffix.lower().lstrip(".")
+        media_type = {"jpg": "image/jpeg", "jpeg": "image/jpeg",
+                      "png": "image/png", "webp": "image/webp",
+                      "gif": "image/gif"}.get(ext, "image/jpeg")
+    except Exception as e:
+        print(f"[image-intel] could not encode {img_path}: {e}")
+        return None
+
+    prompt = f"""You are a product photo analyst for Amazon NIS listings. Look at the photo and report observations the operator may want to act on.
+
+PRODUCT CONTEXT (from pre-upload):
+  Amazon product type: {pt or 'unknown'}
+  Sub-class: {subclass or 'unknown'}
+  Style name: {style_name or 'unknown'}
+  Fabric (declared): {fabric or 'unknown'}
+
+YOUR JOB — return STRUCTURED JSON only, no prose, no markdown.
+
+  observations: 3-6 short, factual visual callouts an operator may want in the listing copy.
+    Each must be something the photo shows that the pre-upload likely didn't capture.
+    Examples: "Hood is fur-trimmed", "Visible quilted diamond stitching", "Asymmetric front zipper",
+              "Side seam pockets at hip level", "Drawstring waist", "Logo embroidery on left chest".
+    Skip the obvious (e.g. don't say 'It is a coat' if the PT is COAT).
+
+  field_suggestions: 0-5 advisory dropdown picks. Each item:
+    {{ "field": "special_feature|pattern_type|coat_silhouette_type|neckline|sleeve_length|fit_type",
+       "value": "<short Amazon-style enum value>",
+       "why": "<one sentence — what the photo shows>" }}
+    Only suggest if the photo CLEARLY shows it. Never guess. Operator decides whether to apply.
+
+  image_quality: 0-4 issues, only if you see them. Each item:
+    {{ "issue": "background_not_white|model_facing_away|low_resolution|cluttered_props|main_image_obstructed",
+       "detail": "<one sentence>" }}
+    Skip this list entirely if the photo looks compliant with Amazon main-image rules.
+
+  summary: one sentence, <=120 chars. The single most useful thing the operator should know.
+
+Return JSON only, no prose, no markdown:
+{{"observations":["..."],"field_suggestions":[],"image_quality":[],"summary":"..."}}"""
+
+    try:
+        msg = _anthropic_client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=900,
+            messages=[{"role": "user", "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": img_b64}},
+                {"type": "text", "text": prompt},
+            ]}],
+        )
+        raw = msg.content[0].text.strip()
+        raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+        raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE).strip()
+        parsed = json.loads(raw)
+    except Exception as e:
+        print(f"[image-intel] vision pass failed for {style_num}: {e}")
+        return None
+
+    # Normalize + sanity-clip
+    intel = {
+        "observations": [str(o)[:200] for o in (parsed.get("observations") or [])][:6],
+        "field_suggestions": [
+            {
+                "field": str(s.get("field", ""))[:80],
+                "value": str(s.get("value", ""))[:120],
+                "why":   str(s.get("why", ""))[:240],
+            }
+            for s in (parsed.get("field_suggestions") or [])
+            if isinstance(s, dict) and s.get("field") and s.get("value")
+        ][:5],
+        "image_quality": [
+            {
+                "issue":  str(q.get("issue", ""))[:80],
+                "detail": str(q.get("detail", ""))[:240],
+            }
+            for q in (parsed.get("image_quality") or [])
+            if isinstance(q, dict) and q.get("issue")
+        ][:4],
+        "summary": str(parsed.get("summary", ""))[:200],
+        "model": "claude-sonnet-4-5",
+        "analyzed_at": datetime.now().isoformat(timespec="seconds"),
+    }
+
+    cache[str(style_num)] = {"img_path": img_path, "intel": intel}
+    return intel
+
+
+@app.route("/api/analyze-style-image", methods=["POST"])
+def api_analyze_style_image():
+    """Manually re-run image intel for a style. Useful after image swap."""
+    data = request.get_json(force=True) or {}
+    style_num = str(data.get("style_num", ""))
+    force = bool(data.get("force", False))
+    if not style_num:
+        return jsonify({"error": "No style_num"}), 400
+    img_path = (session_data.get("style_images") or {}).get(style_num)
+    if not img_path or not Path(img_path).exists():
+        return jsonify({"error": "No image uploaded for this style"}), 404
+    if force:
+        cache = session_data.setdefault("style_image_intel", {})
+        cache.pop(style_num, None)
+    intel = analyze_style_image(style_num, img_path)
+    if intel is None:
+        return jsonify({"error": "Vision pass unavailable"}), 503
+    return jsonify({"ok": True, "style_num": style_num, "intel": intel})
+
+
+@app.route("/api/style-image-intel/<style_num>", methods=["GET"])
+def api_get_style_image_intel(style_num):
+    """Retrieve cached image intel for a style without re-running vision."""
+    cache = session_data.get("style_image_intel") or {}
+    cached = cache.get(str(style_num))
+    if not cached:
+        return jsonify({"ok": True, "style_num": style_num, "intel": None})
+    return jsonify({"ok": True, "style_num": style_num, "intel": cached.get("intel")})
 
 
 @app.route("/api/style-image/<style_num>")

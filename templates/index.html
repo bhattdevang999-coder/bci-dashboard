@@ -5810,6 +5810,7 @@ async function showStyleSummary(data) {
     html += '<div id="style-img-preview-' + escHtml(sn) + '" style="margin-bottom:6px;"></div>';
     html += '<input type="file" accept="image/*" onclick="event.stopPropagation()" onchange="uploadStyleImage(\'' + escHtml(sn) + '\', this.files)" style="font-size:11px; width:100%;">';
     html += '<div style="font-size:10px; color:#94a3b8; margin-top:2px;">JPG/PNG — AI will analyze this image</div>';
+    html += '<div id="style-img-intel-' + escHtml(sn) + '" style="margin-top:8px;"></div>';
     html += '</div>';
     html += '</div>';
     html += '</td></tr>';
@@ -9423,19 +9424,103 @@ async function uploadStyleImage(styleNum, files) {
   const formData = new FormData();
   formData.append('style_num', styleNum);
   formData.append('file', files[0]);
+  // Show "reading…" placeholder before request returns
+  const intelEl = document.getElementById('style-img-intel-' + styleNum);
+  if (intelEl) intelEl.innerHTML = renderImgIntelChip({ status: 'reading' }, styleNum);
   try {
     const resp = await fetch('/api/upload-style-image', { method: 'POST', body: formData });
     const d = await resp.json();
     if (d.ok) {
       const preview = document.getElementById('style-img-preview-' + styleNum);
       if (preview) {
-        preview.innerHTML = '<img src="' + d.path + '" style="max-width:180px; max-height:120px; border-radius:4px; border:1px solid #e2e8f0;">';
+        preview.innerHTML = '<img src="' + d.path + '?t=' + Date.now() + '" style="max-width:180px; max-height:120px; border-radius:4px; border:1px solid #e2e8f0;">';
+      }
+      if (intelEl) {
+        intelEl.innerHTML = renderImgIntelChip(d.intel ? { status: 'read', intel: d.intel } : { status: 'no_vision' }, styleNum);
       }
       showToast('Image uploaded for style ' + styleNum, 'success');
     } else {
+      if (intelEl) intelEl.innerHTML = '';
       showToast(d.error || 'Upload failed', 'error');
     }
-  } catch(e) { showToast('Image upload failed: ' + e.message, 'error'); }
+  } catch(e) {
+    if (intelEl) intelEl.innerHTML = '';
+    showToast('Image upload failed: ' + e.message, 'error');
+  }
+}
+
+function renderImgIntelChip(state, styleNum) {
+  const sn = escHtml(styleNum);
+  if (state.status === 'reading') {
+    return '<div style="display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:4px 8px; background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:12px;">'
+      + '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b;"></span>'
+      + 'Reading image\u2026</div>';
+  }
+  if (state.status === 'no_vision') {
+    return '<div style="display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:4px 8px; background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; border-radius:12px;">'
+      + 'Image saved (vision unavailable)</div>';
+  }
+  const intel     = state.intel || {};
+  const obsCount  = (intel.observations || []).length;
+  const sugCount  = (intel.field_suggestions || []).length;
+  const qualCount = (intel.image_quality || []).length;
+  const total     = obsCount + sugCount + qualCount;
+  const hasQual   = qualCount > 0;
+  const pillBg = hasQual ? '#fef2f2' : '#ecfdf5';
+  const pillFg = hasQual ? '#991b1b' : '#065f46';
+  const pillBd = hasQual ? '#fecaca' : '#a7f3d0';
+  const dot    = hasQual ? '#dc2626' : '#10b981';
+  let chip = '<div style="display:flex; flex-direction:column; gap:6px;">';
+  chip += '<div onclick="toggleImgIntel(\'' + sn + '\')" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; padding:4px 8px; background:' + pillBg + '; color:' + pillFg + '; border:1px solid ' + pillBd + '; border-radius:12px; user-select:none; width:fit-content;">'
+    + '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:' + dot + ';"></span>'
+    + 'Image read \u00b7 ' + total + ' observation' + (total === 1 ? '' : 's')
+    + '<span id="img-intel-caret-' + sn + '" style="margin-left:4px; font-size:9px;">\u25be</span>'
+    + '</div>';
+  chip += '<div id="img-intel-panel-' + sn + '" style="display:none; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; font-size:11px; line-height:1.5; max-height:380px; overflow-y:auto;">';
+  if (intel.summary) {
+    chip += '<div style="font-weight:700; color:#0f172a; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #f1f5f9;">' + escHtml(intel.summary) + '</div>';
+  }
+  if (obsCount) {
+    chip += '<div style="font-size:10px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Visual callouts</div>';
+    chip += '<ul style="margin:0 0 8px 16px; padding:0; color:#334155;">';
+    (intel.observations || []).forEach(function(o) { chip += '<li style="margin-bottom:3px;">' + escHtml(o) + '</li>'; });
+    chip += '</ul>';
+  }
+  if (sugCount) {
+    chip += '<div style="font-size:10px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Field suggestions <span style="font-weight:400; text-transform:none; letter-spacing:0; color:#94a3b8;">(advisory \u2014 review before applying)</span></div>';
+    chip += '<div style="margin-bottom:8px;">';
+    (intel.field_suggestions || []).forEach(function(s) {
+      chip += '<div style="padding:6px 8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; margin-bottom:4px;">';
+      chip += '<div><span style="font-family:ui-monospace,Menlo,Consolas,monospace; font-size:10px; color:#0f766e;">' + escHtml(s.field) + '</span> '
+        + '<span style="font-weight:700; color:#0f172a;">' + escHtml(s.value) + '</span></div>';
+      if (s.why) chip += '<div style="font-size:10px; color:#64748b; margin-top:2px;">' + escHtml(s.why) + '</div>';
+      chip += '</div>';
+    });
+    chip += '</div>';
+  }
+  if (qualCount) {
+    chip += '<div style="font-size:10px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Image quality flags</div>';
+    chip += '<ul style="margin:0 0 8px 16px; padding:0; color:#7f1d1d;">';
+    (intel.image_quality || []).forEach(function(q) {
+      chip += '<li style="margin-bottom:3px;"><strong>' + escHtml(String(q.issue || '').replace(/_/g, " ")) + ':</strong> ' + escHtml(q.detail || '') + '</li>';
+    });
+    chip += '</ul>';
+  }
+  if (total === 0) {
+    chip += '<div style="color:#64748b; font-style:italic;">Image looks clean. No callouts.</div>';
+  }
+  chip += '<div style="font-size:10px; color:#94a3b8; margin-top:8px; padding-top:6px; border-top:1px solid #f1f5f9;">Image Intel \u00b7 ' + escHtml(intel.model || 'vision') + ' \u00b7 advisory only \u2014 nothing auto-applied</div>';
+  chip += '</div></div>';
+  return chip;
+}
+
+function toggleImgIntel(styleNum) {
+  const panel = document.getElementById('img-intel-panel-' + styleNum);
+  const caret = document.getElementById('img-intel-caret-' + styleNum);
+  if (!panel) return;
+  const visible = panel.style.display !== 'none';
+  panel.style.display = visible ? 'none' : 'block';
+  if (caret) caret.textContent = visible ? '\u25be' : '\u25b4';
 }
 
 // ── Per-style training ──────────────────────────────────────────
