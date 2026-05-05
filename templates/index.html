@@ -4816,13 +4816,207 @@ async function betaConfirmVision(confirmed) {
   }
 }
 
-// Step 7 placeholder — will be wired next
+// ═════════ Step 7: Draft generation UI ═════════
 async function betaGenerateDraft() {
   const card = document.getElementById('beta-draft-card');
   const out  = document.getElementById('beta-draft-out');
-  if (card) card.style.display = 'block';
-  if (out)  out.innerHTML = '<div style="padding:14px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; font-size:12px; color:#64748b;">Step 7 (draft generation UI) ships next. For now the vision read above is captured and the session is ready for /api/beta-image-nis/generate.</div>';
-  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!card || !out) return;
+  card.style.display = 'block';
+  out.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;font-size:13px;color:#0f766e;">'
+    + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#14b8a6;animation:beta-pulse 1.4s infinite;flex-shrink:0;"></span>'
+    + '<span>Drafting title, bullets, and description \u2014 this takes 8\u201312 seconds\u2026</span></div>';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  let data = null, err = null;
+  try {
+    const r = await fetch('/api/beta-image-nis/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: betaState.sessionId }),
+    });
+    data = await r.json();
+    if (!r.ok) err = data.error || ('HTTP ' + r.status);
+  } catch(e) { err = e.message; }
+
+  if (err) {
+    out.innerHTML = '<div style="padding:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:13px; color:#991b1b;">'
+      + '<strong>Could not generate draft:</strong> ' + escHtml(err)
+      + '<div style="margin-top:8px;"><button onclick="betaGenerateDraft()" style="padding:6px 12px;font-size:12px;background:#fff;border:1px solid #fca5a5;color:#991b1b;border-radius:4px;cursor:pointer;">Retry</button></div></div>';
+    return;
+  }
+
+  betaState.draft = data;
+  out.innerHTML = renderBetaDraftCard(data);
+  betaSetStage(3);
+
+  // Auto-show Step 4 (build) card so operator sees what's next
+  const buildCard = document.getElementById('beta-build-card');
+  if (buildCard) {
+    buildCard.style.display = 'block';
+    document.getElementById('beta-build-out').innerHTML = renderBetaBuildPanel(data);
+  }
+}
+
+function renderBetaDraftCard(data) {
+  const c = data.content || {};
+  const p = data.provenance || {};
+  const v = data.vision || {};
+  let html = '';
+
+  // Provenance legend
+  html += '<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; padding:10px 14px; background:#f8fafc; border-radius:8px; font-size:11px;">';
+  html += '<span style="font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Source legend:</span>';
+  html += '<span class="beta-prov-tag beta-prov-vision">Vision</span><span style="color:#64748b;">read from photo</span>';
+  html += '<span class="beta-prov-tag beta-prov-brand">Brand</span><span style="color:#64748b;">brand config default</span>';
+  html += '<span class="beta-prov-tag beta-prov-pt">PT</span><span style="color:#64748b;">product-type default</span>';
+  html += '<span class="beta-prov-tag beta-prov-operator">Operator</span><span style="color:#64748b;">you must fill</span>';
+  html += '</div>';
+
+  // CONTENT BLOCK — title / bullets / description / keywords
+  html += '<div style="margin-bottom:24px;">';
+  html += '<div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Listing copy <span class="beta-prov-tag beta-prov-vision" style="margin-left:6px;">Vision + Brand</span></div>';
+  html += '<div style="padding:14px 16px; background:#fff; border:1px solid #e2e8f0; border-radius:8px;">';
+  // Title
+  html += '<div style="margin-bottom:14px;">';
+  html += '<div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">Title</div>';
+  html += '<div style="font-size:14px; color:#0f172a; line-height:1.5;">' + escHtml(c.title || '') + '</div>';
+  html += '<div style="font-size:10px; color:#94a3b8; margin-top:2px;">' + (c.title || '').length + ' / 120 chars</div>';
+  html += '</div>';
+  // Bullets
+  html += '<div style="margin-bottom:14px;">';
+  html += '<div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">Bullets</div>';
+  html += '<ol style="margin:0; padding:0 0 0 20px; font-size:13px; color:#334155; line-height:1.6;">';
+  for (let i = 1; i <= 5; i++) {
+    const b = c['bullet_' + i] || '';
+    html += '<li style="margin-bottom:6px;">' + escHtml(b) + '</li>';
+  }
+  html += '</ol>';
+  html += '</div>';
+  // Description
+  html += '<div style="margin-bottom:14px;">';
+  html += '<div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">Description</div>';
+  html += '<div style="font-size:12px; color:#475569; line-height:1.6; max-height:220px; overflow-y:auto; padding:8px 10px; background:#f8fafc; border-radius:4px;">' + escHtml(c.description || '') + '</div>';
+  html += '<div style="font-size:10px; color:#94a3b8; margin-top:2px;">' + (c.description || '').length + ' / 2000 chars</div>';
+  html += '</div>';
+  // Backend keywords
+  html += '<div>';
+  html += '<div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">Backend keywords</div>';
+  html += '<div style="font-size:11px; color:#64748b; font-family:ui-monospace,Menlo,Consolas,monospace; word-break:break-all; padding:6px 10px; background:#f8fafc; border-radius:4px;">' + escHtml(c.backend_keywords || '') + '</div>';
+  html += '<div style="font-size:10px; color:#94a3b8; margin-top:2px;">' + (new TextEncoder().encode(c.backend_keywords || '')).length + ' / 249 bytes</div>';
+  html += '</div>';
+  html += '</div>';  // /content card
+  html += '</div>';
+
+  // STRUCTURED FIELDS — grouped by source
+  const fieldOrder = [
+    ['product_type','Product Type'],
+    ['color','Color'],
+    ['fit_type','Fit Type'],
+    ['sleeve_length','Sleeve Length'],
+    ['neck_style','Neck Style'],
+    ['closure_type','Closure'],
+    ['coat_silhouette_type','Silhouette'],
+    ['pockets','Pockets'],
+    ['fabric','Fabric'],
+    ['fabric_composition','Fabric Composition'],
+    ['care','Care'],
+    ['coo','Country of Origin'],
+    ['division_name','Division'],
+    ['subclass','Subclass'],
+    ['style_name','Style Name'],
+    ['style_num','Style Number'],
+    ['sku_pattern','SKU Pattern'],
+    ['upc','UPC'],
+    ['sizes','Sizes'],
+    ['price','List Price'],
+    ['cost_price','Cost Price'],
+  ];
+  // Bucket by source
+  const buckets = { vision: [], brand: [], pt: [], operator: [], unknown: [] };
+  fieldOrder.forEach(([key, label]) => {
+    const meta = p[key];
+    if (!meta) return;
+    const src = meta.source || 'unknown';
+    if (!buckets[src]) buckets[src] = [];
+    buckets[src].push({ key, label, meta });
+  });
+
+  html += '<div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Structured fields by source</div>';
+  html += '<div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:14px;">';
+  const renderBucket = (src, title, count) => {
+    const items = buckets[src] || [];
+    if (!items.length) return '';
+    let s = '<div style="padding:14px 16px; background:#fff; border:1px solid #e2e8f0; border-radius:8px;">';
+    s += '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">';
+    s += '<div style="font-size:12px; font-weight:700; color:#0f172a;">' + title + '</div>';
+    s += '<span class="beta-prov-tag beta-prov-' + src + '">' + items.length + ' field' + (items.length === 1 ? '' : 's') + '</span>';
+    s += '</div>';
+    items.forEach(it => {
+      const val = it.meta.value;
+      const display = (val === '' || val === null || val === undefined || (Array.isArray(val) && !val.length)) ? '<em style="color:#94a3b8;">empty</em>' : escHtml(String(val));
+      s += '<div style="display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:1px solid #f1f5f9; font-size:12px;">';
+      s += '<span style="color:#64748b; flex-shrink:0;">' + escHtml(it.label) + '</span>';
+      s += '<span style="color:#0f172a; font-weight:500; text-align:right;">' + display + '</span>';
+      s += '</div>';
+    });
+    s += '</div>';
+    return s;
+  };
+  html += renderBucket('vision',   'From the photo');
+  html += renderBucket('brand',    'From brand config');
+  html += renderBucket('pt',       'Product-type defaults');
+  html += renderBucket('operator', 'You need to fill these');
+  if ((buckets.unknown || []).length) html += renderBucket('unknown', 'Could not determine');
+  html += '</div>';
+
+  return html;
+}
+
+// Render the Step 04 build panel — lightweight today, full operator-fill in Step 8
+function renderBetaBuildPanel(data) {
+  let html = '<div style="padding:14px 16px; background:#fffbeb; border:1px solid #fcd34d; border-radius:8px; font-size:13px; color:#7c2d12; line-height:1.6; margin-bottom:14px;">';
+  html += '<strong>Last-mile fields you fill (Step 8 in development):</strong> UPC, list price, cost price, real size grid, real style number. Once filled, click Build to download an Amazon-ready .xlsm.';
+  html += '</div>';
+  html += '<button onclick="betaBuildXlsm()" style="padding:12px 24px; background:linear-gradient(135deg,#0c4e54,#14b8a6); color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">'
+    + 'Build Amazon .xlsm (placeholder UPC/price/size) \u2192</button>';
+  html += '<div id="beta-build-result" style="margin-top:14px;"></div>';
+  return html;
+}
+
+async function betaBuildXlsm(opFields) {
+  const result = document.getElementById('beta-build-result');
+  if (result) result.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:6px;font-size:12px;color:#0f766e;">'
+    + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#14b8a6;animation:beta-pulse 1.4s infinite;flex-shrink:0;"></span>'
+    + '<span>Building .xlsm\u2026</span></div>';
+  let data = null, err = null;
+  try {
+    const r = await fetch('/api/beta-image-nis/build-xlsm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: betaState.sessionId, operator_fields: opFields || {} }),
+    });
+    data = await r.json();
+    if (!r.ok) err = data.error || ('HTTP ' + r.status);
+  } catch(e) { err = e.message; }
+
+  if (err) {
+    if (result) result.innerHTML = '<div style="padding:10px 14px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:12px; color:#991b1b;">' + escHtml(err) + '</div>';
+    return;
+  }
+  betaSetStage(4);
+  let html = '<div style="padding:14px 16px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; margin-bottom:10px;">';
+  html += '<div style="font-size:14px; font-weight:700; color:#065f46; margin-bottom:8px;">\u2713 .xlsm ready</div>';
+  html += '<div style="font-size:12px; color:#047857; margin-bottom:10px;">' + escHtml(data.fields_written + ' fields written to ' + data.template + ' template (' + data.product_type + ').') + '</div>';
+  html += '<a href="' + escHtml(data.download_url) + '" download style="display:inline-block; padding:8px 16px; background:#10b981; color:#fff; text-decoration:none; border-radius:6px; font-size:13px; font-weight:600;">Download ' + escHtml(data.filename) + '</a>';
+  html += '</div>';
+  if ((data.warnings || []).length) {
+    html += '<div style="padding:10px 14px; background:#fffbeb; border:1px solid #fcd34d; border-radius:8px;">';
+    html += '<div style="font-size:12px; font-weight:700; color:#7c2d12; margin-bottom:6px;">Before you submit to Amazon, fix:</div>';
+    html += '<ul style="margin:0; padding-left:18px; font-size:12px; color:#9a3412;">';
+    data.warnings.forEach(w => { html += '<li style="margin-bottom:3px;">' + escHtml(w) + '</li>'; });
+    html += '</ul></div>';
+  }
+  if (result) result.innerHTML = html;
 }
 
 function showNISPage() {
