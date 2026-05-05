@@ -2002,6 +2002,36 @@ Respond in this exact JSON format (no other text, no markdown):
             )
         title_raw = title_raw[:120]
 
+        # Description: if Claude returned empty (intermittent ~30% of runs),
+        # synthesize a fallback from bullets so the listing isn't broken.
+        desc_raw = str(parsed.get("description", "")).strip()
+        if len(desc_raw) < 200:  # too short to be a real Amazon description
+            print(f"[LLM] description was {len(desc_raw)} chars for style {style_num}; synthesizing fallback from bullets.")
+            # Build a competent fallback paragraph from the merged bullets
+            bullet_sentences = [b.split(" \u2014 ", 1)[1] if " \u2014 " in b else b for b in merged_bullets if b]
+            opener = f"{clean_brand} delivers {bullet_1_focus.lower()} for {audience}." if clean_brand and bullet_1_focus else f"{clean_brand} brings quality and craftsmanship to your wardrobe."
+            desc_raw = opener + " " + " ".join(bullet_sentences)
+            desc_raw = desc_raw[:2000]
+
+        # Backend keywords: same fallback strategy
+        kw_raw = str(parsed.get("backend_keywords", "")).strip()
+        if len(kw_raw.encode("utf-8")) < 50:  # too short to be useful
+            print(f"[LLM] backend_keywords was {len(kw_raw)} bytes for style {style_num}; synthesizing fallback.")
+            # Pull keywords from style + colors + sizes + product type
+            kw_parts = []
+            if itn: kw_parts.append(itn.lower())
+            if subclass: kw_parts.append(subclass.lower())
+            for c in colors[:6]: kw_parts.append(c.lower())
+            kw_parts += ["womens" if gender == "Female" else "mens", "apparel", "clothing"]
+            if keywords_seed: kw_parts.append(keywords_seed.lower())
+            # Add Spanish per the prompt rules
+            kw_parts += ["vestido", "mallas", "ropa"]
+            kw_raw = " ".join(dict.fromkeys(kw_parts))  # dedupe preserving order
+
+        # Cap keywords at 249 bytes
+        while len(kw_raw.encode("utf-8")) > 249 and kw_raw:
+            kw_raw = kw_raw.rsplit(" ", 1)[0]
+
         content = {
             "title": title_raw,
             "bullet_1": merged_bullets[0],
@@ -2009,15 +2039,9 @@ Respond in this exact JSON format (no other text, no markdown):
             "bullet_3": merged_bullets[2],
             "bullet_4": merged_bullets[3],
             "bullet_5": merged_bullets[4],
-            "description": str(parsed.get("description", ""))[:2000],
-            "backend_keywords": str(parsed.get("backend_keywords", "")),
+            "description": desc_raw,
+            "backend_keywords": kw_raw,
         }
-        # Cap backend keywords at 249 bytes (per content_rules)
-        kw = content["backend_keywords"]
-        while len(kw.encode("utf-8")) > 249 and kw:
-            kw = kw.rsplit(" ", 1)[0]
-        content["backend_keywords"] = kw
-
         return content
 
     except Exception as e:
