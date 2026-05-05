@@ -7122,8 +7122,12 @@ YOUR JOB — return JSON only, no prose, no markdown.
 
   detected_pt: ONE of these Amazon product type enum values that best matches the photo —
     [{pt_enum_list}].
-    If the photo is not a wearable apparel product (e.g. a screenshot, a person without product visible),
-    return "UNKNOWN".
+    Be decisive: if the photo shows ANY wearable apparel, pick the closest enum value
+    even if there are multiple items in frame (pick the most prominent / largest).
+    Examples: a sports bra + leggings outfit → PANTS (leggings dominate) or BRA, NOT UNKNOWN.
+    A model with shoes only → SANDAL. A jacket and pants → COAT (jacket is the headline item).
+    Only return "UNKNOWN" when the photo is not apparel at all (a screenshot, a chart, a person
+    with no product visible, an empty room).
 
   detected_color: 1-3 word color description (e.g. "Black", "Navy Blue", "Off White").
 
