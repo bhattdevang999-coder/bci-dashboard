@@ -10153,6 +10153,537 @@ def preupload_download(filename):
     return send_from_directory(str(UPLOAD_OUTPUT), safe_name, as_attachment=True)
 
 
+# ╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗
+# BETA: Generate NIS from Image only — isolated module
+# All endpoints under /api/beta-image-nis/*
+# Operator drops one image + brand. Vision detects PT/color/features.
+# We build a draft style dict, content, and structured fields with provenance
+# tags (vision/brand/pt/operator). Operator confirms then can download xlsm.
+# ╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗╗
+
+BETA_IMAGE_NIS_FEEDBACK_LOG = BASE_DIR / "data" / "beta_image_nis_feedback.jsonl"
+BETA_IMAGE_NIS_FEEDBACK_LOG.parent.mkdir(parents=True, exist_ok=True)
+_BETA_SESSION = {}  # session_id -> {image_path, brand, vision, draft, ...}
+
+
+def _beta_provenance(value, source, confidence=None, suggestion_only=False):
+    """Wrap a field value with provenance metadata.
+    source: 'vision' | 'brand' | 'pt' | 'operator' | 'unknown'
+    """
+    return {
+        "value": value,
+        "source": source,
+        "confidence": confidence,
+        "suggestion_only": suggestion_only,
+    }
+
+
+def _beta_build_draft_style(vision_intel, brand, brand_cfg, hints):
+    """Translate vision output + brand config into a draft style dict +
+    a parallel provenance map. Operator-only fields (SKU/UPC/sizes/COO/price)
+    are blanked and tagged 'operator'.
+    """
+    detected_pt = (vision_intel or {}).get("detected_pt", "") or ""
+    if detected_pt == "UNKNOWN":
+        detected_pt = ""
+    detected_subject = (vision_intel or {}).get("detected_subject", "")
+    detected_color = (vision_intel or {}).get("detected_color", "")
+
+    # Map vision suggestions to a dict by field for quick lookup
+    vision_field_map = {}
+    for s in (vision_intel or {}).get("field_suggestions") or []:
+        if isinstance(s, dict) and s.get("field"):
+            vision_field_map[s["field"]] = s.get("value", "")
+
+    # Hints from operator (override anything if present)
+    hints = hints or {}
+    coo = hints.get("coo") or brand_cfg.get("default_coo", "")
+    fabric = hints.get("fabric") or brand_cfg.get("default_fabric", "")
+    care = hints.get("care") or brand_cfg.get("default_care", "")
+    season_code = hints.get("season_code") or brand_cfg.get("vendor_code_prefix", "")
+    style_num_hint = hints.get("style_num", "") or "BETA-DRAFT"
+
+    # Subclass: derive from detected_pt if not provided
+    detected_pt_def = next((p for p in ALL_PRODUCT_TYPES if p["id"] == detected_pt), None)
+    default_subclass = (detected_pt_def or {}).get("sub_classes", [""])[0] if detected_pt_def else ""
+    subclass = hints.get("subclass") or default_subclass
+
+    # Build the actual style dict shape that the writers expect
+    style = {
+        "style_num": style_num_hint,
+        "style_name": detected_subject or f"{brand} {subclass}".strip(),
+        "subclass": subclass,
+        "sub_subclass": subclass,
+        "division_name": brand_cfg.get("default_division_name", brand),
+        "_resolved_pt": detected_pt,
+        "fabric": fabric,
+        "care": care,
+        "coo": coo,
+        "variants": [],  # operator must add
+        "closure_type": vision_field_map.get("closure_type", ""),
+        "sleeve_type": vision_field_map.get("sleeve_length", ""),
+        "neck_type": vision_field_map.get("neckline", ""),
+        "fit_type": vision_field_map.get("fit_type", ""),
+        "type_of_jacket": vision_field_map.get("coat_silhouette_type", ""),
+        "pockets": vision_field_map.get("pockets", ""),
+    }
+
+    # Provenance map: which fields came from where
+    prov = {
+        "style_num":      _beta_provenance(style["style_num"], "operator"),
+        "style_name":     _beta_provenance(style["style_name"], "vision" if detected_subject else "unknown"),
+        "subclass":       _beta_provenance(style["subclass"], "pt" if not hints.get("subclass") else "operator"),
+        "product_type":   _beta_provenance(detected_pt, "vision", confidence="high" if detected_pt else None),
+        "color":          _beta_provenance(detected_color, "vision"),
+        "division_name":  _beta_provenance(style["division_name"], "brand"),
+        "fabric":         _beta_provenance(fabric, "operator" if hints.get("fabric") else ("brand" if brand_cfg.get("default_fabric") else "unknown"), suggestion_only=not bool(hints.get("fabric"))),
+        "care":           _beta_provenance(care, "operator" if hints.get("care") else ("brand" if brand_cfg.get("default_care") else "unknown")),
+        "coo":            _beta_provenance(coo, "operator" if hints.get("coo") else ("brand" if brand_cfg.get("default_coo") else "unknown")),
+        "closure_type":   _beta_provenance(style["closure_type"], "vision" if style["closure_type"] else "unknown"),
+        "sleeve_length":  _beta_provenance(style["sleeve_type"], "vision" if style["sleeve_type"] else "pt"),
+        "neck_style":     _beta_provenance(style["neck_type"], "vision" if style["neck_type"] else "pt"),
+        "fit_type":       _beta_provenance(style["fit_type"], "vision" if style["fit_type"] else "unknown"),
+        "coat_silhouette_type": _beta_provenance(style["type_of_jacket"], "vision" if style["type_of_jacket"] else "unknown"),
+        "pockets":        _beta_provenance(style["pockets"], "vision" if style["pockets"] else "unknown"),
+        # Operator-only fields
+        "sku_pattern":    _beta_provenance(f"{season_code}-{{styleNum}}-{{COLOR}}-{{SIZE}}" if season_code else "", "brand" if season_code else "operator"),
+        "upc":            _beta_provenance("", "operator"),
+        "sizes":          _beta_provenance([], "operator"),
+        "price":          _beta_provenance("", "operator"),
+        "cost_price":     _beta_provenance("", "operator"),
+        "fabric_composition": _beta_provenance("", "operator", suggestion_only=True),
+    }
+
+    return style, prov
+
+
+@app.route("/api/beta-image-nis/brands", methods=["GET"])
+def api_beta_image_nis_brands():
+    """Return the deduped, sorted list of brands the operator can pick."""
+    file_brands = [p.stem.replace('_', ' ') for p in BRAND_CONFIGS_DIR.glob('*.json')]
+    in_mem = list(BRAND_CONFIGS.keys())
+    deduped = sorted({b.strip() for b in (file_brands + in_mem) if b and b.strip()})
+    return jsonify({"ok": True, "brands": deduped})
+
+
+@app.route("/api/beta-image-nis/analyze", methods=["POST"])
+def api_beta_image_nis_analyze():
+    """Step 1: operator drops image + picks brand. We run vision, then map
+    the output to a draft style dict + provenance. No xlsm yet.
+
+    multipart/form-data:
+      file: image
+      brand: brand name (must match a brand_configs/*.json)
+      coo (optional), fabric (optional), care (optional), season_code (optional),
+      subclass (optional), style_num (optional)
+
+    Returns: { ok, session_id, vision, style, provenance, brand_cfg }
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "No image file"}), 400
+    brand = (request.form.get("brand") or "").strip()
+    if not brand:
+        return jsonify({"error": "Brand is required"}), 400
+    # Strict brand validation — must have a saved config file or be in BRAND_CONFIGS
+    brand_file = BRAND_CONFIGS_DIR / f"{re.sub(r'[^\w]', '_', brand)}.json"
+    if not brand_file.exists() and brand not in BRAND_CONFIGS:
+        known = sorted([p.stem.replace('_', ' ') for p in BRAND_CONFIGS_DIR.glob('*.json')] + list(BRAND_CONFIGS.keys()))
+        return jsonify({"error": f"Unknown brand: {brand}", "known_brands": known}), 400
+    brand_cfg = _load_brand_config_data(brand)
+
+    f = request.files["file"]
+    ext = Path(f.filename or "").suffix.lower()
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+        return jsonify({"error": f"Unsupported image type: {ext}"}), 400
+
+    # Save image into a beta session directory
+    import time, uuid
+    session_id = f"beta-{int(time.time()*1000)}-{uuid.uuid4().hex[:6]}"
+    sess_dir = UPLOAD_IMAGES / f"_beta_{session_id}"
+    sess_dir.mkdir(parents=True, exist_ok=True)
+    img_path = sess_dir / f"product{ext}"
+    f.save(str(img_path))
+
+    # Run vision — standalone (no expected PT, force classification)
+    vision_intel = analyze_style_image(f"_beta_{session_id}", str(img_path))
+    if vision_intel is None:
+        return jsonify({"error": "Vision pass unavailable. Check ANTHROPIC_API_KEY."}), 503
+
+    # Collect operator hints
+    hints = {
+        "coo":          (request.form.get("coo") or "").strip(),
+        "fabric":       (request.form.get("fabric") or "").strip(),
+        "care":         (request.form.get("care") or "").strip(),
+        "season_code":  (request.form.get("season_code") or "").strip(),
+        "subclass":     (request.form.get("subclass") or "").strip(),
+        "style_num":    (request.form.get("style_num") or "").strip(),
+    }
+
+    style, provenance = _beta_build_draft_style(vision_intel, brand, brand_cfg, hints)
+
+    # Stash everything in the beta session so subsequent endpoints can reuse it
+    _BETA_SESSION[session_id] = {
+        "image_path": str(img_path),
+        "brand": brand,
+        "brand_cfg": brand_cfg,
+        "vision_intel": vision_intel,
+        "style": style,
+        "provenance": provenance,
+        "hints": hints,
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+    }
+
+    return jsonify({
+        "ok": True,
+        "session_id": session_id,
+        "image_url": f"/api/beta-image-nis/image/{session_id}",
+        "vision": vision_intel,
+        "style": style,
+        "provenance": provenance,
+        "brand": brand,
+        "brand_cfg_summary": {
+            "vendor_code_prefix": brand_cfg.get("vendor_code_prefix", ""),
+            "default_coo": brand_cfg.get("default_coo", ""),
+            "default_fabric": brand_cfg.get("default_fabric", ""),
+            "gender": brand_cfg.get("gender", ""),
+            "department": brand_cfg.get("department", ""),
+        },
+    })
+
+
+@app.route("/api/beta-image-nis/generate", methods=["POST"])
+def api_beta_image_nis_generate():
+    """Step 2: take a beta session (from /analyze) + any operator overrides,
+    run full content LLM with image attached, and return the complete draft
+    listing (title/bullets/description/backend_keywords) + the merged style
+    + provenance.
+
+    JSON body:
+      session_id: required, from /analyze
+      overrides: optional dict of fields the operator manually edited
+        (e.g. {"fabric":"100% Cotton","coo":"India","style_num":"S26-12345"})
+
+    Returns: { ok, session_id, content, style, provenance, image_url }
+    """
+    data = request.get_json(force=True) or {}
+    session_id = (data.get("session_id") or "").strip()
+    overrides = data.get("overrides") or {}
+    sess = _BETA_SESSION.get(session_id)
+    if not sess:
+        return jsonify({"error": "Unknown beta session. Run /analyze first."}), 404
+
+    # Apply operator overrides into hints + recompute style/provenance
+    hints = dict(sess.get("hints") or {})
+    for k in ("coo", "fabric", "care", "season_code", "subclass", "style_num"):
+        if k in overrides and overrides[k]:
+            hints[k] = str(overrides[k]).strip()
+    sess["hints"] = hints
+
+    style, provenance = _beta_build_draft_style(
+        sess["vision_intel"], sess["brand"], sess["brand_cfg"], hints
+    )
+
+    # Inject the beta image into session_data["style_images"] briefly so
+    # generate_content_llm pulls it as a vision input. Restore after.
+    prior_img_map = (session_data.get("style_images") or {}).copy()
+    session_data.setdefault("style_images", {})[str(style["style_num"])] = sess["image_path"]
+
+    # Inject the beta style into session_data["styles"] briefly so
+    # _resolve_style_product_type picks up the right PT context.
+    prior_styles = list(session_data.get("styles") or [])
+    session_data["styles"] = prior_styles + [style]
+
+    try:
+        # Run content LLM. Vision image will be picked up via session_data["style_images"].
+        content = generate_content_llm(sess["brand_cfg"], sess["brand"], style, "")
+    finally:
+        # Restore session_data so we don't leak this beta into the main flow
+        session_data["style_images"] = prior_img_map
+        session_data["styles"] = prior_styles
+
+    if content is None:
+        return jsonify({"error": "Content generation unavailable (LLM client missing)."}), 503
+
+    # Persist on the session
+    sess["style"] = style
+    sess["provenance"] = provenance
+    sess["content"] = content
+
+    return jsonify({
+        "ok": True,
+        "session_id": session_id,
+        "image_url": f"/api/beta-image-nis/image/{session_id}",
+        "vision": sess["vision_intel"],
+        "style": style,
+        "provenance": provenance,
+        "content": content,
+        "brand": sess["brand"],
+    })
+
+
+@app.route("/api/beta-image-nis/feedback", methods=["POST"])
+def api_beta_image_nis_feedback():
+    """Step 4: Operator flags an issue with a vision read or a generated field.
+    Logged to data/beta_image_nis_feedback.jsonl for later analysis.
+
+    JSON body:
+      session_id: required
+      kind: 'pt_wrong' | 'field_wrong' | 'observation_wrong' | 'image_quality_missed' |
+            'pt_correct' | 'general' (free-text)
+      field: optional, when kind='field_wrong' (e.g. 'closure_type')
+      detected_value: what vision returned
+      correct_value: what operator says it should be (optional)
+      note: free-text detail
+      operator: optional name/email tag
+    """
+    data = request.get_json(force=True) or {}
+    session_id = (data.get("session_id") or "").strip()
+    kind = (data.get("kind") or "").strip().lower()
+    valid_kinds = {"pt_wrong", "pt_correct", "field_wrong", "observation_wrong", "image_quality_missed", "general"}
+    if kind not in valid_kinds:
+        return jsonify({"error": f"Invalid kind. Must be one of: {sorted(valid_kinds)}"}), 400
+    sess = _BETA_SESSION.get(session_id)
+    if not sess:
+        return jsonify({"error": "Unknown beta session"}), 404
+
+    entry = {
+        "timestamp":      datetime.now().isoformat(timespec="seconds"),
+        "session_id":     session_id,
+        "brand":          sess.get("brand"),
+        "image_path":     sess.get("image_path"),
+        "detected_pt":    (sess.get("vision_intel") or {}).get("detected_pt"),
+        "detected_subject": (sess.get("vision_intel") or {}).get("detected_subject"),
+        "kind":           kind,
+        "field":          (data.get("field") or "").strip()[:80] or None,
+        "detected_value": str(data.get("detected_value") or "")[:240] or None,
+        "correct_value":  str(data.get("correct_value") or "")[:240] or None,
+        "note":           str(data.get("note") or "")[:1000] or None,
+        "operator":       (data.get("operator") or "").strip()[:80] or None,
+    }
+
+    try:
+        with open(BETA_IMAGE_NIS_FEEDBACK_LOG, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        return jsonify({"error": f"Could not write feedback: {e}"}), 500
+
+    # Mirror onto the session for in-memory traceability
+    sess.setdefault("feedback", []).append(entry)
+
+    return jsonify({"ok": True, "entry": entry})
+
+
+@app.route("/api/beta-image-nis/feedback", methods=["GET"])
+def api_beta_image_nis_feedback_list():
+    """Read recent feedback entries for analysis. Optional ?limit=N (default 200, max 1000)."""
+    try:
+        limit = max(1, min(int(request.args.get("limit", 200)), 1000))
+    except Exception:
+        limit = 200
+    entries = []
+    if BETA_IMAGE_NIS_FEEDBACK_LOG.exists():
+        with open(BETA_IMAGE_NIS_FEEDBACK_LOG, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entries.append(json.loads(line))
+                except Exception:
+                    pass
+    entries = entries[-limit:]
+    # Quick aggregates: counts per kind, per detected_pt, per field
+    from collections import Counter
+    by_kind = Counter(e.get("kind") for e in entries)
+    by_pt = Counter(e.get("detected_pt") for e in entries if e.get("detected_pt"))
+    by_field = Counter(e.get("field") for e in entries if e.get("field"))
+    return jsonify({
+        "ok": True,
+        "count": len(entries),
+        "entries": entries,
+        "summary": {
+            "by_kind":  dict(by_kind),
+            "by_pt":    dict(by_pt),
+            "by_field": dict(by_field),
+        },
+    })
+
+
+@app.route("/api/beta-image-nis/build-xlsm", methods=["POST"])
+def api_beta_image_nis_build_xlsm():
+    """Step 3: Build a single-style .xlsm download from a beta session.
+
+    JSON body:
+      session_id: required
+      operator_fields: optional dict of last-mile fills
+        (color_name, size, upc, list_price, cost_price, sku_override)
+        If omitted, we build with a placeholder variant + return validation
+        warnings telling the operator exactly what to fill before Amazon submit.
+
+    Returns: { ok, download_url, filename, warnings, fields_written }
+    """
+    data = request.get_json(force=True) or {}
+    session_id = (data.get("session_id") or "").strip()
+    op_fields = data.get("operator_fields") or {}
+    sess = _BETA_SESSION.get(session_id)
+    if not sess:
+        return jsonify({"error": "Unknown beta session"}), 404
+
+    style = dict(sess.get("style") or {})
+    if not style.get("_resolved_pt"):
+        return jsonify({"error": "No product type detected. Run /analyze first."}), 400
+    if not sess.get("content"):
+        return jsonify({"error": "No content generated. Run /generate first."}), 400
+
+    pt = style["_resolved_pt"]
+    template_file = _pt_defaults.get_pt_default(pt, "template_file")
+    if not template_file:
+        return jsonify({"error": f"No template configured for product type {pt}"}), 400
+    template_path = UPLOAD_TEMPLATES / template_file
+    if not template_path.exists():
+        return jsonify({"error": f"Template file missing on server: {template_file}"}), 500
+
+    # Build a single placeholder variant from operator_fields (or fall back to defaults)
+    color_name = (op_fields.get("color_name") or sess["vision_intel"].get("detected_color") or "Black").strip()
+    size       = (op_fields.get("size") or "M").strip()
+    upc        = (op_fields.get("upc") or "").strip()
+    list_price = (op_fields.get("list_price") or "").strip()
+    cost_price = (op_fields.get("cost_price") or "").strip()
+    style_num  = (op_fields.get("sku_override") or style.get("style_num") or "BETA-DRAFT").strip()
+    style["style_num"] = style_num
+
+    # Color code: first 3 letters uppercase
+    color_code = re.sub(r'[^A-Z]', '', color_name.upper())[:3] or "BLK"
+    season_code = (sess["hints"] or {}).get("season_code") or sess["brand_cfg"].get("vendor_code_prefix", "BETA")
+    # Avoid duplicating season_code if operator already prefixed it
+    sku_root = style_num if style_num.upper().startswith(season_code.upper() + "-") else f"{season_code}-{style_num}"
+
+    variant = {
+        "sku":         f"{sku_root}-{color_code}-{size}",
+        "color_name": color_name,
+        "color_code": color_code,
+        "size":       size,
+        "upc":        upc,
+        "list_price": list_price,
+        "cost_price": cost_price,
+    }
+    style["variants"] = [variant]
+
+    # Skip the parent row by default in beta — single-variant builds don't need it
+    skip_parent_prior = session_data.get("skip_parent_row", False)
+    session_data["skip_parent_row"] = True
+
+    # Inject the beta image into session_data["style_images"] briefly so the
+    # writer can reach it if needed.
+    prior_imgs = (session_data.get("style_images") or {}).copy()
+    session_data.setdefault("style_images", {})[str(style_num)] = sess["image_path"]
+    prior_styles = list(session_data.get("styles") or [])
+    session_data["styles"] = prior_styles + [style]
+
+    # Output filename
+    safe_brand = re.sub(r'[^\w]', '_', sess["brand"])
+    out_name = f"BETA_{safe_brand}_{style_num}_{int(datetime.now().timestamp())}.xlsm"
+    out_path = UPLOAD_OUTPUT / out_name
+
+    content_map = {style_num: sess["content"]}
+    fields_written = 0
+    try:
+        _generate_category_file(
+            [style], content_map, str(template_path),
+            sess["brand"], sess["brand_cfg"],
+            season_code, str(out_path),
+        )
+        # Count non-blank cells written on the data row to give a sense of coverage
+        try:
+            wb = openpyxl.load_workbook(str(out_path), keep_vba=True, read_only=True)
+            for sn in wb.sheetnames:
+                if sn.upper().startswith("TEMPLATE"):
+                    ws = wb[sn]
+                    for c in range(1, ws.max_column + 1):
+                        v = ws.cell(row=7, column=c).value
+                        if v not in (None, ""):
+                            fields_written += 1
+                    break
+        except Exception:
+            pass
+    except Exception as e:
+        session_data["skip_parent_row"] = skip_parent_prior
+        session_data["style_images"] = prior_imgs
+        session_data["styles"] = prior_styles
+        return jsonify({"error": f"Build failed: {str(e)[:200]}"}), 500
+    finally:
+        session_data["skip_parent_row"] = skip_parent_prior
+        session_data["style_images"] = prior_imgs
+        session_data["styles"] = prior_styles
+
+    # Validation warnings — honest about placeholders
+    warnings = []
+    if not upc:
+        warnings.append("UPC is blank — Amazon will reject. Add a real UPC before submit.")
+    if not list_price:
+        warnings.append("List price is blank — add before submit.")
+    if not cost_price:
+        warnings.append("Cost price is blank.")
+    if size == "M" and not op_fields.get("size"):
+        warnings.append("Size defaulted to 'M'. Add real size grid (XS/S/M/L/XL) before submit.")
+    if style_num == "BETA-DRAFT":
+        warnings.append("Style number is the placeholder 'BETA-DRAFT'. Replace with real season-style code.")
+    if not style.get("fabric"):
+        warnings.append("Fabric composition not set — vision can't see this; add manually.")
+    if not style.get("coo"):
+        warnings.append("Country of Origin not set — vision can't see this; add manually.")
+
+    sess["last_build"] = {
+        "filename": out_name,
+        "path": str(out_path),
+        "warnings": warnings,
+        "fields_written": fields_written,
+        "built_at": datetime.now().isoformat(timespec="seconds"),
+    }
+
+    return jsonify({
+        "ok": True,
+        "session_id": session_id,
+        "filename": out_name,
+        "download_url": f"/api/preupload/download/{out_name}",
+        "warnings": warnings,
+        "fields_written": fields_written,
+        "product_type": pt,
+        "template": template_file,
+    })
+
+
+@app.route("/api/beta-image-nis/session/<session_id>", methods=["GET"])
+def api_beta_image_nis_session(session_id):
+    """Fetch the current state of a beta session."""
+    sess = _BETA_SESSION.get(session_id)
+    if not sess:
+        return jsonify({"error": "Unknown session"}), 404
+    return jsonify({
+        "ok": True,
+        "session_id": session_id,
+        "image_url": f"/api/beta-image-nis/image/{session_id}",
+        "brand": sess.get("brand"),
+        "vision": sess.get("vision_intel"),
+        "style": sess.get("style"),
+        "provenance": sess.get("provenance"),
+        "content": sess.get("content"),
+        "hints": sess.get("hints"),
+    })
+
+
+@app.route("/api/beta-image-nis/image/<session_id>", methods=["GET"])
+def api_beta_image_nis_image(session_id):
+    """Serve the beta session image."""
+    sess = _BETA_SESSION.get(session_id)
+    if not sess:
+        return jsonify({"error": "Unknown session"}), 404
+    p = sess.get("image_path")
+    if not p or not Path(p).exists():
+        return jsonify({"error": "Image missing"}), 404
+    return send_file(p)
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))

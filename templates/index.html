@@ -2979,6 +2979,213 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   }
 }
 
+/* ════════ BETA: Image → NIS — futuristic shell ════════ */
+.nav-item-beta {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px; margin:2px 0; border-radius:6px; cursor:pointer;
+  font-size:13px; color:#cbd5e1; transition:all 150ms;
+  position:relative;
+}
+.nav-item-beta:hover { background:rgba(15,166,180,0.08); color:#5eead4; }
+.nav-item-beta.active {
+  background:linear-gradient(90deg, rgba(15,166,180,0.18), rgba(15,166,180,0.04));
+  color:#5eead4; font-weight:600;
+  box-shadow:inset 2px 0 0 #14b8a6;
+}
+.nav-beta-icon { font-size:11px; color:#14b8a6; }
+
+.beta-shell { max-width:1200px; margin:0 auto; padding:0 0 60px; }
+
+.beta-hero {
+  position:relative; overflow:hidden; border-radius:14px;
+  background:linear-gradient(135deg, #0a1929 0%, #0e2436 50%, #0f3340 100%);
+  padding:48px 48px 36px; margin-bottom:24px;
+  border:1px solid rgba(20,184,166,0.18);
+}
+.beta-hero-grid {
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(20,184,166,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,184,166,0.06) 1px, transparent 1px);
+  background-size:24px 24px;
+  mask-image:radial-gradient(ellipse at top right, black 30%, transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse at top right, black 30%, transparent 70%);
+  pointer-events:none;
+}
+.beta-hero-inner { position:relative; z-index:1; }
+.beta-eyebrow {
+  display:inline-flex; align-items:center; gap:10px;
+  font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#5eead4;
+  margin-bottom:18px; font-weight:600;
+}
+.beta-pulse {
+  display:inline-block; width:8px; height:8px; border-radius:50%;
+  background:#14b8a6; box-shadow:0 0 0 0 rgba(20,184,166,0.7);
+  animation:beta-pulse 2s infinite;
+}
+@keyframes beta-pulse {
+  0% { box-shadow:0 0 0 0 rgba(20,184,166,0.7); }
+  70% { box-shadow:0 0 0 10px rgba(20,184,166,0); }
+  100% { box-shadow:0 0 0 0 rgba(20,184,166,0); }
+}
+.beta-tag {
+  padding:2px 8px; background:linear-gradient(90deg,#14b8a6,#0d9488);
+  color:#fff; border-radius:3px; letter-spacing:1px; font-size:9px;
+}
+.beta-h1 {
+  font-size:42px; font-weight:700; color:#f8fafc; line-height:1.15; margin:0 0 18px;
+  font-family:'Trebuchet MS', system-ui, sans-serif; letter-spacing:-0.5px;
+}
+.beta-h1 em {
+  font-style:normal;
+  background:linear-gradient(90deg, #5eead4, #2dd4bf);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.beta-sub {
+  font-size:15px; color:#cbd5e1; max-width:780px; line-height:1.6; margin:0 0 28px;
+}
+.beta-stage-row {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding-top:16px; border-top:1px solid rgba(20,184,166,0.18);
+}
+.beta-stage {
+  display:flex; align-items:center; gap:10px; padding:8px 14px;
+  background:rgba(15,23,42,0.6); border:1px solid rgba(148,163,184,0.18);
+  border-radius:8px; transition:all 200ms;
+}
+.beta-stage.active {
+  background:linear-gradient(135deg, rgba(20,184,166,0.18), rgba(20,184,166,0.06));
+  border-color:rgba(20,184,166,0.5);
+}
+.beta-stage-num { font-size:11px; color:#5eead4; font-weight:700; letter-spacing:1px; }
+.beta-stage-label { font-size:12px; color:#e2e8f0; }
+.beta-stage-arrow { color:#475569; font-size:14px; }
+
+.beta-roadmap {
+  display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:24px;
+}
+@media (max-width:980px) { .beta-roadmap { grid-template-columns:repeat(2,1fr); } }
+.beta-roadmap-item {
+  background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px;
+  position:relative; overflow:hidden;
+}
+.beta-roadmap-item[data-status="now"]    { border-top:3px solid #14b8a6; }
+.beta-roadmap-item[data-status="next"]   { border-top:3px solid #f59e0b; }
+.beta-roadmap-item[data-status="future"] { border-top:3px solid #94a3b8; }
+.beta-roadmap-tag {
+  font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+  font-weight:700; color:#64748b; margin-bottom:6px;
+}
+.beta-roadmap-item[data-status="now"] .beta-roadmap-tag    { color:#0d9488; }
+.beta-roadmap-item[data-status="next"] .beta-roadmap-tag   { color:#b45309; }
+.beta-roadmap-title { font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px; }
+.beta-roadmap-detail { font-size:12px; color:#64748b; line-height:1.5; }
+
+.beta-card {
+  background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+  padding:24px 28px; margin-bottom:18px;
+}
+.beta-card-head {
+  display:flex; align-items:center; gap:14px; margin-bottom:18px;
+  padding-bottom:14px; border-bottom:1px solid #f1f5f9;
+}
+.beta-card-stage {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:38px; height:38px; border-radius:8px;
+  background:linear-gradient(135deg, #0c4e54, #14b8a6);
+  color:#fff; font-weight:700; font-size:14px; letter-spacing:0.5px;
+}
+.beta-card-title  { font-size:17px; font-weight:700; color:#0f172a; }
+.beta-card-sub    { font-size:12px; color:#64748b; margin-top:2px; }
+
+.beta-input-grid {
+  display:grid; grid-template-columns: 320px 1fr; gap:24px;
+}
+@media (max-width:820px) { .beta-input-grid { grid-template-columns:1fr; } }
+
+.beta-dropzone {
+  border:2px dashed #cbd5e1; border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:32px 16px; text-align:center; cursor:pointer;
+  background:#f8fafc; transition:all 150ms; min-height:240px;
+}
+.beta-dropzone:hover {
+  border-color:#14b8a6; background:#f0fdfa;
+}
+.beta-dropzone-icon { font-size:32px; color:#94a3b8; margin-bottom:10px; }
+.beta-dropzone-text { font-size:13px; color:#0f172a; margin-bottom:4px; }
+.beta-dropzone-hint { font-size:11px; color:#94a3b8; }
+.beta-preview img { max-width:100%; max-height:200px; border-radius:6px; margin-top:12px; }
+
+.beta-form { display:flex; flex-direction:column; gap:14px; }
+.beta-field { display:flex; flex-direction:column; gap:5px; }
+.beta-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.beta-label {
+  font-size:11px; color:#475569; font-weight:600;
+  display:flex; align-items:center; gap:6px;
+}
+.beta-req {
+  font-size:9px; padding:1px 6px; background:#fef2f2; color:#991b1b;
+  border-radius:3px; letter-spacing:0.5px; text-transform:uppercase; font-weight:700;
+}
+.beta-opt {
+  font-size:9px; padding:1px 6px; background:#f1f5f9; color:#64748b;
+  border-radius:3px; letter-spacing:0.5px; text-transform:uppercase; font-weight:600;
+}
+.beta-input, .beta-select {
+  font-size:13px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px;
+  background:#fff; transition:border 150ms; font-family:inherit;
+}
+.beta-input:focus, .beta-select:focus {
+  outline:none; border-color:#14b8a6; box-shadow:0 0 0 3px rgba(20,184,166,0.1);
+}
+
+.beta-btn-primary {
+  margin-top:6px; padding:12px 20px;
+  background:linear-gradient(135deg, #0c4e54 0%, #14b8a6 100%);
+  color:#fff; border:none; border-radius:8px;
+  font-size:14px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:all 150ms;
+}
+.beta-btn-primary:hover:not(:disabled) {
+  transform:translateY(-1px); box-shadow:0 8px 20px rgba(20,184,166,0.3);
+}
+.beta-btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+.beta-btn-arrow { font-size:16px; }
+
+.beta-status {
+  font-size:12px; color:#64748b; margin-top:4px; min-height:18px;
+}
+.beta-status.error { color:#991b1b; }
+.beta-status.working {
+  color:#0d9488; display:flex; align-items:center; gap:8px;
+}
+.beta-status.working::before {
+  content:''; width:10px; height:10px; border-radius:50%;
+  background:#14b8a6; animation:beta-pulse 1.4s infinite;
+}
+
+.beta-prov-tag {
+  display:inline-block; font-size:9px; padding:1px 6px; border-radius:3px;
+  letter-spacing:0.5px; text-transform:uppercase; font-weight:700;
+}
+.beta-prov-vision   { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+.beta-prov-brand    { background:#eff6ff; color:#1e3a8a; border:1px solid #bfdbfe; }
+.beta-prov-pt       { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
+.beta-prov-operator { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+.beta-prov-unknown  { background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; }
+
+.beta-notice {
+  display:flex; gap:14px; align-items:flex-start;
+  background:linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%);
+  border:1px solid #fcd34d; border-radius:10px; padding:16px 20px;
+  margin-top:16px;
+}
+.beta-notice-icon { font-size:20px; color:#b45309; flex-shrink:0; line-height:1; }
+.beta-notice-title { font-size:13px; font-weight:700; color:#7c2d12; margin-bottom:3px; }
+.beta-notice-body { font-size:12px; color:#9a3412; line-height:1.5; }
+
 </style>
 </head>
 <body>
@@ -3014,6 +3221,14 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="nav-label">Intel</div>
     <div class="nav-item-intel" id="nav-intel" onclick="showIntelPage()">
       <span class="nav-intel-icon">&#9670;</span> Recommendations
+    </div>
+
+    <div class="nav-section-divider"></div>
+    <div class="nav-label" style="display:flex; align-items:center; gap:6px;">Lab 
+      <span style="font-size:9px; padding:1px 5px; background:linear-gradient(135deg,#0c4e54,#01696F); color:#fff; border-radius:3px; letter-spacing:0.5px;">BETA</span>
+    </div>
+    <div class="nav-item-beta" id="nav-beta-image" onclick="showBetaImageNISPage()">
+      <span class="nav-beta-icon">&#9650;</span> Image → NIS
     </div>
 
     <div class="nav-section-divider"></div>
@@ -4180,6 +4395,156 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
   </div><!-- /engine-page -->
 
+  <!-- ════════════════ BETA: IMAGE → NIS ════════════════ -->
+  <div id="beta-image-page" class="content content-wide" style="display:none;">
+    <div class="beta-shell">
+
+      <!-- HERO -->
+      <div class="beta-hero">
+        <div class="beta-hero-grid"></div>
+        <div class="beta-hero-inner">
+          <div class="beta-eyebrow">
+            <span class="beta-pulse"></span>
+            <span>Lab · Concept · v1</span>
+            <span class="beta-tag">BETA</span>
+          </div>
+          <h1 class="beta-h1">Drop a photo. <em>We read it.</em><br>Draft a listing in seconds.</h1>
+          <p class="beta-sub">A glimpse of where the system is headed: image-first listing creation, with everything tagged so you can see exactly what came from vision, what came from the brand, and what still needs you. Nothing is hidden. Nothing is auto-applied without you saying so.</p>
+          <div class="beta-stage-row">
+            <div class="beta-stage active" id="beta-stage-1"><span class="beta-stage-num">01</span><span class="beta-stage-label">Image + brand</span></div>
+            <div class="beta-stage-arrow">→</div>
+            <div class="beta-stage" id="beta-stage-2"><span class="beta-stage-num">02</span><span class="beta-stage-label">Vision read</span></div>
+            <div class="beta-stage-arrow">→</div>
+            <div class="beta-stage" id="beta-stage-3"><span class="beta-stage-num">03</span><span class="beta-stage-label">Draft listing</span></div>
+            <div class="beta-stage-arrow">→</div>
+            <div class="beta-stage" id="beta-stage-4"><span class="beta-stage-num">04</span><span class="beta-stage-label">Build .xlsm</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISION ROADMAP STRIP -->
+      <div class="beta-roadmap">
+        <div class="beta-roadmap-item" data-status="now">
+          <div class="beta-roadmap-tag">Live today</div>
+          <div class="beta-roadmap-title">Vision read on every photo</div>
+          <div class="beta-roadmap-detail">Detects product type, color, silhouette, features. Compares to your pre-upload. Flags mismatches.</div>
+        </div>
+        <div class="beta-roadmap-item" data-status="now">
+          <div class="beta-roadmap-tag">v1 · this beta</div>
+          <div class="beta-roadmap-title">Draft a full listing from one image</div>
+          <div class="beta-roadmap-detail">Title, bullets, description, ~60 structured Amazon fields auto-filled. SKU/UPC/price stay yours.</div>
+        </div>
+        <div class="beta-roadmap-item" data-status="next">
+          <div class="beta-roadmap-tag">v2 · next 30 days</div>
+          <div class="beta-roadmap-title">Confidence scoring per field</div>
+          <div class="beta-roadmap-detail">Track every operator confirm / reject. Auto-apply only fields where vision earns 90%+ accuracy.</div>
+        </div>
+        <div class="beta-roadmap-item" data-status="future">
+          <div class="beta-roadmap-tag">v3 · future</div>
+          <div class="beta-roadmap-title">Photographer direction</div>
+          <div class="beta-roadmap-detail">System tells your photographer: “shoot front-facing, white background, alt angles X/Y/Z.”</div>
+        </div>
+      </div>
+
+      <!-- INPUT PANEL -->
+      <div class="beta-card">
+        <div class="beta-card-head">
+          <div class="beta-card-stage">01</div>
+          <div>
+            <div class="beta-card-title">Drop a product photo + pick a brand</div>
+            <div class="beta-card-sub">JPG / PNG / WebP · vision runs in 3–5 seconds</div>
+          </div>
+        </div>
+        <div class="beta-input-grid">
+          <div class="beta-dropzone" id="beta-dropzone" onclick="document.getElementById('beta-file-input').click();">
+            <input type="file" id="beta-file-input" accept="image/*" style="display:none;" onchange="betaOnFile(this.files)">
+            <div class="beta-dropzone-icon">△</div>
+            <div class="beta-dropzone-text"><strong>Drop a product photo</strong></div>
+            <div class="beta-dropzone-hint">or click to browse</div>
+            <div class="beta-preview" id="beta-preview" style="display:none;"></div>
+          </div>
+          <div class="beta-form">
+            <div class="beta-field">
+              <label class="beta-label">Brand <span class="beta-req">required</span></label>
+              <select id="beta-brand" class="beta-select"><option value="">Select brand…</option></select>
+            </div>
+            <div class="beta-row-2">
+              <div class="beta-field">
+                <label class="beta-label">Style # <span class="beta-opt">optional</span></label>
+                <input id="beta-style-num" class="beta-input" placeholder="e.g. 12345">
+              </div>
+              <div class="beta-field">
+                <label class="beta-label">Season <span class="beta-opt">optional</span></label>
+                <input id="beta-season" class="beta-input" placeholder="e.g. S26">
+              </div>
+            </div>
+            <div class="beta-row-2">
+              <div class="beta-field">
+                <label class="beta-label">Country of Origin <span class="beta-opt">optional</span></label>
+                <input id="beta-coo" class="beta-input" placeholder="e.g. India">
+              </div>
+              <div class="beta-field">
+                <label class="beta-label">Fabric <span class="beta-opt">optional</span></label>
+                <input id="beta-fabric" class="beta-input" placeholder="e.g. 80% Polyester, 20% Wool">
+              </div>
+            </div>
+            <button class="beta-btn-primary" id="beta-analyze-btn" onclick="betaAnalyze()" disabled>
+              <span class="beta-btn-text">Analyze image</span>
+              <span class="beta-btn-arrow">→</span>
+            </button>
+            <div id="beta-status" class="beta-status"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISION RESULTS -->
+      <div class="beta-card" id="beta-vision-card" style="display:none;">
+        <div class="beta-card-head">
+          <div class="beta-card-stage">02</div>
+          <div>
+            <div class="beta-card-title">Vision read</div>
+            <div class="beta-card-sub">What we see in the photo</div>
+          </div>
+        </div>
+        <div id="beta-vision-out"></div>
+      </div>
+
+      <!-- DRAFT LISTING -->
+      <div class="beta-card" id="beta-draft-card" style="display:none;">
+        <div class="beta-card-head">
+          <div class="beta-card-stage">03</div>
+          <div>
+            <div class="beta-card-title">Draft listing</div>
+            <div class="beta-card-sub">Tagged by source — vision / brand / PT / operator</div>
+          </div>
+        </div>
+        <div id="beta-draft-out"></div>
+      </div>
+
+      <!-- BUILD XLSM -->
+      <div class="beta-card" id="beta-build-card" style="display:none;">
+        <div class="beta-card-head">
+          <div class="beta-card-stage">04</div>
+          <div>
+            <div class="beta-card-title">Build Amazon-ready .xlsm</div>
+            <div class="beta-card-sub">Last-mile fields you fill, then download</div>
+          </div>
+        </div>
+        <div id="beta-build-out"></div>
+      </div>
+
+      <!-- BETA NOTICE -->
+      <div class="beta-notice">
+        <div class="beta-notice-icon">⚠</div>
+        <div>
+          <div class="beta-notice-title">This is a beta. Flag every mistake you spot.</div>
+          <div class="beta-notice-body">The more you click “this is wrong” on what vision gets, the faster the system learns which fields to trust automatically. Every flag is logged. We review them weekly.</div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /beta-image-page -->
+
 </div><!-- /main -->
 
 {# ════════════════════ BOSS THEATER (overlay, hidden by default) ════════════════════ #}
@@ -4203,7 +4568,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page'];
+const ALL_PAGES = ['nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -4212,9 +4577,89 @@ function _showPage(pageId, title, subtitle) {
   });
   document.getElementById('topbar-title').textContent = title;
   document.getElementById('topbar-sub').textContent = subtitle;
-  document.querySelectorAll('.nav-item, .nav-item-catalog, .nav-item-merge, .nav-item-intel')
+  document.querySelectorAll('.nav-item, .nav-item-catalog, .nav-item-merge, .nav-item-intel, .nav-item-engine, .nav-item-beta')
     .forEach(el => el.classList.remove('active'));
   window.scrollTo(0, 0);
+}
+
+function showBetaImageNISPage() {
+  _showPage('beta-image-page', 'Image → NIS  ·  Beta',
+    'Drop one product photo. The system reads it, classifies it, and drafts the listing.');
+  const navEl = document.getElementById('nav-beta-image');
+  if (navEl) navEl.classList.add('active');
+  if (typeof betaImageInit === 'function') betaImageInit();
+}
+
+// ═════════ BETA: Image → NIS — Step 5 init shell ═════════
+const betaState = {
+  brandsLoaded: false,
+  fileSelected: false,
+  brandSelected: false,
+  sessionId: null,
+  vision: null,
+  draft: null,
+};
+
+async function betaImageInit() {
+  // Populate brand dropdown once
+  if (!betaState.brandsLoaded) {
+    await betaLoadBrands();
+    betaState.brandsLoaded = true;
+  }
+  betaSyncButton();
+}
+
+async function betaLoadBrands() {
+  try {
+    const r = await fetch('/api/beta-image-nis/brands');
+    const d = await r.json();
+    const brands = d.brands || [];
+    const sel = document.getElementById('beta-brand');
+    if (sel) {
+      sel.innerHTML = '<option value="">Select brand\u2026</option>' +
+        brands.map(b => `<option value="${b.replace(/"/g,'&quot;')}">${b}</option>`).join('');
+      sel.onchange = () => { betaState.brandSelected = !!sel.value; betaSyncButton(); };
+    }
+  } catch(e) {
+    const status = document.getElementById('beta-status');
+    if (status) { status.className = 'beta-status error'; status.textContent = 'Could not load brand list: ' + e.message; }
+  }
+}
+
+function betaOnFile(files) {
+  if (!files || !files.length) return;
+  const f = files[0];
+  betaState.fileSelected = true;
+  const url = URL.createObjectURL(f);
+  const dz = document.getElementById('beta-dropzone');
+  const preview = document.getElementById('beta-preview');
+  if (preview) {
+    preview.style.display = 'block';
+    preview.innerHTML = `<img src="${url}" alt="preview">`;
+  }
+  // Hide the empty-state icon/text when image is shown
+  const icon = dz?.querySelector('.beta-dropzone-icon');
+  const text = dz?.querySelector('.beta-dropzone-text');
+  const hint = dz?.querySelector('.beta-dropzone-hint');
+  if (icon) icon.style.display = 'none';
+  if (text) text.innerHTML = '<strong>' + f.name + '</strong>';
+  if (hint) hint.textContent = 'Click to choose a different image';
+  betaSyncButton();
+}
+
+function betaSyncButton() {
+  const btn = document.getElementById('beta-analyze-btn');
+  if (!btn) return;
+  btn.disabled = !(betaState.fileSelected && betaState.brandSelected);
+}
+
+// Step 6–9 stubs — implemented later. For Step 5 the button just shows status.
+function betaAnalyze() {
+  const status = document.getElementById('beta-status');
+  if (status) {
+    status.className = 'beta-status working';
+    status.textContent = 'Wiring is live but Steps 6\u20139 (vision UI + draft + build) ship next.';
+  }
 }
 
 function showNISPage() {
