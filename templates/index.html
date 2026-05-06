@@ -3192,54 +3192,103 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
 <!-- ═══════════════════════════ SIDEBAR ═══════════════════════════ -->
 <aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-mark">
-      <span class="b">T</span><span class="rest">LG</span>
-    </div>
-    <div class="logo-sub">Amazon Intelligence</div>
+  <div class="sidebar-logo atlas-logo" onclick="showAtlasPage()" style="cursor:pointer;">
+    <div class="atlas-wordmark">ATLAS</div>
+    <div class="atlas-sublogo">by The Levy Group</div>
   </div>
 
-  <nav class="sidebar-nav">
-    <div class="nav-label">Create Listings</div>
-    <div class="nav-item active" id="nav-nis" onclick="showNISPage()">
-      <span class="nav-icon">✦</span> Upload Pre-Upload
+  <nav class="sidebar-nav atlas-nav">
+    <div class="nav-item-atlas" id="nav-atlas" onclick="showAtlasPage()">
+      <span class="atlas-dot"></span> Home
     </div>
 
     <div class="nav-section-divider"></div>
-    <div class="nav-label">Catalog Health</div>
+    <div class="nav-label">
+      <span class="nav-module-num">01</span> Create
+      <span class="nav-status nav-status-live">LIVE</span>
+    </div>
+    <div class="nav-item" id="nav-nis" onclick="showNISPage()">
+      <span class="nav-dot live"></span> Bulk Upload
+    </div>
+    <div class="nav-item-beta" id="nav-beta-image" onclick="showBetaImageNISPage()">
+      <span class="nav-dot live"></span> Image → NIS
+      <span class="nav-pill nav-pill-beta">BETA</span>
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('photo-brief')">
+      <span class="nav-dot soon"></span> Photo Brief
+      <span class="nav-pill nav-pill-soon">SOON</span>
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('voice-tuner')">
+      <span class="nav-dot soon"></span> Voice Tuner
+      <span class="nav-pill nav-pill-soon">SOON</span>
+    </div>
+
+    <div class="nav-section-divider"></div>
+    <div class="nav-label">
+      <span class="nav-module-num">02</span> Monitor
+      <span class="nav-status nav-status-30">30 DAYS</span>
+    </div>
     <div class="nav-item-catalog" id="nav-catalog" onclick="showCatalogPage()">
-      <span class="nav-catalog-icon">&#10003;</span> Analyze Live Listings
+      <span class="nav-dot live"></span> Catalog Health
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('suppression')">
+      <span class="nav-dot soon"></span> Suppression Watch
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('image-audit')">
+      <span class="nav-dot soon"></span> Image Audit
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('compliance')">
+      <span class="nav-dot soon"></span> Compliance
     </div>
 
     <div class="nav-section-divider"></div>
-    <div class="nav-label">Merge Listings</div>
+    <div class="nav-label">
+      <span class="nav-module-num">03</span> Manage
+      <span class="nav-status nav-status-60">60 DAYS</span>
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('bulk-price')">
+      <span class="nav-dot soon"></span> Bulk Price Sync
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('content-refresh')">
+      <span class="nav-dot soon"></span> Content Refresh
+    </div>
     <div class="nav-item-merge" id="nav-merge" onclick="showMergePage()">
-      <span class="nav-merge-icon">&#9889;</span> Fix Variations
+      <span class="nav-dot live"></span> Variations
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('ab-test')">
+      <span class="nav-dot soon"></span> A/B Test
     </div>
 
     <div class="nav-section-divider"></div>
-    <div class="nav-label">Intel</div>
-    <div class="nav-item-intel" id="nav-intel" onclick="showIntelPage()">
+    <div class="nav-label">
+      <span class="nav-module-num">04</span> Promote
+      <span class="nav-status nav-status-90">60-90 DAYS</span>
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('ad-bulksheet')">
+      <span class="nav-dot soon"></span> Ad Bulksheet
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('keywords')">
+      <span class="nav-dot soon"></span> Keywords
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('pdp-optimizer')">
+      <span class="nav-dot soon"></span> PDP Optimizer
+    </div>
+    <div class="nav-item-soon" onclick="showPreviewPage('reviews')">
+      <span class="nav-dot soon"></span> Reviews
+    </div>
+    <div class="nav-item-intel" id="nav-intel" onclick="showIntelPage()" style="display:none;">
       <span class="nav-intel-icon">&#9670;</span> Recommendations
     </div>
 
     <div class="nav-section-divider"></div>
-    <div class="nav-label" style="display:flex; align-items:center; gap:6px;">Lab 
-      <span style="font-size:9px; padding:1px 5px; background:linear-gradient(135deg,#0c4e54,#01696F); color:#fff; border-radius:3px; letter-spacing:0.5px;">BETA</span>
-    </div>
-    <div class="nav-item-beta" id="nav-beta-image" onclick="showBetaImageNISPage()">
-      <span class="nav-beta-icon">&#9650;</span> Image → NIS
-    </div>
-
-    <div class="nav-section-divider"></div>
-    <div class="nav-label" style="opacity:0.6;">Admin</div>
+    <div class="nav-label" style="opacity:0.5;">Admin</div>
     <div class="nav-item-engine" id="nav-engine" onclick="showEnginePage()">
       <span class="nav-engine-icon">&#9881;</span> Inspect Rules
     </div>
   </nav>
 
-  <div class="sidebar-footer">
-    <strong>TLG Intel</strong> v3.0<br>
+  <div class="sidebar-footer atlas-footer">
+    <strong>Atlas</strong> v1.0 · The Levy Group<br>
     Amazon Intelligence Platform
   </div>
 </aside>
@@ -3248,8 +3297,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 <div class="main">
   <header class="topbar">
     <div>
-      <div class="topbar-title" id="topbar-title">NIS Creation — Upload &amp; Generate</div>
-      <div class="topbar-sub" id="topbar-sub">Upload product data to generate Amazon-ready NIS content</div>
+      <div class="topbar-title" id="topbar-title">Atlas · Home</div>
+      <div class="topbar-sub" id="topbar-sub">The operating system for modern Amazon commerce.</div>
     </div>
     <div class="topbar-right">
       <button class="btn btn-secondary btn-sm" onclick="resetSession()" id="reset-btn" style="display:none;">↺ New Session</button>
@@ -3258,7 +3307,11 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
   <!-- ═══════════════════ NIS PAGE ═══════════════════ -->
   <!-- ═══════════════════ NIS PAGE v3 ═══════════════════ -->
-  <div class="content" id="nis-page">
+  {% include '_atlas_home.html' %}
+
+  {% include '_atlas_preview.html' %}
+
+  <div class="content" id="nis-page" style="display:none;">
 <!-- ════════════════════════════════════════════════════════
      NIS PAGE  —  inner content of <div class="content" id="nis-page">
      ════════════════════════════════════════════════════════ -->
@@ -4611,7 +4664,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page'];
+const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -4620,7 +4673,7 @@ function _showPage(pageId, title, subtitle) {
   });
   document.getElementById('topbar-title').textContent = title;
   document.getElementById('topbar-sub').textContent = subtitle;
-  document.querySelectorAll('.nav-item, .nav-item-catalog, .nav-item-merge, .nav-item-intel, .nav-item-engine, .nav-item-beta')
+  document.querySelectorAll('.nav-item, .nav-item-catalog, .nav-item-merge, .nav-item-intel, .nav-item-engine, .nav-item-beta, .nav-item-atlas, .nav-item-soon')
     .forEach(el => el.classList.remove('active'));
   window.scrollTo(0, 0);
 }
@@ -5285,6 +5338,232 @@ function showNISPage() {
   _showPage('nis-page', 'NIS Creation — Upload & Generate',
     'Upload product data to generate Amazon-ready NIS content');
   document.getElementById('nav-nis').classList.add('active');
+}
+
+// ═══════════════════ ATLAS HOME + PREVIEW PAGES ═══════════════════
+function showAtlasPage() {
+  _showPage('atlas-page', 'Atlas · Home', 'The operating system for modern Amazon commerce.');
+  const nav = document.getElementById('nav-atlas');
+  if (nav) nav.classList.add('active');
+}
+
+const ATLAS_PREVIEWS = {
+  'photo-brief': {
+    name: 'Photo Brief', when: '14 DAYS', module: 'CREATE',
+    tagline: 'Tell your photographer exactly what Atlas needs.',
+    description: 'Atlas reads your product type and brand, then generates a shot list, lighting plan, and on-model brief tuned to Amazon image rules and your brand voice — before the camera comes out.',
+    features: [
+      ['Shot list per ASIN', 'Required angles, props, and on-model poses, sized to Amazon main + alt slot rules.'],
+      ['Brand-aware framing', 'Pulls your tone, fit philosophy, and styling rules from Voice Tuner so every shoot matches.'],
+      ['Compliance built in', 'Flags claims, logos, and overlay risks before the photo is taken — not after suppression.'],
+      ['Export to PDF or Notion', 'Hand the brief to in-house, agency, or freelance shooters in one click.']
+    ],
+    cta: 'Want early access? Ping the team — Photo Brief is the next module after Image → NIS graduates.',
+    related: [['voice-tuner', 'Voice Tuner'], ['image-audit', 'Image Audit'], ['compliance', 'Compliance']]
+  },
+  'voice-tuner': {
+    name: 'Voice Tuner', when: '30 DAYS', module: 'CREATE',
+    tagline: 'One brand voice. Everywhere.',
+    description: 'Lock the way your brand talks — fit philosophy, vocabulary, banned words, hero adjectives. Voice Tuner becomes the source of truth Atlas uses every time it writes a title, bullet, or description.',
+    features: [
+      ['Brand DNA capture', 'Define tone (premium / playful / technical), reading level, and persona in one form.'],
+      ['Banned + preferred words', 'Atlas refuses to write "comfy" if your brand says "engineered comfort".'],
+      ['Per-PT overrides', 'Talk differently in COAT vs SWIMWEAR while staying on-brand.'],
+      ['Live preview', 'See exactly how a sample bullet changes as you tune the dials.']
+    ],
+    cta: 'Voice Tuner ships after Photo Brief. It is the foundation for every CREATE and MANAGE module.',
+    related: [['photo-brief', 'Photo Brief'], ['content-refresh', 'Content Refresh'], ['pdp-optimizer', 'PDP Optimizer']]
+  },
+  'suppression': {
+    name: 'Suppression Watch', when: '30 DAYS', module: 'MONITOR',
+    tagline: 'Find suppressed listings the day they suppress.',
+    description: 'Atlas pulls your live catalog every morning, flags every ASIN that lost the Buy Box, dropped to inactive, or got hit with a policy block — with the exact field that triggered it.',
+    features: [
+      ['Daily catalog crawl', 'No manual report pulls. Atlas reads Seller Central + Brand Analytics on a schedule.'],
+      ['Root-cause field', 'Not "image error" — the actual missing or invalid Amazon field, with the fix.'],
+      ['Variation-aware', 'Knows when a parent is healthy but 4 children are suppressed.'],
+      ['One-click export to fix', 'Dumps the affected ASINs straight into Bulk Upload as a partial-update sheet.']
+    ],
+    cta: 'First MONITOR module to ship. Built on the same Catalog Health engine that already runs in production.',
+    related: [['catalog-health', 'Catalog Health'], ['compliance', 'Compliance'], ['bulk-price', 'Bulk Price Sync']]
+  },
+  'catalog-health': {
+    name: 'Catalog Health', when: 'LIVE TODAY', module: 'MONITOR',
+    tagline: 'Already running. New view coming in 30 days.',
+    description: 'The structural + content health engine that powers the rest of MONITOR. Live today as a sidebar tool. Getting a dedicated dashboard with trend lines and per-ASIN history in 30 days.',
+    features: [
+      ['Structural checks', 'Variation theme, parent-child wiring, image slots, GTIN integrity.'],
+      ['Content checks', 'Title length, bullet count, keyword density, banned-claim scan.'],
+      ['Per-ASIN scoring', 'Every ASIN gets a 0-100 health score with the top three things to fix.'],
+      ['New: trend view', 'See whether your catalog health is climbing or rotting, week over week.']
+    ],
+    cta: 'Catalog Health is in the sidebar today. The expanded dashboard ships alongside Suppression Watch.',
+    related: [['suppression', 'Suppression Watch'], ['image-audit', 'Image Audit'], ['compliance', 'Compliance']]
+  },
+  'image-audit': {
+    name: 'Image Audit', when: '30 DAYS', module: 'MONITOR',
+    tagline: 'Every image. Every slot. Every ASIN.',
+    description: 'Atlas scans every image on every live ASIN — main, alt, swatch, lifestyle — checks slot rules, resolution, background, text overlay, and flags the ones that need to be reshot or replaced.',
+    features: [
+      ['Slot-rule scan', 'Main image rules, A+ rules, swatch rules — all checked against current Amazon spec.'],
+      ['Quality scoring', 'Resolution, sharpness, color cast — surfaced as a per-image score.'],
+      ['Overlay + claim check', 'Flags text-on-image, logos, and claim language Amazon now suppresses for.'],
+      ['Reshoot list', 'Generates a Photo Brief automatically for the ASINs that need new shots.']
+    ],
+    cta: 'Image Audit closes the loop with Photo Brief and Image → NIS — image quality becomes a managed surface.',
+    related: [['photo-brief', 'Photo Brief'], ['catalog-health', 'Catalog Health'], ['compliance', 'Compliance']]
+  },
+  'compliance': {
+    name: 'Compliance', when: '30 DAYS', module: 'MONITOR',
+    tagline: 'Catch policy risk before Amazon does.',
+    description: 'Atlas reads every title, bullet, description, and image against Amazon\'s current policy + claim rules. No more suppression-then-fix loops.',
+    features: [
+      ['Claim language scanner', 'Medical, performance, and superlative claims flagged with the exact rule cited.'],
+      ['Restricted-word DB', 'Auto-updated against Seller Central policy changes.'],
+      ['Pre-publish gate', 'Optionally block CREATE from publishing copy that fails compliance.'],
+      ['Per-PT rules', 'COAT compliance differs from SUPPLEMENT — Atlas knows the difference.']
+    ],
+    cta: 'Compliance ships in the same window as Suppression Watch and Image Audit.',
+    related: [['suppression', 'Suppression Watch'], ['image-audit', 'Image Audit'], ['content-refresh', 'Content Refresh']]
+  },
+  'bulk-price': {
+    name: 'Bulk Price Sync', when: '60 DAYS', module: 'MANAGE',
+    tagline: 'Move 200 prices in one sheet.',
+    description: 'Set per-SKU price, sale price, and start/end dates across hundreds of ASINs. Atlas builds the partial-update sheet, validates it against your catalog, and queues it for upload.',
+    features: [
+      ['Spreadsheet-first', 'Edit in your existing pricing workbook — Atlas adapts to your columns.'],
+      ['Sale window scheduling', 'Set start/end dates per SKU for promos, BFCM, holiday.'],
+      ['Margin guard', 'Optional minimum margin floor — Atlas refuses to push a price below it.'],
+      ['One-click partial sheet', 'Outputs the exact Amazon partial-update file. No manual mapping.']
+    ],
+    cta: 'First MANAGE module. Built on the Bulk Upload engine that already handles 16 product types.',
+    related: [['content-refresh', 'Content Refresh'], ['ab-test', 'A/B Test'], ['ad-bulksheet', 'Ad Bulksheet']]
+  },
+  'content-refresh': {
+    name: 'Content Refresh', when: '60 DAYS', module: 'MANAGE',
+    tagline: 'Rewrite hundreds of bullets in minutes.',
+    description: 'Pick the ASINs. Pick the field. Atlas regenerates titles, bullets, descriptions, or backend keywords in your Voice Tuner brand voice — and writes the partial-update sheet.',
+    features: [
+      ['Field-targeted regen', 'Refresh only bullets, only titles, or all copy fields at once.'],
+      ['Brand-voice locked', 'Pulls from Voice Tuner so every refresh stays on-brand.'],
+      ['Diff view', 'See old vs new side-by-side before publishing a single character.'],
+      ['Partial-update output', 'Writes the Amazon update sheet — never a destructive full overwrite.']
+    ],
+    cta: 'Content Refresh is what makes Voice Tuner valuable across an entire catalog at once.',
+    related: [['voice-tuner', 'Voice Tuner'], ['ab-test', 'A/B Test'], ['pdp-optimizer', 'PDP Optimizer']]
+  },
+  'ab-test': {
+    name: 'A/B Test', when: '60 DAYS', module: 'MANAGE',
+    tagline: 'Test titles and images. Keep what wins.',
+    description: 'Atlas wires Amazon\'s Manage Your Experiments into your catalog so you can run, monitor, and harvest title + image tests at scale — without leaving the operations layer.',
+    features: [
+      ['One-click test setup', 'Pick the ASIN, pick the field, pick variant B. Atlas does the rest.'],
+      ['Cross-variant rollups', 'Group tests across a parent so you read signal, not noise.'],
+      ['Auto-promote winner', 'When confidence threshold hits, Atlas writes the winner to live copy.'],
+      ['Test history', 'Every test, every ASIN, every variant — searchable.']
+    ],
+    cta: 'A/B Test closes the MANAGE loop — refresh, test, promote winner, repeat.',
+    related: [['content-refresh', 'Content Refresh'], ['pdp-optimizer', 'PDP Optimizer'], ['keywords', 'Keywords']]
+  },
+  'ad-bulksheet': {
+    name: 'Ad Bulksheet', when: '60-90 DAYS', module: 'PROMOTE',
+    tagline: 'Campaigns that auto-update with your catalog.',
+    description: 'Atlas reads your live catalog and writes the Amazon Ads bulk-upload sheet — campaigns, ad groups, and product targeting that stay in sync as new ASINs ship.',
+    features: [
+      ['Catalog-aware structure', 'Campaigns built around your real PT + brand hierarchy, not generic templates.'],
+      ['Auto-add new ASINs', 'New SKU shipped via CREATE? Atlas adds it to the right ad group on the next sync.'],
+      ['Negatives library', 'Shared negatives across the brand portfolio — no more duplicate work.'],
+      ['Bulksheet export', 'Outputs the exact Amazon Ads bulk-upload format — paste and go.']
+    ],
+    cta: 'PROMOTE turns Atlas from a catalog tool into a demand engine. Ad Bulksheet is the entry point.',
+    related: [['keywords', 'Keywords'], ['pdp-optimizer', 'PDP Optimizer'], ['reviews', 'Reviews']]
+  },
+  'keywords': {
+    name: 'Keywords', when: '60-90 DAYS', module: 'PROMOTE',
+    tagline: 'One keyword brain across PDP and ads.',
+    description: 'Backend search terms, PDP copy, and ad targeting all draw from the same keyword library — ranked, scored, and refreshed weekly against live search data.',
+    features: [
+      ['Unified keyword DB', 'Same keywords power PDP backend, A+ copy, and Sponsored Products.'],
+      ['Search-volume weighted', 'Refreshed weekly against Amazon Brand Analytics search-frequency rank.'],
+      ['PT-specific dictionaries', 'Swimwear keywords ≠ Outerwear keywords. Atlas keeps them separate.'],
+      ['Cannibalization check', 'Flags when two ASINs are fighting for the same term.']
+    ],
+    cta: 'Keywords is what makes Ad Bulksheet, PDP Optimizer, and Content Refresh share a single source of truth.',
+    related: [['ad-bulksheet', 'Ad Bulksheet'], ['pdp-optimizer', 'PDP Optimizer'], ['content-refresh', 'Content Refresh']]
+  },
+  'pdp-optimizer': {
+    name: 'PDP Optimizer', when: '60-90 DAYS', module: 'PROMOTE',
+    tagline: 'Every PDP, scored and prioritized.',
+    description: 'Atlas grades every live PDP against the highest-converting page in its PT + price band, then surfaces the three changes most likely to lift conversion.',
+    features: [
+      ['Conversion benchmark', 'Compares your PDP to the top sellers in the same PT and price tier.'],
+      ['Three-fix ranking', 'Not 30 vague suggestions — the three changes worth doing this week.'],
+      ['A+ scoring', 'Reads your A+ modules and grades them on density, hierarchy, and clarity.'],
+      ['Hands off to Content Refresh', 'Approve a fix and it queues the partial-update sheet automatically.']
+    ],
+    cta: 'PDP Optimizer is where MONITOR + MANAGE + PROMOTE meet. Highest-leverage module in the roadmap.',
+    related: [['content-refresh', 'Content Refresh'], ['ab-test', 'A/B Test'], ['keywords', 'Keywords']]
+  },
+  'reviews': {
+    name: 'Reviews', when: '60-90 DAYS', module: 'PROMOTE',
+    tagline: 'Read every review. Find every product fix.',
+    description: 'Atlas ingests every review across every ASIN, clusters them into themes, and tells you which product fixes — fit, sizing, packaging, copy — would lift the next 1,000 reviews.',
+    features: [
+      ['Theme clustering', 'Not sentiment scores — actual themes: "runs small", "smells off", "thin fabric".'],
+      ['Cross-ASIN rollup', 'See if a complaint hits 1 SKU or the whole brand line.'],
+      ['Action-able output', 'Each cluster maps to a fix: copy edit, sizing chart, photo, or product spec change.'],
+      ['Review-velocity tracking', 'Watch new reviews against the cluster baseline to see if fixes worked.']
+    ],
+    cta: 'Reviews closes the loop: customer says it, Atlas sees it, MANAGE fixes it.',
+    related: [['pdp-optimizer', 'PDP Optimizer'], ['content-refresh', 'Content Refresh'], ['ab-test', 'A/B Test']]
+  }
+};
+
+function _atlasModuleColor(mod) {
+  return { 'CREATE':'#10B981', 'MONITOR':'#F59E0B', 'MANAGE':'#5EEAD4', 'PROMOTE':'#A78BFA' }[mod] || '#5EEAD4';
+}
+
+function renderAtlasPreview(moduleId, cfg) {
+  if (!cfg.name) {
+    return '<div style="padding:60px 0; text-align:center; color:#94A3B8;">Module preview not found.</div>';
+  }
+  const color = _atlasModuleColor(cfg.module);
+  const featuresHtml = (cfg.features || []).map(f =>
+    '<div class="preview-feature"><h4>' + f[0] + '</h4><p>' + f[1] + '</p></div>'
+  ).join('');
+  const relatedHtml = (cfg.related || []).map(r =>
+    '<a onclick="showPreviewPage(\'' + r[0] + '\')">' + r[1] + ' →</a>'
+  ).join('');
+  return [
+    '<div class="preview-banner">',
+    '  <div class="icon" style="background:rgba(245,158,11,0.2); color:#FBBF24;">◐</div>',
+    '  <div><b>Preview only.</b> <span class="detail">This module is in the build queue. The interface below is a mockup of the shipping experience — not a working tool.</span></div>',
+    '  <div class="when">SHIPS IN ' + cfg.when + '</div>',
+    '</div>',
+    '<div class="preview-eyebrow" style="color:' + color + ';">' + cfg.module + '  ·  Module Preview</div>',
+    '<h1 class="preview-h1">' + cfg.name + '</h1>',
+    '<p class="preview-sub">' + cfg.tagline + '<br><span style="color:#CBD5E1;">' + cfg.description + '</span></p>',
+    '<div class="preview-mockup">',
+    '  <h3>What ' + cfg.name + ' looks like in production</h3>',
+    '  <p>The actual interface ships with the module. This page describes the surface area and how it connects to the rest of Atlas.</p>',
+    '</div>',
+    '<div class="preview-feature-grid">' + featuresHtml + '</div>',
+    '<div class="preview-cta">',
+    '  <div class="preview-cta-text">' + cfg.cta + '</div>',
+    '  <button class="atlas-mod-cta" onclick="showAtlasPage()">← Back to Atlas Home</button>',
+    '</div>',
+    '<div class="preview-related">',
+    '  <h4>Related modules</h4>',
+    '  <div class="preview-related-list">' + relatedHtml + '</div>',
+    '</div>'
+  ].join('');
+}
+
+function showPreviewPage(moduleId) {
+  const cfg = ATLAS_PREVIEWS[moduleId] || {};
+  const root = document.getElementById('atlas-preview-content');
+  if (root) root.innerHTML = renderAtlasPreview(moduleId, cfg);
+  _showPage('atlas-preview-page', 'Atlas · ' + (cfg.name || 'Preview'), cfg.tagline || 'Module preview.');
 }
 
 function showCatalogPage() {

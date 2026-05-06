@@ -1,0 +1,675 @@
+<!-- ═══════════════════════════ ATLAS HOME ═══════════════════════════ -->
+<style>
+/* Make the Atlas page break OUT of the grey app background */
+body:has(#atlas-page[style*="block"]) { background:#08111A; }
+.main:has(#atlas-page[style*="block"]) { background:#08111A; }
+.main:has(#atlas-page[style*="block"]) .topbar { background:#08111A; border-bottom-color:#1C2D40; }
+.main:has(#atlas-page[style*="block"]) .topbar-title { color:#E2E8F0; }
+.main:has(#atlas-page[style*="block"]) .topbar-sub { color:#94A3B8; }
+
+/* Atlas logo in sidebar */
+.atlas-logo { padding:22px 20px 18px; border-bottom:1px solid #1C2D40; }
+.atlas-wordmark {
+  font-family:'Trebuchet MS', system-ui, sans-serif;
+  font-size:28px; font-weight:700; letter-spacing:4px;
+  background:linear-gradient(90deg,#14B8A6,#5EEAD4);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  line-height:1;
+}
+.atlas-sublogo { font-size:10px; color:#64748B; letter-spacing:1.5px; margin-top:6px; text-transform:uppercase; }
+
+/* Atlas sidebar overrides */
+.atlas-nav .nav-label {
+  display:flex; align-items:center; gap:8px;
+  font-size:10px; color:#64748B; text-transform:uppercase; letter-spacing:1.5px;
+  padding:16px 14px 6px; font-weight:700;
+}
+.atlas-nav .nav-module-num {
+  font-family:ui-monospace,Consolas,monospace; font-size:9px;
+  background:#1C2D40; color:#5EEAD4; padding:1px 5px; border-radius:3px;
+  letter-spacing:0.5px;
+}
+.atlas-nav .nav-status {
+  margin-left:auto; font-size:8px; padding:1px 5px; border-radius:3px;
+  letter-spacing:0.5px; font-weight:700;
+}
+.nav-status-live { background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3); }
+.nav-status-30   { background:rgba(245,158,11,0.15); color:#F59E0B; border:1px solid rgba(245,158,11,0.3); }
+.nav-status-60   { background:rgba(94,234,212,0.12); color:#5EEAD4; border:1px solid rgba(94,234,212,0.25); }
+.nav-status-90   { background:rgba(167,139,250,0.15); color:#A78BFA; border:1px solid rgba(167,139,250,0.3); }
+
+.nav-item-atlas {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; margin:2px 0; border-radius:6px; cursor:pointer;
+  font-size:13px; font-weight:600; color:#E2E8F0;
+  transition:all 150ms;
+}
+.nav-item-atlas:hover { background:rgba(20,184,166,0.08); color:#5EEAD4; }
+.nav-item-atlas.active {
+  background:linear-gradient(90deg, rgba(20,184,166,0.18), rgba(20,184,166,0.04));
+  color:#5EEAD4; box-shadow:inset 2px 0 0 #14B8A6;
+}
+.atlas-dot {
+  width:8px; height:8px; border-radius:50%; background:linear-gradient(90deg,#14B8A6,#5EEAD4);
+  flex-shrink:0;
+}
+
+.nav-dot {
+  width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-right:2px;
+}
+.nav-dot.live { background:#10B981; box-shadow:0 0 6px rgba(16,185,129,0.5); }
+.nav-dot.soon { background:#475569; }
+
+.nav-item-soon {
+  display:flex; align-items:center; gap:10px;
+  padding:7px 14px; margin:1px 0; border-radius:6px; cursor:pointer;
+  font-size:12px; color:#64748B; opacity:0.85; transition:all 150ms;
+}
+.nav-item-soon:hover { background:rgba(148,163,184,0.06); color:#94A3B8; opacity:1; }
+
+.nav-pill { margin-left:auto; font-size:8px; padding:1px 5px; border-radius:3px; letter-spacing:0.5px; font-weight:700; }
+.nav-pill-beta { background:linear-gradient(90deg,#14B8A6,#5EEAD4); color:#08111A; }
+.nav-pill-soon { background:rgba(148,163,184,0.15); color:#94A3B8; border:1px solid rgba(148,163,184,0.25); }
+
+.atlas-footer { background:#0E1A26 !important; border-top-color:#1C2D40 !important; color:#94A3B8 !important; }
+.atlas-footer strong { color:#5EEAD4; }
+
+/* ═══════ ATLAS HOME PAGE ═══════ */
+#atlas-page {
+  padding:0;
+  background:#08111A;
+  min-height:100vh;
+  color:#E2E8F0;
+  font-family:'Calibri', system-ui, sans-serif;
+}
+.atlas-shell { max-width:1280px; margin:0 auto; padding:40px 48px 80px; }
+
+/* HERO */
+.atlas-hero {
+  position:relative; overflow:hidden; border-radius:16px; margin-bottom:32px;
+  background:
+    radial-gradient(ellipse 80% 60% at 85% 10%, rgba(20,184,166,0.16) 0%, transparent 55%),
+    linear-gradient(180deg, #0E1A26 0%, #08111A 100%);
+  border:1px solid rgba(20,184,166,0.22);
+  padding:56px 56px 48px;
+}
+.atlas-hero::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(20,184,166,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,184,166,0.05) 1px, transparent 1px);
+  background-size:28px 28px;
+  mask-image:radial-gradient(ellipse 70% 50% at 75% 30%, black 30%, transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse 70% 50% at 75% 30%, black 30%, transparent 70%);
+}
+.atlas-hero-inner { position:relative; z-index:1; }
+.atlas-eyebrow {
+  display:inline-flex; align-items:center; gap:10px;
+  font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:#5EEAD4;
+  font-weight:700; margin-bottom:26px; font-family:'Trebuchet MS', sans-serif;
+}
+.atlas-eyebrow .pulse {
+  display:inline-block; width:8px; height:8px; border-radius:50%; background:#14B8A6;
+  box-shadow:0 0 0 0 rgba(20,184,166,0.7); animation:atlas-pulse 2s infinite;
+}
+@keyframes atlas-pulse {
+  0% { box-shadow:0 0 0 0 rgba(20,184,166,0.7); }
+  70% { box-shadow:0 0 0 10px rgba(20,184,166,0); }
+  100% { box-shadow:0 0 0 0 rgba(20,184,166,0); }
+}
+.atlas-h1 {
+  font-family:'Trebuchet MS', system-ui, sans-serif;
+  font-size:68px; font-weight:700; line-height:1.02; letter-spacing:-2px;
+  color:#E2E8F0; margin:0 0 18px; max-width:940px;
+}
+.atlas-h1 em {
+  font-style:normal;
+  background:linear-gradient(90deg,#5EEAD4,#2DD4BF);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.atlas-sub {
+  font-size:17px; line-height:1.55; color:#94A3B8; max-width:780px;
+  margin:0 0 6px;
+}
+.atlas-sub strong { color:#CBD5E1; font-weight:600; }
+.atlas-bigstat {
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  font-family:ui-monospace,Consolas,monospace;
+  font-size:11px; letter-spacing:1.2px; color:#64748B;
+  padding-top:26px; margin-top:26px; border-top:1px solid rgba(20,184,166,0.18);
+  font-variant-numeric:tabular-nums;
+}
+.atlas-bigstat span { display:inline-flex; align-items:center; }
+.atlas-bigstat span b { color:#5EEAD4; font-weight:700; margin-right:6px; }
+.atlas-bigstat .sep { color:#1C2D40; margin:0 4px; }
+
+/* SECTION HEADINGS */
+.atlas-section-h {
+  display:flex; align-items:baseline; gap:14px; margin-bottom:20px; margin-top:44px;
+}
+.atlas-section-num {
+  font-family:ui-monospace,Consolas,monospace; font-size:11px;
+  color:#14B8A6; letter-spacing:2px;
+}
+.atlas-section-title {
+  font-family:'Trebuchet MS', system-ui, sans-serif;
+  font-size:26px; font-weight:700; color:#E2E8F0; letter-spacing:-0.5px;
+}
+.atlas-section-sub { font-size:13px; color:#64748B; margin-left:auto; }
+
+/* ROADMAP */
+.atlas-roadmap {
+  background:#0E1A26; border:1px solid #1C2D40; border-radius:14px;
+  padding:28px 32px; margin-bottom:32px;
+}
+.atlas-roadmap-track {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+  position:relative; margin-top:8px;
+}
+.atlas-roadmap-track::before {
+  content:''; position:absolute; top:10px; left:5%; right:5%; height:1px;
+  background:linear-gradient(90deg, rgba(16,185,129,0.5) 0%, rgba(245,158,11,0.5) 33%, rgba(94,234,212,0.5) 66%, rgba(167,139,250,0.5) 100%);
+}
+.atlas-rm-col { position:relative; padding-top:30px; }
+.atlas-rm-marker {
+  position:absolute; top:0; left:calc(50% - 10px); width:20px; height:20px; border-radius:50%;
+  background:#08111A; border:3px solid #14B8A6;
+  display:flex; align-items:center; justify-content:center;
+}
+.atlas-rm-marker.live   { border-color:#10B981; box-shadow:0 0 12px rgba(16,185,129,0.4); }
+.atlas-rm-marker.next   { border-color:#F59E0B; }
+.atlas-rm-marker.later  { border-color:#5EEAD4; }
+.atlas-rm-marker.future { border-color:#A78BFA; }
+.atlas-rm-marker::after {
+  content:''; width:6px; height:6px; border-radius:50%; background:currentColor;
+}
+.atlas-rm-marker.live::after   { background:#10B981; }
+.atlas-rm-marker.next::after   { background:#F59E0B; }
+.atlas-rm-marker.later::after  { background:#5EEAD4; }
+.atlas-rm-marker.future::after { background:#A78BFA; }
+.atlas-rm-when {
+  text-align:center; font-family:ui-monospace,Consolas,monospace;
+  font-size:10px; letter-spacing:1.5px; color:#64748B; text-transform:uppercase; font-weight:700;
+  margin-bottom:10px;
+}
+.atlas-rm-title {
+  text-align:center; font-family:'Trebuchet MS',sans-serif; font-size:18px; font-weight:700;
+  color:#E2E8F0; margin-bottom:12px;
+}
+.atlas-rm-list { list-style:none; padding:0; margin:0; }
+.atlas-rm-list li {
+  font-size:12px; color:#94A3B8; padding:4px 0; display:flex; align-items:center; gap:8px;
+  line-height:1.4;
+}
+.atlas-rm-list li::before {
+  content:''; width:4px; height:4px; border-radius:50%; flex-shrink:0;
+  background:#475569;
+}
+.atlas-rm-list li.live::before { background:#10B981; }
+.atlas-rm-list li b { color:#CBD5E1; font-weight:600; }
+
+/* MODULE CARDS */
+.atlas-modules {
+  display:grid; grid-template-columns:repeat(2,1fr); gap:18px;
+}
+@media (max-width:1040px) { .atlas-modules { grid-template-columns:1fr; } }
+.atlas-module {
+  position:relative; background:#0E1A26; border:1px solid #1C2D40; border-radius:14px;
+  padding:28px 30px; transition:all 200ms; overflow:hidden;
+}
+.atlas-module::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+}
+.atlas-module[data-status="live"]   { border-color:rgba(16,185,129,0.25); }
+.atlas-module[data-status="live"]::before   { background:linear-gradient(90deg,#10B981,#14B8A6); }
+.atlas-module[data-status="next"]::before   { background:linear-gradient(90deg,#F59E0B,#FBBF24); }
+.atlas-module[data-status="later"]::before  { background:linear-gradient(90deg,#14B8A6,#5EEAD4); }
+.atlas-module[data-status="future"]::before { background:linear-gradient(90deg,#A78BFA,#C4B5FD); }
+.atlas-module:hover { transform:translateY(-2px); border-color:rgba(20,184,166,0.3); box-shadow:0 8px 24px rgba(20,184,166,0.08); }
+
+.atlas-mod-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+.atlas-mod-eyebrow {
+  font-family:ui-monospace,Consolas,monospace; font-size:10px;
+  color:#64748B; letter-spacing:1.5px; text-transform:uppercase;
+}
+.atlas-mod-status {
+  display:inline-flex; align-items:center; gap:6px; font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:1px; padding:3px 8px; border-radius:4px;
+}
+.atlas-mod-status.live   { background:rgba(16,185,129,0.12); color:#10B981; }
+.atlas-mod-status.next   { background:rgba(245,158,11,0.12); color:#F59E0B; }
+.atlas-mod-status.later  { background:rgba(94,234,212,0.10); color:#5EEAD4; }
+.atlas-mod-status.future { background:rgba(167,139,250,0.12); color:#A78BFA; }
+.atlas-mod-status .dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+.atlas-mod-status.live .dot { animation:atlas-pulse 1.6s infinite; box-shadow:0 0 6px currentColor; }
+
+.atlas-mod-name {
+  font-family:'Trebuchet MS',sans-serif; font-size:32px; font-weight:700; color:#E2E8F0;
+  letter-spacing:-0.5px; line-height:1; margin:8px 0 4px;
+}
+.atlas-mod-tagline { font-size:13px; color:#94A3B8; font-weight:500; margin-bottom:14px; }
+.atlas-mod-desc {
+  font-size:14px; color:#CBD5E1; line-height:1.55; margin-bottom:18px;
+  padding-bottom:16px; border-bottom:1px solid #1C2D40;
+}
+.atlas-mod-subs { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+.atlas-sub-item {
+  display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:6px;
+  font-size:12.5px; background:#08111A;
+  border:1px solid transparent;
+}
+.atlas-sub-item .mark {
+  width:14px; height:14px; border-radius:50%; flex-shrink:0; margin-top:2px;
+  display:flex; align-items:center; justify-content:center;
+}
+.atlas-sub-item.live .mark { background:rgba(16,185,129,0.15); border:1px solid #10B981; }
+.atlas-sub-item.live .mark::after { content:''; width:5px; height:5px; border-radius:50%; background:#10B981; animation:atlas-pulse 1.6s infinite; }
+.atlas-sub-item.soon .mark { border:1px solid #475569; }
+.atlas-sub-item-body { flex:1; line-height:1.4; }
+.atlas-sub-item-name { font-weight:700; color:#E2E8F0; display:inline-flex; align-items:center; gap:6px; }
+.atlas-sub-item.soon .atlas-sub-item-name { color:#94A3B8; }
+.atlas-sub-item-note { color:#64748B; font-size:11.5px; margin-top:1px; }
+.atlas-sub-pill { font-size:9px; padding:1px 5px; border-radius:3px; letter-spacing:0.5px; font-weight:700; }
+.atlas-sub-pill.beta { background:linear-gradient(90deg,#14B8A6,#5EEAD4); color:#08111A; }
+.atlas-sub-pill.soon { background:rgba(148,163,184,0.15); color:#94A3B8; border:1px solid rgba(148,163,184,0.25); }
+
+.atlas-mod-cta {
+  display:inline-flex; align-items:center; gap:8px; padding:10px 18px;
+  background:linear-gradient(135deg,#0c4e54,#14B8A6); color:#E2E8F0;
+  border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+  text-decoration:none; transition:all 150ms;
+}
+.atlas-mod-cta:hover { transform:translateY(-1px); box-shadow:0 8px 20px rgba(20,184,166,0.3); color:#fff; }
+.atlas-mod-cta.ghost {
+  background:transparent; border:1px solid #1C2D40; color:#94A3B8;
+}
+.atlas-mod-cta.ghost:hover { border-color:#5EEAD4; color:#5EEAD4; box-shadow:none; }
+
+/* HOW IT WORKS */
+.atlas-how {
+  background:#0E1A26; border:1px solid #1C2D40; border-radius:14px;
+  padding:28px 32px;
+}
+.atlas-how-flow {
+  display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; align-items:stretch;
+  margin-top:12px;
+}
+.atlas-how-step {
+  background:#08111A; border:1px solid #1C2D40; border-radius:10px; padding:16px 14px;
+  position:relative; transition:all 150ms;
+}
+.atlas-how-step:hover { border-color:rgba(20,184,166,0.4); background:#13212F; }
+.atlas-how-step-num {
+  font-family:ui-monospace,Consolas,monospace; font-size:10px; color:#14B8A6;
+  letter-spacing:1.5px; margin-bottom:6px;
+}
+.atlas-how-step-title { font-size:13px; font-weight:700; color:#E2E8F0; margin-bottom:4px; }
+.atlas-how-step-desc { font-size:11px; color:#64748B; line-height:1.4; }
+
+/* PROOF */
+.atlas-proof {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
+}
+.atlas-proof-card {
+  background:#0E1A26; border:1px solid #1C2D40; border-radius:12px;
+  padding:22px 24px; position:relative;
+}
+.atlas-proof-num {
+  font-family:'Trebuchet MS',sans-serif; font-size:36px; font-weight:700;
+  background:linear-gradient(135deg,#14B8A6,#5EEAD4);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  line-height:1; margin-bottom:6px; font-variant-numeric:tabular-nums;
+}
+.atlas-proof-label { font-size:12px; color:#94A3B8; line-height:1.5; }
+.atlas-proof-label b { color:#CBD5E1; font-weight:600; }
+
+/* FOOTER CTA */
+.atlas-footer-cta {
+  margin-top:40px; text-align:center;
+  padding:32px 48px;
+  background:
+    radial-gradient(ellipse 60% 80% at 50% 100%, rgba(20,184,166,0.14) 0%, transparent 70%),
+    linear-gradient(180deg, transparent, #0E1A26);
+  border-top:1px solid #1C2D40; border-radius:0 0 14px 14px;
+}
+.atlas-footer-cta h3 {
+  font-family:'Trebuchet MS',sans-serif; font-size:28px; font-weight:700;
+  color:#E2E8F0; margin:0 0 10px; letter-spacing:-0.5px;
+}
+.atlas-footer-cta p { font-size:14px; color:#94A3B8; margin:0 0 22px; }
+.atlas-footer-cta .atlas-mod-cta { padding:14px 28px; font-size:14px; }
+</style>
+
+<div class="content content-wide" id="atlas-page">
+  <div class="atlas-shell">
+
+    <!-- ═══ HERO ═══ -->
+    <div class="atlas-hero">
+      <div class="atlas-hero-inner">
+        <div class="atlas-eyebrow">
+          <span class="pulse"></span>
+          <span>Atlas · Platform v1</span>
+          <span style="color:#475569;">·</span>
+          <span>Currently in beta</span>
+        </div>
+
+        <h1 class="atlas-h1">
+          From one photo to<br>
+          a managed Amazon catalog.
+        </h1>
+
+        <p class="atlas-sub">
+          <strong>Atlas is the operating system for modern Amazon commerce.</strong> See your entire catalog. Create and manage every listing. Watch what's working. Edit at scale. Drive demand.
+        </p>
+        <p class="atlas-sub" style="margin-top:10px; color:#5EEAD4; font-style:italic;">
+          One place. One brain. One source of truth.
+        </p>
+
+        <div class="atlas-bigstat">
+          <span><b>16</b>product types trained</span><span class="sep">·</span>
+          <span><b>12</b>brand identities</span><span class="sep">·</span>
+          <span><b>9,400+</b>Amazon dropdown values cached</span><span class="sep">·</span>
+          <span><b>105</b>system routes</span><span class="sep">·</span>
+          <span><b>6</b>PTs cross-validated</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ROADMAP ═══ -->
+    <div class="atlas-section-h">
+      <span class="atlas-section-num">// THE ATLAS ROADMAP</span>
+      <div class="atlas-section-title">Built for what's next.</div>
+      <span class="atlas-section-sub">Honest dates. Real scope.</span>
+    </div>
+    <div class="atlas-roadmap">
+      <div class="atlas-roadmap-track">
+        <div class="atlas-rm-col">
+          <div class="atlas-rm-marker live"></div>
+          <div class="atlas-rm-when">Today</div>
+          <div class="atlas-rm-title">Create</div>
+          <ul class="atlas-rm-list">
+            <li class="live"><b>Bulk Upload</b></li>
+            <li class="live"><b>Image → NIS Beta</b></li>
+            <li>Photo Brief · concept</li>
+            <li>Voice Tuner · concept</li>
+          </ul>
+        </div>
+        <div class="atlas-rm-col">
+          <div class="atlas-rm-marker next"></div>
+          <div class="atlas-rm-when">30 days</div>
+          <div class="atlas-rm-title">Monitor</div>
+          <ul class="atlas-rm-list">
+            <li>Catalog Health</li>
+            <li>Suppression Watch</li>
+            <li>Image Audit</li>
+            <li>Compliance</li>
+          </ul>
+        </div>
+        <div class="atlas-rm-col">
+          <div class="atlas-rm-marker later"></div>
+          <div class="atlas-rm-when">60 days</div>
+          <div class="atlas-rm-title">Manage</div>
+          <ul class="atlas-rm-list">
+            <li>Bulk Price Sync</li>
+            <li>Content Refresh</li>
+            <li class="live"><b>Variations · live</b></li>
+            <li>A/B Test</li>
+          </ul>
+        </div>
+        <div class="atlas-rm-col">
+          <div class="atlas-rm-marker future"></div>
+          <div class="atlas-rm-when">60–90 days</div>
+          <div class="atlas-rm-title">Promote</div>
+          <ul class="atlas-rm-list">
+            <li>Ad Bulksheet</li>
+            <li>Keywords</li>
+            <li>PDP Optimizer</li>
+            <li>Reviews</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MODULE CARDS ═══ -->
+    <div class="atlas-section-h">
+      <span class="atlas-section-num">// THE FOUR MODULES</span>
+      <div class="atlas-section-title">What Atlas does.</div>
+      <span class="atlas-section-sub">Click any module to enter.</span>
+    </div>
+
+    <div class="atlas-modules">
+      <!-- MODULE 01 · CREATE -->
+      <div class="atlas-module" data-status="live">
+        <div class="atlas-mod-head">
+          <span class="atlas-mod-eyebrow">Module 01</span>
+          <span class="atlas-mod-status live"><span class="dot"></span>Live now</span>
+        </div>
+        <div class="atlas-mod-name">CREATE</div>
+        <div class="atlas-mod-tagline">Make new listings.</div>
+        <div class="atlas-mod-desc">Drop a photo or a spreadsheet. Atlas turns it into a real Amazon listing — title, copy, every required field, ready to upload.</div>
+        <div class="atlas-mod-subs">
+          <div class="atlas-sub-item live" onclick="showNISPage()">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Bulk Upload</span>
+              <div class="atlas-sub-item-note">50 products at once. Spreadsheet to Amazon-ready in minutes.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item live" onclick="showBetaImageNISPage()">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Image → NIS <span class="atlas-sub-pill beta">BETA</span></span>
+              <div class="atlas-sub-item-note">One photo, one brand, one click. Done.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('photo-brief')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Photo Brief <span class="atlas-sub-pill soon">SOON</span></span>
+              <div class="atlas-sub-item-note">Tells your photographer what to shoot. Trained on top sellers in your category.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('voice-tuner')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Voice Tuner <span class="atlas-sub-pill soon">SOON</span></span>
+              <div class="atlas-sub-item-note">Learns your brand's voice from listings you've already nailed.</div>
+            </div>
+          </div>
+        </div>
+        <a class="atlas-mod-cta" onclick="showBetaImageNISPage()">Enter Create <span>→</span></a>
+      </div>
+
+      <!-- MODULE 02 · MONITOR -->
+      <div class="atlas-module" data-status="next">
+        <div class="atlas-mod-head">
+          <span class="atlas-mod-eyebrow">Module 02</span>
+          <span class="atlas-mod-status next"><span class="dot"></span>Ships in 30 days</span>
+        </div>
+        <div class="atlas-mod-name">MONITOR</div>
+        <div class="atlas-mod-tagline">Watch what's already live.</div>
+        <div class="atlas-mod-desc">Atlas checks your live ASINs every day. If Amazon adds a required field, suppresses a listing, or changes a rule — you find out before your sales drop.</div>
+        <div class="atlas-mod-subs">
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('catalog-health')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Catalog Health</span>
+              <div class="atlas-sub-item-note">Daily x-ray of your catalog. Spots what's broken before Amazon does.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('suppression')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Suppression Watch</span>
+              <div class="atlas-sub-item-note">The moment Amazon hides a listing, you know — and why.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('image-audit')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Image Audit</span>
+              <div class="atlas-sub-item-note">Finds every photo that breaks Amazon's rules across your catalog.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('compliance')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Compliance</span>
+              <div class="atlas-sub-item-note">Tracks regulatory changes — DG, GHS, age — and flags what needs updates.</div>
+            </div>
+          </div>
+        </div>
+        <a class="atlas-mod-cta ghost" onclick="showPreviewPage('catalog-health')">Preview Monitor <span>→</span></a>
+      </div>
+
+      <!-- MODULE 03 · MANAGE -->
+      <div class="atlas-module" data-status="later">
+        <div class="atlas-mod-head">
+          <span class="atlas-mod-eyebrow">Module 03</span>
+          <span class="atlas-mod-status later"><span class="dot"></span>Ships in 60 days</span>
+        </div>
+        <div class="atlas-mod-name">MANAGE</div>
+        <div class="atlas-mod-tagline">Edit at scale.</div>
+        <div class="atlas-mod-desc">Update prices, refresh copy, fix variations across hundreds of ASINs in one click. The work that takes a week now takes an hour.</div>
+        <div class="atlas-mod-subs">
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('bulk-price')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Bulk Price Sync</span>
+              <div class="atlas-sub-item-note">One field, 200 ASINs, one click. Pushed to Amazon via SP-API.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('content-refresh')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Content Refresh</span>
+              <div class="atlas-sub-item-note">Old listing reads stale? Atlas rewrites it in your current brand voice.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item live" onclick="showMergePage()">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Variations <span class="atlas-sub-pill beta" style="background:rgba(16,185,129,0.18); color:#10B981; border:1px solid rgba(16,185,129,0.3);">LIVE</span></span>
+              <div class="atlas-sub-item-note">Reunites split families and orphan ASINs into proper variation groups.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('ab-test')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">A/B Test</span>
+              <div class="atlas-sub-item-note">Two title options, head-to-head on real traffic. Winner wins.</div>
+            </div>
+          </div>
+        </div>
+        <a class="atlas-mod-cta ghost" onclick="showPreviewPage('bulk-price')">Preview Manage <span>→</span></a>
+      </div>
+
+      <!-- MODULE 04 · PROMOTE -->
+      <div class="atlas-module" data-status="future">
+        <div class="atlas-mod-head">
+          <span class="atlas-mod-eyebrow">Module 04</span>
+          <span class="atlas-mod-status future"><span class="dot"></span>Ships in 60–90 days</span>
+        </div>
+        <div class="atlas-mod-name">PROMOTE</div>
+        <div class="atlas-mod-tagline">Drive demand.</div>
+        <div class="atlas-mod-desc">Atlas pulls product data into your ad campaigns automatically. Tracks what shoppers actually search for, and which fields on your detail pages drive sales.</div>
+        <div class="atlas-mod-subs">
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('ad-bulksheet')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Ad Bulksheet</span>
+              <div class="atlas-sub-item-note">Every product attribute auto-loaded into your ad templates. No more double-keying.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('keywords')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Keywords</span>
+              <div class="atlas-sub-item-note">Tracks share-of-voice for every keyword that matters.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('pdp-optimizer')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">PDP Optimizer</span>
+              <div class="atlas-sub-item-note">Tells you which fields drive conversion — and what to change.</div>
+            </div>
+          </div>
+          <div class="atlas-sub-item soon" onclick="showPreviewPage('reviews')">
+            <div class="mark"></div>
+            <div class="atlas-sub-item-body">
+              <span class="atlas-sub-item-name">Reviews</span>
+              <div class="atlas-sub-item-note">Surfaces what customers actually complain about, per product.</div>
+            </div>
+          </div>
+        </div>
+        <a class="atlas-mod-cta ghost" onclick="showPreviewPage('ad-bulksheet')">Preview Promote <span>→</span></a>
+      </div>
+    </div>
+
+    <!-- ═══ HOW IT WORKS ═══ -->
+    <div class="atlas-section-h">
+      <span class="atlas-section-num">// HOW IT WORKS</span>
+      <div class="atlas-section-title">One pipeline. Everything tagged.</div>
+      <span class="atlas-section-sub">Nothing auto-applied without you saying so.</span>
+    </div>
+    <div class="atlas-how">
+      <div class="atlas-how-flow">
+        <div class="atlas-how-step">
+          <div class="atlas-how-step-num">01 · INPUT</div>
+          <div class="atlas-how-step-title">Photo or sheet</div>
+          <div class="atlas-how-step-desc">One product photo, or a pre-upload with 50+ styles.</div>
+        </div>
+        <div class="atlas-how-step">
+          <div class="atlas-how-step-num">02 · VISION</div>
+          <div class="atlas-how-step-title">Claude Sonnet 4.5</div>
+          <div class="atlas-how-step-desc">Reads the image. Classifies PT, color, silhouette, features.</div>
+        </div>
+        <div class="atlas-how-step">
+          <div class="atlas-how-step-num">03 · RULES</div>
+          <div class="atlas-how-step-title">PT-aware engine</div>
+          <div class="atlas-how-step-desc">16 product types × brand configs × Amazon dropdowns cached.</div>
+        </div>
+        <div class="atlas-how-step">
+          <div class="atlas-how-step-num">04 · PROVENANCE</div>
+          <div class="atlas-how-step-title">Every field tagged</div>
+          <div class="atlas-how-step-desc">Vision / Brand / PT / Operator. You see where each value came from.</div>
+        </div>
+        <div class="atlas-how-step">
+          <div class="atlas-how-step-num">05 · OUTPUT</div>
+          <div class="atlas-how-step-title">Amazon-ready</div>
+          <div class="atlas-how-step-desc">Clean .xlsm for Seller Central. Soon: direct push via SP-API.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PROOF ═══ -->
+    <div class="atlas-section-h">
+      <span class="atlas-section-num">// WHAT'S SHIPPED</span>
+      <div class="atlas-section-title">Real work, live in production.</div>
+      <span class="atlas-section-sub">Not demos. Not mockups.</span>
+    </div>
+    <div class="atlas-proof">
+      <div class="atlas-proof-card">
+        <div class="atlas-proof-num">89</div>
+        <div class="atlas-proof-label"><b>variants shipped</b> on Sage R1 — 9 styles, every Amazon field, first pass</div>
+      </div>
+      <div class="atlas-proof-card">
+        <div class="atlas-proof-num">24 / 24</div>
+        <div class="atlas-proof-label"><b>round-1 operator fixes</b> addressed. Zero deferred. All deployed in one push.</div>
+      </div>
+      <div class="atlas-proof-card">
+        <div class="atlas-proof-num">6</div>
+        <div class="atlas-proof-label"><b>product types cross-validated</b> — COAT, DRESS, SWIMWEAR, SHIRT, PANTS, SHORTS</div>
+      </div>
+    </div>
+
+    <!-- ═══ FOOTER CTA ═══ -->
+    <div class="atlas-footer-cta">
+      <h3>Ready to see it?</h3>
+      <p>Drop one photo. Pick your brand. Watch Atlas draft a listing in seconds.</p>
+      <a class="atlas-mod-cta" onclick="showBetaImageNISPage()">Try Image → NIS now <span style="font-size:16px;">→</span></a>
+    </div>
+
+  </div>
+</div>
