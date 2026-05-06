@@ -1,1 +1,24 @@
-{"entries": []}
+{
+  "entries": [
+    {
+      "id": "20260506-203615-86a52e63",
+      "filename": "sample_preupload_template.xlsx",
+      "brand": "Volcom",
+      "total_styles": 1,
+      "total_variants": 1,
+      "generated_file": "",
+      "generated_files": [],
+      "timestamp": "2026-05-06T20:36:15.435939Z"
+    },
+    {
+      "id": "20260506-203727-9c7a74c4",
+      "filename": "sample_preupload_template.xlsx",
+      "brand": "Volcom",
+      "total_styles": 1,
+      "total_variants": 1,
+      "generated_file": "",
+      "generated_files": [],
+      "timestamp": "2026-05-06T20:37:27.467230Z"
+    }
+  ]
+}

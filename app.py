@@ -2212,7 +2212,12 @@ def fuzzy_match_headers(headers):
 
 def _read_sheet_rows(ws):
     """Find header row (>=5 non-empty cells with style/brand/color/upc/price keywords)
-    and return (headers, data_rows)."""
+    and return (headers, data_rows).
+
+    Skips annotation rows that some Atlas templates include between the header
+    and real data: a 'tag row' (REQUIRED / IMPORTANT / OPTIONAL / GROUND TRUTH)
+    and a 'description row' (human-readable hints, no real data values).
+    """
     all_rows = list(ws.iter_rows(values_only=True))
     header_row_idx = None
     for i, row in enumerate(all_rows):
@@ -2225,7 +2230,36 @@ def _read_sheet_rows(ws):
     if header_row_idx is None:
         return None, []
     headers = [str(c).strip() if c is not None else "" for c in all_rows[header_row_idx]]
-    data = [row for row in all_rows[header_row_idx + 1:] if any(c is not None for c in row)]
+
+    TAG_TOKENS = {"required", "important", "optional", "ground truth",
+                  "required*", "optional*", "recommended", "conditional"}
+
+    def _is_annotation_row(row):
+        """True for tag-only rows (REQUIRED / OPTIONAL / etc.) or descriptive
+        prose rows that explain what each column means."""
+        cells = [c for c in row if c is not None and str(c).strip() != ""]
+        if not cells:
+            return False
+        # Tag row: all non-empty cells are tag tokens.
+        if all(str(c).strip().lower() in TAG_TOKENS for c in cells):
+            return True
+        # Description row: a clear majority of cells are long prose strings
+        # (4+ words). Real data rows occasionally have a 3-4 word product
+        # name but never have most cells looking like sentences.
+        wordy = sum(1 for c in cells if isinstance(c, str) and len(c.split()) >= 4)
+        if wordy >= max(3, (len(cells) * 3) // 5):
+            return True
+        # Also catch description-style cells with em-dashes, parens-explanations,
+        # or hint phrasing like "e.g." / "if applicable" / "as registered".
+        hint_markers = (" — ", " - ", "e.g.", "if applicable", "as registered",
+                        "used to", "must be", "for the listing")
+        hint_cells = sum(
+            1 for c in cells if isinstance(c, str) and any(m in c.lower() for m in hint_markers)
+        )
+        return hint_cells >= max(3, len(cells) // 3)
+
+    raw_data = [row for row in all_rows[header_row_idx + 1:] if any(c is not None for c in row)]
+    data = [row for row in raw_data if not _is_annotation_row(row)]
     return headers, data
 
 
