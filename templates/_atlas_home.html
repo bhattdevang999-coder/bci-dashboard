@@ -720,57 +720,574 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
   font-size: 12.5px; color: #94A3B8; line-height: 1.6;
 }
 
+
+/* ═══════ PASS 9 · SCALE / DEPTH / CLICK MOMENT / AUTHORSHIP ═══════ */
+
+/* === Section 1 · Scale === */
+.atlas-scale {
+  margin: 0 0 28px; padding: 36px 36px 30px;
+  background: linear-gradient(180deg, rgba(20,184,166,0.06) 0%, rgba(8,17,26,0) 100%);
+  border: 1px solid #1C2D40; border-radius: 16px;
+  position: relative; overflow: hidden;
+}
+.atlas-scale::before {
+  content:''; position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(94,234,212,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94,234,212,0.04) 1px, transparent 1px);
+  background-size: 36px 36px; pointer-events:none;
+}
+.atlas-scale-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+  letter-spacing: 2px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 14px; position: relative;
+}
+.atlas-scale-eyebrow .pulse {
+  width:7px; height:7px; border-radius:50%; background:#10B981;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.6); animation: atlasPulse 2.2s infinite;
+}
+.atlas-scale-h1 {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 38px; font-weight: 700;
+  color: #E2E8F0; line-height: 1.1; letter-spacing: -0.7px;
+  margin: 0 0 12px; position: relative; max-width: 920px;
+}
+.atlas-scale-h1 .accent { color: #5EEAD4; }
+.atlas-scale-sub {
+  font-size: 14.5px; color: #94A3B8; line-height: 1.6;
+  margin: 0 0 28px; max-width: 760px; position: relative;
+}
+.atlas-scale-matrix {
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 12px;
+  padding: 16px 20px; position: relative;
+  display: grid; grid-template-columns: 140px repeat(4, 1fr);
+  gap: 0;
+}
+.atlas-scale-matrix-h {
+  display: contents;
+}
+.atlas-scale-matrix-cell-h {
+  font-family: ui-monospace, monospace; font-size: 9.5px;
+  letter-spacing: 1.6px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; padding: 0 0 14px; text-align: center;
+  border-bottom: 1px solid #1C2D40;
+}
+.atlas-scale-matrix-cell-h:first-child { border-bottom-color: transparent; }
+.atlas-scale-matrix-row {
+  display: contents;
+}
+.atlas-scale-matrix-row > div {
+  padding: 14px 8px;
+  border-bottom: 1px dashed #13212F;
+  display: flex; align-items: center; justify-content: center;
+}
+.atlas-scale-matrix-row:last-child > div { border-bottom: none; }
+.atlas-scale-matrix-row > .atlas-scale-brand {
+  justify-content: flex-start;
+  font-family: 'Trebuchet MS', sans-serif; font-size: 13.5px;
+  color: #CBD5E1; font-weight: 700; letter-spacing: -0.2px;
+}
+.atlas-scale-matrix-row.ghost > div { opacity: 0.35; }
+.atlas-scale-matrix-row.ghost > .atlas-scale-brand {
+  color: #475569; font-family: ui-monospace, monospace; font-size: 13px; letter-spacing: 2px;
+}
+.atlas-scale-matrix-row .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block;
+}
+.dot-create  { background: #10B981; box-shadow: 0 0 12px rgba(16,185,129,0.45); }
+.dot-monitor { background: #F59E0B; box-shadow: 0 0 12px rgba(245,158,11,0.45); }
+.dot-manage  { background: #5EEAD4; box-shadow: 0 0 12px rgba(94,234,212,0.45); }
+.dot-promote { background: #A78BFA; box-shadow: 0 0 12px rgba(167,139,250,0.45); }
+.dot-empty   { background: #1C2D40; box-shadow: none; }
+
+.atlas-scale-foot {
+  margin-top: 18px; padding-top: 16px; border-top: 1px dashed #1C2D40;
+  font-size: 12.5px; color: #94A3B8; letter-spacing: 0.2px;
+  text-align: center; position: relative;
+}
+
+/* === Section 2 · Depth === */
+.atlas-depth {
+  margin: 0 0 28px; padding: 36px 36px 30px;
+  background: #0E1A26;
+  border: 1px solid #1C2D40; border-radius: 16px;
+}
+.atlas-depth-eyebrow {
+  font-family: ui-monospace, monospace; font-size: 11px;
+  letter-spacing: 2px; color: #A78BFA; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 12px;
+}
+.atlas-depth-h {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 28px;
+  color: #E2E8F0; font-weight: 700; letter-spacing: -0.6px;
+  line-height: 1.15; margin: 0 0 28px; max-width: 760px;
+}
+.atlas-depth-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px; margin-bottom: 22px;
+}
+@media (max-width: 1100px) { .atlas-depth-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px)  { .atlas-depth-grid { grid-template-columns: 1fr; } }
+.atlas-depth-tile {
+  background: #13212F; border: 1px solid #1C2D40; border-radius: 12px;
+  padding: 22px 22px 18px;
+  position: relative;
+  transition: all 250ms ease;
+}
+.atlas-depth-tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(167,139,250,0.4);
+  box-shadow: 0 12px 28px -10px rgba(0,0,0,0.5);
+}
+.atlas-depth-num {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 32px;
+  background: linear-gradient(135deg, #A78BFA, #5EEAD4);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700; letter-spacing: -1px; line-height: 1;
+  margin-bottom: 10px;
+}
+.atlas-depth-tile:nth-child(5) .atlas-depth-num {
+  font-size: 18px; letter-spacing: 1px;
+  background: linear-gradient(135deg, #5EEAD4, #A78BFA);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.atlas-depth-label {
+  font-family: ui-monospace, monospace; font-size: 10.5px;
+  letter-spacing: 1.4px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 12px;
+  padding-bottom: 10px; border-bottom: 1px solid #1C2D40;
+}
+.atlas-depth-text {
+  font-size: 12.5px; color: #94A3B8; line-height: 1.6;
+}
+.atlas-depth-text code {
+  font-family: ui-monospace, monospace; font-size: 11px;
+  background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2);
+  padding: 1px 6px; border-radius: 4px; color: #DDD6FE;
+}
+.atlas-depth-foot {
+  font-size: 13px; color: #CBD5E1; line-height: 1.6;
+  padding: 14px 18px; background: rgba(167,139,250,0.04);
+  border: 1px solid rgba(167,139,250,0.2); border-radius: 8px;
+  text-align: center;
+}
+.atlas-depth-foot b { color: #A78BFA; font-weight: 700; }
+
+/* === Section 3 · Click moment === */
+.atlas-click {
+  margin: 0 0 28px; padding: 36px 36px 30px;
+  background: linear-gradient(180deg, rgba(94,234,212,0.06) 0%, #0E1A26 60%);
+  border: 1px solid rgba(94,234,212,0.3); border-radius: 16px;
+  position: relative; overflow: hidden;
+}
+.atlas-click::after {
+  content:''; position:absolute; top:-40%; left:-10%; width:120%; height:200%;
+  background: radial-gradient(ellipse at center, rgba(94,234,212,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.atlas-click-eyebrow {
+  display:inline-flex; align-items:center; gap:10px;
+  font-family: ui-monospace, monospace; font-size: 11px;
+  letter-spacing: 2px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 14px; position: relative;
+}
+.atlas-click-eyebrow .live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #10B981;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.7); animation: atlasPulse 1.6s infinite;
+}
+.atlas-click-h {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 32px;
+  color: #E2E8F0; font-weight: 700; letter-spacing: -0.6px;
+  line-height: 1.15; margin: 0 0 10px; max-width: 800px; position: relative;
+}
+.atlas-click-h .accent { color: #5EEAD4; }
+.atlas-click-sub {
+  font-size: 14px; color: #94A3B8; line-height: 1.6;
+  margin: 0 0 28px; max-width: 720px; position: relative;
+}
+
+.atlas-click-stage {
+  display: grid; grid-template-columns: 1.05fr 1fr;
+  gap: 18px; position: relative;
+}
+@media (max-width: 1100px) { .atlas-click-stage { grid-template-columns: 1fr; } }
+
+.atlas-click-drop {
+  background: #0E1A26; border: 2px dashed #1C2D40; border-radius: 14px;
+  padding: 36px 28px 28px; text-align: center;
+  cursor: pointer; transition: all 220ms ease;
+  min-height: 360px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.atlas-click-drop::before {
+  content:''; position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(94,234,212,0.06), transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(20,184,166,0.04), transparent 50%);
+  pointer-events:none;
+}
+.atlas-click-drop:hover {
+  border-color: #5EEAD4;
+  background: linear-gradient(180deg, rgba(20,184,166,0.06), #0E1A26);
+}
+.atlas-click-drop.drag-over {
+  border-color: #5EEAD4; border-style: solid;
+  background: linear-gradient(180deg, rgba(94,234,212,0.14), rgba(20,184,166,0.06));
+  transform: scale(1.005);
+  box-shadow: 0 0 0 4px rgba(94,234,212,0.18), inset 0 0 60px rgba(94,234,212,0.1);
+}
+.atlas-click-icon-wrap {
+  width: 88px; height: 88px; border-radius: 18px;
+  background: linear-gradient(135deg, #14B8A6, #5EEAD4);
+  display: flex; align-items: center; justify-content: center;
+  color: #08111A; margin: 0 auto 20px;
+  position: relative; box-shadow: 0 16px 50px -10px rgba(20,184,166,0.5);
+}
+.atlas-click-icon { width: 44px; height: 44px; }
+.atlas-click-headline {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 19px;
+  color: #E2E8F0; font-weight: 700; margin-bottom: 8px;
+  position: relative;
+}
+.atlas-click-headline .accent { color: #5EEAD4; }
+.atlas-click-formats {
+  font-family: ui-monospace, monospace; font-size: 11px;
+  color: #94A3B8; margin-bottom: 22px; position: relative;
+  letter-spacing: 0.5px;
+}
+.atlas-click-btn {
+  padding: 12px 26px;
+  background: linear-gradient(135deg, #14B8A6, #5EEAD4);
+  color: #08111A; border: none; border-radius: 9px;
+  font-family: 'Trebuchet MS', sans-serif; font-size: 13.5px;
+  font-weight: 700; letter-spacing: 0.4px;
+  cursor: pointer; transition: all 180ms;
+  box-shadow: 0 8px 24px -8px rgba(20,184,166,0.55);
+  position: relative; z-index: 2;
+}
+.atlas-click-btn:hover {
+  transform: translateY(-2px) scale(1.02); filter: brightness(1.1);
+  box-shadow: 0 12px 32px -8px rgba(20,184,166,0.7);
+}
+.atlas-click-foot {
+  margin-top: 22px; font-size: 11px; color: #64748B;
+  font-family: ui-monospace, monospace; letter-spacing: 0.4px;
+  max-width: 380px; line-height: 1.5;
+  position: relative;
+}
+
+/* Right pane — readout */
+.atlas-click-readout {
+  background: #08111A; border: 1px solid #1C2D40; border-radius: 14px;
+  padding: 22px 24px; min-height: 360px;
+  font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;
+  position: relative; overflow: hidden;
+}
+.atlas-click-readout::before {
+  content:''; position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(94,234,212,0.025) 1px, transparent 1px);
+  background-size: 26px 26px; pointer-events:none;
+}
+.atlas-click-readout-empty .readout-eyebrow {
+  font-size: 10px; color: #5EEAD4; letter-spacing: 1.6px;
+  text-transform: uppercase; font-weight: 700; margin-bottom: 18px;
+}
+.readout-line {
+  display: flex; gap: 10px; padding: 6px 0; align-items: baseline;
+  border-bottom: 1px dashed #13212F;
+}
+.readout-line:last-child { border-bottom: none; }
+.readout-line .k { color: #5EEAD4; min-width: 130px; }
+.readout-line .v { color: #CBD5E1; }
+.readout-line .v.dim { color: #475569; font-style: italic; }
+.readout-pulse {
+  position: absolute; bottom: 18px; right: 18px;
+  width: 8px; height: 8px; border-radius: 50%; background: #10B981;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.7);
+  animation: atlasPulse 1.6s infinite;
+}
+.atlas-click-readout.processing { opacity: 0.7; }
+.atlas-click-readout-result { font-size: 12.5px; }
+.atlas-click-readout-result .group {
+  margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px dashed #13212F;
+}
+.atlas-click-readout-result .group:last-child { border-bottom: none; padding-bottom: 0; }
+.atlas-click-readout-result .group-h {
+  font-size: 10px; color: #A78BFA; letter-spacing: 1.5px;
+  text-transform: uppercase; font-weight: 700; margin-bottom: 8px;
+}
+.atlas-click-readout-result .row {
+  display: flex; gap: 10px; padding: 4px 0; align-items: baseline;
+}
+.atlas-click-readout-result .row .k {
+  color: #5EEAD4; min-width: 130px; font-size: 11px;
+}
+.atlas-click-readout-result .row .v {
+  color: #E2E8F0; flex: 1;
+}
+.atlas-click-readout-result .row .conf {
+  font-size: 9px; padding: 2px 6px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;
+}
+.conf.high   { color: #10B981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); }
+.conf.med    { color: #F59E0B; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+.conf.low    { color: #94A3B8; background: rgba(148,163,184,0.08); border: 1px solid rgba(148,163,184,0.25); }
+
+.atlas-click-readout-error {
+  text-align:center; padding: 60px 20px; color: #F87171;
+}
+.atlas-click-readout-error b { color: #FBBF24; }
+
+.atlas-click-progress {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; min-height: 280px;
+}
+.atlas-click-progress .spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(94,234,212,0.18);
+  border-top-color: #5EEAD4;
+  border-radius: 50%;
+  animation: spin 900ms linear infinite;
+  margin-bottom: 18px;
+}
+.atlas-click-progress-text {
+  font-family: ui-monospace, monospace; font-size: 12px;
+  color: #94A3B8; letter-spacing: 0.6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* === Section 4 · Authorship === */
+.atlas-shipped {
+  margin: 0 0 28px; padding: 36px 36px 30px;
+  background: #0E1A26;
+  border: 1px solid #1C2D40; border-radius: 16px;
+}
+.atlas-shipped-eyebrow {
+  font-family: ui-monospace, monospace; font-size: 11px;
+  letter-spacing: 2px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 12px;
+}
+.atlas-shipped-h {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 28px;
+  color: #E2E8F0; font-weight: 700; letter-spacing: -0.6px;
+  line-height: 1.15; margin: 0 0 28px; max-width: 760px;
+}
+.atlas-shipped-h .accent { color: #5EEAD4; }
+.atlas-shipped-track {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr) ; gap: 6px;
+  align-items: stretch;
+  margin-bottom: 22px;
+}
+@media (max-width: 1100px) { .atlas-shipped-track { grid-template-columns: 1fr; } }
+.atlas-shipped-week {
+  background: #13212F; border: 1px solid #1C2D40; border-radius: 10px;
+  padding: 14px 14px 12px;
+  position: relative;
+  transition: all 200ms;
+}
+.atlas-shipped-week:hover {
+  border-color: rgba(94,234,212,0.4); transform: translateY(-2px);
+}
+.atlas-shipped-week.current {
+  background: linear-gradient(180deg, rgba(94,234,212,0.08), #13212F);
+  border-color: rgba(94,234,212,0.5);
+}
+.atlas-shipped-num {
+  font-family: ui-monospace, monospace; font-size: 10px;
+  letter-spacing: 1.4px; color: #5EEAD4; font-weight: 700;
+  margin-bottom: 6px;
+}
+.atlas-shipped-name {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 13.5px;
+  color: #E2E8F0; font-weight: 700; letter-spacing: -0.2px;
+  margin-bottom: 6px;
+}
+.atlas-shipped-text {
+  font-size: 11.5px; color: #94A3B8; line-height: 1.55;
+}
+.atlas-shipped-arr {
+  display: none;
+}
+.atlas-shipped-foot {
+  margin-top: 8px; padding: 14px 18px;
+  background: rgba(94,234,212,0.04); border: 1px solid rgba(94,234,212,0.2);
+  border-radius: 8px;
+  font-size: 13px; color: #CBD5E1; line-height: 1.6;
+  text-align: center;
+}
+.atlas-shipped-foot b { color: #5EEAD4; font-weight: 700; }
+
 </style>
 
 <div class="content content-wide" id="atlas-page">
   <div class="atlas-shell">
 
-    <!-- ═══ HERO — the frame, not the demo ═══ -->
-    <div class="atlas-frame-hero">
-      <div class="atlas-frame-eyebrow"><span class="pulse"></span>YOUR SINGLE SOURCE OF TRUTH</div>
-      <h1 class="atlas-frame-h1">This is the dashboard <span class="accent">your agency runs on.</span></h1>
-      <p class="atlas-frame-sub">Connect your brands once. Atlas pulls every catalog, every signal, every decision into one operating layer. The frame below fills with your data the moment you onboard.</p>
+        <!-- ═══ SECTION 1 · SCALE — multi-brand portfolio infrastructure ═══ -->
+    <div class="atlas-scale">
+      <div class="atlas-scale-eyebrow"><span class="pulse"></span>MULTI-BRAND OPERATING INFRASTRUCTURE</div>
+      <h1 class="atlas-scale-h1">Not a listing tool. <span class="accent">The operating layer above your team.</span></h1>
+      <p class="atlas-scale-sub">One engine. One severity table. One brand-voice config. Scaled across every brand in your portfolio. Connect a brand once and Atlas treats it the same way it treats the next twelve.</p>
 
-      <!-- Empty KPI strip -->
-      <div class="atlas-kpi-strip">
-        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">Brands monitored</div></div>
-        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">ASINs under management</div></div>
-        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">Issues open this week</div></div>
-        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">Revenue at risk</div></div>
-        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">Actions queued</div></div>
-      </div>
-
-      <!-- Empty decision feed pattern -->
-      <div class="atlas-frame-feed">
-        <div class="atlas-frame-feed-h">
-          <span class="atlas-frame-feed-eye">// WHAT ATLAS SURFACES, EVERY MORNING</span>
-          <span class="atlas-frame-feed-meta">awaiting your data</span>
+      <div class="atlas-scale-matrix">
+        <div class="atlas-scale-matrix-h">
+          <div class="atlas-scale-matrix-cell-h"></div>
+          <div class="atlas-scale-matrix-cell-h">CREATE</div>
+          <div class="atlas-scale-matrix-cell-h">MONITOR</div>
+          <div class="atlas-scale-matrix-cell-h">MANAGE</div>
+          <div class="atlas-scale-matrix-cell-h">PROMOTE</div>
         </div>
-        <div class="atlas-frame-feed-row empty">
-          <span class="col-time">— : —</span>
-          <span class="col-brand">your brand</span>
-          <span class="col-asin">your ASIN</span>
-          <span class="col-issue">issue Atlas surfaced</span>
-          <span class="col-impact">$ at risk</span>
-          <span class="col-action">action ready</span>
+        <div class="atlas-scale-matrix-row">
+          <div class="atlas-scale-brand">Brand 01</div>
+          <div class="atlas-scale-cell"><span class="dot dot-create"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-monitor"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-manage"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-promote"></span></div>
         </div>
-        <div class="atlas-frame-feed-row empty">
-          <span class="col-time">— : —</span>
-          <span class="col-brand">your brand</span>
-          <span class="col-asin">your ASIN</span>
-          <span class="col-issue">issue Atlas surfaced</span>
-          <span class="col-impact">$ at risk</span>
-          <span class="col-action">action ready</span>
+        <div class="atlas-scale-matrix-row">
+          <div class="atlas-scale-brand">Brand 02</div>
+          <div class="atlas-scale-cell"><span class="dot dot-create"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-monitor"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-manage"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-promote"></span></div>
         </div>
-        <div class="atlas-frame-feed-row empty">
-          <span class="col-time">— : —</span>
-          <span class="col-brand">your brand</span>
-          <span class="col-asin">your ASIN</span>
-          <span class="col-issue">issue Atlas surfaced</span>
-          <span class="col-impact">$ at risk</span>
-          <span class="col-action">action ready</span>
+        <div class="atlas-scale-matrix-row">
+          <div class="atlas-scale-brand">Brand 03</div>
+          <div class="atlas-scale-cell"><span class="dot dot-create"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-monitor"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-manage"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-promote"></span></div>
+        </div>
+        <div class="atlas-scale-matrix-row ghost">
+          <div class="atlas-scale-brand">…</div>
+          <div class="atlas-scale-cell"><span class="dot dot-empty"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-empty"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-empty"></span></div>
+          <div class="atlas-scale-cell"><span class="dot dot-empty"></span></div>
         </div>
       </div>
+      <div class="atlas-scale-foot">Connect any brand. Same engine. Same playbook. Same source of truth.</div>
+    </div>
+
+    <!-- ═══ SECTION 2 · DEPTH — the hard part, already solved ═══ -->
+    <div class="atlas-depth">
+      <div class="atlas-depth-eyebrow">// THE HARD PART, ALREADY SOLVED</div>
+      <h2 class="atlas-depth-h">This is not a wrapper around a model.</h2>
+      <div class="atlas-depth-grid">
+        <div class="atlas-depth-tile">
+          <div class="atlas-depth-num" data-target="16">16</div>
+          <div class="atlas-depth-label">PT-aware rule engines</div>
+          <div class="atlas-depth-text">Required / optional / hidden field resolution per Amazon NIS template — DRESS, COAT, SHIRT, PANTS, SWIMWEAR, SHORTS, BLAZER, BRA, OVERALLS, SKIRT, SNOW_PANT, SNOWSUIT, SWEATSHIRT, HAT, SANDAL, ONE_PIECE_OUTFIT.</div>
+        </div>
+        <div class="atlas-depth-tile">
+          <div class="atlas-depth-num" data-target="9400">9,400+</div>
+          <div class="atlas-depth-label">Amazon dropdown values resolved</div>
+          <div class="atlas-depth-text">Cached per PT, validated against the live Amazon spec. The combinatorial space Atlas already navigates so your team doesn't.</div>
+        </div>
+        <div class="atlas-depth-tile">
+          <div class="atlas-depth-num" data-target="200">200+</div>
+          <div class="atlas-depth-label">Header variants fuzzy-detected</div>
+          <div class="atlas-depth-text">Vendor Central, Seller Central, custom flat files — Atlas auto-maps your columns. No renaming, no hand-mapping, no template lock-in.</div>
+        </div>
+        <div class="atlas-depth-tile">
+          <div class="atlas-depth-num" data-target="22">22</div>
+          <div class="atlas-depth-label">Issue types · severity-weighted</div>
+          <div class="atlas-depth-text">Variation orphans, content gaps, ad-eligibility blockers — each ranked, joined to your sales report on ASIN, surfaced by dollar at risk.</div>
+        </div>
+        <div class="atlas-depth-tile">
+          <div class="atlas-depth-num">PROXY → GROUND TRUTH</div>
+          <div class="atlas-depth-label">Reason-code reconciliation</div>
+          <div class="atlas-depth-text">Amazon's <code>asin_not_buyable</code>, <code>out_of_stock</code>, <code>buy_box_suppressed</code> codes mapped to one severity table. Proxy guesses upgrade to ground truth the moment the ad bulksheet uploads.</div>
+        </div>
+      </div>
+      <div class="atlas-depth-foot">Wrapping a model is a weekend. Resolving Amazon's conditional rule engine is six weeks. <b>That part is done.</b></div>
+    </div>
+
+    <!-- ═══ SECTION 3 · CLICK MOMENT — embedded Image → NIS, real vision ═══ -->
+    <div class="atlas-click">
+      <div class="atlas-click-eyebrow"><span class="live-dot"></span>TRY IT NOW · LIVE VISION · NO SIGNUP</div>
+      <h2 class="atlas-click-h">Drop a product photo. <span class="accent">Atlas reads it in 4 seconds.</span></h2>
+      <p class="atlas-click-sub">Same vision pipeline that powers Image → NIS Beta. Pulls product type, color, silhouette, ~60 structured fields with per-field confidence flags — straight from one image.</p>
+
+      <div class="atlas-click-stage">
+        <!-- Drop zone -->
+        <div class="atlas-click-drop" id="atlas-click-drop">
+          <input type="file" id="atlas-click-file" accept="image/*" style="display:none;" onchange="atlasClickRun(this.files)">
+          <div class="atlas-click-icon-wrap">
+            <svg class="atlas-click-icon" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M7 14L10 11L14 15L17 12L21 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="9" cy="8" r="1.5" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+          </div>
+          <div class="atlas-click-headline">Drop a photo, or <span class="accent">click to browse</span></div>
+          <div class="atlas-click-formats">JPG · PNG · WebP — vision returns in 3–5 seconds</div>
+          <button type="button" class="atlas-click-btn" onclick="document.getElementById('atlas-click-file').click()">Browse →</button>
+          <div class="atlas-click-foot">Powered by Claude Sonnet 4.5 vision · runs against your real photo · no upload limit on this page</div>
+        </div>
+
+        <!-- Right pane: vision readout -->
+        <div class="atlas-click-readout" id="atlas-click-readout">
+          <div class="atlas-click-readout-empty">
+            <div class="readout-eyebrow">// VISION JSON · LIVE</div>
+            <div class="readout-line"><span class="k">detected_pt:</span> <span class="v dim">awaiting photo</span></div>
+            <div class="readout-line"><span class="k">brand_voice:</span> <span class="v dim">applied per brand_code</span></div>
+            <div class="readout-line"><span class="k">attributes:</span> <span class="v dim">~60 fields with confidence</span></div>
+            <div class="readout-line"><span class="k">image_quality:</span> <span class="v dim">flags surfaced inline</span></div>
+            <div class="readout-line"><span class="k">narrative:</span> <span class="v dim">human-readable summary</span></div>
+            <div class="readout-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SECTION 4 · AUTHORSHIP — what shipped, week by week ═══ -->
+    <div class="atlas-shipped">
+      <div class="atlas-shipped-eyebrow">// SHIPPED</div>
+      <h2 class="atlas-shipped-h">Six weeks. <span class="accent">One person.</span> A real brand validating it.</h2>
+      <div class="atlas-shipped-track">
+        <div class="atlas-shipped-week">
+          <div class="atlas-shipped-num">W1</div>
+          <div class="atlas-shipped-name">PT classifier</div>
+          <div class="atlas-shipped-text">16 product-type rule engines. Sub-class → PT mapping. Operator queue for unknowns.</div>
+        </div>
+        <div class="atlas-shipped-arr">→</div>
+        <div class="atlas-shipped-week">
+          <div class="atlas-shipped-num">W2</div>
+          <div class="atlas-shipped-name">NIS rule engine</div>
+          <div class="atlas-shipped-text">Required / optional / hidden field resolution per PT. 9,400+ Amazon dropdown values cached.</div>
+        </div>
+        <div class="atlas-shipped-arr">→</div>
+        <div class="atlas-shipped-week">
+          <div class="atlas-shipped-num">W3</div>
+          <div class="atlas-shipped-name">Bulk Upload pipeline</div>
+          <div class="atlas-shipped-text">.xlsm output. Brand voice config per brand_code. Sage Collective onboarded.</div>
+        </div>
+        <div class="atlas-shipped-arr">→</div>
+        <div class="atlas-shipped-week">
+          <div class="atlas-shipped-num">W4</div>
+          <div class="atlas-shipped-name">Catalog Health</div>
+          <div class="atlas-shipped-text">22 issue types, severity table, sales-revenue join, ad-readiness proxy → ground truth pattern.</div>
+        </div>
+        <div class="atlas-shipped-arr">→</div>
+        <div class="atlas-shipped-week">
+          <div class="atlas-shipped-num">W5</div>
+          <div class="atlas-shipped-name">Variations + vision</div>
+          <div class="atlas-shipped-text">Image → NIS Beta. ⌘K command palette. Variation graph reuses Catalog Health.</div>
+        </div>
+        <div class="atlas-shipped-arr">→</div>
+        <div class="atlas-shipped-week current">
+          <div class="atlas-shipped-num">W6</div>
+          <div class="atlas-shipped-name">Atlas platform</div>
+          <div class="atlas-shipped-text">4-module architecture. Multi-brand readiness. The page you're reading right now.</div>
+        </div>
+      </div>
+      <div class="atlas-shipped-foot">Built solo. Sage Collective validating on real catalog. Nate operating on the QA side. <b>This is what six weeks of one motivated person looks like.</b></div>
     </div>
 
     <!-- ═══ ROADMAP ═══ -->
@@ -1074,3 +1591,130 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 
   </div>
 </div>
+
+<script>
+// ═══════ ATLAS CLICK MOMENT — live vision wiring ═══════
+(function(){
+  function init() {
+    const drop = document.getElementById('atlas-click-drop');
+    if (!drop) return;
+    drop.addEventListener('click', function(e){
+      if (e.target.tagName === 'BUTTON') return;
+      document.getElementById('atlas-click-file').click();
+    });
+    drop.addEventListener('dragover', function(e){
+      e.preventDefault(); drop.classList.add('drag-over');
+    });
+    drop.addEventListener('dragleave', function(){
+      drop.classList.remove('drag-over');
+    });
+    drop.addEventListener('drop', function(e){
+      e.preventDefault(); drop.classList.remove('drag-over');
+      atlasClickRun(e.dataTransfer.files);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+
+window.atlasClickRun = async function(files) {
+  if (!files || !files.length) return;
+  const f = files[0];
+  const readout = document.getElementById('atlas-click-readout');
+  if (!readout) return;
+  // Show progress
+  readout.classList.add('processing');
+  readout.innerHTML = '<div class="atlas-click-progress"><div class="spinner"></div><div class="atlas-click-progress-text">VISION READING · CLAUDE 4.5</div></div>';
+  try {
+    const fd = new FormData();
+    fd.append('file', f);
+    const res = await fetch('/api/test-image-intel', { method: 'POST', body: fd });
+    const data = await res.json();
+    readout.classList.remove('processing');
+    if (!data.ok) {
+      readout.innerHTML = '<div class="atlas-click-readout-error"><b>Vision call failed</b><br>' + (data.error || 'unknown') + '</div>';
+      return;
+    }
+    renderVisionResult(readout, data.intel || {}, data.path);
+  } catch(e) {
+    readout.classList.remove('processing');
+    readout.innerHTML = '<div class="atlas-click-readout-error"><b>Network error</b><br>' + (e.message || 'unknown') + '</div>';
+  }
+};
+
+function escAtlas(s){
+  return String(s == null ? '' : s).replace(/[&<>"\']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"\'":'&#39;'}[c]; });
+}
+
+function confidencePill(score){
+  if (typeof score !== 'number') return '';
+  if (score >= 0.8)  return '<span class="conf high">' + Math.round(score*100) + '%</span>';
+  if (score >= 0.55) return '<span class="conf med">'  + Math.round(score*100) + '%</span>';
+  return '<span class="conf low">' + Math.round(score*100) + '%</span>';
+}
+
+function renderVisionResult(root, intel, imgPath) {
+  const groups = [];
+  // Header group with detected PT + summary
+  const pt = intel.detected_pt || intel.product_type || (intel.field_suggestions || []).find(s => s.field === 'product_type')?.value;
+  const subject = intel.detected_subject || intel.subject || intel.summary;
+  let head = '';
+  if (pt || subject) {
+    head += '<div class="group"><div class="group-h">// VISION READ COMPLETE</div>';
+    if (pt)      head += '<div class="row"><span class="k">detected_pt</span><span class="v">' + escAtlas(pt) + '</span></div>';
+    if (subject) head += '<div class="row"><span class="k">summary</span><span class="v">' + escAtlas(subject) + '</span></div>';
+    if (imgPath) head += '<div class="row"><span class="k">image</span><span class="v" style="font-size:11px;color:#64748B;">' + escAtlas(imgPath) + '</span></div>';
+    head += '</div>';
+  }
+
+  // Field suggestions group
+  const fs = Array.isArray(intel.field_suggestions) ? intel.field_suggestions : [];
+  if (fs.length) {
+    let body = '<div class="group"><div class="group-h">// FIELD SUGGESTIONS · ' + fs.length + '</div>';
+    fs.slice(0, 12).forEach(function(s){
+      body += '<div class="row">';
+      body += '<span class="k">' + escAtlas(s.field || '') + '</span>';
+      body += '<span class="v">' + escAtlas(s.value || s.suggestion || '') + '</span>';
+      if (s.confidence != null) body += confidencePill(typeof s.confidence === 'number' ? s.confidence : 0);
+      body += '</div>';
+    });
+    if (fs.length > 12) {
+      body += '<div class="row" style="opacity:0.6;"><span class="k">…</span><span class="v">+ ' + (fs.length - 12) + ' more fields</span></div>';
+    }
+    body += '</div>';
+    groups.push(body);
+  }
+
+  // Observations group
+  const obs = Array.isArray(intel.observations) ? intel.observations : [];
+  if (obs.length) {
+    let body = '<div class="group"><div class="group-h">// OBSERVATIONS · ' + obs.length + '</div>';
+    obs.slice(0, 6).forEach(function(o){
+      const text = typeof o === 'string' ? o : (o.text || o.observation || JSON.stringify(o));
+      body += '<div class="row"><span class="k">·</span><span class="v">' + escAtlas(text) + '</span></div>';
+    });
+    body += '</div>';
+    groups.push(body);
+  }
+
+  // Image quality group
+  const iq = Array.isArray(intel.image_quality) ? intel.image_quality : [];
+  if (iq.length) {
+    let body = '<div class="group"><div class="group-h">// IMAGE QUALITY FLAGS</div>';
+    iq.slice(0, 5).forEach(function(q){
+      const text = typeof q === 'string' ? q : (q.flag || q.text || JSON.stringify(q));
+      body += '<div class="row"><span class="k">flag</span><span class="v">' + escAtlas(text) + '</span></div>';
+    });
+    body += '</div>';
+    groups.push(body);
+  }
+
+  if (!head && !groups.length) {
+    root.innerHTML = '<div class="atlas-click-readout-error"><b>Vision returned no data</b><br>Try another photo.</div>';
+    return;
+  }
+
+  root.innerHTML = '<div class="atlas-click-readout-result">' + head + groups.join('') + '</div>';
+}
+</script>
