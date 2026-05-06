@@ -2917,6 +2917,41 @@ def upload_product_data():
     
     try:
         styles, errors, warnings = parse_product_file(str(save_path))
+
+        # ── Strip template-example rows (Volcom Rashguard, etc.) ───────────
+        # Atlas templates ship with one filled example row to show the
+        # operator the expected shape. When the operator pastes their own
+        # data without deleting that example, parse_product_file picks it up
+        # as a real product. Filter it out before the multi-brand guard fires.
+        TEMPLATE_EXAMPLE_STYLES = {"436008622"}  # known sample row(s) we ship
+        if styles:
+            from collections import Counter as _C
+            brand_counter = _C((s.get("brand") or "").strip() for s in styles)
+            total_rows = len(styles)
+            stripped = []
+            removed_examples = []
+            for s in styles:
+                sn = (s.get("style_num") or "").strip()
+                br = (s.get("brand") or "").strip()
+                # Rule A: matches a known seeded sample style number
+                if sn in TEMPLATE_EXAMPLE_STYLES:
+                    removed_examples.append({"reason": "sample_style_number", "style_num": sn, "brand": br})
+                    continue
+                # Rule B: minority brand (≤1 row) AND majority brand has ≥3 rows
+                if br and brand_counter.get(br, 0) <= 1 and total_rows >= 4:
+                    majority = brand_counter.most_common(1)[0]
+                    if majority[1] >= 3 and majority[0] != br:
+                        removed_examples.append({"reason": "minority_brand_example", "style_num": sn, "brand": br})
+                        continue
+                stripped.append(s)
+            if removed_examples and stripped:
+                styles = stripped
+                for ex in removed_examples:
+                    warnings.append(
+                        f"Skipped template example row — style {ex['style_num']} ({ex['brand']}). "
+                        f"If this was real product data, delete the seeded example row from the template before re-uploading."
+                    )
+
         session_data["styles"] = styles
 
         total_variants = sum(len(s["variants"]) for s in styles)
