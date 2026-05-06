@@ -3252,6 +3252,15 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
             time.sleep(0.2)
         content_progress["current_step"] = f"Generating SEO-optimized title (max 120 chars)..."
 
+        # ═══ Resolve PT + gender up front so they're always defined ═══
+        # These are used by derive_neck_type / normalize_color / subcategory
+        # logic AFTER both LLM and rule-based branches. Pre-Pass-12.2 they
+        # were only assigned in the rule-based else-branch, so successful
+        # LLM runs raised UnboundLocalError downstream.
+        resolved_pt = _resolve_style_product_type(style) or ""
+        _style_gender, _ = _derive_gender_department(style)
+        eff_gender_gen = _style_gender or brand_cfg.get("gender", "")
+
         # Try LLM generation first (unless mode is "rules")
         gen_mode = session_data.get("generation_mode", "auto")
         llm_result = None
@@ -3277,10 +3286,8 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
             if _anthropic_client is not None:
                 print(f"[LLM] Falling back to rule-based for style {style_num}")
             # Use actual subclass as product type descriptor (not hardcoded "Dress")
-            pt_label = subclass or sub_subclass or _resolve_style_product_type(style).replace("_", " ").title() or "Dress"
-            resolved_pt = _resolve_style_product_type(style) or ""
-            style_gender, _ = _derive_gender_department(style)
-            eff_gender_gen = style_gender or brand_cfg.get("gender", "")
+            pt_label = subclass or sub_subclass or resolved_pt.replace("_", " ").title() or "Dress"
+            style_gender = _style_gender
             title = generate_title(brand_cfg, brand, style_name, pt_label, first_color, first_size, upf, style_gender=style_gender)
             bullets = generate_bullets(brand_cfg, brand, style_name, sub_subclass, fabric, care, first_color, upf,
                                        subclass=subclass, gender=eff_gender_gen, product_type=resolved_pt, style_num=style_num)
