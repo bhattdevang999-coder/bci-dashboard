@@ -3969,6 +3969,222 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
     </div>
 
+    <!-- ════════════════ DATA SPEC + HOW IT WORKS ════════════════ -->
+    <div class="atlas-ch-explainer">
+      <details class="atlas-explainer-card" open>
+        <summary>
+          <span class="atlas-explainer-eyebrow">// DATA WE NEED</span>
+          <span class="atlas-explainer-title">The exact columns Atlas reads from your three reports</span>
+          <span class="atlas-explainer-caret">▾</span>
+        </summary>
+        <div class="atlas-explainer-body">
+          <p class="atlas-explainer-intro">
+            Atlas auto-detects column headers — you don't need to rename anything. Every row below shows the field name we look for, what it powers, and which header variants we'll accept. <b>Audit your data against this spec before uploading</b> so you know exactly what works today and what's missing.
+          </p>
+
+          <!-- ══ CATALOG FILE ══ -->
+          <div class="atlas-spec-block">
+            <div class="atlas-spec-block-h">
+              <span class="atlas-spec-num">01</span>
+              <div>
+                <div class="atlas-spec-name">Catalog file <span class="atlas-cat-pill req">Required</span></div>
+                <div class="atlas-spec-source">From: Vendor Central → Reports → Detail Page Sales &amp; Traffic · Seller Central → Inventory → Manage Inventory · or any custom flat file with an ASIN/SKU column</div>
+              </div>
+            </div>
+
+            <div class="atlas-spec-cluster">
+              <div class="atlas-spec-cluster-h">Identity · 5 fields</div>
+              <table class="atlas-spec-table">
+                <tr><td class="f">Child ASIN</td><td class="p">Primary key Atlas uses for everything</td><td class="a">asin · child_asin · asin1</td></tr>
+                <tr><td class="f">Parent ASIN</td><td class="p">Variation grouping + family integrity</td><td class="a">parent_asin · parent sku</td></tr>
+                <tr><td class="f">SKU</td><td class="p">Internal cross-reference</td><td class="a">sku · seller-sku · vendor sku · item_sku</td></tr>
+                <tr><td class="f">UPC / EAN / GTIN</td><td class="p">Barcode validation</td><td class="a">upc · ean · gtin</td></tr>
+                <tr><td class="f">Style #</td><td class="p">TLG style cross-walk</td><td class="a">style number · style_num</td></tr>
+              </table>
+            </div>
+
+            <div class="atlas-spec-cluster">
+              <div class="atlas-spec-cluster-h">Variation structure · 4 fields</div>
+              <table class="atlas-spec-table">
+                <tr><td class="f">Parentage Level</td><td class="p">Tells Atlas which row is parent vs child</td><td class="a">parent_child · parent/child · parentage</td></tr>
+                <tr><td class="f">Variation Theme</td><td class="p">SizeName-ColorName / Size / Color etc</td><td class="a">variation_theme · variation theme name</td></tr>
+                <tr><td class="f">Color</td><td class="p">Variation axis + suppression check</td><td class="a">color · color_name · color_map</td></tr>
+                <tr><td class="f">Size</td><td class="p">Variation axis + suppression check</td><td class="a">size · product - size · apparel size value</td></tr>
+            </table>
+            </div>
+
+            <div class="atlas-spec-cluster">
+              <div class="atlas-spec-cluster-h">Content fields · 11 fields</div>
+              <table class="atlas-spec-table">
+                <tr><td class="f">Title / Item Name</td><td class="p">Title length + format scoring</td><td class="a">title · item_name · product title</td></tr>
+                <tr><td class="f">Brand</td><td class="p">Brand integrity check vs parent</td><td class="a">brand · brand_name</td></tr>
+                <tr><td class="f">Bullet Points 1–5</td><td class="p">Bullet completeness + content score</td><td class="a">bullet_point1..5 · key product features 1..5</td></tr>
+                <tr><td class="f">Description / A+ Content</td><td class="p">Long-form copy presence</td><td class="a">description · product_description</td></tr>
+                <tr><td class="f">Backend Keywords</td><td class="p">Search-term completeness</td><td class="a">backend keywords · generic_keywords · search terms</td></tr>
+                <tr><td class="f">Item Type Keyword</td><td class="p">Amazon browse-tree placement</td><td class="a">item type keyword</td></tr>
+                <tr><td class="f">Category / Product Type</td><td class="p">PT classification + rule-engine routing</td><td class="a">product type · sub-class name · category</td></tr>
+                <tr><td class="f">Subcategory</td><td class="p">Refines PT routing</td><td class="a">subcategory · sub sub-class name</td></tr>
+              </table>
+            </div>
+
+            <div class="atlas-spec-cluster">
+              <div class="atlas-spec-cluster-h">Imagery · 4 fields</div>
+              <table class="atlas-spec-table">
+                <tr><td class="f">Main Image URL</td><td class="p">Main-image presence + slot rule</td><td class="a">main_image_url · main image · image-url</td></tr>
+                <tr><td class="f">Other Image URL</td><td class="p">Alt slot completeness</td><td class="a">other_image_url · image url 2</td></tr>
+                <tr><td class="f">Additional Image Count</td><td class="p">Slot fill ratio</td><td class="a">image count · additional image count</td></tr>
+                <tr><td class="f">A+ / EBC Status</td><td class="p">Premium-content present?</td><td class="a">a+ status · ebc status · enhanced brand content</td></tr>
+              </table>
+            </div>
+
+            <div class="atlas-spec-cluster">
+              <div class="atlas-spec-cluster-h">Pricing + Buy Box · 4 fields</div>
+              <table class="atlas-spec-table">
+                <tr><td class="f">List Price</td><td class="p">Margin guard + ad eligibility proxy</td><td class="a">price · list price · standard_price · your price</td></tr>
+                <tr><td class="f">Sale Price</td><td class="p">Promo state for ad spend ranking</td><td class="a">sale price</td></tr>
+                <tr><td class="f">Buy Box Price</td><td class="p">Lost-Buy-Box detection</td><td class="a">buy box price</td></tr>
+                <tr><td class="f">Buy Box Winner</td><td class="p">Definitive Buy Box ownership</td><td class="a">buy box winner</td></tr>
+              </table>
+            </div>
+
+            <div class="atlas-spec-cluster">
+              <div class="atlas-spec-cluster-h">Inventory + Status · 6 fields</div>
+              <table class="atlas-spec-table">
+                <tr><td class="f">Available Quantity</td><td class="p">At-risk + low-inventory flags</td><td class="a">quantity · amzn ioh · fulfillable quantity</td></tr>
+                <tr><td class="f">Inventory Status</td><td class="p">Out-of-stock detection</td><td class="a">inventory status</td></tr>
+                <tr><td class="f">Status / Listing Status</td><td class="p">Active / inactive flag</td><td class="a">status · listing status</td></tr>
+                <tr><td class="f">Search Suppressed</td><td class="p">Direct suppression flag</td><td class="a">search suppressed · suppression reason</td></tr>
+                <tr><td class="f">Hazmat Status</td><td class="p">Restricted-category gate</td><td class="a">hazmat status</td></tr>
+                <tr><td class="f">Listing Quality Score</td><td class="p">Amazon's own LQS metric (when present)</td><td class="a">listing quality score</td></tr>
+              </table>
+            </div>
+
+            <div class="atlas-spec-cluster">
+              <div class="atlas-spec-cluster-h">Product specs · 7 fields (apparel sharpens classification)</div>
+              <table class="atlas-spec-table">
+                <tr><td class="f">Fabric / Material</td><td class="p">Apparel rule-engine routing</td><td class="a">fabric content · material</td></tr>
+                <tr><td class="f">Country of Origin</td><td class="p">Compliance flag</td><td class="a">country of origin</td></tr>
+                <tr><td class="f">Care Instructions</td><td class="p">Compliance + content score</td><td class="a">care instructions</td></tr>
+                <tr><td class="f">Item Weight</td><td class="p">FBA + size-tier inference</td><td class="a">item weight</td></tr>
+                <tr><td class="f">Package Dimensions</td><td class="p">Size-tier inference</td><td class="a">package dimensions</td></tr>
+                <tr><td class="f">Fulfillment Method</td><td class="p">FBA vs FBM split</td><td class="a">fulfillment method</td></tr>
+                <tr><td class="f">First Available Date</td><td class="p">Age + traction normalization</td><td class="a">first available date</td></tr>
+              </table>
+            </div>
+
+            <div class="atlas-spec-cluster">
+              <div class="atlas-spec-cluster-h">Reviews + meta · 4 fields</div>
+              <table class="atlas-spec-table">
+                <tr><td class="f">Customer Review Count</td><td class="p">Reviews module input</td><td class="a">review count</td></tr>
+                <tr><td class="f">Average Star Rating</td><td class="p">Reviews module input</td><td class="a">star rating · average star rating</td></tr>
+                <tr><td class="f">Season Code</td><td class="p">TLG seasonality cross-walk</td><td class="a">season code</td></tr>
+                <tr><td class="f">Last Updated</td><td class="p">Freshness banner on Catalog Health</td><td class="a">last updated</td></tr>
+              </table>
+            </div>
+
+            <div class="atlas-spec-takeaway">
+              <b>Bare minimum to run Catalog Health:</b> ASIN + Title + at least one of (Brand, Category, Bullet 1, Main Image). Anything missing just drops the corresponding check — it never blocks the upload.
+            </div>
+          </div>
+
+          <!-- ══ SALES REPORT ══ -->
+          <div class="atlas-spec-block">
+            <div class="atlas-spec-block-h">
+              <span class="atlas-spec-num" style="color:#94A3B8; border-color:rgba(148,163,184,0.3); background:rgba(148,163,184,0.08);">02</span>
+              <div>
+                <div class="atlas-spec-name">Sales data <span class="atlas-cat-pill opt">Optional</span></div>
+                <div class="atlas-spec-source">From: Vendor Central → Reports → Detail Page Sales &amp; Traffic By ASIN · Seller Central → Reports → Business Reports → Detail Page Sales &amp; Traffic by ASIN</div>
+              </div>
+            </div>
+            <table class="atlas-spec-table">
+              <tr><td class="f">ASIN</td><td class="p">Joins to your catalog file</td><td class="a">asin · child asin</td></tr>
+              <tr><td class="f">Sessions / Glance Views</td><td class="p">Traffic — for revenue impact ranking</td><td class="a">sessions · glance views · page views</td></tr>
+              <tr><td class="f">Units Ordered / Shipped</td><td class="p">Revenue weight</td><td class="a">ordered units · shipped units · units</td></tr>
+              <tr><td class="f">Ordered / Shipped Revenue</td><td class="p">Dollar impact of every issue</td><td class="a">ordered revenue · shipped revenue · ordered product sales</td></tr>
+              <tr><td class="f">Returns / Return Rate</td><td class="p">Reviews-loop signal</td><td class="a">returns · return rate</td></tr>
+              <tr><td class="f">Conversion Rate / CVR</td><td class="p">PDP-Optimizer benchmark</td><td class="a">conversion rate · unit session %</td></tr>
+              <tr><td class="f">Buy Box %</td><td class="p">Cross-checks Lost-Buy-Box flag</td><td class="a">buy box % · buy box percentage</td></tr>
+              <tr><td class="f">Ad Spend</td><td class="p">Future Ad Bulksheet input</td><td class="a">ad spend</td></tr>
+              <tr><td class="f">Ad Revenue / Attributed Sales</td><td class="p">Future PDP-Optimizer input</td><td class="a">ad revenue · attributed sales</td></tr>
+              <tr><td class="f">ACOS</td><td class="p">Future PROMOTE module input</td><td class="a">acos</td></tr>
+              <tr><td class="f">Subcategory Sales Rank</td><td class="p">Top-seller benchmark</td><td class="a">sales rank · subcategory sales rank</td></tr>
+              <tr><td class="f">Report Period (Start / End / Month)</td><td class="p">Trend lines + freshness</td><td class="a">period start · period end · report month</td></tr>
+            </table>
+            <div class="atlas-spec-takeaway">
+              <b>Bare minimum:</b> ASIN + (Sessions OR Units) + Revenue. Without sales data Atlas still finds every broken ASIN — it just can't rank the fixes by dollars.
+            </div>
+          </div>
+
+          <!-- ══ AD BULKSHEET ══ -->
+          <div class="atlas-spec-block">
+            <div class="atlas-spec-block-h">
+              <span class="atlas-spec-num" style="color:#5EEAD4; border-color:rgba(94,234,212,0.3); background:rgba(94,234,212,0.08);">03</span>
+              <div>
+                <div class="atlas-spec-name">Ad eligibility bulksheet <span class="atlas-cat-pill truth">Ground truth</span></div>
+                <div class="atlas-spec-source">From: Amazon Advertising Console → Bulk Operations → Create bulk download → Sponsored Products → check <i>Include ASIN eligibility status</i> → Download</div>
+              </div>
+            </div>
+            <table class="atlas-spec-table">
+              <tr><td class="f">Advertised ASIN</td><td class="p">Joins to your catalog file</td><td class="a">advertised asin · asin · child asin</td></tr>
+              <tr><td class="f">Advertised SKU</td><td class="p">Cross-check vs catalog SKU</td><td class="a">advertised sku · sku</td></tr>
+              <tr><td class="f">Eligibility Status</td><td class="p">Direct yes/no — flips Atlas from proxy guess to ground truth</td><td class="a">eligibility status · asin eligibility status</td></tr>
+              <tr><td class="f">Eligibility Reasons</td><td class="p">Amazon's own reason code (e.g. asin_not_buyable, out_of_stock) → mapped to suppression/Buy-Box flags</td><td class="a">eligibility reasons · eligibility reason</td></tr>
+              <tr><td class="f">Ad Type / Campaign Type</td><td class="p">Sponsored Products vs Brands vs Display split</td><td class="a">ad type · campaign type · product type</td></tr>
+              <tr><td class="f">Campaign Name</td><td class="p">Campaign-level rollups</td><td class="a">campaign name · campaign</td></tr>
+            </table>
+            <div class="atlas-spec-takeaway">
+              <b>Why ground truth matters:</b> Without this file Atlas estimates ad-eligibility from your catalog (Buy Box, inventory, suppression). With it, every estimate is replaced by Amazon's actual eligibility code — including reasons we couldn't otherwise see.
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="atlas-explainer-card">
+        <summary>
+          <span class="atlas-explainer-eyebrow">// HOW THIS WORKS</span>
+          <span class="atlas-explainer-title">Catalog Health, end-to-end</span>
+          <span class="atlas-explainer-caret">▾</span>
+        </summary>
+        <div class="atlas-explainer-body">
+          <div class="atlas-howit-grid">
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">01</div>
+              <div class="atlas-howit-step-name">Drop your catalog</div>
+              <div class="atlas-howit-step-text">Atlas reads any Amazon catalog export. Column headers are auto-detected against the spec above — no renaming needed.</div>
+            </div>
+            <div class="atlas-howit-arrow">→</div>
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">02</div>
+              <div class="atlas-howit-step-name">Layer 1 + Layer 2 checks</div>
+              <div class="atlas-howit-step-text">Structural: orphans, parent-child mismatches, broken variation themes, brand collisions. Content: title length, bullet count, image-slot fill, backend keywords, A+ presence.</div>
+            </div>
+            <div class="atlas-howit-arrow">→</div>
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">03</div>
+              <div class="atlas-howit-step-name">Ad-readiness pass</div>
+              <div class="atlas-howit-step-text">Lost Buy Box, Out of Stock, Suppressed, Inactive, Restricted-category — flagged as PROXY guesses unless you upload the ad bulksheet.</div>
+            </div>
+            <div class="atlas-howit-arrow">→</div>
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">04</div>
+              <div class="atlas-howit-step-name">Score + rank + export</div>
+              <div class="atlas-howit-step-text">Every ASIN gets a 0–100 health score. With sales data, every issue gets a $-impact. Download the fix file as a Vendor-Central-ready bulksheet.</div>
+            </div>
+          </div>
+
+          <div class="atlas-howit-links">
+            <div class="atlas-howit-links-h">// HOW CATALOG HEALTH FEEDS THE REST OF ATLAS</div>
+            <div class="atlas-howit-link"><b>→ Variations</b> — broken variation families surfaced here jump straight into Variations for one-click fix-and-export.</div>
+            <div class="atlas-howit-link"><b>→ Suppression Watch</b> (30 days) — runs the same engine on a daily schedule against your live catalog.</div>
+            <div class="atlas-howit-link"><b>→ Image Audit</b> (30 days) — image-slot gaps Catalog Health flags become reshoot lists in Image Audit.</div>
+            <div class="atlas-howit-link"><b>→ Bulk Price Sync</b> (60 days) — Lost-Buy-Box ASINs from here feed price-correction sheets.</div>
+            <div class="atlas-howit-link"><b>→ Reviews</b> (60-90 days) — high-return ASINs (return rate &gt; baseline) get clustered into themes for product fixes.</div>
+            <div class="atlas-howit-link"><b>→ PDP Optimizer</b> (60-90 days) — low-CVR ASINs from sales data become priority targets.</div>
+          </div>
+        </div>
+      </details>
+    </div>
+
     <!-- Section 1: Upload Zones (Atlas grid) -->
     <div class="atlas-catalog-grid">
       <!-- TILE 1: Catalog (REQUIRED) -->
