@@ -1123,17 +1123,107 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 }
 .atlas-shipped-foot b { color: #5EEAD4; font-weight: 700; }
 
+
+/* ═══════ DATA SPEC DOORWAY (Pass 10) ═══════ */
+.atlas-data-doors {
+  margin: 8px 0 32px;
+  padding: 18px 22px 16px;
+  background: rgba(14,26,38,0.6);
+  border: 1px solid #1C2D40; border-radius: 12px;
+}
+.atlas-data-doors-h {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.6px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 12px;
+  padding-bottom: 10px; border-bottom: 1px dashed #1C2D40;
+}
+.atlas-data-doors-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+@media (max-width: 1100px) { .atlas-data-doors-grid { grid-template-columns: repeat(2, 1fr); } }
+.atlas-data-door {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: #13212F; border: 1px solid #1C2D40; border-radius: 8px;
+  cursor: pointer; transition: all 180ms;
+  text-decoration: none;
+}
+.atlas-data-door:hover {
+  border-color: rgba(94,234,212,0.4);
+  background: rgba(94,234,212,0.04);
+  transform: translateY(-1px);
+}
+.atlas-data-door-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: rgba(94,234,212,0.08); border: 1px solid rgba(94,234,212,0.25);
+  color: #5EEAD4; font-family: ui-monospace, monospace; font-size: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; flex-shrink: 0; letter-spacing: 0.5px;
+}
+.atlas-data-door-body { flex: 1; min-width: 0; }
+.atlas-data-door-name {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 13px;
+  color: #E2E8F0; font-weight: 700; letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+.atlas-data-door-spec {
+  font-family: ui-monospace, monospace; font-size: 10.5px;
+  color: #64748B; margin-top: 2px;
+}
+.atlas-data-door-arrow {
+  color: #475569; font-size: 12px; transition: color 180ms;
+}
+.atlas-data-door:hover .atlas-data-door-arrow { color: #5EEAD4; }
+
 </style>
 
 <div class="content content-wide" id="atlas-page">
   <div class="atlas-shell">
 
-        <!-- ═══ SECTION 1 · SCALE — multi-brand portfolio infrastructure ═══ -->
-    <div class="atlas-scale">
-      <div class="atlas-scale-eyebrow"><span class="pulse"></span>MULTI-BRAND OPERATING INFRASTRUCTURE</div>
-      <h1 class="atlas-scale-h1">Not a listing tool. <span class="accent">The operating layer above your team.</span></h1>
-      <p class="atlas-scale-sub">One engine. One severity table. One brand-voice config. Scaled across every brand in your portfolio. Connect a brand once and Atlas treats it the same way it treats the next twelve.</p>
+        <!-- ═══ SECTION 3 · CLICK MOMENT — embedded Image → NIS, real vision ═══ -->
+    <div class="atlas-click">
+      <div class="atlas-click-eyebrow"><span class="live-dot"></span>VISION · LIVE</div>
+      <h2 class="atlas-click-h">Drop a product photo.</h2>
+      
 
+      <div class="atlas-click-stage">
+        <!-- Drop zone -->
+        <div class="atlas-click-drop" id="atlas-click-drop">
+          <input type="file" id="atlas-click-file" accept="image/*" style="display:none;" onchange="atlasClickRun(this.files)">
+          <div class="atlas-click-icon-wrap">
+            <svg class="atlas-click-icon" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M7 14L10 11L14 15L17 12L21 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="9" cy="8" r="1.5" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+          </div>
+          <div class="atlas-click-headline">Drop a photo, or <span class="accent">click to browse</span></div>
+          <div class="atlas-click-formats">JPG · PNG · WebP — vision returns in 3–5 seconds</div>
+          <button type="button" class="atlas-click-btn" onclick="document.getElementById('atlas-click-file').click()">Browse →</button>
+          
+        </div>
+
+        <!-- Right pane: vision readout -->
+        <div class="atlas-click-readout" id="atlas-click-readout">
+          <div class="atlas-click-readout-empty">
+            <div class="readout-eyebrow">// VISION JSON · LIVE</div>
+            <div class="readout-line"><span class="k">detected_pt:</span> <span class="v dim">awaiting photo</span></div>
+            <div class="readout-line"><span class="k">brand_voice:</span> <span class="v dim">applied per brand_code</span></div>
+            <div class="readout-line"><span class="k">attributes:</span> <span class="v dim">~60 fields with confidence</span></div>
+            <div class="readout-line"><span class="k">image_quality:</span> <span class="v dim">flags surfaced inline</span></div>
+            <div class="readout-line"><span class="k">narrative:</span> <span class="v dim">human-readable summary</span></div>
+            <div class="readout-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+        </div>
+
+    
+
+<!-- ═══ SECTION 1 · SCALE — multi-brand portfolio infrastructure ═══ -->
+    <div class="atlas-scale">
       <div class="atlas-scale-matrix">
         <div class="atlas-scale-matrix-h">
           <div class="atlas-scale-matrix-cell-h"></div>
@@ -1171,186 +1261,10 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
           <div class="atlas-scale-cell"><span class="dot dot-empty"></span></div>
         </div>
       </div>
-      <div class="atlas-scale-foot">Connect any brand. Same engine. Same playbook. Same source of truth.</div>
-    </div>
-
-    <!-- ═══ SECTION 2 · DEPTH — the hard part, already solved ═══ -->
-    <div class="atlas-depth">
-      <div class="atlas-depth-eyebrow">// THE HARD PART, ALREADY SOLVED</div>
-      <h2 class="atlas-depth-h">This is not a wrapper around a model.</h2>
-      <div class="atlas-depth-grid">
-        <div class="atlas-depth-tile">
-          <div class="atlas-depth-num" data-target="16">16</div>
-          <div class="atlas-depth-label">PT-aware rule engines</div>
-          <div class="atlas-depth-text">Required / optional / hidden field resolution per Amazon NIS template — DRESS, COAT, SHIRT, PANTS, SWIMWEAR, SHORTS, BLAZER, BRA, OVERALLS, SKIRT, SNOW_PANT, SNOWSUIT, SWEATSHIRT, HAT, SANDAL, ONE_PIECE_OUTFIT.</div>
-        </div>
-        <div class="atlas-depth-tile">
-          <div class="atlas-depth-num" data-target="9400">9,400+</div>
-          <div class="atlas-depth-label">Amazon dropdown values resolved</div>
-          <div class="atlas-depth-text">Cached per PT, validated against the live Amazon spec. The combinatorial space Atlas already navigates so your team doesn't.</div>
-        </div>
-        <div class="atlas-depth-tile">
-          <div class="atlas-depth-num" data-target="200">200+</div>
-          <div class="atlas-depth-label">Header variants fuzzy-detected</div>
-          <div class="atlas-depth-text">Vendor Central, Seller Central, custom flat files — Atlas auto-maps your columns. No renaming, no hand-mapping, no template lock-in.</div>
-        </div>
-        <div class="atlas-depth-tile">
-          <div class="atlas-depth-num" data-target="22">22</div>
-          <div class="atlas-depth-label">Issue types · severity-weighted</div>
-          <div class="atlas-depth-text">Variation orphans, content gaps, ad-eligibility blockers — each ranked, joined to your sales report on ASIN, surfaced by dollar at risk.</div>
-        </div>
-        <div class="atlas-depth-tile">
-          <div class="atlas-depth-num">PROXY → GROUND TRUTH</div>
-          <div class="atlas-depth-label">Reason-code reconciliation</div>
-          <div class="atlas-depth-text">Amazon's <code>asin_not_buyable</code>, <code>out_of_stock</code>, <code>buy_box_suppressed</code> codes mapped to one severity table. Proxy guesses upgrade to ground truth the moment the ad bulksheet uploads.</div>
-        </div>
-      </div>
-      <div class="atlas-depth-foot">Wrapping a model is a weekend. Resolving Amazon's conditional rule engine is six weeks. <b>That part is done.</b></div>
-    </div>
-
-    <!-- ═══ SECTION 3 · CLICK MOMENT — embedded Image → NIS, real vision ═══ -->
-    <div class="atlas-click">
-      <div class="atlas-click-eyebrow"><span class="live-dot"></span>TRY IT NOW · LIVE VISION · NO SIGNUP</div>
-      <h2 class="atlas-click-h">Drop a product photo. <span class="accent">Atlas reads it in 4 seconds.</span></h2>
-      <p class="atlas-click-sub">Same vision pipeline that powers Image → NIS Beta. Pulls product type, color, silhouette, ~60 structured fields with per-field confidence flags — straight from one image.</p>
-
-      <div class="atlas-click-stage">
-        <!-- Drop zone -->
-        <div class="atlas-click-drop" id="atlas-click-drop">
-          <input type="file" id="atlas-click-file" accept="image/*" style="display:none;" onchange="atlasClickRun(this.files)">
-          <div class="atlas-click-icon-wrap">
-            <svg class="atlas-click-icon" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.6"/>
-              <path d="M7 14L10 11L14 15L17 12L21 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="9" cy="8" r="1.5" stroke="currentColor" stroke-width="1.6"/>
-            </svg>
-          </div>
-          <div class="atlas-click-headline">Drop a photo, or <span class="accent">click to browse</span></div>
-          <div class="atlas-click-formats">JPG · PNG · WebP — vision returns in 3–5 seconds</div>
-          <button type="button" class="atlas-click-btn" onclick="document.getElementById('atlas-click-file').click()">Browse →</button>
-          <div class="atlas-click-foot">Powered by Claude Sonnet 4.5 vision · runs against your real photo · no upload limit on this page</div>
-        </div>
-
-        <!-- Right pane: vision readout -->
-        <div class="atlas-click-readout" id="atlas-click-readout">
-          <div class="atlas-click-readout-empty">
-            <div class="readout-eyebrow">// VISION JSON · LIVE</div>
-            <div class="readout-line"><span class="k">detected_pt:</span> <span class="v dim">awaiting photo</span></div>
-            <div class="readout-line"><span class="k">brand_voice:</span> <span class="v dim">applied per brand_code</span></div>
-            <div class="readout-line"><span class="k">attributes:</span> <span class="v dim">~60 fields with confidence</span></div>
-            <div class="readout-line"><span class="k">image_quality:</span> <span class="v dim">flags surfaced inline</span></div>
-            <div class="readout-line"><span class="k">narrative:</span> <span class="v dim">human-readable summary</span></div>
-            <div class="readout-pulse"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ SECTION 4 · AUTHORSHIP — what shipped, week by week ═══ -->
-    <div class="atlas-shipped">
-      <div class="atlas-shipped-eyebrow">// SHIPPED</div>
-      <h2 class="atlas-shipped-h">Six weeks. <span class="accent">One person.</span> A real brand validating it.</h2>
-      <div class="atlas-shipped-track">
-        <div class="atlas-shipped-week">
-          <div class="atlas-shipped-num">W1</div>
-          <div class="atlas-shipped-name">PT classifier</div>
-          <div class="atlas-shipped-text">16 product-type rule engines. Sub-class → PT mapping. Operator queue for unknowns.</div>
-        </div>
-        <div class="atlas-shipped-arr">→</div>
-        <div class="atlas-shipped-week">
-          <div class="atlas-shipped-num">W2</div>
-          <div class="atlas-shipped-name">NIS rule engine</div>
-          <div class="atlas-shipped-text">Required / optional / hidden field resolution per PT. 9,400+ Amazon dropdown values cached.</div>
-        </div>
-        <div class="atlas-shipped-arr">→</div>
-        <div class="atlas-shipped-week">
-          <div class="atlas-shipped-num">W3</div>
-          <div class="atlas-shipped-name">Bulk Upload pipeline</div>
-          <div class="atlas-shipped-text">.xlsm output. Brand voice config per brand_code. Sage Collective onboarded.</div>
-        </div>
-        <div class="atlas-shipped-arr">→</div>
-        <div class="atlas-shipped-week">
-          <div class="atlas-shipped-num">W4</div>
-          <div class="atlas-shipped-name">Catalog Health</div>
-          <div class="atlas-shipped-text">22 issue types, severity table, sales-revenue join, ad-readiness proxy → ground truth pattern.</div>
-        </div>
-        <div class="atlas-shipped-arr">→</div>
-        <div class="atlas-shipped-week">
-          <div class="atlas-shipped-num">W5</div>
-          <div class="atlas-shipped-name">Variations + vision</div>
-          <div class="atlas-shipped-text">Image → NIS Beta. ⌘K command palette. Variation graph reuses Catalog Health.</div>
-        </div>
-        <div class="atlas-shipped-arr">→</div>
-        <div class="atlas-shipped-week current">
-          <div class="atlas-shipped-num">W6</div>
-          <div class="atlas-shipped-name">Atlas platform</div>
-          <div class="atlas-shipped-text">4-module architecture. Multi-brand readiness. The page you're reading right now.</div>
-        </div>
-      </div>
-      <div class="atlas-shipped-foot">Built solo. Sage Collective validating on real catalog. Nate operating on the QA side. <b>This is what six weeks of one motivated person looks like.</b></div>
-    </div>
-
-    <!-- ═══ ROADMAP ═══ -->
-    <div class="atlas-section-h">
-      <span class="atlas-section-num">// THE ATLAS ROADMAP</span>
-      <div class="atlas-section-title">Built for what's next.</div>
-      <span class="atlas-section-sub">Same brain. Wider lens.</span>
-    </div>
-    <div class="atlas-roadmap">
-      <div class="atlas-roadmap-track">
-        <div class="atlas-rm-col">
-          <div class="atlas-rm-marker live"></div>
-          <div class="atlas-rm-when">In hand</div>
-          <div class="atlas-rm-title">Create</div>
-          <ul class="atlas-rm-list">
-            <li class="live"><b>Bulk Upload</b></li>
-            <li class="live"><b>Image → NIS Beta</b></li>
-            <li>Photo Brief · concept</li>
-            <li>Voice Tuner · concept</li>
-          </ul>
-        </div>
-        <div class="atlas-rm-col">
-          <div class="atlas-rm-marker next"></div>
-          <div class="atlas-rm-when">In hand</div>
-          <div class="atlas-rm-title">Monitor</div>
-          <ul class="atlas-rm-list">
-            <li>Catalog Health</li>
-            <li>Suppression Watch</li>
-            <li>Image Audit</li>
-            <li>Compliance</li>
-          </ul>
-        </div>
-        <div class="atlas-rm-col">
-          <div class="atlas-rm-marker later"></div>
-          <div class="atlas-rm-when">Building</div>
-          <div class="atlas-rm-title">Manage</div>
-          <ul class="atlas-rm-list">
-            <li>Bulk Price Sync</li>
-            <li>Content Refresh</li>
-            <li class="live"><b>Variations · live</b></li>
-            <li>A/B Test</li>
-          </ul>
-        </div>
-        <div class="atlas-rm-col">
-          <div class="atlas-rm-marker future"></div>
-          <div class="atlas-rm-when">Next</div>
-          <div class="atlas-rm-title">Promote</div>
-          <ul class="atlas-rm-list">
-            <li>Ad Bulksheet</li>
-            <li>Keywords</li>
-            <li>PDP Optimizer</li>
-            <li>Reviews</li>
-          </ul>
-        </div>
-      </div>
+      
     </div>
 
     <!-- ═══ MODULE CARDS ═══ -->
-    <div class="atlas-section-h">
-      <span class="atlas-section-num">// ONE OPERATING LAYER · FOUR LENSES</span>
-      <div class="atlas-section-title">Same brand. Same ASIN. <span style="color:#5EEAD4;">Four lenses.</span></div>
-      <span class="atlas-section-sub">One pipeline. Connected by design.</span>
-    </div>
 
     <div class="atlas-modules">
       <!-- MODULE 01 · CREATE -->
@@ -1522,75 +1436,49 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
       </div>
     </div>
 
-    <!-- ═══ HOW IT WORKS ═══ -->
-    <div class="atlas-section-h">
-      <span class="atlas-section-num">// HOW IT WORKS</span>
-      <div class="atlas-section-title">One pipeline. Everything tagged.</div>
-      <span class="atlas-section-sub">Nothing auto-applied without you saying so.</span>
-    </div>
-    <div class="atlas-how">
-      <div class="atlas-how-flow">
-        <div class="atlas-how-step">
-          <div class="atlas-how-step-num">01 · INPUT</div>
-          <div class="atlas-how-step-title">Photo or sheet</div>
-          <div class="atlas-how-step-desc">One product photo, or a pre-upload with 50+ styles.</div>
-        </div>
-        <div class="atlas-how-step">
-          <div class="atlas-how-step-num">02 · VISION</div>
-          <div class="atlas-how-step-title">Claude Sonnet 4.5</div>
-          <div class="atlas-how-step-desc">Reads the image. Classifies PT, color, silhouette, features.</div>
-        </div>
-        <div class="atlas-how-step">
-          <div class="atlas-how-step-num">03 · RULES</div>
-          <div class="atlas-how-step-title">PT-aware engine</div>
-          <div class="atlas-how-step-desc">16 product types × brand configs × Amazon dropdowns cached.</div>
-        </div>
-        <div class="atlas-how-step">
-          <div class="atlas-how-step-num">04 · PROVENANCE</div>
-          <div class="atlas-how-step-title">Every field tagged</div>
-          <div class="atlas-how-step-desc">Vision / Brand / PT / Operator. You see where each value came from.</div>
-        </div>
-        <div class="atlas-how-step">
-          <div class="atlas-how-step-num">05 · OUTPUT</div>
-          <div class="atlas-how-step-title">Amazon-ready</div>
-          <div class="atlas-how-step-desc">Clean .xlsm for Seller Central. Soon: direct push via SP-API.</div>
-        </div>
-      </div>
-    </div>
-
     
-    <!-- ═══ ASK ═══ -->
-    <div class="atlas-ask">
-      <div class="atlas-ask-eyebrow">// THREE WEEKS · THREE BRANDS · ONE OPERATING LAYER</div>
-      <div class="atlas-ask-title">Pick three brands. Atlas trains on them.</div>
-      <div class="atlas-ask-grid">
-        <div class="atlas-ask-card">
-          <div class="atlas-ask-num">01</div>
-          <div class="atlas-ask-name">Three brands of your choice</div>
-          <div class="atlas-ask-text">Read-only catalog access. Same export your team already pulls weekly.</div>
-        </div>
-        <div class="atlas-ask-card">
-          <div class="atlas-ask-num">02</div>
-          <div class="atlas-ask-name">Four hours of one ops person, per brand</div>
-          <div class="atlas-ask-text">They validate Atlas's first 50 listings. Their corrections train Atlas on your voice.</div>
-        </div>
-        <div class="atlas-ask-card">
-          <div class="atlas-ask-num">03</div>
-          <div class="atlas-ask-name">Thirty minutes weekly, with you</div>
-          <div class="atlas-ask-text">You point Atlas at where the next module pushes the most ROI for your book.</div>
-        </div>
+
+    <!-- ═══ DATA SPEC DOORWAYS ═══ -->
+    <div class="atlas-data-doors">
+      <div class="atlas-data-doors-h">// THE DATA ATLAS READS</div>
+      <div class="atlas-data-doors-grid">
+        <a class="atlas-data-door" onclick="showNISPage(); return false;">
+          <span class="atlas-data-door-icon">PU</span>
+          <div class="atlas-data-door-body">
+            <div class="atlas-data-door-name">Pre-upload sheet</div>
+            <div class="atlas-data-door-spec">31 columns · 12 required</div>
+          </div>
+          <span class="atlas-data-door-arrow">→</span>
+        </a>
+        <a class="atlas-data-door" onclick="showCatalogPage(); return false;">
+          <span class="atlas-data-door-icon">CE</span>
+          <div class="atlas-data-door-body">
+            <div class="atlas-data-door-name">Catalog export</div>
+            <div class="atlas-data-door-spec">50 fields · 8 clusters</div>
+          </div>
+          <span class="atlas-data-door-arrow">→</span>
+        </a>
+        <a class="atlas-data-door" onclick="showCatalogPage(); return false;">
+          <span class="atlas-data-door-icon">SR</span>
+          <div class="atlas-data-door-body">
+            <div class="atlas-data-door-name">Sales report</div>
+            <div class="atlas-data-door-spec">12 fields · per ASIN</div>
+          </div>
+          <span class="atlas-data-door-arrow">→</span>
+        </a>
+        <a class="atlas-data-door" onclick="showCatalogPage(); return false;">
+          <span class="atlas-data-door-icon">AB</span>
+          <div class="atlas-data-door-body">
+            <div class="atlas-data-door-name">Ad eligibility bulksheet</div>
+            <div class="atlas-data-door-spec">6 fields · ground truth</div>
+          </div>
+          <span class="atlas-data-door-arrow">→</span>
+        </a>
       </div>
     </div>
 
-<!-- ═══ FOOTER CTA ═══ -->
-    <div class="atlas-footer-cta">
-      <h3>Ready to see it?</h3>
-      <p>Drop one photo. Pick your brand. Watch Atlas draft a listing in seconds.</p>
-      <a class="atlas-mod-cta" onclick="showBetaImageNISPage()">Open Atlas <span style="font-size:16px;">→</span></a>
-    </div>
-
-  </div>
-</div>
+  </div><!-- /atlas-shell -->
+</div><!-- /atlas-page -->
 
 <script>
 // ═══════ ATLAS CLICK MOMENT — live vision wiring ═══════
@@ -1623,7 +1511,6 @@ window.atlasClickRun = async function(files) {
   const f = files[0];
   const readout = document.getElementById('atlas-click-readout');
   if (!readout) return;
-  // Show progress
   readout.classList.add('processing');
   readout.innerHTML = '<div class="atlas-click-progress"><div class="spinner"></div><div class="atlas-click-progress-text">VISION READING · CLAUDE 4.5</div></div>';
   try {
@@ -1644,7 +1531,7 @@ window.atlasClickRun = async function(files) {
 };
 
 function escAtlas(s){
-  return String(s == null ? '' : s).replace(/[&<>"\']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"\'":'&#39;'}[c]; });
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
 }
 
 function confidencePill(score){
@@ -1656,8 +1543,7 @@ function confidencePill(score){
 
 function renderVisionResult(root, intel, imgPath) {
   const groups = [];
-  // Header group with detected PT + summary
-  const pt = intel.detected_pt || intel.product_type || (intel.field_suggestions || []).find(s => s.field === 'product_type')?.value;
+  const pt = intel.detected_pt || intel.product_type || (intel.field_suggestions || []).find(function(s){ return s.field === 'product_type'; })?.value;
   const subject = intel.detected_subject || intel.subject || intel.summary;
   let head = '';
   if (pt || subject) {
@@ -1667,8 +1553,6 @@ function renderVisionResult(root, intel, imgPath) {
     if (imgPath) head += '<div class="row"><span class="k">image</span><span class="v" style="font-size:11px;color:#64748B;">' + escAtlas(imgPath) + '</span></div>';
     head += '</div>';
   }
-
-  // Field suggestions group
   const fs = Array.isArray(intel.field_suggestions) ? intel.field_suggestions : [];
   if (fs.length) {
     let body = '<div class="group"><div class="group-h">// FIELD SUGGESTIONS · ' + fs.length + '</div>';
@@ -1679,14 +1563,10 @@ function renderVisionResult(root, intel, imgPath) {
       if (s.confidence != null) body += confidencePill(typeof s.confidence === 'number' ? s.confidence : 0);
       body += '</div>';
     });
-    if (fs.length > 12) {
-      body += '<div class="row" style="opacity:0.6;"><span class="k">…</span><span class="v">+ ' + (fs.length - 12) + ' more fields</span></div>';
-    }
+    if (fs.length > 12) body += '<div class="row" style="opacity:0.6;"><span class="k">…</span><span class="v">+ ' + (fs.length - 12) + ' more fields</span></div>';
     body += '</div>';
     groups.push(body);
   }
-
-  // Observations group
   const obs = Array.isArray(intel.observations) ? intel.observations : [];
   if (obs.length) {
     let body = '<div class="group"><div class="group-h">// OBSERVATIONS · ' + obs.length + '</div>';
@@ -1697,8 +1577,6 @@ function renderVisionResult(root, intel, imgPath) {
     body += '</div>';
     groups.push(body);
   }
-
-  // Image quality group
   const iq = Array.isArray(intel.image_quality) ? intel.image_quality : [];
   if (iq.length) {
     let body = '<div class="group"><div class="group-h">// IMAGE QUALITY FLAGS</div>';
@@ -1709,12 +1587,10 @@ function renderVisionResult(root, intel, imgPath) {
     body += '</div>';
     groups.push(body);
   }
-
   if (!head && !groups.length) {
     root.innerHTML = '<div class="atlas-click-readout-error"><b>Vision returned no data</b><br>Try another photo.</div>';
     return;
   }
-
   root.innerHTML = '<div class="atlas-click-readout-result">' + head + groups.join('') + '</div>';
 }
 </script>
