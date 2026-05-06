@@ -3849,13 +3849,16 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 <!-- ════════════════ GENERATION OVERLAY ════════════════ -->
 <div class="gen-overlay" id="gen-overlay">
   <div class="gen-overlay-inner">
-    <div class="gen-style-name" id="gen-current-style">Preparing...</div>
+    <div id="gen-counter" style="font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:2.4px;color:#5EEAD4;text-transform:uppercase;font-weight:700;margin-bottom:8px;">Style 0 of 0</div>
+    <div class="gen-style-name" id="gen-current-style">Preparing…</div>
+    <div id="gen-style-elapsed" style="font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#94A3B8;margin-top:6px;letter-spacing:0.4px;">—</div>
     <div class="gen-log" id="gen-log"></div>
     <div class="gen-progress-section">
       <div class="gen-progress-bar-wrap">
         <div class="gen-progress-bar-fill" id="gen-overlay-bar" style="width:0%"></div>
       </div>
-      <div class="gen-progress-label" id="gen-overlay-label">Starting...</div>
+      <div class="gen-progress-label" id="gen-overlay-label">Starting…</div>
+      <div id="gen-honest-note" style="margin-top:10px;font-family:ui-monospace,Consolas,monospace;font-size:10.5px;color:#64748B;letter-spacing:0.5px;line-height:1.5;">// Each style takes 15–30s on the live server — Claude Sonnet 4.5 writes title, 5 bullets, description, and backend keywords per ASIN.</div>
     </div>
   </div>
 </div>
@@ -8652,22 +8655,65 @@ function wsAddLogLine(text) {
   log.scrollTop = log.scrollHeight;
 }
 
+// Client-side ticker so the overlay never looks frozen, even when one
+// LLM call sits on a 25s synchronous Anthropic round-trip.
+let _genTicker = null;
+let _genStyleStartedAt = 0;
+let _genLastStyleKey = '';
+const _GEN_THEATRICS = [
+  'Reading product attributes',
+  'Pulling brand voice',
+  'Drafting title (max 120 chars)',
+  'Composing 5 unique bullets',
+  'Writing buyer-focused description',
+  'Building backend keywords (250 bytes max)',
+  'Validating against Amazon NIS rules',
+];
+let _genTheatricIdx = 0;
+function _genStartTicker() {
+  if (_genTicker) return;
+  _genTicker = setInterval(() => {
+    // Update elapsed-on-style
+    const el = document.getElementById('gen-style-elapsed');
+    if (el && _genStyleStartedAt) {
+      const sec = Math.floor((Date.now() - _genStyleStartedAt) / 1000);
+      el.textContent = `• ${sec}s on this style`;
+    }
+  }, 250);
+}
+function _genStopTicker() {
+  if (_genTicker) { clearInterval(_genTicker); _genTicker = null; }
+}
+
 function pollGenerationProgress() {
+  _genStartTicker();
   const pollInterval = setInterval(async () => {
     try {
       const pr = await fetch('/api/content-progress');
       const pg = await pr.json();
 
-      // Update style name
-      const nameEl = document.getElementById('gen-current-style');
-      if (pg.current_style && pg.current_style !== _lastStep) {
-        if (nameEl) nameEl.textContent = pg.current_style;
-        _lastStep = pg.current_style;
+      // Per-style counter (stays prominent)
+      const counter = document.getElementById('gen-counter');
+      if (counter && pg.total > 0) {
+        const idx = Math.min(pg.completed + 1, pg.total);
+        counter.textContent = `Style ${idx} of ${pg.total}`;
       }
 
-      // Update log
-      if (pg.current_step) {
+      // When the server moves to a new style, reset the per-style timer
+      const styleKey = pg.current_style || '';
+      if (styleKey && styleKey !== _genLastStyleKey) {
+        _genLastStyleKey = styleKey;
+        _genStyleStartedAt = Date.now();
+        const nameEl = document.getElementById('gen-current-style');
+        if (nameEl) nameEl.textContent = styleKey;
+        // Reset rotating theatrics on style boundary
+        _genTheatricIdx = 0;
+      }
+
+      // Update log when the server’s own label changes
+      if (pg.current_step && pg.current_step !== _lastStep) {
         wsAddLogLine(pg.current_step);
+        _lastStep = pg.current_step;
       }
 
       // Progress bar
@@ -8677,12 +8723,13 @@ function pollGenerationProgress() {
         const lbl = document.getElementById('gen-overlay-label');
         if (lbl) {
           const etaPart = pg.eta ? ` · ~${pg.eta} remaining` : '';
-          lbl.textContent = `${pg.completed} of ${pg.total} styles${etaPart}`;
+          lbl.textContent = `${pg.completed} of ${pg.total} styles complete${etaPart}`;
         }
       }
 
       if (pg.status === 'done' || pg.status === 'error' || pg.percent >= 100) {
         clearInterval(pollInterval);
+        _genStopTicker();
         const bar = document.getElementById('gen-overlay-bar');
         if (bar) bar.style.width = '100%';
 
@@ -8705,8 +8752,21 @@ function pollGenerationProgress() {
 
         state.generatedContent = data.content || {};
 
-        wsAddLogLine('Complete! Building workspace...');
-        await new Promise(r => setTimeout(r, 600));
+        // Surface per-style pipeline errors honestly.
+        const failed = Object.values(state.generatedContent).filter(s => s && s._pipeline_error);
+        if (failed.length === Object.keys(state.generatedContent).length && failed.length > 0) {
+          document.getElementById('gen-overlay').classList.remove('active');
+          const sample = failed[0];
+          const msg = (sample.qa_issues && sample.qa_issues[0] && sample.qa_issues[0].msg) || 'unknown pipeline error';
+          showToast(`Generation finished but every style errored: ${msg}`, 'error');
+          return;
+        }
+        if (failed.length > 0) {
+          showToast(`${failed.length} of ${Object.keys(state.generatedContent).length} styles failed — opening workspace with the rest.`, 'warning');
+        }
+
+        wsAddLogLine('Complete! Building workspace…');
+        await new Promise(r => setTimeout(r, 400));
 
         revealWorkspace();
       }
