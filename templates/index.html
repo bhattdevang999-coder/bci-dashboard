@@ -3333,7 +3333,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 <div class="atlas-upload-header">
   <div class="atlas-upload-eyebrow"><span class="pulse"></span>CREATE · BULK UPLOAD · LIVE</div>
   <h1 class="atlas-upload-h1">Bulk Upload</h1>
-  <p class="atlas-upload-sub">Pre-upload sheet → auto-classified → validated against the live Amazon NIS rule engine → .xlsm output.</p>
+  <p class="atlas-upload-sub atlas-status-sub">No file uploaded</p>
   <div class="atlas-stepper" id="atlas-upload-stepper">
     <div class="atlas-step active" data-step="1"><span class="num">01</span> Upload sheet</div>
     <span class="atlas-step-arrow">→</span>
@@ -3354,9 +3354,50 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   <button class="atlas-dz-btn-secondary" id="reset-btn" style="display:none;" onclick="resetSession()">↺ Reset</button>
 </div>
 
-<!-- ════════════════ SECTION 1: UPLOAD ════════════════ -->
+<!-- ════════════════ SECTION 1: DATA SOURCE (SaaS dashboard) ════════════════ -->
 <div id="section-upload">
-  <div class="atlas-upload-grid">
+  <div class="atlas-sources-h">
+    <div class="atlas-sources-eyebrow">// DATA SOURCE</div>
+    <div class="atlas-sources-meta" id="bu-sources-meta">No file uploaded</div>
+  </div>
+  <div class="atlas-sources">
+    <div class="atlas-source-row" id="bu-row">
+      <div class="atlas-source-icon">PU</div>
+      <div class="atlas-source-body">
+        <div class="atlas-source-name">Pre-upload sheet <span class="atlas-cat-pill req">Required</span></div>
+        <div class="atlas-source-meta">31 columns · Atlas template · .xlsx / .xls / .csv / .tsv</div>
+      </div>
+      <div class="atlas-source-state" id="bu-state"><span class="dot"></span>No file uploaded</div>
+      <div class="atlas-source-actions">
+        <a class="atlas-source-btn-secondary" href="/api/download-sample-template" download>
+          <span class="ic">⇩</span> Template
+        </a>
+        <button class="atlas-source-btn-primary" type="button"
+                onclick="document.getElementById('product-file-input').click()">
+          Upload <span class="arr">→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="atlas-empty-results" id="bu-empty-state">
+    <div class="atlas-empty-h">
+      <div class="atlas-empty-eyebrow">// NIS RESULTS</div>
+      <div class="atlas-empty-meta">awaiting upload</div>
+    </div>
+    <div class="atlas-empty-table">
+      <div class="atlas-empty-table-head">
+        <div>Style #</div><div>PT</div><div>Validation</div><div class="r">Output .xlsm</div>
+      </div>
+      <div class="atlas-empty-table-row"><div>—</div><div>—</div><div>—</div><div class="r">—</div></div>
+      <div class="atlas-empty-table-row"><div>—</div><div>—</div><div>—</div><div class="r">—</div></div>
+      <div class="atlas-empty-table-row"><div>—</div><div>—</div><div>—</div><div class="r">—</div></div>
+    </div>
+    <div class="atlas-empty-foot">Drop the pre-upload sheet above. Atlas auto-classifies every style, validates against the live Amazon NIS rule engine, generates copy in your brand voice, ships back .xlsm.</div>
+  </div>
+
+  <!-- Legacy upload-grid (hidden) preserved for existing JS hooks -->
+  <div class="atlas-upload-grid" style="display:none;">
     <!-- LEFT RAIL: WHAT WE NEED -->
     <aside class="atlas-data-panel">
       <div class="atlas-data-panel-eyebrow">// WHAT WE NEED FROM YOU</div>
@@ -4049,7 +4090,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-upload-header">
       <div class="atlas-upload-eyebrow"><span class="pulse"></span>MONITOR · CATALOG HEALTH · LIVE</div>
       <h1 class="atlas-upload-h1">Catalog Health</h1>
-      <p class="atlas-upload-sub">Catalog export + sales report + ad bulksheet → every ASIN scored → fixes ranked by $ at risk → partial-update sheet.</p>
+      <p class="atlas-upload-sub atlas-status-sub">No data connected</p>
       <div class="atlas-stepper">
         <div class="atlas-step active"><span class="num">01</span> Drop catalog</div>
         <span class="atlas-step-arrow">→</span>
@@ -4063,10 +4104,10 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
     <!-- ════════════════ DATA SPEC + HOW IT WORKS ════════════════ -->
     <div class="atlas-ch-explainer">
-      <details class="atlas-explainer-card" open>
+      <details class="atlas-explainer-card">
         <summary>
-          <span class="atlas-explainer-eyebrow">// DATA WE NEED</span>
-          <span class="atlas-explainer-title">The exact columns Atlas reads from your three reports</span>
+          <span class="atlas-explainer-eyebrow">// FIELD REFERENCE</span>
+          <span class="atlas-explainer-title">Why Atlas reads each field — click to expand</span>
           <span class="atlas-explainer-caret">▾</span>
         </summary>
         <div class="atlas-explainer-body">
@@ -4321,118 +4362,108 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </details>
     </div>
 
-    <!-- Section 1: Upload Zones (Atlas grid) -->
-    <div class="atlas-catalog-grid">
-      <!-- TILE 1: Catalog (REQUIRED) -->
-      <div class="atlas-cat-tile">
-        <div class="atlas-cat-tile-head">
-          <div class="atlas-cat-tile-num">01</div>
-          <div class="atlas-cat-tile-meta">
-            <div class="atlas-cat-tile-label">Catalog file <span class="atlas-cat-pill req">Required</span></div>
-            <div class="atlas-cat-tile-unlock">Unlocks: structural checks, variation integrity, content gaps</div>
-          </div>
+    <!-- Section 1: Data sources (SaaS dashboard rows) -->
+    <div class="atlas-sources-h">
+      <div class="atlas-sources-eyebrow">// DATA SOURCES</div>
+      <div class="atlas-sources-meta" id="ch-sources-meta">No data connected</div>
+    </div>
+    <div class="atlas-sources">
+      <!-- ROW 1: Catalog -->
+      <div class="atlas-source-row" id="ch-catalog-row">
+        <div class="atlas-source-icon">CE</div>
+        <div class="atlas-source-body">
+          <div class="atlas-source-name">Catalog export <span class="atlas-cat-pill req">Required</span></div>
+          <div class="atlas-source-meta">50 fields · Vendor Central or Seller Central</div>
         </div>
-        <div class="atlas-dropzone atlas-dropzone-sm" id="ch-catalog-zone">
-          <input type="file" id="ch-catalog-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadCatalog(this.files)">
-          <div class="atlas-dz-icon atlas-dz-icon-sm">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 3H6A2 2 0 004 5V19A2 2 0 006 21H18A2 2 0 0020 19V8L15 3H9Z" stroke="#08111A" stroke-width="2" stroke-linejoin="round"/>
-              <path d="M14 3V8H19" stroke="#08111A" stroke-width="2" stroke-linejoin="round"/>
-              <path d="M8 13H16M8 17H13" stroke="#08111A" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="atlas-dz-headline-sm">Drop catalog export</div>
-          <div class="atlas-dz-formats">
-            <span class="atlas-dz-format">.csv</span><span class="atlas-dz-format">.tsv</span>
-            <span class="atlas-dz-format">.xlsx</span>
-          </div>
+        <div class="atlas-source-state" id="ch-catalog-state">
+          <span class="dot"></span>Not connected
         </div>
-        <a class="atlas-tile-download" href="/api/download-sample-catalog" download>
-          ⇩ Sample catalog export
-        </a>
-        <div id="ch-catalog-status" class="hidden mt-8">
-          <div class="upload-success"><span>✓</span><span id="ch-catalog-status-msg"></span></div>
+        <div class="atlas-source-actions">
+          <a class="atlas-source-btn-secondary" href="/api/download-sample-catalog" download>
+            <span class="ic">⇩</span> Template
+          </a>
+          <button class="atlas-source-btn-primary" type="button"
+                  onclick="document.getElementById('ch-catalog-input').click()">
+            Connect <span class="arr">→</span>
+          </button>
+          <input type="file" id="ch-catalog-input" accept=".csv,.tsv,.xlsx,.xls" style="display:none;" onchange="chUploadCatalog(this.files)">
         </div>
-        <details class="atlas-cat-help">
-          <summary>Where to download this</summary>
-          <div><b>Vendor Central:</b> Reports → Detail Page Sales &amp; Traffic → Export</div>
-          <div><b>Seller Central:</b> Inventory → Manage Inventory → Export</div>
-          <div><b>Custom:</b> Any flat file with an ASIN or SKU column.</div>
-        </details>
       </div>
 
-      <!-- TILE 2: Sales (OPTIONAL) -->
-      <div class="atlas-cat-tile">
-        <div class="atlas-cat-tile-head">
-          <div class="atlas-cat-tile-num">02</div>
-          <div class="atlas-cat-tile-meta">
-            <div class="atlas-cat-tile-label">Sales data <span class="atlas-cat-pill opt">Optional</span></div>
-            <div class="atlas-cat-tile-unlock">Unlocks: revenue-weighted fix priority + ROI ranking</div>
-          </div>
+      <!-- ROW 2: Sales -->
+      <div class="atlas-source-row" id="ch-sales-row">
+        <div class="atlas-source-icon">SR</div>
+        <div class="atlas-source-body">
+          <div class="atlas-source-name">Sales report <span class="atlas-cat-pill opt">Optional</span></div>
+          <div class="atlas-source-meta">12 fields · Brand Analytics or Detail Page Sales &amp; Traffic</div>
         </div>
-        <div class="atlas-dropzone atlas-dropzone-sm" id="ch-sales-zone">
-          <input type="file" id="ch-sales-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadSales(this.files)">
-          <div class="atlas-dz-icon atlas-dz-icon-sm">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 17L9 11L13 15L21 7" stroke="#08111A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M15 7H21V13" stroke="#08111A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="atlas-dz-headline-sm">Drop sales report</div>
-          <div class="atlas-dz-formats">
-            <span class="atlas-dz-format">sessions</span><span class="atlas-dz-format">units</span>
-            <span class="atlas-dz-format">revenue</span>
-          </div>
+        <div class="atlas-source-state" id="ch-sales-state">
+          <span class="dot"></span>Not connected
         </div>
-        <a class="atlas-tile-download" href="/api/download-sample-sales" download>
-          ⇩ Sample sales report
-        </a>
-        <div id="ch-sales-status" class="hidden mt-8">
-          <div class="upload-success"><span>✓</span><span id="ch-sales-status-msg"></span></div>
+        <div class="atlas-source-actions">
+          <a class="atlas-source-btn-secondary" href="/api/download-sample-sales" download>
+            <span class="ic">⇩</span> Template
+          </a>
+          <button class="atlas-source-btn-primary" type="button"
+                  onclick="document.getElementById('ch-sales-input').click()">
+            Connect <span class="arr">→</span>
+          </button>
+          <input type="file" id="ch-sales-input" accept=".csv,.tsv,.xlsx,.xls" style="display:none;" onchange="chUploadSales(this.files)">
         </div>
-        <details class="atlas-cat-help">
-          <summary>Where to download this</summary>
-          <div><b>Vendor Central:</b> Reports → Detail Page Sales &amp; Traffic By ASIN</div>
-          <div><b>Seller Central:</b> Reports → Business Reports → Detail Page Sales &amp; Traffic by ASIN</div>
-          <div>Needs: ASIN, Sessions (or Glance Views), Units Ordered, Revenue.</div>
-        </details>
       </div>
 
-      <!-- TILE 3: Ad Bulksheet (GROUND TRUTH) -->
-      <div class="atlas-cat-tile">
-        <div class="atlas-cat-tile-head">
-          <div class="atlas-cat-tile-num">03</div>
-          <div class="atlas-cat-tile-meta">
-            <div class="atlas-cat-tile-label">Ad eligibility <span class="atlas-cat-pill truth">Ground truth</span></div>
-            <div class="atlas-cat-tile-unlock">Unlocks: PROXY → GROUND TRUTH on suppression + Buy Box loss</div>
-          </div>
+      <!-- ROW 3: Ad bulksheet -->
+      <div class="atlas-source-row" id="ch-adbulk-row">
+        <div class="atlas-source-icon">AB</div>
+        <div class="atlas-source-body">
+          <div class="atlas-source-name">Ad eligibility bulksheet <span class="atlas-cat-pill truth">Ground truth</span></div>
+          <div class="atlas-source-meta">6 fields · Sponsored Products bulk download</div>
         </div>
-        <div class="atlas-dropzone atlas-dropzone-sm" id="ch-adbulk-zone">
-          <input type="file" id="ch-adbulk-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadAdBulksheet(this.files)">
-          <div class="atlas-dz-icon atlas-dz-icon-sm">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="3" stroke="#08111A" stroke-width="2.4"/>
-              <path d="M12 2V5M12 19V22M2 12H5M19 12H22M4.93 4.93L7.05 7.05M16.95 16.95L19.07 19.07M4.93 19.07L7.05 16.95M16.95 7.05L19.07 4.93" stroke="#08111A" stroke-width="2.4" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="atlas-dz-headline-sm">Drop ads bulksheet</div>
-          <div class="atlas-dz-formats">
-            <span class="atlas-dz-format">sponsored products</span>
-          </div>
+        <div class="atlas-source-state" id="ch-adbulk-state">
+          <span class="dot"></span>Not connected
         </div>
-        <a class="atlas-tile-download" href="/api/download-sample-ad-bulksheet" download>
-          ⇩ Sample ad bulksheet
-        </a>
-        <div id="ch-adbulk-status" class="hidden mt-8">
-          <div class="upload-success"><span>✓</span><span id="ch-adbulk-status-msg"></span></div>
+        <div class="atlas-source-actions">
+          <a class="atlas-source-btn-secondary" href="/api/download-sample-ad-bulksheet" download>
+            <span class="ic">⇩</span> Template
+          </a>
+          <button class="atlas-source-btn-primary" type="button"
+                  onclick="document.getElementById('ch-adbulk-input').click()">
+            Connect <span class="arr">→</span>
+          </button>
+          <input type="file" id="ch-adbulk-input" accept=".csv,.tsv,.xlsx,.xls" style="display:none;" onchange="chUploadAdBulksheet(this.files)">
         </div>
-        <details class="atlas-cat-help">
-          <summary>Where to download this</summary>
-          <div><b>Advertising Console:</b> Bulk operations → Create bulk download → Sponsored Products → check <i>Include ASIN eligibility status</i> → Download.</div>
-          <div>Needs: Advertised ASIN, Eligibility Status, Eligibility Reasons.</div>
-        </details>
       </div>
     </div>
+
+    <!-- Empty results card -->
+    <div class="atlas-empty-results" id="ch-empty-state">
+      <div class="atlas-empty-h">
+        <div class="atlas-empty-eyebrow">// ATLAS RESULTS</div>
+        <div class="atlas-empty-meta">awaiting connected data</div>
+      </div>
+      <div class="atlas-empty-table">
+        <div class="atlas-empty-table-head">
+          <div>ASIN</div><div>Score</div><div>Top issues</div><div class="r">Revenue at risk</div>
+        </div>
+        <div class="atlas-empty-table-row"><div>—</div><div>—</div><div>—</div><div class="r">—</div></div>
+        <div class="atlas-empty-table-row"><div>—</div><div>—</div><div>—</div><div class="r">—</div></div>
+        <div class="atlas-empty-table-row"><div>—</div><div>—</div><div>—</div><div class="r">—</div></div>
+        <div class="atlas-empty-table-row"><div>—</div><div>—</div><div>—</div><div class="r">—</div></div>
+      </div>
+      <div class="atlas-empty-foot">Connect a catalog export above. Atlas scores every ASIN, ranks issues by revenue at risk, exports a partial-update fix sheet.</div>
+    </div>
+
+    <!-- Hidden status containers for catalog upload status messages (preserves existing JS) -->
+    <div id="ch-catalog-status" class="hidden"></div>
+    <div id="ch-sales-status"   class="hidden"></div>
+    <div id="ch-adbulk-status"  class="hidden"></div>
+    <div id="ch-catalog-status-msg" class="hidden"></div>
+    <div id="ch-sales-status-msg" class="hidden"></div>
+    <div id="ch-adbulk-status-msg" class="hidden"></div>
+
+    <!-- Hidden grid wrapper closer -->
+    <div class="atlas-catalog-grid" style="display:none;">
+      </div>
 
     <!-- Section 2: Detection Summary -->
     <div id="ch-detection-card" class="card hidden">
@@ -4679,7 +4710,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-upload-header">
       <div class="atlas-upload-eyebrow"><span class="pulse"></span>MANAGE · VARIATIONS · LIVE</div>
       <h1 class="atlas-upload-h1">Variations</h1>
-      <p class="atlas-upload-sub">Reads Catalog Health output → surfaces orphans, split families, brand collisions → approve each fix → Vendor-Central bulksheet.</p>
+      <p class="atlas-upload-sub atlas-status-sub">Awaiting Catalog Health</p>
       <div class="atlas-stepper">
         <div class="atlas-step active"><span class="num">01</span> Read Catalog Health</div>
         <span class="atlas-step-arrow">→</span>
@@ -4691,10 +4722,48 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
     </div>
 
+    <!-- Section: Variations data source (SaaS dashboard) -->
+    <div class="atlas-sources-h">
+      <div class="atlas-sources-eyebrow">// DATA SOURCE</div>
+      <div class="atlas-sources-meta">Reads Catalog Health output — no second upload</div>
+    </div>
+    <div class="atlas-sources">
+      <div class="atlas-source-row">
+        <div class="atlas-source-icon">VG</div>
+        <div class="atlas-source-body">
+          <div class="atlas-source-name">Variation graph <span class="atlas-cat-pill opt">Auto-pulled</span></div>
+          <div class="atlas-source-meta">Built during Catalog Health scan · parent→child variation graph</div>
+        </div>
+        <div class="atlas-source-state"><span class="dot"></span>Awaiting Catalog Health</div>
+        <div class="atlas-source-actions">
+          <button class="atlas-source-btn-primary" type="button" onclick="showCatalogPage()">
+            Open Catalog Health <span class="arr">→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="atlas-empty-results">
+      <div class="atlas-empty-h">
+        <div class="atlas-empty-eyebrow">// VARIATION QUEUE</div>
+        <div class="atlas-empty-meta">0 issues surfaced</div>
+      </div>
+      <div class="atlas-empty-table">
+        <div class="atlas-empty-table-head">
+          <div>Issue type</div><div>Affected ASINs</div><div>Severity</div><div class="r">Action</div>
+        </div>
+        <div class="atlas-empty-table-row"><div>Split family</div><div>—</div><div>—</div><div class="r">—</div></div>
+        <div class="atlas-empty-table-row"><div>Orphan ASIN</div><div>—</div><div>—</div><div class="r">—</div></div>
+        <div class="atlas-empty-table-row"><div>Brand collision</div><div>—</div><div>—</div><div class="r">—</div></div>
+        <div class="atlas-empty-table-row"><div>Category mismatch</div><div>—</div><div>—</div><div class="r">—</div></div>
+      </div>
+      <div class="atlas-empty-foot">Run Catalog Health first. Variations surfaces every split family, orphan, and brand collision in one queue — approve fixes, output a Vendor-Central bulksheet.</div>
+    </div>
+
     <div class="atlas-ch-explainer">
       <details class="atlas-explainer-card">
         <summary>
-          <span class="atlas-explainer-eyebrow">// DATA WE NEED</span>
+          <span class="atlas-explainer-eyebrow">// FIELD REFERENCE</span>
           <span class="atlas-explainer-title">What Variations reads from your catalog</span>
           <span class="atlas-explainer-caret">▾</span>
         </summary>
@@ -5117,7 +5186,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-ch-explainer" style="margin-bottom:20px;">
       <details class="atlas-explainer-card">
         <summary>
-          <span class="atlas-explainer-eyebrow">// DATA WE NEED</span>
+          <span class="atlas-explainer-eyebrow">// FIELD REFERENCE</span>
           <span class="atlas-explainer-title">What Image → NIS reads from one photo</span>
           <span class="atlas-explainer-caret">▾</span>
         </summary>
@@ -5282,7 +5351,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
           <div class="beta-roadmap-detail">Title, bullets, description, ~60 structured Amazon fields auto-filled. SKU/UPC/price stay yours.</div>
         </div>
         <div class="beta-roadmap-item" data-status="next">
-          <div class="beta-roadmap-tag">v2 · next 30 days</div>
+          <div class="beta-roadmap-tag">v2 · next</div>
           <div class="beta-roadmap-title">Confidence scoring per field</div>
           <div class="beta-roadmap-detail">Track every operator confirm / reject. Auto-apply only fields where vision earns 90%+ accuracy.</div>
         </div>
@@ -6159,7 +6228,7 @@ const ATLAS_PREVIEWS = {
   'catalog-health': {
     name: 'Catalog Health', when: 'IN HAND', module: 'MONITOR',
     tagline: 'Already running. New view in development.',
-    description: 'The structural + content health engine that powers the rest of MONITOR. Live today as a sidebar tool. Getting a dedicated dashboard with trend lines and per-ASIN history in 30 days.',
+    description: 'The structural + content health engine that powers the rest of MONITOR. Live today as a sidebar tool. Dedicated dashboard with trend lines and per-ASIN history is next.',
     features: [
       ['Structural checks', 'Variation theme, parent-child wiring, image slots, GTIN integrity.'],
       ['Content checks', 'Title length, bullet count, keyword density, banned-claim scan.'],
