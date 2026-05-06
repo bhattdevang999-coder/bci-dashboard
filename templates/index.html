@@ -3360,10 +3360,6 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-sources-eyebrow">// DATA SOURCE</div>
     <div class="atlas-sources-meta" id="bu-sources-meta">No file uploaded</div>
   </div>
-  <div class="atlas-sources-rationale">
-    Atlas does not assume what your pre-upload looks like. <b>Drop the sheet you already use to launch new ASINs</b> — Atlas reads the 31 columns Amazon NIS actually validates against.
-    <span class="why">Nate and Devang have shipped pre-upload sheets inside Amazon for years. The 12 required + 4 important + 15 optional fields below are the exact shape Vendor / Seller Central rejects without.</span>
-  </div>
   <div class="atlas-sources">
     <div class="atlas-source-row" id="bu-row">
       <div class="atlas-source-icon">PU</div>
@@ -4374,10 +4370,6 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       <div class="atlas-sources-eyebrow">// DATA SOURCES</div>
       <div class="atlas-sources-meta" id="ch-sources-meta">No data connected</div>
     </div>
-    <div class="atlas-sources-rationale">
-      Atlas does not yet know about your reports. <b>Connect three sheets and Atlas scores every ASIN, ranks issues by revenue at risk, and outputs a fix sheet.</b> Catalog export is the spine; sales report adds dollars; ad-eligibility bulksheet is Amazon's own ground truth.
-      <span class="why">Nate ran catalogs inside Amazon for years; Devang ships these reports daily for The Levy Group. The 50 / 12 / 6 fields below are the columns Amazon's own teams use to triage broken listings — not a guess at what data “might be useful.”</span>
-    </div>
     <div class="atlas-sources">
       <!-- ROW 1: Catalog -->
       <div class="atlas-source-row" id="ch-catalog-row">
@@ -4737,10 +4729,6 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-sources-h">
       <div class="atlas-sources-eyebrow">// DATA SOURCE</div>
       <div class="atlas-sources-meta">Reads Catalog Health output — no second upload</div>
-    </div>
-    <div class="atlas-sources-rationale">
-      Variations does not need another upload. <b>It reads the variation graph Catalog Health already built</b> — split families, orphan ASINs, brand collisions, category mismatches — and turns them into one approve-and-bulksheet queue.
-      <span class="why">Variations is the #1 reason new launches lose Buy Box and reviews fragment. Devang and Nate have rebuilt variation families inside Vendor / Seller Central enough times to know exactly which signals matter — parent→child wiring, theme, GTIN integrity, sub-class consistency.</span>
     </div>
     <div class="atlas-sources">
       <div class="atlas-source-row">

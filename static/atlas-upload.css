@@ -794,25 +794,6 @@ ol.atlas-hb-list li::before {
   display: flex; justify-content: space-between; align-items: center;
   padding: 0 4px; margin: 0 0 10px;
 }
-.atlas-sources-rationale {
-  margin: 4px 4px 14px;
-  padding: 12px 14px;
-  background: rgba(94,234,212,0.025);
-  border: 1px solid rgba(94,234,212,0.18);
-  border-left: 3px solid #5EEAD4;
-  border-radius: 0 8px 8px 0;
-  font-size: 12.5px; line-height: 1.55; color: #CBD5E1;
-}
-.atlas-sources-rationale b { color: #E2E8F0; font-weight: 600; }
-.atlas-sources-rationale .why {
-  display: block; margin-top: 6px;
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 10.5px; letter-spacing: 0.6px; color: #94A3B8;
-}
-.atlas-sources-rationale .why::before {
-  content: "// why we know this is the right shape  ";
-  color: #64748B; letter-spacing: 1.4px; text-transform: uppercase;
-}
 .atlas-sources-eyebrow {
   font-family: ui-monospace, Consolas, monospace; font-size: 10px;
   letter-spacing: 1.6px; color: #5EEAD4; text-transform: uppercase;
