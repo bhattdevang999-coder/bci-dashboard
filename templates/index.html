@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Levy Group — Amazon Intelligence</title>
+<title>Atlas · Amazon Operations Platform</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='atlas-upload.css') }}">
 <style>
   /* ── Design tokens ─────────────────────────────────── */
   :root {
@@ -3317,48 +3318,118 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
      ════════════════════════════════════════════════════════ -->
 
 <!-- ── Operator identity ─────────────────────────────────────── -->
-<div class="nis-operator-row">
-  <label class="nis-operator-label" for="operator-input">Name:</label>
-  <input type="text" id="operator-input" class="nis-operator-input"
-         placeholder="Your name" autocomplete="off"
-         oninput="setOperator(this.value)">
+<!-- ════════════════ ATLAS BULK UPLOAD HEADER ════════════════ -->
+<div class="atlas-upload-header">
+  <div class="atlas-upload-eyebrow"><span class="pulse"></span>CREATE · BULK UPLOAD · LIVE</div>
+  <h1 class="atlas-upload-h1">Drop a sheet. <span class="accent">Get a managed Amazon catalog.</span></h1>
+  <p class="atlas-upload-sub">Upload your pre-upload template. Atlas auto-classifies every style, validates against the live Amazon NIS rules for your product type, generates titles + bullets + descriptions in your brand voice, and ships back a ready-to-upload .xlsm.</p>
+  <div class="atlas-stepper" id="atlas-upload-stepper">
+    <div class="atlas-step active" data-step="1"><span class="num">01</span> Upload sheet</div>
+    <span class="atlas-step-arrow">→</span>
+    <div class="atlas-step" data-step="2"><span class="num">02</span> Auto-classify</div>
+    <span class="atlas-step-arrow">→</span>
+    <div class="atlas-step" data-step="3"><span class="num">03</span> Generate copy</div>
+    <span class="atlas-step-arrow">→</span>
+    <div class="atlas-step" data-step="4"><span class="num">04</span> Download .xlsm</div>
+  </div>
 </div>
 
-<!-- ── Reset button (hidden until data loaded) ───────────────── -->
-<div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-  <button class="btn btn-secondary btn-sm" id="reset-btn" style="display:none;" onclick="resetSession()">
-    ↺ Reset Session
-  </button>
+<!-- ── Operator name + reset ─────────────────────────────────── -->
+<div class="atlas-operator-bar">
+  <label for="operator-input">Operator</label>
+  <input type="text" id="operator-input"
+         placeholder="Your name (logged with every accept / regenerate)" autocomplete="off"
+         oninput="setOperator(this.value)">
+  <button class="atlas-dz-btn-secondary" id="reset-btn" style="display:none;" onclick="resetSession()">↺ Reset</button>
 </div>
 
 <!-- ════════════════ SECTION 1: UPLOAD ════════════════ -->
-<div class="card" id="section-upload">
-  <div class="card-header">
-    <div class="card-icon">📑</div>
+<div id="section-upload">
+  <div class="atlas-upload-grid">
+    <!-- LEFT RAIL: WHAT WE NEED -->
+    <aside class="atlas-data-panel">
+      <div class="atlas-data-panel-eyebrow">// WHAT WE NEED FROM YOU</div>
+      <h3 class="atlas-data-panel-title">31 columns. 12 required.</h3>
+      <p class="atlas-data-summary">Atlas reads <b>identity, pricing, fabric, and feature</b> data from one sheet and turns it into a fully-validated Amazon listing. Required fields are non-negotiable. Important fields unlock compliance + trust signals. Optional fields sharpen the copy.</p>
+
+      <div class="atlas-data-cluster req">
+        <div class="atlas-data-cluster-h"><span class="dot"></span>Required · 12</div>
+        <ul class="atlas-data-list">
+          <li>Brand Code</li><li>TLG Division</li><li>Sub Class</li>
+          <li>Style #</li><li>Style Name</li><li>Color Code</li>
+          <li>Color Name</li><li>Size</li><li>UPC</li>
+          <li>Wholesale $</li><li>Retail $</li><li>Earliest Ship Date</li>
+        </ul>
+      </div>
+
+      <div class="atlas-data-cluster imp">
+        <div class="atlas-data-cluster-h"><span class="dot"></span>Important · 4</div>
+        <ul class="atlas-data-list">
+          <li>Country of Origin</li><li>Care Instructions</li>
+          <li>Fabric Content %</li><li>Bullet 1</li>
+        </ul>
+      </div>
+
+      <div class="atlas-data-cluster opt">
+        <div class="atlas-data-cluster-h"><span class="dot"></span>Optional · 15</div>
+        <ul class="atlas-data-list">
+          <li>Sub Sub-Class</li><li>Style Desc</li><li>Model Name</li>
+          <li>Child ASIN</li><li>SKU</li><li>Neck Type</li>
+          <li>Closure</li><li>Sleeve</li><li>Fit</li><li>UPF</li>
+          <li>Bullets 2–5</li><li>Additional Details</li>
+        </ul>
+      </div>
+
+      <div class="atlas-data-foot">
+        <a href="/api/download-sample-template" download>⇩ Sample sheet</a>
+        <span style="color:#475569;">·</span>
+        <span>Don't have all 12? Upload anyway — Atlas flags what's missing per row.</span>
+      </div>
+    </aside>
+
+    <!-- RIGHT: DROPZONE -->
     <div>
-      <div class="card-title">Upload Product Data</div>
-      <div class="card-desc">Required. Upload your pre-upload template — Excel or CSV with styles, colors, sizes, and UPCs.</div>
+      <div class="atlas-dropzone" id="product-dropzone">
+        <input type="file" id="product-file-input" accept=".xlsx,.xls,.xlsm,.csv,.tsv"
+               onchange="handleProductUpload(this.files)">
+        <div class="atlas-dz-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="#08111A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 17V19A2 2 0 006 21H18A2 2 0 0020 19V17" stroke="#08111A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="atlas-dz-headline">Drop your pre-upload sheet <span class="accent">here</span></div>
+        <div class="atlas-dz-sub">Drag the file in, or click anywhere on this card to browse. We'll classify, validate, and queue generation in seconds.</div>
+        <div class="atlas-dz-formats">
+          <span class="atlas-dz-format">.xlsx</span>
+          <span class="atlas-dz-format">.xls</span>
+          <span class="atlas-dz-format">.xlsm</span>
+          <span class="atlas-dz-format">.csv</span>
+          <span class="atlas-dz-format">.tsv</span>
+          <span class="atlas-dz-format">max 50MB</span>
+        </div>
+        <div class="atlas-dz-actions">
+          <button type="button" class="atlas-dz-btn-primary" onclick="document.getElementById('product-file-input').click(); event.stopPropagation();">
+            Browse files →
+          </button>
+          <a class="atlas-dz-btn-secondary" href="/api/download-sample-template" download onclick="event.stopPropagation();">
+            ⇩ Download sample template
+          </a>
+        </div>
+        <div class="atlas-dz-utility">No sheet on hand? <a onclick="document.getElementById('atlas-image-test-toggle').open = true; event.stopPropagation();">Test with a single product photo instead.</a></div>
+      </div>
+
+      <!-- Demoted: standalone Image Intel test -->
+      <details class="atlas-utility-row" id="atlas-image-test-toggle">
+        <summary>Test image without uploading a template · classify any photo + see what vision picks up</summary>
+        <div style="margin-top:10px;">
+          <input type="file" accept="image/*" onchange="testImageIntel(this.files)" style="font-size:12px;">
+          <div style="font-size:10px; color:#475569; margin-top:6px;">JPG/PNG · vision returns detected product type, color, observations, image-quality flags</div>
+          <div id="test-image-intel-out" style="margin-top:10px;"></div>
+        </div>
+      </details>
     </div>
   </div>
-
-  <div class="upload-zone" id="product-dropzone">
-    <input type="file" id="product-file-input" accept=".xlsx,.xls,.xlsm,.csv,.tsv"
-           onchange="handleProductUpload(this.files)">
-    <div class="upload-zone-icon">📊</div>
-    <div class="upload-zone-text"><strong>Click to upload</strong> or drag and drop</div>
-    <div class="upload-zone-hint">Excel (.xlsx, .xls, .xlsm) or CSV/TSV — max 50MB</div>
-    <div style="margin-top:8px;"><a href="/api/download-sample-template" style="font-size:12px; color:var(--accent);">Download sample pre-upload template</a></div>
-  </div>
-
-  <!-- ===== Standalone Image Intel test (no pre-upload required) ===== -->
-  <details style="margin-top:16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px;">
-    <summary style="cursor:pointer; font-size:12px; font-weight:600; color:#0f766e;">Test image without uploading a template &middot; classify any photo + see what vision picks up</summary>
-    <div style="margin-top:10px;">
-      <input type="file" accept="image/*" onchange="testImageIntel(this.files)" style="font-size:12px;">
-      <div style="font-size:10px; color:#94a3b8; margin-top:4px;">JPG/PNG &middot; vision returns detected product type, color, observations, image-quality flags</div>
-      <div id="test-image-intel-out" style="margin-top:10px;"></div>
-    </div>
-  </details>
 
   <!-- Loading state -->
   <div id="product-loading" class="hidden mt-16">
@@ -3871,75 +3942,123 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
     </div>
 
-    <!-- Section 1: Upload Zones -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon">📂</div>
-        <div>
-          <div class="card-title">Upload Catalog &amp; Sales Data</div>
-          <div class="card-desc">Auto-detects columns from any Vendor Central, Seller Central, or custom format</div>
+    <!-- ════════════════ ATLAS CATALOG HEALTH HEADER ════════════════ -->
+    <div class="atlas-upload-header">
+      <div class="atlas-upload-eyebrow"><span class="pulse"></span>MONITOR · CATALOG HEALTH · LIVE</div>
+      <h1 class="atlas-upload-h1">See <span class="accent">every broken ASIN</span> before it costs you a sale.</h1>
+      <p class="atlas-upload-sub">Drop your catalog export. Atlas finds orphaned children, missing variation parents, content gaps, and ad-eligibility blocks. Add sales data to rank fixes by revenue. Add an ad bulksheet to flip educated guesses into ground truth.</p>
+      <div class="atlas-stepper">
+        <div class="atlas-step active"><span class="num">01</span> Drop catalog</div>
+        <span class="atlas-step-arrow">→</span>
+        <div class="atlas-step"><span class="num">02</span> Auto-detect columns</div>
+        <span class="atlas-step-arrow">→</span>
+        <div class="atlas-step"><span class="num">03</span> Score every ASIN</div>
+        <span class="atlas-step-arrow">→</span>
+        <div class="atlas-step"><span class="num">04</span> Download fix file</div>
+      </div>
+    </div>
+
+    <!-- Section 1: Upload Zones (Atlas grid) -->
+    <div class="atlas-catalog-grid">
+      <!-- TILE 1: Catalog (REQUIRED) -->
+      <div class="atlas-cat-tile">
+        <div class="atlas-cat-tile-head">
+          <div class="atlas-cat-tile-num">01</div>
+          <div class="atlas-cat-tile-meta">
+            <div class="atlas-cat-tile-label">Catalog file <span class="atlas-cat-pill req">Required</span></div>
+            <div class="atlas-cat-tile-unlock">Unlocks: structural checks, variation integrity, content gaps</div>
+          </div>
         </div>
+        <div class="atlas-dropzone atlas-dropzone-sm" id="ch-catalog-zone">
+          <input type="file" id="ch-catalog-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadCatalog(this.files)">
+          <div class="atlas-dz-icon atlas-dz-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 3H6A2 2 0 004 5V19A2 2 0 006 21H18A2 2 0 0020 19V8L15 3H9Z" stroke="#08111A" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M14 3V8H19" stroke="#08111A" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M8 13H16M8 17H13" stroke="#08111A" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="atlas-dz-headline-sm">Drop catalog export</div>
+          <div class="atlas-dz-formats">
+            <span class="atlas-dz-format">.csv</span><span class="atlas-dz-format">.tsv</span>
+            <span class="atlas-dz-format">.xlsx</span>
+          </div>
+        </div>
+        <div id="ch-catalog-status" class="hidden mt-8">
+          <div class="upload-success"><span>✓</span><span id="ch-catalog-status-msg"></span></div>
+        </div>
+        <details class="atlas-cat-help">
+          <summary>Where to download this</summary>
+          <div><b>Vendor Central:</b> Reports → Detail Page Sales &amp; Traffic → Export</div>
+          <div><b>Seller Central:</b> Inventory → Manage Inventory → Export</div>
+          <div><b>Custom:</b> Any flat file with an ASIN or SKU column.</div>
+        </details>
       </div>
 
-      <div class="ch-upload-grid">
-        <!-- Catalog Upload -->
-        <div>
-          <div class="form-label">Catalog File <span style="color:var(--error)">*</span></div>
-          <div class="upload-zone" id="ch-catalog-zone">
-            <input type="file" id="ch-catalog-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadCatalog(this.files)">
-            <div class="upload-zone-icon">📋</div>
-            <div class="upload-zone-text"><strong>Click to upload</strong> or drag &amp; drop</div>
-            <div class="upload-zone-hint">CSV, TSV, or Excel — any Amazon catalog export</div>
-          </div>
-          <div id="ch-catalog-status" class="hidden mt-8">
-            <div class="upload-success"><span>✓</span><span id="ch-catalog-status-msg"></span></div>
-          </div>
-          <span class="ch-help-toggle" onclick="toggleChHelp('ch-help-catalog')">What report is this? Where to download it?</span>
-          <div id="ch-help-catalog" class="ch-help-content">
-            <strong>Vendor Central:</strong> Reports &gt; Detail Page Sales &amp; Traffic &gt; Export<br>
-            <strong>Seller Central:</strong> Inventory &gt; Manage Inventory &gt; Export<br>
-            <strong>Custom:</strong> Any flat file with ASIN or SKU column. Column headers are auto-detected.
+      <!-- TILE 2: Sales (OPTIONAL) -->
+      <div class="atlas-cat-tile">
+        <div class="atlas-cat-tile-head">
+          <div class="atlas-cat-tile-num">02</div>
+          <div class="atlas-cat-tile-meta">
+            <div class="atlas-cat-tile-label">Sales data <span class="atlas-cat-pill opt">Optional</span></div>
+            <div class="atlas-cat-tile-unlock">Unlocks: revenue-weighted fix priority + ROI ranking</div>
           </div>
         </div>
+        <div class="atlas-dropzone atlas-dropzone-sm" id="ch-sales-zone">
+          <input type="file" id="ch-sales-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadSales(this.files)">
+          <div class="atlas-dz-icon atlas-dz-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 17L9 11L13 15L21 7" stroke="#08111A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15 7H21V13" stroke="#08111A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="atlas-dz-headline-sm">Drop sales report</div>
+          <div class="atlas-dz-formats">
+            <span class="atlas-dz-format">sessions</span><span class="atlas-dz-format">units</span>
+            <span class="atlas-dz-format">revenue</span>
+          </div>
+        </div>
+        <div id="ch-sales-status" class="hidden mt-8">
+          <div class="upload-success"><span>✓</span><span id="ch-sales-status-msg"></span></div>
+        </div>
+        <details class="atlas-cat-help">
+          <summary>Where to download this</summary>
+          <div><b>Vendor Central:</b> Reports → Detail Page Sales &amp; Traffic By ASIN</div>
+          <div><b>Seller Central:</b> Reports → Business Reports → Detail Page Sales &amp; Traffic by ASIN</div>
+          <div>Needs: ASIN, Sessions (or Glance Views), Units Ordered, Revenue.</div>
+        </details>
+      </div>
 
-        <!-- Sales Upload -->
-        <div>
-          <div class="form-label">Sales Data <span class="optional-tag">Optional</span></div>
-          <div class="upload-zone" id="ch-sales-zone">
-            <input type="file" id="ch-sales-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadSales(this.files)">
-            <div class="upload-zone-icon">💰</div>
-            <div class="upload-zone-text"><strong>Click to upload</strong> or drag &amp; drop</div>
-            <div class="upload-zone-hint">Sessions, units, revenue by ASIN</div>
-          </div>
-          <div id="ch-sales-status" class="hidden mt-8">
-            <div class="upload-success"><span>✓</span><span id="ch-sales-status-msg"></span></div>
-          </div>
-          <span class="ch-help-toggle" onclick="toggleChHelp('ch-help-sales')">What report is this? Where to download it?</span>
-          <div id="ch-help-sales" class="ch-help-content">
-            <strong>Vendor Central:</strong> Reports &gt; Detail Page Sales &amp; Traffic By ASIN<br>
-            <strong>Seller Central:</strong> Reports &gt; Business Reports &gt; Detail Page Sales &amp; Traffic by ASIN<br>
-            Needs columns: ASIN, Sessions (or Glance Views), Units Ordered, Revenue.
+      <!-- TILE 3: Ad Bulksheet (GROUND TRUTH) -->
+      <div class="atlas-cat-tile">
+        <div class="atlas-cat-tile-head">
+          <div class="atlas-cat-tile-num">03</div>
+          <div class="atlas-cat-tile-meta">
+            <div class="atlas-cat-tile-label">Ad eligibility <span class="atlas-cat-pill truth">Ground truth</span></div>
+            <div class="atlas-cat-tile-unlock">Unlocks: PROXY → GROUND TRUTH on suppression + Buy Box loss</div>
           </div>
         </div>
-
-        <!-- Ad Bulksheet Upload (Tier-2 ground truth) -->
-        <div>
-          <div class="form-label">Ad Eligibility Bulksheet <span class="optional-tag">Ground Truth</span></div>
-          <div class="upload-zone" id="ch-adbulk-zone">
-            <input type="file" id="ch-adbulk-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadAdBulksheet(this.files)">
-            <div class="upload-zone-icon">📡</div>
-            <div class="upload-zone-text"><strong>Click to upload</strong> or drag &amp; drop</div>
-            <div class="upload-zone-hint">Sponsored Products bulksheet — flips PROXY → GROUND TRUTH</div>
+        <div class="atlas-dropzone atlas-dropzone-sm" id="ch-adbulk-zone">
+          <input type="file" id="ch-adbulk-input" accept=".csv,.tsv,.xlsx,.xls" onchange="chUploadAdBulksheet(this.files)">
+          <div class="atlas-dz-icon atlas-dz-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="3" stroke="#08111A" stroke-width="2.4"/>
+              <path d="M12 2V5M12 19V22M2 12H5M19 12H22M4.93 4.93L7.05 7.05M16.95 16.95L19.07 19.07M4.93 19.07L7.05 16.95M16.95 7.05L19.07 4.93" stroke="#08111A" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
           </div>
-          <div id="ch-adbulk-status" class="hidden mt-8">
-            <div class="upload-success"><span>✓</span><span id="ch-adbulk-status-msg"></span></div>
-          </div>
-          <span class="ch-help-toggle" onclick="toggleChHelp('ch-help-adbulk')">What report is this? Where to download it?</span>
-          <div id="ch-help-adbulk" class="ch-help-content">
-            <strong>Advertising Console:</strong> Bulk operations &gt; Create bulk download &gt; Sponsored Products &gt; check <em>Include ASIN eligibility status</em> &gt; Download.<br>
-            Needs columns: Advertised ASIN, Eligibility Status, Eligibility Reasons.
+          <div class="atlas-dz-headline-sm">Drop ads bulksheet</div>
+          <div class="atlas-dz-formats">
+            <span class="atlas-dz-format">sponsored products</span>
           </div>
         </div>
+        <div id="ch-adbulk-status" class="hidden mt-8">
+          <div class="upload-success"><span>✓</span><span id="ch-adbulk-status-msg"></span></div>
+        </div>
+        <details class="atlas-cat-help">
+          <summary>Where to download this</summary>
+          <div><b>Advertising Console:</b> Bulk operations → Create bulk download → Sponsored Products → check <i>Include ASIN eligibility status</i> → Download.</div>
+          <div>Needs: Advertised ASIN, Eligibility Status, Eligibility Reasons.</div>
+        </details>
       </div>
     </div>
 
@@ -5335,8 +5454,8 @@ async function betaBuildXlsm(opFields) {
 }
 
 function showNISPage() {
-  _showPage('nis-page', 'NIS Creation — Upload & Generate',
-    'Upload product data to generate Amazon-ready NIS content');
+  _showPage('nis-page', 'Atlas · Bulk Upload',
+    'Drop a sheet. Atlas turns it into a managed Amazon catalog.');
   document.getElementById('nav-nis').classList.add('active');
 }
 
@@ -5567,8 +5686,8 @@ function showPreviewPage(moduleId) {
 }
 
 function showCatalogPage() {
-  _showPage('catalog-page', 'Catalog Health',
-    'Structural + content analysis for any Amazon catalog');
+  _showPage('catalog-page', 'Atlas · Catalog Health',
+    'See every broken ASIN before it costs you a sale.');
   document.getElementById('nav-catalog').classList.add('active');
 }
 
