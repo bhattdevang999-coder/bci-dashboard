@@ -2805,6 +2805,39 @@ def download_sample_template():
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
+@app.route("/api/download-sample-catalog")
+def download_sample_catalog():
+    """Sample Catalog export sheet — 50 columns matching CATALOG_FIELD_MAP."""
+    path = BASE_DIR / "uploads" / "sample_catalog_export.xlsx"
+    if not path.exists():
+        return jsonify({"error": "Sample catalog template not found"}), 404
+    return send_file(str(path), as_attachment=True,
+                     download_name="Atlas_Sample_Catalog_Export.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+@app.route("/api/download-sample-sales")
+def download_sample_sales():
+    """Sample Sales report sheet — 12 fields matching SALES_FIELD_MAP."""
+    path = BASE_DIR / "uploads" / "sample_sales_report.xlsx"
+    if not path.exists():
+        return jsonify({"error": "Sample sales template not found"}), 404
+    return send_file(str(path), as_attachment=True,
+                     download_name="Atlas_Sample_Sales_Report.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+@app.route("/api/download-sample-ad-bulksheet")
+def download_sample_ad_bulksheet():
+    """Sample Ad eligibility bulksheet — 6 fields matching AD_BULKSHEET_FIELD_MAP."""
+    path = BASE_DIR / "uploads" / "sample_ad_eligibility.xlsx"
+    if not path.exists():
+        return jsonify({"error": "Sample ad bulksheet template not found"}), 404
+    return send_file(str(path), as_attachment=True,
+                     download_name="Atlas_Sample_Ad_Eligibility.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
 
 
 @app.route("/api/save-subclass-mapping", methods=["POST"])

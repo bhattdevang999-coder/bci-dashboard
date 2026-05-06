@@ -3332,8 +3332,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 <!-- ════════════════ ATLAS BULK UPLOAD HEADER ════════════════ -->
 <div class="atlas-upload-header">
   <div class="atlas-upload-eyebrow"><span class="pulse"></span>CREATE · BULK UPLOAD · LIVE</div>
-  <h1 class="atlas-upload-h1">Drop a sheet. <span class="accent">Get a managed Amazon catalog.</span></h1>
-  <p class="atlas-upload-sub">Upload your pre-upload template. Atlas auto-classifies every style, validates against the live Amazon NIS rules for your product type, generates titles + bullets + descriptions in your brand voice, and ships back a ready-to-upload .xlsm.</p>
+  <h1 class="atlas-upload-h1">Bulk Upload</h1>
+  <p class="atlas-upload-sub">Pre-upload sheet → auto-classified → validated against the live Amazon NIS rule engine → .xlsm output.</p>
   <div class="atlas-stepper" id="atlas-upload-stepper">
     <div class="atlas-step active" data-step="1"><span class="num">01</span> Upload sheet</div>
     <span class="atlas-step-arrow">→</span>
@@ -3342,40 +3342,6 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-step" data-step="3"><span class="num">03</span> Generate copy</div>
     <span class="atlas-step-arrow">→</span>
     <div class="atlas-step" data-step="4"><span class="num">04</span> Download .xlsm</div>
-  </div>
-</div>
-
-<!-- ═══ TODAY vs WITH ATLAS (Pass 7) ═══ -->
-<div class="atlas-tva">
-  <div class="atlas-tva-eyebrow">// TODAY vs WITH ATLAS</div>
-  <div class="atlas-tva-grid">
-    <div class="atlas-tva-col">
-      <div class="atlas-tva-col-h">Today, your team</div>
-      <ul class="atlas-tva-list">
-        <li>Drafts copy for each new style by hand</li>
-        <li>Re-checks brand voice every revision</li>
-        <li>Fills NIS templates field-by-field per PT</li>
-        <li>Re-uploads after Amazon rejects required fields</li>
-        <li>4–6 hours from one new style to live listing</li>
-      </ul>
-    </div>
-    <div class="atlas-tva-arrow">→</div>
-    <div class="atlas-tva-col atlas">
-      <div class="atlas-tva-col-h">With Atlas, your team</div>
-      <ul class="atlas-tva-list">
-        <li>Drops the existing pre-upload sheet</li>
-        <li>Reviews + accepts auto-drafted copy in brand voice</li>
-        <li>Atlas validates against the live NIS rule engine for the correct PT</li>
-        <li>Output is a ready-to-upload .xlsm — no fix-loop</li>
-        <li>~30 seconds per listing, 50–100 listings per session</li>
-      </ul>
-    </div>
-  </div>
-  <div class="atlas-tva-roi">
-    <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">~95%</div><div class="atlas-tva-roi-label">ops time recovered per listing</div></div>
-    <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">16</div><div class="atlas-tva-roi-label">PTs validated automatically</div></div>
-    <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">12</div><div class="atlas-tva-roi-label">brand voices supported</div></div>
-    <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">audit-logged</div><div class="atlas-tva-roi-label">every accept / regen / edit</div></div>
   </div>
 </div>
 
@@ -3480,8 +3446,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   <div class="atlas-ch-explainer" style="margin-top:24px;">
     <details class="atlas-explainer-card atlas-howbuilt-card">
       <summary>
-        <span class="atlas-explainer-eyebrow" style="color:#A78BFA;">// HOW IT&#39;S BUILT</span>
-        <span class="atlas-explainer-title">Bulk Upload, under the hood</span>
+        <span class="atlas-explainer-eyebrow" style="color:#A78BFA;">// ARCHITECTURE</span>
+        <span class="atlas-explainer-title">Bulk Upload — architecture</span>
         <span class="atlas-explainer-caret">▾</span>
       </summary>
       <div class="atlas-explainer-body">
@@ -4082,8 +4048,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <!-- ════════════════ ATLAS CATALOG HEALTH HEADER ════════════════ -->
     <div class="atlas-upload-header">
       <div class="atlas-upload-eyebrow"><span class="pulse"></span>MONITOR · CATALOG HEALTH · LIVE</div>
-      <h1 class="atlas-upload-h1">See <span class="accent">every broken ASIN</span> before it costs you a sale.</h1>
-      <p class="atlas-upload-sub">Drop your catalog export. Atlas finds orphaned children, missing variation parents, content gaps, and ad-eligibility blocks. Add sales data to rank fixes by revenue. Add an ad bulksheet to flip educated guesses into ground truth.</p>
+      <h1 class="atlas-upload-h1">Catalog Health</h1>
+      <p class="atlas-upload-sub">Catalog export + sales report + ad bulksheet → every ASIN scored → fixes ranked by $ at risk → partial-update sheet.</p>
       <div class="atlas-stepper">
         <div class="atlas-step active"><span class="num">01</span> Drop catalog</div>
         <span class="atlas-step-arrow">→</span>
@@ -4092,40 +4058,6 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         <div class="atlas-step"><span class="num">03</span> Score every ASIN</div>
         <span class="atlas-step-arrow">→</span>
         <div class="atlas-step"><span class="num">04</span> Download fix file</div>
-      </div>
-    </div>
-
-    <!-- ═══ TODAY vs WITH ATLAS (Pass 7) ═══ -->
-    <div class="atlas-tva">
-      <div class="atlas-tva-eyebrow">// TODAY vs WITH ATLAS</div>
-      <div class="atlas-tva-grid">
-        <div class="atlas-tva-col">
-          <div class="atlas-tva-col-h">Today, your team</div>
-          <ul class="atlas-tva-list">
-            <li>Audits the catalog manually, brand by brand</li>
-            <li>Spots variation issues by reading rows in Excel</li>
-            <li>Doesn't see Buy Box loss until sales dip</li>
-            <li>Fixes ranked by who's shouting — not by revenue</li>
-            <li>Net: catalog hygiene drifts between full audits</li>
-          </ul>
-        </div>
-        <div class="atlas-tva-arrow">→</div>
-        <div class="atlas-tva-col atlas">
-          <div class="atlas-tva-col-h">With Atlas, your team</div>
-          <ul class="atlas-tva-list">
-            <li>Drops one catalog export, gets every issue scored</li>
-            <li>Variation graph + content gaps + ad-eligibility in one pass</li>
-            <li>Add sales data → every issue ranked by $ at risk</li>
-            <li>Add ad bulksheet → proxy guesses become Amazon ground truth</li>
-            <li>Output is a Vendor-Central-ready fix file</li>
-          </ul>
-        </div>
-      </div>
-      <div class="atlas-tva-roi">
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">100%</div><div class="atlas-tva-roi-label">ASIN coverage per scan</div></div>
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">68</div><div class="atlas-tva-roi-label">data fields read across 3 reports</div></div>
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">$-ranked</div><div class="atlas-tva-roi-label">fix queue ordered by revenue lift</div></div>
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">ground truth</div><div class="atlas-tva-roi-label">when ad bulksheet uploaded</div></div>
       </div>
     </div>
 
@@ -4301,8 +4233,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
       <details class="atlas-explainer-card atlas-howbuilt-card">
         <summary>
-          <span class="atlas-explainer-eyebrow" style="color:#A78BFA;">// HOW IT&#39;S BUILT</span>
-          <span class="atlas-explainer-title">Catalog Health, under the hood</span>
+          <span class="atlas-explainer-eyebrow" style="color:#A78BFA;">// ARCHITECTURE</span>
+          <span class="atlas-explainer-title">Catalog Health — architecture</span>
           <span class="atlas-explainer-caret">▾</span>
         </summary>
         <div class="atlas-explainer-body">
@@ -4415,6 +4347,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
             <span class="atlas-dz-format">.xlsx</span>
           </div>
         </div>
+        <a class="atlas-tile-download" href="/api/download-sample-catalog" download>
+          ⇩ Sample catalog export
+        </a>
         <div id="ch-catalog-status" class="hidden mt-8">
           <div class="upload-success"><span>✓</span><span id="ch-catalog-status-msg"></span></div>
         </div>
@@ -4449,6 +4384,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
             <span class="atlas-dz-format">revenue</span>
           </div>
         </div>
+        <a class="atlas-tile-download" href="/api/download-sample-sales" download>
+          ⇩ Sample sales report
+        </a>
         <div id="ch-sales-status" class="hidden mt-8">
           <div class="upload-success"><span>✓</span><span id="ch-sales-status-msg"></span></div>
         </div>
@@ -4482,6 +4420,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
             <span class="atlas-dz-format">sponsored products</span>
           </div>
         </div>
+        <a class="atlas-tile-download" href="/api/download-sample-ad-bulksheet" download>
+          ⇩ Sample ad bulksheet
+        </a>
         <div id="ch-adbulk-status" class="hidden mt-8">
           <div class="upload-success"><span>✓</span><span id="ch-adbulk-status-msg"></span></div>
         </div>
@@ -4737,8 +4678,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <!-- ═══ ATLAS VARIATIONS HEADER ═══ -->
     <div class="atlas-upload-header">
       <div class="atlas-upload-eyebrow"><span class="pulse"></span>MANAGE · VARIATIONS · LIVE</div>
-      <h1 class="atlas-upload-h1">Fix every <span class="accent">broken variation</span>. Reassign every orphaned ASIN.</h1>
-      <p class="atlas-upload-sub">Atlas reads your Catalog Health output and shows every split family, orphan, and brand-mismatched parent in one queue. Approve fixes individually or in bulk — output is a Vendor-Central-ready bulksheet.</p>
+      <h1 class="atlas-upload-h1">Variations</h1>
+      <p class="atlas-upload-sub">Reads Catalog Health output → surfaces orphans, split families, brand collisions → approve each fix → Vendor-Central bulksheet.</p>
       <div class="atlas-stepper">
         <div class="atlas-step active"><span class="num">01</span> Read Catalog Health</div>
         <span class="atlas-step-arrow">→</span>
@@ -4747,38 +4688,6 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         <div class="atlas-step"><span class="num">03</span> Approve each fix</div>
         <span class="atlas-step-arrow">→</span>
         <div class="atlas-step"><span class="num">04</span> Download bulksheet</div>
-      </div>
-    </div>
-
-    <!-- ═══ TODAY vs WITH ATLAS (Pass 7) ═══ -->
-    <div class="atlas-tva">
-      <div class="atlas-tva-eyebrow">// TODAY vs WITH ATLAS</div>
-      <div class="atlas-tva-grid">
-        <div class="atlas-tva-col">
-          <div class="atlas-tva-col-h">Today, your team</div>
-          <ul class="atlas-tva-list">
-            <li>Hunts orphan ASINs through Vendor Central by hand</li>
-            <li>Re-creates parent/child links one ASIN at a time</li>
-            <li>Misses brand-collisions until customer reviews the wrong product</li>
-            <li>Loses the family rank every time a child orphans</li>
-          </ul>
-        </div>
-        <div class="atlas-tva-arrow">→</div>
-        <div class="atlas-tva-col atlas">
-          <div class="atlas-tva-col-h">With Atlas, your team</div>
-          <ul class="atlas-tva-list">
-            <li>Reads Catalog Health output — no second upload</li>
-            <li>4 issue types surfaced: split families · orphans · category mismatches · brand collisions</li>
-            <li>Approve/reject each fix; output is one bulksheet</li>
-            <li>Every row is independent — failures don't block the rest</li>
-          </ul>
-        </div>
-      </div>
-      <div class="atlas-tva-roi">
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">4</div><div class="atlas-tva-roi-label">issue types auto-detected</div></div>
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">0</div><div class="atlas-tva-roi-label">extra uploads needed</div></div>
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">cherry-pick</div><div class="atlas-tva-roi-label">approve any, skip any</div></div>
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">family rank</div><div class="atlas-tva-roi-label">protected the moment children rejoin</div></div>
       </div>
     </div>
 
@@ -4820,8 +4729,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
       <details class="atlas-explainer-card atlas-howbuilt-card">
         <summary>
-          <span class="atlas-explainer-eyebrow" style="color:#A78BFA;">// HOW IT&#39;S BUILT</span>
-          <span class="atlas-explainer-title">Variations, under the hood</span>
+          <span class="atlas-explainer-eyebrow" style="color:#A78BFA;">// ARCHITECTURE</span>
+          <span class="atlas-explainer-title">Variations — architecture</span>
           <span class="atlas-explainer-caret">▾</span>
         </summary>
         <div class="atlas-explainer-body">
@@ -5203,37 +5112,6 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
   <!-- ════════════════ BETA: IMAGE → NIS ════════════════ -->
   <div id="beta-image-page" class="content content-wide" style="display:none;">
-    <!-- ═══ TODAY vs WITH ATLAS (Pass 7) ═══ -->
-    <div class="atlas-tva">
-      <div class="atlas-tva-eyebrow">// TODAY vs WITH ATLAS</div>
-      <div class="atlas-tva-grid">
-        <div class="atlas-tva-col">
-          <div class="atlas-tva-col-h">Today, your team</div>
-          <ul class="atlas-tva-list">
-            <li>Waits for the pre-upload sheet before drafting starts</li>
-            <li>Cross-checks photo against PT manually for compliance</li>
-            <li>Best-effort copy from a single image; misses fields the photo can't show</li>
-            <li>Restarts when the spreadsheet finally arrives anyway</li>
-          </ul>
-        </div>
-        <div class="atlas-tva-arrow">→</div>
-        <div class="atlas-tva-col atlas">
-          <div class="atlas-tva-col-h">With Atlas, your team</div>
-          <ul class="atlas-tva-list">
-            <li>Drops one product photo + picks a brand</li>
-            <li>Vision detects PT, color, silhouette, ~60 structured fields with confidence flags</li>
-            <li>Atlas drafts a full listing operator can review or edit field-by-field</li>
-            <li>Operator fills UPC/price/cost in one form — output is the .xlsm</li>
-          </ul>
-        </div>
-      </div>
-      <div class="atlas-tva-roi">
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">3–5 sec</div><div class="atlas-tva-roi-label">vision read per photo</div></div>
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">~60 fields</div><div class="atlas-tva-roi-label">extracted from one image</div></div>
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">advisory only</div><div class="atlas-tva-roi-label">v1 — pre-upload remains source of truth</div></div>
-        <div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">flags logged</div><div class="atlas-tva-roi-label">every operator correction trains v2</div></div>
-      </div>
-    </div>
 
     <!-- ═══ DATA SPEC + HOW IT WORKS for Image → NIS Beta ═══ -->
     <div class="atlas-ch-explainer" style="margin-bottom:20px;">
@@ -5280,8 +5158,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
       <details class="atlas-explainer-card atlas-howbuilt-card">
         <summary>
-          <span class="atlas-explainer-eyebrow" style="color:#A78BFA;">// HOW IT&#39;S BUILT</span>
-          <span class="atlas-explainer-title">Image → NIS, under the hood</span>
+          <span class="atlas-explainer-eyebrow" style="color:#A78BFA;">// ARCHITECTURE</span>
+          <span class="atlas-explainer-title">Image → NIS — architecture</span>
           <span class="atlas-explainer-caret">▾</span>
         </summary>
         <div class="atlas-explainer-body">
@@ -6458,7 +6336,7 @@ function renderAtlasPreview(moduleId, cfg) {
   const tvaRoi   = (tva.roi   || []).map(r =>
     '<div class="atlas-tva-roi-stat"><div class="atlas-tva-roi-num">' + r[0] + '</div><div class="atlas-tva-roi-label">' + r[1] + '</div></div>'
   ).join('');
-  const tvaHtml = (tvaToday || tvaAtlas) ? (
+  const tvaHtml = false ? (
     '<div class="atlas-tva preview-tva">' +
     '<div class="atlas-tva-eyebrow">// TODAY vs WITH ATLAS</div>' +
     '<div class="atlas-tva-grid">' +
@@ -6498,7 +6376,7 @@ function renderAtlasPreview(moduleId, cfg) {
     dataHtml,
     cfg.howbuilt ? (
       '<div class="atlas-hb-foot" style="margin-top:24px; background:rgba(167,139,250,0.06); border:1px solid rgba(167,139,250,0.25); color:#CBD5E1;">' +
-      '<div class="atlas-hb-foot-eyebrow">// HOW IT&#39;S BUILT (PLANNED)</div>' +
+      '<div class="atlas-hb-foot-eyebrow">// ARCHITECTURE (PLANNED)</div>' +
       cfg.howbuilt + '</div>'
     ) : '',
     '<div class="preview-cta">',

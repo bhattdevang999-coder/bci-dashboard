@@ -774,3 +774,17 @@ ol.atlas-hb-list li::before {
   letter-spacing: 1.6px; color: #A78BFA; text-transform: uppercase;
   font-weight: 700; margin-bottom: 6px;
 }
+
+/* ═══════ TILE DOWNLOAD BUTTONS (Pass 11) ═══════ */
+.atlas-tile-download {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 8px 14px;
+  background: rgba(94,234,212,0.04); border: 1px solid rgba(94,234,212,0.25);
+  color: #5EEAD4; border-radius: 6px;
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+  letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700;
+  text-decoration: none; transition: all 150ms;
+}
+.atlas-tile-download:hover {
+  background: rgba(94,234,212,0.1); border-color: #5EEAD4; color: #5EEAD4;
+}
