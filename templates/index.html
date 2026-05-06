@@ -3296,15 +3296,26 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
 <!-- ═══════════════════════════ MAIN ═══════════════════════════════ -->
 <div class="main">
-  <header class="topbar">
-    <div>
-      <div class="topbar-title" id="topbar-title">Atlas · Home</div>
+  <header class="topbar atlas-topbar">
+    <div class="atlas-topbar-left">
+      <div class="atlas-module-chip" id="atlas-module-chip" onclick="atlasToggleModuleMenu(event)">
+        <span class="atlas-module-chip-dot"></span>
+        <span class="atlas-module-chip-label" id="atlas-module-chip-label">Atlas · Home</span>
+        <span class="atlas-module-chip-caret">▾</span>
+      </div>
       <div class="topbar-sub" id="topbar-sub">The operating system for modern Amazon commerce.</div>
+      <span id="topbar-title" style="display:none;">Atlas · Home</span>
     </div>
     <div class="topbar-right">
-      <button class="btn btn-secondary btn-sm" onclick="resetSession()" id="reset-btn" style="display:none;">↺ New Session</button>
+      <button class="atlas-cmdk-trigger" onclick="atlasOpenPalette()" title="Search Atlas (⌘K)">
+        <span class="atlas-cmdk-icon">⌕</span>
+        <span class="atlas-cmdk-text">Search Atlas</span>
+        <span class="atlas-cmdk-kbd"><kbd>⌘</kbd><kbd>K</kbd></span>
+      </button>
     </div>
   </header>
+
+  {% include '_atlas_navigation.html' %}
 
   <!-- ═══════════════════ NIS PAGE ═══════════════════ -->
   <!-- ═══════════════════ NIS PAGE v3 ═══════════════════ -->
@@ -4798,8 +4809,8 @@ function _showPage(pageId, title, subtitle) {
 }
 
 function showBetaImageNISPage() {
-  _showPage('beta-image-page', 'Image → NIS  ·  Beta',
-    'Drop one product photo. The system reads it, classifies it, and drafts the listing.');
+  _showPage('beta-image-page', 'Atlas · Image → NIS',
+    'Drop one product photo. Atlas reads it, classifies it, and drafts the listing.');
   const navEl = document.getElementById('nav-beta-image');
   if (navEl) navEl.classList.add('active');
   if (typeof betaImageInit === 'function') betaImageInit();
@@ -5692,22 +5703,22 @@ function showCatalogPage() {
 }
 
 function showMergePage() {
-  _showPage('merge-page', 'Merge Listings',
-    'Fix broken variations and reassign orphaned ASINs');
+  _showPage('merge-page', 'Atlas · Variations',
+    'Fix broken variation families and reassign orphaned ASINs.');
   document.getElementById('nav-merge').classList.add('active');
   mergeSyncGate();
 }
 
 function showIntelPage() {
-  _showPage('intel-page', 'Intel — Recommendations',
-    'Data-driven opportunities to improve your catalog');
+  _showPage('intel-page', 'Atlas · Recommendations',
+    'Data-driven opportunities ranked by revenue lift.');
   document.getElementById('nav-intel').classList.add('active');
   intelSyncGate();
 }
 
 function showEnginePage() {
-  _showPage('engine-page', 'NIS Rule Engine',
-    'Live conditional-logic engine — required / optional / hidden across every Amazon NIS template');
+  _showPage('engine-page', 'Atlas · Rule Engine',
+    'Live conditional-logic engine across every Amazon NIS template.');
   const navEl = document.getElementById('nav-engine');
   if (navEl) navEl.classList.add('active');
   engineInit();

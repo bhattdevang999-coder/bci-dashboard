@@ -1,0 +1,656 @@
+<!-- ═══════════════════ ATLAS NAVIGATION (chip menu + ⌘K palette) ═══════════════════ -->
+<style>
+/* Module chip in topbar */
+.atlas-topbar { background:#08111A !important; border-bottom:1px solid #1C2D40 !important; }
+.atlas-topbar-left { display: flex; flex-direction: column; gap: 4px; }
+.atlas-module-chip {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 7px 12px 7px 12px;
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 8px;
+  cursor: pointer; transition: all 160ms ease;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 14px; font-weight: 700; color: #E2E8F0;
+  letter-spacing: -0.2px; user-select: none;
+  width: fit-content;
+}
+.atlas-module-chip:hover {
+  border-color: rgba(94,234,212,0.4); background: #13212F;
+}
+.atlas-module-chip.open {
+  border-color: #5EEAD4; background: #13212F;
+}
+.atlas-module-chip-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #10B981;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.6); animation: chipPulse 2.4s infinite;
+}
+@keyframes chipPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+  70%  { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.atlas-module-chip-caret {
+  font-size: 10px; color: #5EEAD4; transition: transform 160ms;
+}
+.atlas-module-chip.open .atlas-module-chip-caret { transform: rotate(180deg); }
+
+/* Cmd+K trigger */
+.atlas-cmdk-trigger {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 8px 12px 8px 14px;
+  background: rgba(94,234,212,0.04);
+  border: 1px solid rgba(94,234,212,0.18);
+  border-radius: 8px; cursor: pointer;
+  color: #94A3B8; font-family: 'Calibri', sans-serif; font-size: 13px;
+  transition: all 160ms ease; min-width: 220px;
+}
+.atlas-cmdk-trigger:hover {
+  border-color: rgba(94,234,212,0.5); color: #5EEAD4;
+  background: rgba(94,234,212,0.06);
+}
+.atlas-cmdk-icon { font-size: 14px; color: #5EEAD4; }
+.atlas-cmdk-text { flex: 1; text-align: left; }
+.atlas-cmdk-kbd { display: inline-flex; gap: 3px; }
+.atlas-cmdk-kbd kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  background: rgba(255,255,255,0.04); border: 1px solid #1C2D40;
+  border-radius: 4px; font-family: ui-monospace, monospace;
+  font-size: 10px; color: #94A3B8; font-weight: 700;
+}
+
+/* ── Module dropdown (chip menu) ─────────────────────────── */
+.atlas-module-menu {
+  position: absolute; top: 60px; left: 24px; z-index: 9000;
+  width: 720px; max-width: calc(100vw - 48px);
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 14px;
+  box-shadow: 0 24px 60px -10px rgba(0,0,0,0.6), 0 0 0 1px rgba(94,234,212,0.06);
+  padding: 10px; opacity: 0; transform: translateY(-6px) scale(0.98);
+  pointer-events: none; transition: all 180ms ease;
+  font-family: 'Calibri', sans-serif;
+}
+.atlas-module-menu.open {
+  opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
+}
+.atlas-mm-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+@media (max-width: 1100px) { .atlas-mm-grid { grid-template-columns: repeat(2, 1fr); } }
+.atlas-mm-col {
+  background: rgba(255,255,255,0.015); border: 1px solid #1C2D40;
+  border-radius: 10px; padding: 12px 12px 8px;
+}
+.atlas-mm-col-h {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #1C2D40;
+}
+.atlas-mm-col-name {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: #5EEAD4; font-weight: 700;
+}
+.atlas-mm-col[data-status="MONITOR"] .atlas-mm-col-name { color: #F59E0B; }
+.atlas-mm-col[data-status="MANAGE"]  .atlas-mm-col-name { color: #5EEAD4; }
+.atlas-mm-col[data-status="PROMOTE"] .atlas-mm-col-name { color: #A78BFA; }
+.atlas-mm-col-status {
+  font-family: ui-monospace, monospace; font-size: 9px;
+  padding: 2px 6px; border-radius: 4px; letter-spacing: 1px;
+  text-transform: uppercase; font-weight: 700;
+  background: rgba(255,255,255,0.04); color: #64748B;
+  border: 1px solid #1C2D40;
+}
+.atlas-mm-col[data-status="CREATE"]  .atlas-mm-col-status { color: #10B981; border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.06); }
+.atlas-mm-col[data-status="MONITOR"] .atlas-mm-col-status { color: #F59E0B; border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.06); }
+.atlas-mm-col[data-status="MANAGE"]  .atlas-mm-col-status { color: #5EEAD4; border-color: rgba(94,234,212,0.3); background: rgba(94,234,212,0.06); }
+.atlas-mm-col[data-status="PROMOTE"] .atlas-mm-col-status { color: #A78BFA; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.06); }
+
+.atlas-mm-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  font-size: 13px; color: #CBD5E1; transition: all 120ms;
+  margin-bottom: 2px;
+}
+.atlas-mm-item:hover {
+  background: rgba(94,234,212,0.06); color: #E2E8F0;
+}
+.atlas-mm-item.active {
+  background: rgba(94,234,212,0.1); color: #5EEAD4;
+}
+.atlas-mm-item-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: #10B981;
+}
+.atlas-mm-item.soon .atlas-mm-item-dot { background: #475569; }
+.atlas-mm-item-name { flex: 1; }
+.atlas-mm-item-pill {
+  font-family: ui-monospace, monospace; font-size: 8px;
+  padding: 1px 5px; border-radius: 3px; letter-spacing: 0.8px;
+  text-transform: uppercase; font-weight: 700;
+}
+.atlas-mm-item-pill.live { color: #10B981; background: rgba(16,185,129,0.1); }
+.atlas-mm-item-pill.beta { color: #5EEAD4; background: rgba(94,234,212,0.1); }
+.atlas-mm-item-pill.soon { color: #64748B; background: rgba(100,116,139,0.1); }
+
+.atlas-mm-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px 4px; margin-top: 6px;
+  border-top: 1px solid #1C2D40;
+  font-size: 11px; color: #64748B;
+  font-family: ui-monospace, monospace; letter-spacing: 0.4px;
+}
+.atlas-mm-foot kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  background: rgba(255,255,255,0.04); border: 1px solid #1C2D40;
+  border-radius: 3px; font-size: 9px; color: #94A3B8; font-weight: 700;
+  margin: 0 2px;
+}
+
+/* ── Cmd+K palette ───────────────────────────────────────── */
+.atlas-palette-backdrop {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(8,17,26,0.72); backdrop-filter: blur(8px);
+  display: none; align-items: flex-start; justify-content: center;
+  padding-top: 12vh;
+}
+.atlas-palette-backdrop.open { display: flex; }
+.atlas-palette {
+  width: 640px; max-width: calc(100vw - 32px);
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 14px;
+  box-shadow: 0 30px 80px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(94,234,212,0.08);
+  overflow: hidden; font-family: 'Calibri', sans-serif;
+  animation: paletteIn 200ms ease;
+}
+@keyframes paletteIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.atlas-palette-input-wrap {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 18px; border-bottom: 1px solid #1C2D40;
+}
+.atlas-palette-input-icon {
+  font-size: 16px; color: #5EEAD4;
+}
+.atlas-palette-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: #E2E8F0; font-size: 16px; font-family: 'Calibri', sans-serif;
+}
+.atlas-palette-input::placeholder { color: #475569; }
+.atlas-palette-esc {
+  font-family: ui-monospace, monospace; font-size: 9px;
+  padding: 3px 8px; border: 1px solid #1C2D40; border-radius: 4px;
+  color: #64748B; letter-spacing: 0.8px; text-transform: uppercase;
+  font-weight: 700;
+}
+.atlas-palette-list {
+  max-height: 60vh; overflow-y: auto; padding: 8px;
+}
+.atlas-palette-list::-webkit-scrollbar { width: 6px; }
+.atlas-palette-list::-webkit-scrollbar-track { background: transparent; }
+.atlas-palette-list::-webkit-scrollbar-thumb { background: #1C2D40; border-radius: 3px; }
+
+.atlas-palette-section {
+  font-family: ui-monospace, monospace; font-size: 9px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: #64748B; font-weight: 700;
+  padding: 8px 10px 6px; margin-top: 4px;
+}
+.atlas-palette-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 8px; cursor: pointer;
+  font-size: 13.5px; color: #CBD5E1; transition: all 100ms;
+  user-select: none;
+}
+.atlas-palette-item:hover, .atlas-palette-item.active {
+  background: rgba(94,234,212,0.08); color: #E2E8F0;
+}
+.atlas-palette-item.active {
+  box-shadow: inset 3px 0 0 0 #5EEAD4;
+}
+.atlas-palette-item-icon {
+  width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(94,234,212,0.06); border: 1px solid rgba(94,234,212,0.2);
+  color: #5EEAD4; font-family: ui-monospace, monospace; font-size: 11px; font-weight: 700;
+}
+.atlas-palette-item[data-mod="MONITOR"] .atlas-palette-item-icon {
+  background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.2); color: #F59E0B;
+}
+.atlas-palette-item[data-mod="MANAGE"] .atlas-palette-item-icon {
+  background: rgba(94,234,212,0.06); border-color: rgba(94,234,212,0.2); color: #5EEAD4;
+}
+.atlas-palette-item[data-mod="PROMOTE"] .atlas-palette-item-icon {
+  background: rgba(167,139,250,0.06); border-color: rgba(167,139,250,0.2); color: #A78BFA;
+}
+.atlas-palette-item[data-action="action"] .atlas-palette-item-icon {
+  background: rgba(255,255,255,0.04); border-color: #1C2D40; color: #94A3B8;
+}
+.atlas-palette-item-body { flex: 1; min-width: 0; }
+.atlas-palette-item-name {
+  font-weight: 600; color: #E2E8F0; font-size: 14px; line-height: 1.2;
+}
+.atlas-palette-item-sub {
+  font-size: 11.5px; color: #64748B; margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.atlas-palette-item-pill {
+  font-family: ui-monospace, monospace; font-size: 8px;
+  padding: 2px 6px; border-radius: 4px; letter-spacing: 0.8px;
+  text-transform: uppercase; font-weight: 700; flex-shrink: 0;
+}
+.atlas-palette-item-pill.live { color: #10B981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); }
+.atlas-palette-item-pill.beta { color: #5EEAD4; background: rgba(94,234,212,0.1); border: 1px solid rgba(94,234,212,0.25); }
+.atlas-palette-item-pill.soon { color: #94A3B8; background: rgba(148,163,184,0.08); border: 1px solid rgba(148,163,184,0.2); }
+
+.atlas-palette-empty {
+  text-align: center; padding: 40px 20px;
+  font-size: 13px; color: #64748B;
+}
+.atlas-palette-empty b { color: #94A3B8; }
+
+.atlas-palette-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 16px; border-top: 1px solid #1C2D40;
+  font-size: 11px; color: #64748B;
+  font-family: ui-monospace, monospace; letter-spacing: 0.4px;
+}
+.atlas-palette-foot-grp { display: flex; gap: 14px; align-items: center; }
+.atlas-palette-foot kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  background: rgba(255,255,255,0.04); border: 1px solid #1C2D40;
+  border-radius: 3px; font-size: 9px; color: #94A3B8; font-weight: 700;
+  margin: 0 2px;
+}
+
+/* Hide the legacy reset-btn that lives in topbar-right (we removed it) */
+.topbar > .topbar-right > #reset-btn { display: none !important; }
+</style>
+
+<!-- Module chip dropdown -->
+<div class="atlas-module-menu" id="atlas-module-menu" onclick="event.stopPropagation();">
+  <div class="atlas-mm-grid">
+    <div class="atlas-mm-col" data-status="CREATE">
+      <div class="atlas-mm-col-h">
+        <span class="atlas-mm-col-name">01 · Create</span>
+        <span class="atlas-mm-col-status">LIVE</span>
+      </div>
+      <div class="atlas-mm-item" data-id="bulk-upload" onclick="atlasGoTo('bulk-upload')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Bulk Upload</span>
+        <span class="atlas-mm-item-pill live">Live</span>
+      </div>
+      <div class="atlas-mm-item" data-id="image-nis" onclick="atlasGoTo('image-nis')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Image → NIS</span>
+        <span class="atlas-mm-item-pill beta">Beta</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="photo-brief" onclick="atlasGoTo('photo-brief')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Photo Brief</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="voice-tuner" onclick="atlasGoTo('voice-tuner')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Voice Tuner</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+    </div>
+
+    <div class="atlas-mm-col" data-status="MONITOR">
+      <div class="atlas-mm-col-h">
+        <span class="atlas-mm-col-name">02 · Monitor</span>
+        <span class="atlas-mm-col-status">30 DAYS</span>
+      </div>
+      <div class="atlas-mm-item" data-id="catalog-health" onclick="atlasGoTo('catalog-health')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Catalog Health</span>
+        <span class="atlas-mm-item-pill live">Live</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="suppression" onclick="atlasGoTo('suppression')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Suppression Watch</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="image-audit" onclick="atlasGoTo('image-audit')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Image Audit</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="compliance" onclick="atlasGoTo('compliance')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Compliance</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+    </div>
+
+    <div class="atlas-mm-col" data-status="MANAGE">
+      <div class="atlas-mm-col-h">
+        <span class="atlas-mm-col-name">03 · Manage</span>
+        <span class="atlas-mm-col-status">60 DAYS</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="bulk-price" onclick="atlasGoTo('bulk-price')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Bulk Price Sync</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="content-refresh" onclick="atlasGoTo('content-refresh')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Content Refresh</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+      <div class="atlas-mm-item" data-id="variations" onclick="atlasGoTo('variations')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Variations</span>
+        <span class="atlas-mm-item-pill live">Live</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="ab-test" onclick="atlasGoTo('ab-test')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">A/B Test</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+    </div>
+
+    <div class="atlas-mm-col" data-status="PROMOTE">
+      <div class="atlas-mm-col-h">
+        <span class="atlas-mm-col-name">04 · Promote</span>
+        <span class="atlas-mm-col-status">60-90 DAYS</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="ad-bulksheet" onclick="atlasGoTo('ad-bulksheet')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Ad Bulksheet</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="keywords" onclick="atlasGoTo('keywords')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Keywords</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="pdp-optimizer" onclick="atlasGoTo('pdp-optimizer')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">PDP Optimizer</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+      <div class="atlas-mm-item soon" data-id="reviews" onclick="atlasGoTo('reviews')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Reviews</span>
+        <span class="atlas-mm-item-pill soon">Soon</span>
+      </div>
+    </div>
+  </div>
+  <div class="atlas-mm-foot">
+    <span>Press <kbd>⌘</kbd><kbd>K</kbd> for search · <kbd>esc</kbd> to close</span>
+    <span onclick="atlasGoTo('home')" style="cursor:pointer; color:#5EEAD4;">← Atlas Home</span>
+  </div>
+</div>
+
+<!-- Cmd+K palette -->
+<div class="atlas-palette-backdrop" id="atlas-palette-backdrop" onclick="atlasClosePalette()">
+  <div class="atlas-palette" onclick="event.stopPropagation();">
+    <div class="atlas-palette-input-wrap">
+      <span class="atlas-palette-input-icon">⌕</span>
+      <input type="text" class="atlas-palette-input" id="atlas-palette-input"
+             placeholder="Search modules and actions — try 'bulk', 'photo', 'download'..."
+             oninput="atlasFilterPalette()" autocomplete="off">
+      <span class="atlas-palette-esc">esc</span>
+    </div>
+    <div class="atlas-palette-list" id="atlas-palette-list"></div>
+    <div class="atlas-palette-foot">
+      <div class="atlas-palette-foot-grp">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+        <span><kbd>↵</kbd> select</span>
+        <span><kbd>esc</kbd> close</span>
+      </div>
+      <span>Atlas command palette</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────── Atlas Navigation: chip menu + ⌘K palette ───────
+const ATLAS_NAV_ITEMS = [
+  // Live modules
+  { id:'home',           name:'Atlas Home',         sub:'Platform overview + roadmap',                              mod:'CREATE',  pill:'live', go:()=>showAtlasPage(),         keys:'home overview roadmap atlas' },
+  { id:'bulk-upload',    name:'Bulk Upload',        sub:'Drop a sheet → managed Amazon catalog',                   mod:'CREATE',  pill:'live', go:()=>showNISPage(),           keys:'bulk upload sheet xlsx csv pre-upload create generate listing nis' },
+  { id:'image-nis',      name:'Image → NIS',        sub:'One photo → drafted listing (Beta, vision-powered)',       mod:'CREATE',  pill:'beta', go:()=>showBetaImageNISPage(),  keys:'image photo vision beta create draft listing' },
+  { id:'catalog-health', name:'Catalog Health',     sub:'Score every ASIN, find broken variations + content gaps',  mod:'MONITOR', pill:'live', go:()=>showCatalogPage(),       keys:'catalog health monitor scan check audit asin broken' },
+  { id:'variations',     name:'Variations',         sub:'Fix broken variation families, reassign orphaned ASINs',   mod:'MANAGE',  pill:'live', go:()=>showMergePage(),         keys:'variations merge parent child orphan family' },
+  { id:'engine',         name:'Inspect Rules',      sub:'Live conditional logic engine across every Amazon NIS PT', mod:'CREATE',  pill:'live', go:()=>showEnginePage(),        keys:'rules engine logic conditional inspect required optional admin' },
+
+  // Soon modules → preview pages
+  { id:'photo-brief',    name:'Photo Brief',        sub:'Shot list + brand-aware brief for shoots — 14 days',       mod:'CREATE',  pill:'soon', go:()=>showPreviewPage('photo-brief'),    keys:'photo brief shoot photographer shot list create' },
+  { id:'voice-tuner',    name:'Voice Tuner',        sub:'Lock brand voice — Atlas writes everything from it — 30d', mod:'CREATE',  pill:'soon', go:()=>showPreviewPage('voice-tuner'),    keys:'voice tuner brand tone language create' },
+  { id:'suppression',    name:'Suppression Watch',  sub:'Daily catch every ASIN that lost Buy Box — 30 days',       mod:'MONITOR', pill:'soon', go:()=>showPreviewPage('suppression'),    keys:'suppression watch buy box monitor inactive blocked' },
+  { id:'image-audit',    name:'Image Audit',        sub:'Scan every image, slot rules, flag reshoot — 30 days',     mod:'MONITOR', pill:'soon', go:()=>showPreviewPage('image-audit'),    keys:'image audit photo slot reshoot monitor' },
+  { id:'compliance',     name:'Compliance',         sub:'Catch policy + claim risk before Amazon does — 30 days',   mod:'MONITOR', pill:'soon', go:()=>showPreviewPage('compliance'),     keys:'compliance policy claim risk legal restricted monitor' },
+  { id:'bulk-price',     name:'Bulk Price Sync',    sub:'Move 200 prices in one sheet — 60 days',                   mod:'MANAGE',  pill:'soon', go:()=>showPreviewPage('bulk-price'),     keys:'bulk price sync sale promo manage' },
+  { id:'content-refresh',name:'Content Refresh',    sub:'Rewrite hundreds of bullets in your voice — 60 days',      mod:'MANAGE',  pill:'soon', go:()=>showPreviewPage('content-refresh'),keys:'content refresh rewrite bullets title manage copy' },
+  { id:'ab-test',        name:'A/B Test',           sub:'Run + harvest title + image tests at scale — 60 days',     mod:'MANAGE',  pill:'soon', go:()=>showPreviewPage('ab-test'),        keys:'ab test experiment title image manage' },
+  { id:'ad-bulksheet',   name:'Ad Bulksheet',       sub:'Catalog-aware Amazon Ads bulk sheet — 60-90 days',         mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('ad-bulksheet'),   keys:'ad bulksheet sponsored products campaign promote' },
+  { id:'keywords',       name:'Keywords',           sub:'Unified keyword brain across PDP + ads — 60-90 days',      mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('keywords'),       keys:'keywords search terms ads pdp promote' },
+  { id:'pdp-optimizer',  name:'PDP Optimizer',      sub:'Score every PDP vs top sellers in PT — 60-90 days',        mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('pdp-optimizer'),  keys:'pdp optimizer score promote conversion' },
+  { id:'reviews',        name:'Reviews',            sub:'Theme-cluster every review → product fixes — 60-90 days',  mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('reviews'),        keys:'reviews customer feedback themes cluster promote' },
+];
+
+const ATLAS_NAV_ACTIONS = [
+  { id:'download-template', name:'Download sample pre-upload template', sub:'Excel sheet with the 31 expected columns', go:()=>{ window.location.href='/api/download-sample-template'; }, keys:'download template sample pre-upload xlsx excel sheet columns' },
+  { id:'reset-session',     name:'Reset session',                       sub:'Clear server state and start fresh',       go:()=>{ if (confirm('Reset session? This clears the current upload.')) { fetch('/api/session-reset',{method:'POST'}).then(()=>location.reload()); } }, keys:'reset clear restart new session start fresh' },
+  { id:'go-home',           name:'Go to Atlas Home',                    sub:'Roadmap, modules, what\'s shipping when',  go:()=>showAtlasPage(), keys:'home atlas overview' },
+];
+
+let atlasPaletteIdx = 0;
+let atlasFilteredItems = [];
+let atlasRecent = JSON.parse(localStorage.getItem('atlas_recent') || '[]');
+
+function atlasToggleModuleMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('atlas-module-menu');
+  const chip = document.getElementById('atlas-module-chip');
+  const open = menu.classList.toggle('open');
+  chip.classList.toggle('open', open);
+}
+function atlasCloseModuleMenu() {
+  document.getElementById('atlas-module-menu')?.classList.remove('open');
+  document.getElementById('atlas-module-chip')?.classList.remove('open');
+}
+
+function atlasUpdateChipLabel(label) {
+  const el = document.getElementById('atlas-module-chip-label');
+  if (el) el.textContent = label;
+}
+
+function atlasGoTo(id) {
+  const item = ATLAS_NAV_ITEMS.find(i => i.id === id);
+  if (!item) return;
+  // record in recent (most-recent first, dedup, max 5)
+  atlasRecent = [id, ...atlasRecent.filter(x => x !== id)].slice(0, 5);
+  localStorage.setItem('atlas_recent', JSON.stringify(atlasRecent));
+  atlasCloseModuleMenu();
+  atlasClosePalette();
+  try { item.go(); } catch(e) { console.error('atlasGoTo failed', e); }
+  // Reflect new state on chip + active items (works regardless of show*Page)
+  setTimeout(() => {
+    const t = document.getElementById('topbar-title');
+    if (t) atlasUpdateChipLabel(t.textContent);
+    document.querySelectorAll('.atlas-mm-item').forEach(el => {
+      el.classList.toggle('active', el.getAttribute('data-id') === id);
+    });
+  }, 30);
+}
+
+function atlasOpenPalette() {
+  const bd = document.getElementById('atlas-palette-backdrop');
+  bd.classList.add('open');
+  const inp = document.getElementById('atlas-palette-input');
+  inp.value = '';
+  atlasFilterPalette();
+  setTimeout(() => inp.focus(), 50);
+}
+function atlasClosePalette() {
+  document.getElementById('atlas-palette-backdrop')?.classList.remove('open');
+}
+
+function atlasFilterPalette() {
+  const q = (document.getElementById('atlas-palette-input')?.value || '').trim().toLowerCase();
+  const list = document.getElementById('atlas-palette-list');
+  if (!list) return;
+
+  let modules, actions;
+  if (!q) {
+    // Default view — recent first if any, then all modules, then actions
+    const recentItems = atlasRecent.map(id => ATLAS_NAV_ITEMS.find(i => i.id === id)).filter(Boolean);
+    const otherItems  = ATLAS_NAV_ITEMS.filter(i => !atlasRecent.includes(i.id));
+    modules = [...recentItems, ...otherItems];
+    actions = ATLAS_NAV_ACTIONS;
+  } else {
+    const score = (item, query) => {
+      const hay = (item.name + ' ' + (item.keys || '') + ' ' + (item.sub || '')).toLowerCase();
+      if (item.name.toLowerCase().startsWith(query)) return 3;
+      if (hay.includes(' ' + query)) return 2;
+      if (hay.includes(query)) return 1;
+      return 0;
+    };
+    modules = ATLAS_NAV_ITEMS.map(i => ({ i, s: score(i, q) })).filter(x => x.s > 0).sort((a,b) => b.s - a.s).map(x => x.i);
+    actions = ATLAS_NAV_ACTIONS.map(i => ({ i, s: score(i, q) })).filter(x => x.s > 0).sort((a,b) => b.s - a.s).map(x => x.i);
+  }
+
+  atlasFilteredItems = [...modules, ...actions];
+
+  if (atlasFilteredItems.length === 0) {
+    list.innerHTML = '<div class="atlas-palette-empty">No matches for <b>' + escapeHtmlAtlas(q) + '</b></div>';
+    return;
+  }
+
+  let html = '';
+  if (modules.length > 0) {
+    html += '<div class="atlas-palette-section">' + (q ? 'Modules' : (atlasRecent.length > 0 ? 'Recent + modules' : 'Modules')) + '</div>';
+    modules.forEach((it, i) => {
+      const idx = i;
+      html += atlasRenderPaletteItem(it, idx, 'module');
+    });
+  }
+  if (actions.length > 0) {
+    html += '<div class="atlas-palette-section">Actions</div>';
+    actions.forEach((it, i) => {
+      const idx = modules.length + i;
+      html += atlasRenderPaletteItem(it, idx, 'action');
+    });
+  }
+  list.innerHTML = html;
+  atlasPaletteIdx = 0;
+  atlasHighlightPalette();
+}
+
+function atlasRenderPaletteItem(it, idx, kind) {
+  const initials = it.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  const pillHtml = it.pill ? '<span class="atlas-palette-item-pill ' + it.pill + '">' + it.pill + '</span>' : '';
+  const dataMod  = it.mod ? ' data-mod="' + it.mod + '"' : '';
+  const dataAct  = kind === 'action' ? ' data-action="action"' : '';
+  return '<div class="atlas-palette-item" data-idx="' + idx + '"' + dataMod + dataAct +
+         ' onclick="atlasPaletteSelect(' + idx + ')">' +
+         '<span class="atlas-palette-item-icon">' + initials + '</span>' +
+         '<div class="atlas-palette-item-body">' +
+         '<div class="atlas-palette-item-name">' + escapeHtmlAtlas(it.name) + '</div>' +
+         '<div class="atlas-palette-item-sub">' + escapeHtmlAtlas(it.sub || '') + '</div>' +
+         '</div>' + pillHtml + '</div>';
+}
+
+function atlasHighlightPalette() {
+  const items = document.querySelectorAll('#atlas-palette-list .atlas-palette-item');
+  items.forEach((el, i) => el.classList.toggle('active', i === atlasPaletteIdx));
+  const act = items[atlasPaletteIdx];
+  if (act) act.scrollIntoView({ block: 'nearest' });
+}
+
+function atlasPaletteSelect(idx) {
+  const it = atlasFilteredItems[idx];
+  if (!it) return;
+  atlasClosePalette();
+  if (it.go) {
+    if (ATLAS_NAV_ITEMS.includes(it)) atlasGoTo(it.id);
+    else it.go();
+  }
+}
+
+function escapeHtmlAtlas(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Global keyboard
+document.addEventListener('keydown', (e) => {
+  // ⌘K / Ctrl+K
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    const bd = document.getElementById('atlas-palette-backdrop');
+    if (bd?.classList.contains('open')) atlasClosePalette(); else atlasOpenPalette();
+    return;
+  }
+  const paletteOpen = document.getElementById('atlas-palette-backdrop')?.classList.contains('open');
+  if (e.key === 'Escape') {
+    if (paletteOpen) { atlasClosePalette(); return; }
+    atlasCloseModuleMenu();
+    return;
+  }
+  if (paletteOpen) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      atlasPaletteIdx = Math.min(atlasPaletteIdx + 1, atlasFilteredItems.length - 1);
+      atlasHighlightPalette();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      atlasPaletteIdx = Math.max(atlasPaletteIdx - 1, 0);
+      atlasHighlightPalette();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      atlasPaletteSelect(atlasPaletteIdx);
+    }
+  }
+});
+
+// Close menu on outside click
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('atlas-module-menu');
+  const chip = document.getElementById('atlas-module-chip');
+  if (menu?.classList.contains('open') && !menu.contains(e.target) && !chip.contains(e.target)) {
+    atlasCloseModuleMenu();
+  }
+});
+
+// Patch _showPage so the chip label updates whenever the topbar title changes.
+// Deferred to DOMContentLoaded because _showPage is defined in the main script
+// which is parsed AFTER this navigation partial.
+function _atlasPatchShowPage(){
+  const orig = window._showPage;
+  if (typeof orig !== 'function') return false;
+  if (orig.__atlas_patched) return true;
+  const wrapped = function(pageId, title, subtitle) {
+    orig(pageId, title, subtitle);
+    atlasUpdateChipLabel(title);
+    const map = {
+      'atlas-page':'home','nis-page':'bulk-upload','catalog-page':'catalog-health',
+      'merge-page':'variations','beta-image-page':'image-nis','engine-page':'engine'
+    };
+    const cur = map[pageId];
+    document.querySelectorAll('.atlas-mm-item').forEach(el => {
+      el.classList.toggle('active', el.getAttribute('data-id') === cur);
+    });
+  };
+  wrapped.__atlas_patched = true;
+  window._showPage = wrapped;
+  return true;
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _atlasPatchShowPage);
+} else {
+  // Already loaded — run on next tick
+  setTimeout(_atlasPatchShowPage, 0);
+}
+// Sync initial chip label to current topbar title on load
+function _atlasInitChip() {
+  const t = document.getElementById('topbar-title');
+  if (t && t.textContent) atlasUpdateChipLabel(t.textContent);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _atlasInitChip);
+} else { setTimeout(_atlasInitChip, 0); }
+</script>
