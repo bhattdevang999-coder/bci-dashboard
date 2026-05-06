@@ -3442,6 +3442,53 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
   </div>
 
+  <!-- ═══ HOW BULK UPLOAD WORKS ═══ -->
+  <div class="atlas-ch-explainer" style="margin-top:24px;">
+    <details class="atlas-explainer-card">
+      <summary>
+        <span class="atlas-explainer-eyebrow">// HOW THIS WORKS</span>
+        <span class="atlas-explainer-title">Bulk Upload, end-to-end</span>
+        <span class="atlas-explainer-caret">▾</span>
+      </summary>
+      <div class="atlas-explainer-body">
+        <div class="atlas-howit-grid">
+          <div class="atlas-howit-step">
+            <div class="atlas-howit-step-num">01</div>
+            <div class="atlas-howit-step-name">Drop your sheet</div>
+            <div class="atlas-howit-step-text">.xlsx / .xls / .xlsm / .csv / .tsv up to 50MB. Atlas reads any pre-upload format and detects column headers automatically.</div>
+          </div>
+          <div class="atlas-howit-arrow">→</div>
+          <div class="atlas-howit-step">
+            <div class="atlas-howit-step-num">02</div>
+            <div class="atlas-howit-step-name">Auto-classify each row</div>
+            <div class="atlas-howit-step-text">Sub-class → Amazon product type (16 PTs trained: COAT, DRESS, SHIRT, PANTS, SWIMWEAR, SHORTS, BLAZER, BRA, OVERALLS, SKIRT, SNOW_PANT, SNOWSUIT, SWEATSHIRT, HAT, SANDAL, ONE_PIECE_OUTFIT). Unknown sub-classes get queued for human mapping.</div>
+          </div>
+          <div class="atlas-howit-arrow">→</div>
+          <div class="atlas-howit-step">
+            <div class="atlas-howit-step-num">03</div>
+            <div class="atlas-howit-step-name">Generate copy + validate</div>
+            <div class="atlas-howit-step-text">Title, 5 bullets, description, backend keywords — all generated in your brand voice and validated against the live Amazon NIS rule engine for the correct PT (required / optional / hidden fields).</div>
+          </div>
+          <div class="atlas-howit-arrow">→</div>
+          <div class="atlas-howit-step">
+            <div class="atlas-howit-step-num">04</div>
+            <div class="atlas-howit-step-name">Download .xlsm</div>
+            <div class="atlas-howit-step-text">Output is a real Amazon partial-update sheet — paste straight into Vendor or Seller Central. Every accept / regenerate / edit is logged with the operator name for audit.</div>
+          </div>
+        </div>
+
+        <div class="atlas-howit-links">
+          <div class="atlas-howit-links-h">// HOW BULK UPLOAD CONNECTS TO THE REST OF ATLAS</div>
+          <div class="atlas-howit-link"><b>← From your product master</b> — the same internal sheet you already use becomes Atlas's source of truth.</div>
+          <div class="atlas-howit-link"><b>→ Catalog Health</b> — listings shipped through Bulk Upload show up in Catalog Health on the next sync, scored against the same rules they were generated against.</div>
+          <div class="atlas-howit-link"><b>→ Image → NIS Beta</b> — the same generation pipeline runs from a single photo when you don't have a sheet yet.</div>
+          <div class="atlas-howit-link"><b>→ Voice Tuner (30 days)</b> — every accept / regenerate trains the brand voice that Bulk Upload writes from.</div>
+          <div class="atlas-howit-link"><b>→ Content Refresh (60 days)</b> — re-runs Bulk Upload's copy generation across hundreds of live ASINs with one click.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
   <!-- Loading state -->
   <div id="product-loading" class="hidden mt-16">
     <div class="alert alert-info">
@@ -4530,6 +4577,101 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
   <!-- ═══════════════════════ MERGE LISTINGS PAGE ═══════════════════════ -->
   <div id="merge-page" class="content">
+    <!-- ═══ ATLAS VARIATIONS HEADER ═══ -->
+    <div class="atlas-upload-header">
+      <div class="atlas-upload-eyebrow"><span class="pulse"></span>MANAGE · VARIATIONS · LIVE</div>
+      <h1 class="atlas-upload-h1">Fix every <span class="accent">broken variation</span>. Reassign every orphaned ASIN.</h1>
+      <p class="atlas-upload-sub">Atlas reads your Catalog Health output and shows every split family, orphan, and brand-mismatched parent in one queue. Approve fixes individually or in bulk — output is a Vendor-Central-ready bulksheet.</p>
+      <div class="atlas-stepper">
+        <div class="atlas-step active"><span class="num">01</span> Read Catalog Health</div>
+        <span class="atlas-step-arrow">→</span>
+        <div class="atlas-step"><span class="num">02</span> Surface broken families</div>
+        <span class="atlas-step-arrow">→</span>
+        <div class="atlas-step"><span class="num">03</span> Approve each fix</div>
+        <span class="atlas-step-arrow">→</span>
+        <div class="atlas-step"><span class="num">04</span> Download bulksheet</div>
+      </div>
+    </div>
+
+    <div class="atlas-ch-explainer">
+      <details class="atlas-explainer-card">
+        <summary>
+          <span class="atlas-explainer-eyebrow">// DATA WE NEED</span>
+          <span class="atlas-explainer-title">What Variations reads from your catalog</span>
+          <span class="atlas-explainer-caret">▾</span>
+        </summary>
+        <div class="atlas-explainer-body">
+          <p class="atlas-explainer-intro">
+            Variations runs on top of Catalog Health — drop your catalog there first and the broken families flow into this queue automatically. <b>No new upload required for this module.</b>
+          </p>
+          <div class="atlas-spec-cluster">
+            <div class="atlas-spec-cluster-h">Required for variation logic · 5 fields</div>
+            <table class="atlas-spec-table">
+              <tr><td class="f">Child ASIN</td><td class="p">The ASIN we're checking</td><td class="a">asin · child_asin</td></tr>
+              <tr><td class="f">Parent ASIN</td><td class="p">Detects orphans (null parent) and broken parent-child links</td><td class="a">parent_asin · parent sku</td></tr>
+              <tr><td class="f">Parentage Level</td><td class="p">Distinguishes parent rows from children in your export</td><td class="a">parent_child · parentage</td></tr>
+              <tr><td class="f">Variation Theme</td><td class="p">Detects theme mismatches (e.g. parent says SizeName-ColorName, children say Size only)</td><td class="a">variation_theme · variation theme name</td></tr>
+              <tr><td class="f">Brand</td><td class="p">Catches brand-collision — child ASINs grouped under a parent of a different brand</td><td class="a">brand · brand_name</td></tr>
+            </table>
+          </div>
+          <div class="atlas-spec-cluster">
+            <div class="atlas-spec-cluster-h">Sharpens the queue · 4 fields</div>
+            <table class="atlas-spec-table">
+              <tr><td class="f">Color + Size</td><td class="p">Confirms variation-axis values inside the matrix</td><td class="a">color · size · apparel size value</td></tr>
+              <tr><td class="f">Style # / Style Number</td><td class="p">TLG-side cross-walk so multiple ASINs of the same style fold to the same parent</td><td class="a">style # · style_num</td></tr>
+              <tr><td class="f">Category / Sub-class</td><td class="p">Catches category-mismatch families (children in a different PT than the parent)</td><td class="a">category · sub-class name · product type</td></tr>
+              <tr><td class="f">Status</td><td class="p">Filters inactive ASINs out of the queue</td><td class="a">status · listing status</td></tr>
+            </table>
+          </div>
+          <div class="atlas-spec-takeaway">
+            <b>Bare minimum:</b> ASIN + Parent ASIN + Variation Theme. Atlas can detect the most damaging fixes (orphans + theme mismatches) on those three columns alone.
+          </div>
+        </div>
+      </details>
+
+      <details class="atlas-explainer-card">
+        <summary>
+          <span class="atlas-explainer-eyebrow">// HOW THIS WORKS</span>
+          <span class="atlas-explainer-title">Variations, end-to-end</span>
+          <span class="atlas-explainer-caret">▾</span>
+        </summary>
+        <div class="atlas-explainer-body">
+          <div class="atlas-howit-grid">
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">01</div>
+              <div class="atlas-howit-step-name">Pulls from Catalog Health</div>
+              <div class="atlas-howit-step-text">Atlas reuses the variation graph it built during Catalog Health — no second upload. If you haven't uploaded a catalog yet, you'll see a banner pointing you there.</div>
+            </div>
+            <div class="atlas-howit-arrow">→</div>
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">02</div>
+              <div class="atlas-howit-step-name">Surfaces 4 issue types</div>
+              <div class="atlas-howit-step-text">Split families · Orphaned ASINs · Category mismatches · Brand collisions. Each gets its own queue with affected ASIN counts.</div>
+            </div>
+            <div class="atlas-howit-arrow">→</div>
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">03</div>
+              <div class="atlas-howit-step-name">Approve / reject each fix</div>
+              <div class="atlas-howit-step-text">Each row shows the proposed parent, the children that would join, and the variation theme it would inherit. Approve all or cherry-pick.</div>
+            </div>
+            <div class="atlas-howit-arrow">→</div>
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">04</div>
+              <div class="atlas-howit-step-name">Download bulksheet</div>
+              <div class="atlas-howit-step-text">CSV → Vendor Central. Output is a partial-update only — every row is independent so a single failure doesn't block the rest.</div>
+            </div>
+          </div>
+          <div class="atlas-howit-links">
+            <div class="atlas-howit-links-h">// HOW VARIATIONS CONNECTS TO THE REST OF ATLAS</div>
+            <div class="atlas-howit-link"><b>← Catalog Health</b> — the source of every issue surfaced here.</div>
+            <div class="atlas-howit-link"><b>→ Bulk Upload</b> — newly-shipped families show up cleanly in next Catalog Health sync.</div>
+            <div class="atlas-howit-link"><b>→ A/B Test (60 days)</b> — only well-formed parents can run experiments; this module unblocks them.</div>
+            <div class="atlas-howit-link"><b>→ Ad Bulksheet (60-90 days)</b> — campaign structure is built per-parent; broken families confuse ad targeting.</div>
+          </div>
+        </div>
+      </details>
+    </div>
+
 
     <div class="module-page-header">
       <h1>&#9889; Merge Listings</h1>
@@ -4830,6 +4972,92 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
   <!-- ════════════════ BETA: IMAGE → NIS ════════════════ -->
   <div id="beta-image-page" class="content content-wide" style="display:none;">
+    <!-- ═══ DATA SPEC + HOW IT WORKS for Image → NIS Beta ═══ -->
+    <div class="atlas-ch-explainer" style="margin-bottom:20px;">
+      <details class="atlas-explainer-card">
+        <summary>
+          <span class="atlas-explainer-eyebrow">// DATA WE NEED</span>
+          <span class="atlas-explainer-title">What Image → NIS reads from one photo</span>
+          <span class="atlas-explainer-caret">▾</span>
+        </summary>
+        <div class="atlas-explainer-body">
+          <p class="atlas-explainer-intro">
+            Image → NIS is the only Atlas module that runs without an uploaded sheet. Vision (Claude Sonnet 4.5) reads one photo and drafts a full listing. <b>You only need a brand selection + the photo</b> — everything else is optional but sharpens the result.
+          </p>
+          <div class="atlas-spec-cluster">
+            <div class="atlas-spec-cluster-h">Required · 2 inputs</div>
+            <table class="atlas-spec-table">
+              <tr><td class="f">Product photo</td><td class="p">JPG / PNG / WebP — vision runs in 3-5 seconds</td><td class="a">drag-drop or click-to-browse</td></tr>
+              <tr><td class="f">Brand</td><td class="p">Drives voice + naming + restricted-claim list</td><td class="a">dropdown · 12 brand identities trained</td></tr>
+            </table>
+          </div>
+          <div class="atlas-spec-cluster">
+            <div class="atlas-spec-cluster-h">Optional but sharpens vision · 4 inputs</div>
+            <table class="atlas-spec-table">
+              <tr><td class="f">Style #</td><td class="p">Cross-walks to existing TLG style data if you have it</td><td class="a">numeric / alpha-numeric</td></tr>
+              <tr><td class="f">Season</td><td class="p">Suppresses out-of-season language ("snow", "summer-only")</td><td class="a">e.g. S26, FW25</td></tr>
+              <tr><td class="f">Country of Origin</td><td class="p">Compliance flag</td><td class="a">e.g. India, Bangladesh, China</td></tr>
+              <tr><td class="f">Fabric</td><td class="p">Helps vision lock material when not visually obvious</td><td class="a">e.g. 80% Polyester, 20% Wool</td></tr>
+            </table>
+          </div>
+          <div class="atlas-spec-cluster">
+            <div class="atlas-spec-cluster-h">What vision returns</div>
+            <table class="atlas-spec-table">
+              <tr><td class="f">Detected PT</td><td class="p">Atlas product type (1 of 16 trained)</td><td class="a">vision-classified</td></tr>
+              <tr><td class="f">~60 structured fields</td><td class="p">Color, silhouette, neck type, sleeve type, closure, fit, features, etc</td><td class="a">vision JSON</td></tr>
+              <tr><td class="f">Confidence flags</td><td class="p">Per-field: vision-strong / vision-weak / unknown</td><td class="a">scoring v1 — auto-apply only ≥90%</td></tr>
+              <tr><td class="f">Image-quality flags</td><td class="p">e.g. multiple items detected, mannequin only, poor lighting</td><td class="a">vision narrative</td></tr>
+            </table>
+          </div>
+          <div class="atlas-spec-takeaway">
+            <b>Why pre-upload remains primary:</b> Image vision is advisory in v1 — it accelerates drafting but operator review is required. Pre-upload sheets stay the source of truth for structured fields like UPC, price, and size.
+          </div>
+        </div>
+      </details>
+
+      <details class="atlas-explainer-card">
+        <summary>
+          <span class="atlas-explainer-eyebrow">// HOW THIS WORKS</span>
+          <span class="atlas-explainer-title">Image → NIS, end-to-end</span>
+          <span class="atlas-explainer-caret">▾</span>
+        </summary>
+        <div class="atlas-explainer-body">
+          <div class="atlas-howit-grid">
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">01</div>
+              <div class="atlas-howit-step-name">Drop a photo + pick brand</div>
+              <div class="atlas-howit-step-text">Best results: full-product hero shot, clean background, single item, model facing forward.</div>
+            </div>
+            <div class="atlas-howit-arrow">→</div>
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">02</div>
+              <div class="atlas-howit-step-name">Vision read</div>
+              <div class="atlas-howit-step-text">Claude Sonnet 4.5 reads the image. Returns ~60 structured fields with per-field confidence (vision-strong / vision-weak / unknown).</div>
+            </div>
+            <div class="atlas-howit-arrow">→</div>
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">03</div>
+              <div class="atlas-howit-step-name">Draft listing</div>
+              <div class="atlas-howit-step-text">Atlas writes title, bullets, description in the brand's voice. Operator fills UPC + price + cost in one form.</div>
+            </div>
+            <div class="atlas-howit-arrow">→</div>
+            <div class="atlas-howit-step">
+              <div class="atlas-howit-step-num">04</div>
+              <div class="atlas-howit-step-name">Build .xlsm</div>
+              <div class="atlas-howit-step-text">Same Amazon NIS validation as Bulk Upload. Output is operator-ready to publish.</div>
+            </div>
+          </div>
+          <div class="atlas-howit-links">
+            <div class="atlas-howit-links-h">// HOW IMAGE → NIS CONNECTS TO THE REST OF ATLAS</div>
+            <div class="atlas-howit-link"><b>← Bulk Upload</b> — same generation pipeline, different input medium.</div>
+            <div class="atlas-howit-link"><b>→ Photo Brief (14 days)</b> — upgrades vision read into a shoot brief that targets the gaps it found.</div>
+            <div class="atlas-howit-link"><b>→ Catalog Health</b> — listings shipped here join the daily health scan automatically.</div>
+            <div class="atlas-howit-link"><b>→ Image Audit (30 days)</b> — same vision engine evaluates every live ASIN's image quality.</div>
+          </div>
+        </div>
+      </details>
+    </div>
+
     <div class="beta-shell">
 
       <!-- HERO -->
@@ -5705,6 +5933,7 @@ const ATLAS_PREVIEWS = {
       ['Export to PDF or Notion', 'Hand the brief to in-house, agency, or freelance shooters in one click.']
     ],
     cta: 'Want early access? Ping the team — Photo Brief is the next module after Image → NIS graduates.',
+    data: [["PT + brand","Drives shot list per Amazon spec","pulled from prior Bulk Upload or Image → NIS run"], ["Existing photos","Atlas grades them and identifies gaps","JPG / PNG"], ["Voice Tuner output","Determines brand-aware framing","auto-pulled when Voice Tuner ships"], ["Compliance baseline","Banned overlays / claims / logos for the brand","auto from Voice Tuner"]],
     related: [['voice-tuner', 'Voice Tuner'], ['image-audit', 'Image Audit'], ['compliance', 'Compliance']]
   },
   'voice-tuner': {
@@ -5718,6 +5947,7 @@ const ATLAS_PREVIEWS = {
       ['Live preview', 'See exactly how a sample bullet changes as you tune the dials.']
     ],
     cta: 'Voice Tuner ships after Photo Brief. It is the foundation for every CREATE and MANAGE module.',
+    data: [["Brand DNA form","Tone, persona, reading level","12 dimensions, 1 form"], ["Banned + preferred words","Hard rules Atlas applies everywhere","free text · per brand"], ["Sample of approved live copy","5-10 PDPs Atlas should imitate","paste or upload links"], ["Per-PT overrides","Different tone for COAT vs SWIMWEAR","auto from your live catalog"]],
     related: [['photo-brief', 'Photo Brief'], ['content-refresh', 'Content Refresh'], ['pdp-optimizer', 'PDP Optimizer']]
   },
   'suppression': {
@@ -5731,6 +5961,7 @@ const ATLAS_PREVIEWS = {
       ['One-click export to fix', 'Dumps the affected ASINs straight into Bulk Upload as a partial-update sheet.']
     ],
     cta: 'First MONITOR module to ship. Built on the same Catalog Health engine that already runs in production.',
+    data: [["Seller / Vendor Central credentials","Daily catalog pull","OAuth (no password storage)"], ["Brand Analytics access","Suppression-reason cross-check","requires Brand Registry"], ["Email / Slack webhook","Where to send alerts","one URL or address"], ["Threshold preferences","How aggressive should alerts be?","simple sliders"]],
     related: [['catalog-health', 'Catalog Health'], ['compliance', 'Compliance'], ['bulk-price', 'Bulk Price Sync']]
   },
   'catalog-health': {
@@ -5744,6 +5975,7 @@ const ATLAS_PREVIEWS = {
       ['New: trend view', 'See whether your catalog health is climbing or rotting, week over week.']
     ],
     cta: 'Catalog Health is in the sidebar today. The expanded dashboard ships alongside Suppression Watch.',
+    data: [["Catalog file","50 fields, 8 clusters","see Catalog Health spec"], ["Sales report","12 fields","see Catalog Health spec"], ["Ad bulksheet","6 fields, ground truth","see Catalog Health spec"]],
     related: [['suppression', 'Suppression Watch'], ['image-audit', 'Image Audit'], ['compliance', 'Compliance']]
   },
   'image-audit': {
@@ -5757,6 +5989,7 @@ const ATLAS_PREVIEWS = {
       ['Reshoot list', 'Generates a Photo Brief automatically for the ASINs that need new shots.']
     ],
     cta: 'Image Audit closes the loop with Photo Brief and Image → NIS — image quality becomes a managed surface.',
+    data: [["Catalog file with image URLs","Atlas pulls each image and scans it","same as Catalog Health"], ["Amazon image rules baseline","Pre-loaded — auto-updated weekly","no upload needed"], ["Brand visual baseline","What \"good\" looks like for your brand","pulled from Voice Tuner / Photo Brief"]],
     related: [['photo-brief', 'Photo Brief'], ['catalog-health', 'Catalog Health'], ['compliance', 'Compliance']]
   },
   'compliance': {
@@ -5770,6 +6003,7 @@ const ATLAS_PREVIEWS = {
       ['Per-PT rules', 'COAT compliance differs from SUPPLEMENT — Atlas knows the difference.']
     ],
     cta: 'Compliance ships in the same window as Suppression Watch and Image Audit.',
+    data: [["Catalog file with title + bullets + description","Text scan against policy DB","same as Catalog Health"], ["Image URLs","Overlay + claim detection","same as Catalog Health"], ["Per-PT compliance config","COAT vs SUPPLEMENT etc","pre-loaded — kept current weekly"], ["Brand whitelist","Approved claims you can make (e.g. \"engineered comfort\")","pulled from Voice Tuner"]],
     related: [['suppression', 'Suppression Watch'], ['image-audit', 'Image Audit'], ['content-refresh', 'Content Refresh']]
   },
   'bulk-price': {
@@ -5783,6 +6017,7 @@ const ATLAS_PREVIEWS = {
       ['One-click partial sheet', 'Outputs the exact Amazon partial-update file. No manual mapping.']
     ],
     cta: 'First MANAGE module. Built on the Bulk Upload engine that already handles 16 product types.',
+    data: [["Live SKU list","Pulled from your last catalog upload","auto"], ["Price + sale price + windows","Per-SKU edits in your existing pricing workbook",".xlsx — Atlas adapts to your columns"], ["Cost data","Margin guard requires unit cost","optional but recommended"], ["Promo calendar","Start / end dates per SKU","optional"]],
     related: [['content-refresh', 'Content Refresh'], ['ab-test', 'A/B Test'], ['ad-bulksheet', 'Ad Bulksheet']]
   },
   'content-refresh': {
@@ -5796,6 +6031,7 @@ const ATLAS_PREVIEWS = {
       ['Partial-update output', 'Writes the Amazon update sheet — never a destructive full overwrite.']
     ],
     cta: 'Content Refresh is what makes Voice Tuner valuable across an entire catalog at once.',
+    data: [["Live ASIN list","Which to refresh","pulled from Catalog Health"], ["Field selector","Title / bullets / description / keywords","in-app pick"], ["Voice Tuner config","Determines voice + banned words","auto"], ["Existing copy","Source for diff view","auto from catalog file"]],
     related: [['voice-tuner', 'Voice Tuner'], ['ab-test', 'A/B Test'], ['pdp-optimizer', 'PDP Optimizer']]
   },
   'ab-test': {
@@ -5809,6 +6045,7 @@ const ATLAS_PREVIEWS = {
       ['Test history', 'Every test, every ASIN, every variant — searchable.']
     ],
     cta: 'A/B Test closes the MANAGE loop — refresh, test, promote winner, repeat.',
+    data: [["Live ASIN","Which one to test","pulled from Catalog Health"], ["Variant B","Title or image to compete against current","paste / upload"], ["Confidence threshold","When to auto-promote winner","default 95% — adjustable"], ["Manage Your Experiments access","Brand Registry required","pulled from Seller Central"]],
     related: [['content-refresh', 'Content Refresh'], ['pdp-optimizer', 'PDP Optimizer'], ['keywords', 'Keywords']]
   },
   'ad-bulksheet': {
@@ -5822,6 +6059,7 @@ const ATLAS_PREVIEWS = {
       ['Bulksheet export', 'Outputs the exact Amazon Ads bulk-upload format — paste and go.']
     ],
     cta: 'PROMOTE turns Atlas from a catalog tool into a demand engine. Ad Bulksheet is the entry point.',
+    data: [["Live catalog","Drives campaign structure","auto from Catalog Health"], ["Voice Tuner config","Hero adjectives for ad copy","auto"], ["Existing campaign hierarchy","Imports current state","Sponsored Products bulk download"], ["Negatives library","Shared negative keywords","CSV upload"]],
     related: [['keywords', 'Keywords'], ['pdp-optimizer', 'PDP Optimizer'], ['reviews', 'Reviews']]
   },
   'keywords': {
@@ -5835,6 +6073,7 @@ const ATLAS_PREVIEWS = {
       ['Cannibalization check', 'Flags when two ASINs are fighting for the same term.']
     ],
     cta: 'Keywords is what makes Ad Bulksheet, PDP Optimizer, and Content Refresh share a single source of truth.',
+    data: [["Brand Analytics search-frequency rank","Refreshed weekly","requires Brand Registry"], ["Live PDP backend keywords","Current state","auto from Catalog Health"], ["Sponsored Products search-term reports","Performance signal per term",".csv from Advertising Console"], ["Per-PT keyword dictionaries","Pre-loaded — refreshed weekly","no upload"]],
     related: [['ad-bulksheet', 'Ad Bulksheet'], ['pdp-optimizer', 'PDP Optimizer'], ['content-refresh', 'Content Refresh']]
   },
   'pdp-optimizer': {
@@ -5848,6 +6087,7 @@ const ATLAS_PREVIEWS = {
       ['Hands off to Content Refresh', 'Approve a fix and it queues the partial-update sheet automatically.']
     ],
     cta: 'PDP Optimizer is where MONITOR + MANAGE + PROMOTE meet. Highest-leverage module in the roadmap.',
+    data: [["Live catalog","PDP content + images","auto from Catalog Health"], ["Sales data with CVR","Ranking input","auto from Catalog Health"], ["Top-seller benchmark catalog","Atlas pulls comp PDPs in same PT + price tier","auto — refreshed weekly"], ["A+ module data","Density + hierarchy scoring","auto from catalog"]],
     related: [['content-refresh', 'Content Refresh'], ['ab-test', 'A/B Test'], ['keywords', 'Keywords']]
   },
   'reviews': {
@@ -5861,6 +6101,7 @@ const ATLAS_PREVIEWS = {
       ['Review-velocity tracking', 'Watch new reviews against the cluster baseline to see if fixes worked.']
     ],
     cta: 'Reviews closes the loop: customer says it, Atlas sees it, MANAGE fixes it.',
+    data: [["Per-ASIN review history","Atlas pulls all reviews","requires Brand Registry"], ["Review velocity baseline","Detect changes after fixes","auto from prior pulls"], ["Return-rate from sales report","Cross-check theme severity","see Catalog Health spec"], ["Product spec sheet","Maps complaint to fix type","auto from catalog"]],
     related: [['pdp-optimizer', 'PDP Optimizer'], ['content-refresh', 'Content Refresh'], ['ab-test', 'A/B Test']]
   }
 };
@@ -5877,6 +6118,14 @@ function renderAtlasPreview(moduleId, cfg) {
   const featuresHtml = (cfg.features || []).map(f =>
     '<div class="preview-feature"><h4>' + f[0] + '</h4><p>' + f[1] + '</p></div>'
   ).join('');
+  const dataRows = (cfg.data || []).map(d =>
+    '<tr><td class="f">' + d[0] + '</td><td class="p">' + d[1] + '</td><td class="a">' + d[2] + '</td></tr>'
+  ).join('');
+  const dataHtml = dataRows ? (
+    '<div class="preview-data-section"><div class="preview-data-eyebrow">// DATA WE\'D NEED</div>' +
+    '<div class="preview-data-sub">For Levy: open this section to see if you already gather what this module needs.</div>' +
+    '<table class="atlas-spec-table preview-spec-table">' + dataRows + '</table></div>'
+  ) : '';
   const relatedHtml = (cfg.related || []).map(r =>
     '<a onclick="showPreviewPage(\'' + r[0] + '\')">' + r[1] + ' →</a>'
   ).join('');
@@ -5894,6 +6143,7 @@ function renderAtlasPreview(moduleId, cfg) {
     '  <p>The actual interface ships with the module. This page describes the surface area and how it connects to the rest of Atlas.</p>',
     '</div>',
     '<div class="preview-feature-grid">' + featuresHtml + '</div>',
+    dataHtml,
     '<div class="preview-cta">',
     '  <div class="preview-cta-text">' + cfg.cta + '</div>',
     '  <button class="atlas-mod-cta" onclick="showAtlasPage()">← Back to Atlas Home</button>',

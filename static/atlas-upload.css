@@ -606,3 +606,24 @@ body:has(#catalog-page[style*="block"]) {
 
 /* Hide the per-tile "where to download" — covered by master panel */
 .atlas-cat-tile .atlas-cat-help { display: none; }
+
+/* ── Preview pages: data spec section ───────────────────── */
+.preview-data-section {
+  background: #0E1A26; border: 1px solid #1C2D40;
+  border-radius: 12px; padding: 22px 24px 18px;
+  margin: 24px 0;
+}
+.preview-data-eyebrow {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.6px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 6px;
+}
+.preview-data-sub {
+  font-size: 12px; color: #94A3B8; line-height: 1.55;
+  margin-bottom: 14px;
+}
+.preview-spec-table { background: transparent; }
+.preview-spec-table tr { border-bottom: 1px solid #13212F; }
+.preview-spec-table td.f { color: #E2E8F0; }
+.preview-spec-table td.p { color: #94A3B8; }
+.preview-spec-table td.a { color: #64748B; }
