@@ -487,137 +487,288 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 }
 .atlas-audit-cta-text b { color: #5EEAD4; font-weight: 700; }
 
+
+/* ═══════ WHAT CHANGES FOR YOUR TEAM (Pass 7) ═══════ */
+.atlas-team {
+  margin: 0 0 36px;
+  padding: 36px 36px 32px;
+  background: #0E1A26;
+  border: 1px solid #1C2D40; border-radius: 14px;
+  position: relative;
+}
+.atlas-team-eyebrow {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.8px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 12px;
+}
+.atlas-team-title {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 32px;
+  color: #E2E8F0; font-weight: 700; line-height: 1.1;
+  letter-spacing: -0.6px; margin: 0 0 8px; max-width: 760px;
+}
+.atlas-team-title .accent { color: #5EEAD4; }
+.atlas-team-sub {
+  font-size: 14px; color: #94A3B8; line-height: 1.6;
+  max-width: 760px; margin: 0 0 28px;
+}
+.atlas-team-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+}
+@media (max-width: 1040px) { .atlas-team-grid { grid-template-columns: 1fr; } }
+.atlas-team-card {
+  background: #13212F; border: 1px solid #1C2D40; border-radius: 12px;
+  padding: 22px 22px 20px; display: flex; flex-direction: column;
+}
+.atlas-team-card-h {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.atlas-team-card-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: rgba(94,234,212,0.1); border: 1px solid rgba(94,234,212,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: ui-monospace, monospace; font-size: 13px;
+  color: #5EEAD4; font-weight: 700;
+}
+.atlas-team-card[data-track="MONITOR"] .atlas-team-card-icon {
+  background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: #F59E0B;
+}
+.atlas-team-card[data-track="REVENUE"] .atlas-team-card-icon {
+  background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.3); color: #A78BFA;
+}
+.atlas-team-card-name {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 17px;
+  color: #E2E8F0; font-weight: 700; letter-spacing: -0.2px;
+}
+.atlas-team-row {
+  margin-bottom: 12px;
+  padding-bottom: 12px; border-bottom: 1px dashed #1C2D40;
+}
+.atlas-team-row:last-of-type { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+.atlas-team-row-label {
+  font-family: ui-monospace, monospace; font-size: 9.5px;
+  letter-spacing: 1.4px; text-transform: uppercase;
+  color: #64748B; font-weight: 700; margin-bottom: 4px;
+}
+.atlas-team-row[data-state="today"] .atlas-team-row-label { color: #94A3B8; }
+.atlas-team-row[data-state="atlas"] .atlas-team-row-label { color: #5EEAD4; }
+.atlas-team-row-text {
+  font-size: 12.5px; color: #CBD5E1; line-height: 1.55;
+}
+.atlas-team-row-text b { color: #E2E8F0; font-weight: 600; }
+.atlas-team-roi {
+  margin-top: 14px; padding: 12px 14px;
+  background: rgba(94,234,212,0.04); border: 1px solid rgba(94,234,212,0.2);
+  border-radius: 8px; display: flex; gap: 14px; flex-wrap: wrap;
+}
+.atlas-team-roi-stat {
+  flex: 1; min-width: 90px;
+}
+.atlas-team-roi-num {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 20px;
+  color: #5EEAD4; font-weight: 700; letter-spacing: -0.4px;
+}
+.atlas-team-roi-label {
+  font-family: ui-monospace, monospace; font-size: 9.5px;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: #64748B; font-weight: 700; margin-top: 2px;
+}
+
+
+/* ═══════ FRAME HERO (Pass 8) ═══════ */
+.atlas-frame-hero {
+  margin: 0 0 36px;
+  padding: 36px 36px 32px;
+  background: linear-gradient(180deg, rgba(20,184,166,0.06) 0%, rgba(8,17,26,0) 100%);
+  border: 1px solid #1C2D40; border-radius: 14px;
+  position: relative; overflow: hidden;
+}
+.atlas-frame-hero::before {
+  content:''; position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(94,234,212,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94,234,212,0.04) 1px, transparent 1px);
+  background-size: 36px 36px; pointer-events:none;
+}
+.atlas-frame-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+  letter-spacing: 2px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 14px; position: relative;
+}
+.atlas-frame-eyebrow .pulse {
+  width: 7px; height: 7px; border-radius: 50%; background: #10B981;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.6); animation: atlasPulse 2.2s infinite;
+}
+.atlas-frame-h1 {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 38px; font-weight: 700;
+  color: #E2E8F0; line-height: 1.1; letter-spacing: -0.7px;
+  margin: 0 0 12px; position: relative; max-width: 880px;
+}
+.atlas-frame-h1 .accent { color: #5EEAD4; }
+.atlas-frame-sub {
+  font-size: 15px; color: #94A3B8; line-height: 1.6;
+  margin: 0 0 28px; max-width: 720px; position: relative;
+}
+
+/* KPI strip */
+.atlas-kpi-strip {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+  margin-bottom: 22px; position: relative;
+}
+@media (max-width:1040px) { .atlas-kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+.atlas-kpi {
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 10px;
+  padding: 14px 16px 12px;
+}
+.atlas-kpi-num {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 24px;
+  color: #E2E8F0; font-weight: 700; letter-spacing: -0.4px;
+  line-height: 1.05;
+}
+.atlas-kpi-num.atlas-kpi-empty { color: #475569; }
+.atlas-kpi-num.atlas-kpi-num-accent { color: #5EEAD4; }
+.atlas-kpi-label {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.4px; color: #94A3B8; text-transform: uppercase;
+  margin-top: 6px; font-weight: 700;
+}
+
+/* Empty decision feed */
+.atlas-frame-feed {
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 12px;
+  padding: 14px 18px 16px; position: relative;
+}
+.atlas-frame-feed-h {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 10px; margin-bottom: 8px;
+  border-bottom: 1px solid #1C2D40;
+}
+.atlas-frame-feed-eye {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.6px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700;
+}
+.atlas-frame-feed-meta {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  color: #475569; letter-spacing: 0.6px;
+}
+.atlas-frame-feed-row {
+  display: grid;
+  grid-template-columns: 60px 130px 110px 1fr 100px 140px;
+  gap: 14px; align-items: center;
+  padding: 10px 4px;
+  border-bottom: 1px dashed #13212F;
+  font-size: 12.5px;
+}
+.atlas-frame-feed-row:last-child { border-bottom: none; }
+.atlas-frame-feed-row .col-time { font-family: ui-monospace, monospace; color: #475569; font-size: 11px; }
+.atlas-frame-feed-row .col-brand { color: #94A3B8; font-weight: 600; }
+.atlas-frame-feed-row .col-asin { color: #64748B; font-family: ui-monospace, monospace; font-size: 11px; }
+.atlas-frame-feed-row .col-issue { color: #94A3B8; }
+.atlas-frame-feed-row .col-impact { color: #475569; font-family: ui-monospace, monospace; text-align: right; }
+.atlas-frame-feed-row .col-action { color: #5EEAD4; font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.4px; text-align: right; }
+.atlas-frame-feed-row.empty { opacity: 0.55; }
+@media (max-width: 1040px) {
+  .atlas-frame-feed-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "time impact" "brand action" "asin asin" "issue issue";
+  }
+  .atlas-frame-feed-row .col-time { grid-area: time; }
+  .atlas-frame-feed-row .col-brand { grid-area: brand; }
+  .atlas-frame-feed-row .col-asin { grid-area: asin; }
+  .atlas-frame-feed-row .col-issue { grid-area: issue; }
+  .atlas-frame-feed-row .col-impact { grid-area: impact; }
+  .atlas-frame-feed-row .col-action { grid-area: action; }
+}
+
+/* Pick-three-brands ask */
+.atlas-ask {
+  margin: 36px 0 36px;
+  padding: 32px 32px 28px;
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 14px;
+  position: relative;
+}
+.atlas-ask-eyebrow {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.8px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 8px;
+}
+.atlas-ask-title {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 26px;
+  color: #E2E8F0; font-weight: 700; letter-spacing: -0.5px;
+  line-height: 1.15; margin: 0 0 22px;
+}
+.atlas-ask-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+}
+@media (max-width:1040px) { .atlas-ask-grid { grid-template-columns: 1fr; } }
+.atlas-ask-card {
+  background: #13212F; border: 1px solid #1C2D40; border-radius: 10px;
+  padding: 18px 20px 16px;
+}
+.atlas-ask-num {
+  font-family: ui-monospace, monospace; font-size: 11px;
+  color: #5EEAD4; letter-spacing: 1.5px; font-weight: 700;
+  margin-bottom: 8px;
+}
+.atlas-ask-name {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 16px;
+  color: #E2E8F0; font-weight: 700; letter-spacing: -0.2px;
+  margin-bottom: 6px;
+}
+.atlas-ask-text {
+  font-size: 12.5px; color: #94A3B8; line-height: 1.6;
+}
+
 </style>
 
 <div class="content content-wide" id="atlas-page">
   <div class="atlas-shell">
 
-    <!-- ═══ HERO ═══ -->
-    <div class="atlas-hero">
-      <div class="atlas-hero-inner">
-        <div class="atlas-eyebrow">
-          <span class="pulse"></span>
-          <span>Atlas · Platform v1</span>
-          <span style="color:#475569;">·</span>
-          <span>Currently in beta</span>
-        </div>
+    <!-- ═══ HERO — the frame, not the demo ═══ -->
+    <div class="atlas-frame-hero">
+      <div class="atlas-frame-eyebrow"><span class="pulse"></span>YOUR SINGLE SOURCE OF TRUTH</div>
+      <h1 class="atlas-frame-h1">This is the dashboard <span class="accent">your agency runs on.</span></h1>
+      <p class="atlas-frame-sub">Connect your brands once. Atlas pulls every catalog, every signal, every decision into one operating layer. The frame below fills with your data the moment you onboard.</p>
 
-        <h1 class="atlas-h1">
-          From one photo to<br>
-          a managed Amazon catalog.
-        </h1>
-
-        <p class="atlas-sub">
-          <strong>Atlas is the operating system for modern Amazon commerce.</strong> See your entire catalog. Create and manage every listing. Watch what's working. Edit at scale. Drive demand.
-        </p>
-        <p class="atlas-sub" style="margin-top:10px; color:#5EEAD4; font-style:italic;">
-          One place. One brain. One source of truth.
-        </p>
-
-        <div class="atlas-bigstat">
-          <span><b>16</b>product types trained</span><span class="sep">·</span>
-          <span><b>12</b>brand identities</span><span class="sep">·</span>
-          <span><b>9,400+</b>Amazon dropdown values cached</span><span class="sep">·</span>
-          <span><b>105</b>system routes</span><span class="sep">·</span>
-          <span><b>6</b>PTs cross-validated</span>
-        </div>
+      <!-- Empty KPI strip -->
+      <div class="atlas-kpi-strip">
+        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">Brands monitored</div></div>
+        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">ASINs under management</div></div>
+        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">Issues open this week</div></div>
+        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">Revenue at risk</div></div>
+        <div class="atlas-kpi"><div class="atlas-kpi-num atlas-kpi-empty">—</div><div class="atlas-kpi-label">Actions queued</div></div>
       </div>
-    </div>
 
-    <!-- ═══ YOUR ATLAS JOURNEY (Pass 6) ═══ -->
-    <div class="atlas-journey">
-      <div class="atlas-journey-eyebrow">// YOUR ATLAS JOURNEY</div>
-      <h2 class="atlas-journey-title">From <span class="accent">one sheet</span> to a catalog that runs itself.</h2>
-      <p class="atlas-journey-sub">Every Atlas module connects. You start with one upload. Atlas pulls signal forward into every module that follows — so the work you do once becomes the data every other module reads.</p>
-      <div class="atlas-journey-flow">
-        <div class="atlas-journey-step" data-mod="CREATE">
-          <div class="atlas-journey-step-h">
-            <span class="atlas-journey-step-num">01 · CREATE</span>
-            <span class="atlas-journey-step-icon">●</span>
-          </div>
-          <div class="atlas-journey-step-name">Drop your data</div>
-          <div class="atlas-journey-step-text">Pre-upload sheet or one product photo. Atlas turns it into a fully-validated Amazon listing in your brand voice. <b>Output:</b> ready-to-upload .xlsm.</div>
-          <div class="atlas-journey-arrow"></div>
+      <!-- Empty decision feed pattern -->
+      <div class="atlas-frame-feed">
+        <div class="atlas-frame-feed-h">
+          <span class="atlas-frame-feed-eye">// WHAT ATLAS SURFACES, EVERY MORNING</span>
+          <span class="atlas-frame-feed-meta">awaiting your data</span>
         </div>
-        <div class="atlas-journey-step" data-mod="MONITOR">
-          <div class="atlas-journey-step-h">
-            <span class="atlas-journey-step-num">02 · MONITOR</span>
-            <span class="atlas-journey-step-icon" style="color:#F59E0B;">◐</span>
-          </div>
-          <div class="atlas-journey-step-name">Watch it stay healthy</div>
-          <div class="atlas-journey-step-text">Atlas reads your live catalog daily and flags every ASIN that loses Buy Box, gets suppressed, or drops a required field. <b>Output:</b> ranked fix list with $-impact per row.</div>
-          <div class="atlas-journey-arrow"></div>
+        <div class="atlas-frame-feed-row empty">
+          <span class="col-time">— : —</span>
+          <span class="col-brand">your brand</span>
+          <span class="col-asin">your ASIN</span>
+          <span class="col-issue">issue Atlas surfaced</span>
+          <span class="col-impact">$ at risk</span>
+          <span class="col-action">action ready</span>
         </div>
-        <div class="atlas-journey-step" data-mod="MANAGE">
-          <div class="atlas-journey-step-h">
-            <span class="atlas-journey-step-num">03 · MANAGE</span>
-            <span class="atlas-journey-step-icon" style="color:#5EEAD4;">◐</span>
-          </div>
-          <div class="atlas-journey-step-name">Edit at scale</div>
-          <div class="atlas-journey-step-text">One sheet to update prices across hundreds of ASINs. One click to refresh every bullet in your voice. <b>Output:</b> partial-update sheets — never destructive overwrites.</div>
-          <div class="atlas-journey-arrow"></div>
+        <div class="atlas-frame-feed-row empty">
+          <span class="col-time">— : —</span>
+          <span class="col-brand">your brand</span>
+          <span class="col-asin">your ASIN</span>
+          <span class="col-issue">issue Atlas surfaced</span>
+          <span class="col-impact">$ at risk</span>
+          <span class="col-action">action ready</span>
         </div>
-        <div class="atlas-journey-step" data-mod="PROMOTE">
-          <div class="atlas-journey-step-h">
-            <span class="atlas-journey-step-num">04 · PROMOTE</span>
-            <span class="atlas-journey-step-icon" style="color:#A78BFA;">○</span>
-          </div>
-          <div class="atlas-journey-step-name">Drive demand</div>
-          <div class="atlas-journey-step-text">Catalog-aware ad campaigns that auto-update as new ASINs ship. PDP grading vs top sellers. Review themes mapped to product fixes. <b>Output:</b> a demand engine, not a tool.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ DATA ATLAS NEEDS (self-audit) ═══ -->
-    <div class="atlas-audit">
-      <div class="atlas-audit-h">
-        <div class="atlas-audit-title-block">
-          <div class="atlas-audit-eyebrow">// DATA ATLAS NEEDS</div>
-          <h2 class="atlas-audit-title">Three reports power everything.</h2>
-          <p class="atlas-audit-sub">Open each module to see the exhaustive column spec. The summary below is what you need to gather to run Atlas at full strength.</p>
-        </div>
-      </div>
-      <div class="atlas-audit-grid">
-        <div class="atlas-audit-card">
-          <div class="atlas-audit-card-h">
-            <span class="atlas-audit-card-icon">PU</span>
-            <span class="atlas-audit-card-name">Pre-upload sheet</span>
-          </div>
-          <div class="atlas-audit-card-source">Your internal product master · 31 columns · <a onclick="showNISPage()" style="color:#5EEAD4; cursor:pointer; text-decoration:none;">open Bulk Upload →</a></div>
-          <ul class="atlas-audit-card-needs">
-            <li>Identity: Brand, Style #, Color, Size, UPC</li>
-            <li>Pricing: Wholesale + Retail</li>
-            <li>Specs: Fabric, COO, Care, Bullet 1</li>
-          </ul>
-        </div>
-        <div class="atlas-audit-card">
-          <div class="atlas-audit-card-h">
-            <span class="atlas-audit-card-icon">CH</span>
-            <span class="atlas-audit-card-name">Catalog export</span>
-          </div>
-          <div class="atlas-audit-card-source">Vendor / Seller Central · 50 fields · <a onclick="showCatalogPage()" style="color:#5EEAD4; cursor:pointer; text-decoration:none;">open Catalog Health →</a></div>
-          <ul class="atlas-audit-card-needs">
-            <li>ASIN + Parent ASIN + SKU</li>
-            <li>Title + 5 bullets + description + images</li>
-            <li>Buy Box price + winner + inventory + status</li>
-          </ul>
-        </div>
-        <div class="atlas-audit-card">
-          <div class="atlas-audit-card-h">
-            <span class="atlas-audit-card-icon">SR</span>
-            <span class="atlas-audit-card-name">Sales + ad bulksheet</span>
-          </div>
-          <div class="atlas-audit-card-source">Brand Analytics + Advertising Console · 18 fields · <a onclick="showCatalogPage()" style="color:#5EEAD4; cursor:pointer; text-decoration:none;">spec on Catalog Health →</a></div>
-          <ul class="atlas-audit-card-needs">
-            <li>Sessions, units, revenue, returns, CVR</li>
-            <li>ACOS, ad spend, attributed sales</li>
-            <li>Eligibility status + reasons (ad bulksheet)</li>
-          </ul>
-        </div>
-      </div>
-      <div class="atlas-audit-cta">
-        <div class="atlas-audit-cta-text">
-          <b>For Levy:</b> these are the exact data sources Atlas needs. Open each module to verify field-by-field. If a column is missing, Atlas tells you which checks it has to skip — never blocks the upload.
+        <div class="atlas-frame-feed-row empty">
+          <span class="col-time">— : —</span>
+          <span class="col-brand">your brand</span>
+          <span class="col-asin">your ASIN</span>
+          <span class="col-issue">issue Atlas surfaced</span>
+          <span class="col-impact">$ at risk</span>
+          <span class="col-action">action ready</span>
         </div>
       </div>
     </div>
@@ -626,13 +777,13 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
     <div class="atlas-section-h">
       <span class="atlas-section-num">// THE ATLAS ROADMAP</span>
       <div class="atlas-section-title">Built for what's next.</div>
-      <span class="atlas-section-sub">Honest dates. Real scope.</span>
+      <span class="atlas-section-sub">Same brain. Wider lens.</span>
     </div>
     <div class="atlas-roadmap">
       <div class="atlas-roadmap-track">
         <div class="atlas-rm-col">
           <div class="atlas-rm-marker live"></div>
-          <div class="atlas-rm-when">Today</div>
+          <div class="atlas-rm-when">In hand</div>
           <div class="atlas-rm-title">Create</div>
           <ul class="atlas-rm-list">
             <li class="live"><b>Bulk Upload</b></li>
@@ -643,7 +794,7 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
         </div>
         <div class="atlas-rm-col">
           <div class="atlas-rm-marker next"></div>
-          <div class="atlas-rm-when">30 days</div>
+          <div class="atlas-rm-when">In hand</div>
           <div class="atlas-rm-title">Monitor</div>
           <ul class="atlas-rm-list">
             <li>Catalog Health</li>
@@ -654,7 +805,7 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
         </div>
         <div class="atlas-rm-col">
           <div class="atlas-rm-marker later"></div>
-          <div class="atlas-rm-when">60 days</div>
+          <div class="atlas-rm-when">Building</div>
           <div class="atlas-rm-title">Manage</div>
           <ul class="atlas-rm-list">
             <li>Bulk Price Sync</li>
@@ -665,7 +816,7 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
         </div>
         <div class="atlas-rm-col">
           <div class="atlas-rm-marker future"></div>
-          <div class="atlas-rm-when">60–90 days</div>
+          <div class="atlas-rm-when">Next</div>
           <div class="atlas-rm-title">Promote</div>
           <ul class="atlas-rm-list">
             <li>Ad Bulksheet</li>
@@ -679,9 +830,9 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 
     <!-- ═══ MODULE CARDS ═══ -->
     <div class="atlas-section-h">
-      <span class="atlas-section-num">// THE FOUR MODULES</span>
-      <div class="atlas-section-title">What Atlas does.</div>
-      <span class="atlas-section-sub">Click any module to enter.</span>
+      <span class="atlas-section-num">// ONE OPERATING LAYER · FOUR LENSES</span>
+      <div class="atlas-section-title">Same brand. Same ASIN. <span style="color:#5EEAD4;">Four lenses.</span></div>
+      <span class="atlas-section-sub">One pipeline. Connected by design.</span>
     </div>
 
     <div class="atlas-modules">
@@ -731,7 +882,7 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
       <div class="atlas-module" data-status="next">
         <div class="atlas-mod-head">
           <span class="atlas-mod-eyebrow">Module 02</span>
-          <span class="atlas-mod-status next"><span class="dot"></span>Ships in 30 days</span>
+          <span class="atlas-mod-status next"><span class="dot"></span>In development</span>
         </div>
         <div class="atlas-mod-name">MONITOR</div>
         <div class="atlas-mod-tagline">Watch what's already live.</div>
@@ -773,7 +924,7 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
       <div class="atlas-module" data-status="later">
         <div class="atlas-mod-head">
           <span class="atlas-mod-eyebrow">Module 03</span>
-          <span class="atlas-mod-status later"><span class="dot"></span>Ships in 60 days</span>
+          <span class="atlas-mod-status later"><span class="dot"></span>In development</span>
         </div>
         <div class="atlas-mod-name">MANAGE</div>
         <div class="atlas-mod-tagline">Edit at scale.</div>
@@ -815,7 +966,7 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
       <div class="atlas-module" data-status="future">
         <div class="atlas-mod-head">
           <span class="atlas-mod-eyebrow">Module 04</span>
-          <span class="atlas-mod-status future"><span class="dot"></span>Ships in 60–90 days</span>
+          <span class="atlas-mod-status future"><span class="dot"></span>In development</span>
         </div>
         <div class="atlas-mod-name">PROMOTE</div>
         <div class="atlas-mod-tagline">Drive demand.</div>
@@ -890,32 +1041,35 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
       </div>
     </div>
 
-    <!-- ═══ PROOF ═══ -->
-    <div class="atlas-section-h">
-      <span class="atlas-section-num">// WHAT'S SHIPPED</span>
-      <div class="atlas-section-title">Real work, live in production.</div>
-      <span class="atlas-section-sub">Not demos. Not mockups.</span>
-    </div>
-    <div class="atlas-proof">
-      <div class="atlas-proof-card">
-        <div class="atlas-proof-num">89</div>
-        <div class="atlas-proof-label"><b>variants shipped</b> on Sage R1 — 9 styles, every Amazon field, first pass</div>
-      </div>
-      <div class="atlas-proof-card">
-        <div class="atlas-proof-num">24 / 24</div>
-        <div class="atlas-proof-label"><b>round-1 operator fixes</b> addressed. Zero deferred. All deployed in one push.</div>
-      </div>
-      <div class="atlas-proof-card">
-        <div class="atlas-proof-num">6</div>
-        <div class="atlas-proof-label"><b>product types cross-validated</b> — COAT, DRESS, SWIMWEAR, SHIRT, PANTS, SHORTS</div>
+    
+    <!-- ═══ ASK ═══ -->
+    <div class="atlas-ask">
+      <div class="atlas-ask-eyebrow">// THREE WEEKS · THREE BRANDS · ONE OPERATING LAYER</div>
+      <div class="atlas-ask-title">Pick three brands. Atlas trains on them.</div>
+      <div class="atlas-ask-grid">
+        <div class="atlas-ask-card">
+          <div class="atlas-ask-num">01</div>
+          <div class="atlas-ask-name">Three brands of your choice</div>
+          <div class="atlas-ask-text">Read-only catalog access. Same export your team already pulls weekly.</div>
+        </div>
+        <div class="atlas-ask-card">
+          <div class="atlas-ask-num">02</div>
+          <div class="atlas-ask-name">Four hours of one ops person, per brand</div>
+          <div class="atlas-ask-text">They validate Atlas's first 50 listings. Their corrections train Atlas on your voice.</div>
+        </div>
+        <div class="atlas-ask-card">
+          <div class="atlas-ask-num">03</div>
+          <div class="atlas-ask-name">Thirty minutes weekly, with you</div>
+          <div class="atlas-ask-text">You point Atlas at where the next module pushes the most ROI for your book.</div>
+        </div>
       </div>
     </div>
 
-    <!-- ═══ FOOTER CTA ═══ -->
+<!-- ═══ FOOTER CTA ═══ -->
     <div class="atlas-footer-cta">
       <h3>Ready to see it?</h3>
       <p>Drop one photo. Pick your brand. Watch Atlas draft a listing in seconds.</p>
-      <a class="atlas-mod-cta" onclick="showBetaImageNISPage()">Try Image → NIS now <span style="font-size:16px;">→</span></a>
+      <a class="atlas-mod-cta" onclick="showBetaImageNISPage()">Open Atlas <span style="font-size:16px;">→</span></a>
     </div>
 
   </div>

@@ -627,3 +627,150 @@ body:has(#catalog-page[style*="block"]) {
 .preview-spec-table td.f { color: #E2E8F0; }
 .preview-spec-table td.p { color: #94A3B8; }
 .preview-spec-table td.a { color: #64748B; }
+
+/* ═══════ TODAY vs WITH ATLAS — universal block (Pass 7) ═══════ */
+.atlas-tva {
+  margin: 0 0 24px;
+  padding: 26px 28px 22px;
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 14px;
+  position: relative;
+}
+.atlas-tva-eyebrow {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.8px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 18px;
+}
+.atlas-tva-grid {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: 20px; align-items: stretch;
+}
+@media (max-width: 900px) {
+  .atlas-tva-grid { grid-template-columns: 1fr; }
+  .atlas-tva-arrow { display: none; }
+}
+.atlas-tva-col {
+  background: #13212F; border: 1px solid #1C2D40; border-radius: 10px;
+  padding: 18px 20px 16px;
+}
+.atlas-tva-col.atlas {
+  background: linear-gradient(180deg, rgba(94,234,212,0.06), #13212F);
+  border-color: rgba(94,234,212,0.3);
+}
+.atlas-tva-col-h {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 14px;
+  color: #94A3B8; font-weight: 700; letter-spacing: -0.2px;
+  margin-bottom: 12px; padding-bottom: 10px;
+  border-bottom: 1px solid #1C2D40;
+}
+.atlas-tva-col.atlas .atlas-tva-col-h { color: #5EEAD4; border-bottom-color: rgba(94,234,212,0.2); }
+.atlas-tva-list {
+  list-style: none; padding: 0; margin: 0;
+}
+.atlas-tva-list li {
+  font-size: 12.5px; color: #CBD5E1; line-height: 1.55;
+  padding: 6px 0 6px 20px; position: relative;
+}
+.atlas-tva-list li::before {
+  content: '○'; position: absolute; left: 0; top: 6px;
+  color: #475569; font-size: 11px;
+}
+.atlas-tva-col.atlas .atlas-tva-list li::before {
+  content: '●'; color: #5EEAD4;
+}
+.atlas-tva-arrow {
+  font-size: 22px; color: #1C2D40;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.atlas-tva-roi {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 10px; margin-top: 18px;
+  padding-top: 16px; border-top: 1px dashed #1C2D40;
+}
+@media (max-width: 1100px) { .atlas-tva-roi { grid-template-columns: repeat(2, 1fr); } }
+.atlas-tva-roi-stat {
+  text-align: center;
+  padding: 10px 8px;
+  background: rgba(94,234,212,0.04);
+  border: 1px solid rgba(94,234,212,0.15);
+  border-radius: 8px;
+}
+.atlas-tva-roi-num {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 17px; color: #5EEAD4; font-weight: 700;
+  letter-spacing: -0.3px; line-height: 1.1;
+}
+.atlas-tva-roi-label {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 9.5px; color: #94A3B8;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  margin-top: 4px; font-weight: 700;
+}
+
+/* Preview pages: same TVA block, just spacing */
+.atlas-tva.preview-tva { margin-top: 28px; }
+
+/* ═══════ HOW IT'S BUILT — technical depth panel (Pass 7) ═══════ */
+.atlas-howbuilt-card {
+  border-color: rgba(167,139,250,0.25) !important;
+}
+.atlas-howbuilt-card[open] { border-color: rgba(167,139,250,0.5) !important; }
+.atlas-howbuilt-card summary:hover { background: rgba(167,139,250,0.04) !important; }
+.atlas-howbuilt-card .atlas-explainer-caret { color: #A78BFA !important; }
+
+.atlas-hb-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin: 12px 0 18px;
+}
+@media (max-width: 1100px) { .atlas-hb-grid { grid-template-columns: 1fr; } }
+.atlas-hb-block {
+  background: #13212F; border: 1px solid #1C2D40;
+  border-radius: 10px; padding: 16px 18px 14px;
+}
+.atlas-hb-block-h {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.6px; color: #A78BFA; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 10px;
+  padding-bottom: 8px; border-bottom: 1px solid #1C2D40;
+}
+.atlas-hb-list {
+  list-style: none; padding: 0; margin: 0;
+  font-size: 12.5px; color: #CBD5E1; line-height: 1.65;
+}
+.atlas-hb-list li {
+  padding: 4px 0 4px 18px; position: relative;
+}
+.atlas-hb-list li::before {
+  content: '▸'; position: absolute; left: 0; top: 4px;
+  color: #A78BFA; font-size: 10px;
+}
+.atlas-hb-list ol { padding-left: 0; counter-reset: hbnum; }
+ol.atlas-hb-list { counter-reset: hbnum; }
+ol.atlas-hb-list li::before {
+  content: counter(hbnum, decimal-leading-zero);
+  counter-increment: hbnum;
+  font-family: ui-monospace, monospace; font-size: 9.5px;
+  color: #A78BFA; letter-spacing: 0.6px; font-weight: 700;
+  top: 5px;
+}
+.atlas-hb-list b { color: #E2E8F0; font-weight: 600; }
+.atlas-hb-list code {
+  background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2);
+  padding: 1px 6px; border-radius: 4px;
+  font-family: ui-monospace, Consolas, monospace; font-size: 11.5px;
+  color: #DDD6FE;
+}
+
+.atlas-hb-foot {
+  margin-top: 8px; padding: 12px 16px;
+  background: rgba(167,139,250,0.05);
+  border: 1px solid rgba(167,139,250,0.2);
+  border-radius: 8px;
+  font-size: 12.5px; color: #CBD5E1; line-height: 1.6;
+}
+.atlas-hb-foot b { color: #A78BFA; font-weight: 700; }
+.atlas-hb-foot-eyebrow {
+  font-family: ui-monospace, monospace; font-size: 10px;
+  letter-spacing: 1.6px; color: #A78BFA; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 6px;
+}

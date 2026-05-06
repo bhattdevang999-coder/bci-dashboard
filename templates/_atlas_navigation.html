@@ -300,7 +300,7 @@
     <div class="atlas-mm-col" data-status="MONITOR">
       <div class="atlas-mm-col-h">
         <span class="atlas-mm-col-name">02 · Monitor</span>
-        <span class="atlas-mm-col-status">30 DAYS</span>
+        <span class="atlas-mm-col-status">BUILDING</span>
       </div>
       <div class="atlas-mm-item" data-id="catalog-health" onclick="atlasGoTo('catalog-health')">
         <span class="atlas-mm-item-dot"></span>
@@ -327,7 +327,7 @@
     <div class="atlas-mm-col" data-status="MANAGE">
       <div class="atlas-mm-col-h">
         <span class="atlas-mm-col-name">03 · Manage</span>
-        <span class="atlas-mm-col-status">60 DAYS</span>
+        <span class="atlas-mm-col-status">BUILDING</span>
       </div>
       <div class="atlas-mm-item soon" data-id="bulk-price" onclick="atlasGoTo('bulk-price')">
         <span class="atlas-mm-item-dot"></span>
@@ -354,7 +354,7 @@
     <div class="atlas-mm-col" data-status="PROMOTE">
       <div class="atlas-mm-col-h">
         <span class="atlas-mm-col-name">04 · Promote</span>
-        <span class="atlas-mm-col-status">60-90 DAYS</span>
+        <span class="atlas-mm-col-status">NEXT</span>
       </div>
       <div class="atlas-mm-item soon" data-id="ad-bulksheet" onclick="atlasGoTo('ad-bulksheet')">
         <span class="atlas-mm-item-dot"></span>
@@ -426,10 +426,10 @@ const ATLAS_NAV_ITEMS = [
   { id:'bulk-price',     name:'Bulk Price Sync',    sub:'Move 200 prices in one sheet — 60 days',                   mod:'MANAGE',  pill:'soon', go:()=>showPreviewPage('bulk-price'),     keys:'bulk price sync sale promo manage' },
   { id:'content-refresh',name:'Content Refresh',    sub:'Rewrite hundreds of bullets in your voice — 60 days',      mod:'MANAGE',  pill:'soon', go:()=>showPreviewPage('content-refresh'),keys:'content refresh rewrite bullets title manage copy' },
   { id:'ab-test',        name:'A/B Test',           sub:'Run + harvest title + image tests at scale — 60 days',     mod:'MANAGE',  pill:'soon', go:()=>showPreviewPage('ab-test'),        keys:'ab test experiment title image manage' },
-  { id:'ad-bulksheet',   name:'Ad Bulksheet',       sub:'Catalog-aware Amazon Ads bulk sheet — 60-90 days',         mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('ad-bulksheet'),   keys:'ad bulksheet sponsored products campaign promote' },
-  { id:'keywords',       name:'Keywords',           sub:'Unified keyword brain across PDP + ads — 60-90 days',      mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('keywords'),       keys:'keywords search terms ads pdp promote' },
-  { id:'pdp-optimizer',  name:'PDP Optimizer',      sub:'Score every PDP vs top sellers in PT — 60-90 days',        mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('pdp-optimizer'),  keys:'pdp optimizer score promote conversion' },
-  { id:'reviews',        name:'Reviews',            sub:'Theme-cluster every review → product fixes — 60-90 days',  mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('reviews'),        keys:'reviews customer feedback themes cluster promote' },
+  { id:'ad-bulksheet',   name:'Ad Bulksheet',       sub:'Catalog-aware Amazon Ads bulk sheet',         mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('ad-bulksheet'),   keys:'ad bulksheet sponsored products campaign promote' },
+  { id:'keywords',       name:'Keywords',           sub:'Unified keyword brain across PDP + ads',      mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('keywords'),       keys:'keywords search terms ads pdp promote' },
+  { id:'pdp-optimizer',  name:'PDP Optimizer',      sub:'Score every PDP vs top sellers in PT',        mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('pdp-optimizer'),  keys:'pdp optimizer score promote conversion' },
+  { id:'reviews',        name:'Reviews',            sub:'Theme-cluster every review → product fixes',  mod:'PROMOTE', pill:'soon', go:()=>showPreviewPage('reviews'),        keys:'reviews customer feedback themes cluster promote' },
 ];
 
 const ATLAS_NAV_ACTIONS = [
