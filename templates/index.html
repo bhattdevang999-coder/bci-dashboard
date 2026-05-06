@@ -8681,10 +8681,17 @@ function pollGenerationProgress() {
         }
       }
 
-      if (pg.status === 'done' || pg.percent >= 100) {
+      if (pg.status === 'done' || pg.status === 'error' || pg.percent >= 100) {
         clearInterval(pollInterval);
         const bar = document.getElementById('gen-overlay-bar');
         if (bar) bar.style.width = '100%';
+
+        // Worker-level crash → surface it instead of hanging forever.
+        if (pg.status === 'error') {
+          document.getElementById('gen-overlay').classList.remove('active');
+          showToast('Generation failed: ' + (pg.error || pg.current_step || 'unknown error'), 'error');
+          return;
+        }
 
         // Fetch results
         const resRes = await fetch('/api/content-results');

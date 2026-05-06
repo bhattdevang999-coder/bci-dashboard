@@ -3194,7 +3194,29 @@ def upload_analytics():
         return jsonify({"error": f"Failed to parse analytics file: {str(e)}"}), 500
 
 def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_history):
-    """Background worker for content generation."""
+    """Background worker for content generation.
+
+    Hardened: any style-level exception is caught and recorded so a single
+    bad style never freezes the whole batch on a 'Running QA compliance check…'
+    progress label. Any worker-level exception is caught at the bottom so
+    the progress poller always reaches status='done' or status='error'.
+    """
+    global DESCRIPTION_OPENERS_ROTATION, content_progress
+    try:
+        return _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedback_history)
+    except Exception as _worker_err:
+        traceback.print_exc()
+        print(f"[GEN] Worker crashed: {_worker_err}", flush=True)
+        content_progress["status"] = "error"
+        content_progress["current_step"] = f"Generation crashed: {type(_worker_err).__name__}"
+        content_progress["error"] = f"{type(_worker_err).__name__}: {str(_worker_err)[:300]}"
+        content_progress["results"] = {
+            "content": {}, "total": 0, "qa_errors": 1, "qa_warnings": 0,
+            "error": content_progress["error"],
+        }
+
+
+def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedback_history):
     global DESCRIPTION_OPENERS_ROTATION, content_progress
     DESCRIPTION_OPENERS_ROTATION = {}
     content_map = {}
@@ -3203,6 +3225,7 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
     feedback_count = len([l for l in feedback_history.splitlines() if l.strip()]) if feedback_history else 0
 
     for i, style in enumerate(styles):
+      try:
         style_num = style["style_num"]
         style_name = style["style_name"]
         subclass = style.get("subclass", "")
@@ -3362,6 +3385,25 @@ def _run_content_generation(brand, styles, brand_cfg, has_keywords, feedback_his
         content_progress["completed"] = i + 1
         content_progress["current_step"] = f"✓ {style_num} complete"
         time.sleep(0.1)
+      except Exception as _style_err:
+        # One bad style must not kill the whole batch. Log + record + advance.
+        traceback.print_exc()
+        sn = style.get("style_num", f"row{i}") if isinstance(style, dict) else f"row{i}"
+        content_map[sn] = {
+            "style_num": sn,
+            "style_name": style.get("style_name", "") if isinstance(style, dict) else "",
+            "title": "", "bullets": [""]*5,
+            "bullet_1":"","bullet_2":"","bullet_3":"","bullet_4":"","bullet_5":"",
+            "description": "", "backend_keywords": "",
+            "qa_issues": [{"field": "_pipeline", "severity": "error",
+                            "msg": f"Generation failed: {type(_style_err).__name__}: {str(_style_err)[:200]}"}],
+            "llm_generated": False, "_pipeline_error": True,
+        }
+        total_qa_errors += 1
+        content_progress["completed"] = i + 1
+        content_progress["current_step"] = f"⚠ {sn} — generation error (logged)"
+        print(f"[GEN] Style {sn} failed: {_style_err}", flush=True)
+        time.sleep(0.05)
 
     session_data["generated_content"] = content_map
     content_progress["status"] = "done"
@@ -3485,6 +3527,7 @@ def content_progress_endpoint():
         "current_style": content_progress["current_style"],
         "current_step": content_progress["current_step"],
         "status": content_progress["status"],
+        "error": content_progress.get("error", ""),
         "elapsed": elapsed,
         "eta": eta,
         "percent": round((content_progress["completed"] / max(content_progress["total"], 1)) * 100, 1),

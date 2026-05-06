@@ -1,17 +1,13 @@
 {
-  "brand_name": "Sage Collective",
-  "vendor_code_prefix": "QT5G8",
   "vendor_code_full": "Sage Collective - Levy Group, us_apparel, QT5G8",
-  "department": "Womens",
-  "default_care": "Machine Wash Cold, Tumble Dry Low",
-  "default_size_system": "US",
-  "sells_licensed_sports": "No",
-  "products_contain_batteries": "No",
-  "is_government_contractor": "No",
-  "requires_hazmat_disclosure": "No",
-  "default_styles": ["Puffer", "Faux Wool Outerwear", "Wool Outerwear", "3/4 Coat"],
-  "primary_product_type": "COAT",
-  "fit_notes": "True to size; relaxed fit through body",
-  "target_demo": "Women 25-55",
-  "never_words": ["cheap", "fast fashion", "knockoff"]
+  "default_upf": "",
+  "default_coo": "",
+  "default_care": "",
+  "gender": "Female",
+  "bullet_1_focus": "",
+  "never_words": [
+    "cheap",
+    "fast fashion",
+    "knockoff"
+  ]
 }
