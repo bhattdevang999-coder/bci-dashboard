@@ -11984,6 +11984,394 @@ def lab_generate_progress():
     })
 
 
+# ══════════════════════════════════════════════════════════════
+# LAB · STAGE 4 — grid IS the bulksheet, editor IS the brain
+# validate • regen-cell • copy • lock • auto-gen • bit-perfect .xlsm
+# ══════════════════════════════════════════════════════════════
+
+# Generic “Atlas-side” cell rules so a cell turns red the moment a hard
+# constraint is violated, even before the Amazon NIS rule engine runs.
+# These mirror the LLM prompt rules in generate_content_llm().
+LAB_CELL_RULES = {
+    "title":            {"max_chars": 120, "min_chars": 30, "required": True},
+    "bullet_1":         {"max_chars": 256, "min_chars": 30, "required": True},
+    "bullet_2":         {"max_chars": 256, "min_chars": 30, "required": True},
+    "bullet_3":         {"max_chars": 256, "min_chars": 30, "required": True},
+    "bullet_4":         {"max_chars": 256, "min_chars": 30, "required": True},
+    "bullet_5":         {"max_chars": 256, "min_chars": 30, "required": True},
+    "description":      {"max_chars": 2000, "min_chars": 100, "required": True},
+    "backend_keywords": {"max_bytes": 249},
+    "upc":              {"pattern": r"^[0-9]{12,13}$", "required": True,
+                          "err": "UPC must be 12 or 13 numeric digits"},
+    "item_weight_value": {"min_value": 0.001, "required": True},
+}
+
+_LAB_BANNED_PHRASES = [
+    "the modern woman", "the modern man", "the modern individual",
+    "women who refuse", "men who refuse",
+    "luxurious", "premium quality", "best seller", "limited time",
+]
+
+
+def _lab_validate_value(key, value, style=None):
+    """Return list of {severity, msg} for one cell value.
+
+    severity: 'error' → Amazon will reject · 'warn' → Atlas guidance.
+    """
+    out = []
+    rule = LAB_CELL_RULES.get(key)
+    sval = "" if value is None else str(value).strip()
+
+    if rule:
+        if rule.get("required") and not sval:
+            out.append({"severity": "error", "msg": f"{key} is required"})
+        if rule.get("max_chars") and len(sval) > rule["max_chars"]:
+            out.append({"severity": "error",
+                        "msg": f"{len(sval)} chars — Amazon caps {key} at {rule['max_chars']}"})
+        if rule.get("min_chars") and sval and len(sval) < rule["min_chars"]:
+            out.append({"severity": "warn",
+                        "msg": f"{len(sval)} chars — below recommended minimum {rule['min_chars']}"})
+        if rule.get("max_bytes") and len(sval.encode("utf-8")) > rule["max_bytes"]:
+            out.append({"severity": "error",
+                        "msg": f"{len(sval.encode('utf-8'))} bytes — over {rule['max_bytes']}-byte cap"})
+        if rule.get("pattern") and sval and not re.match(rule["pattern"], sval):
+            out.append({"severity": "error", "msg": rule.get("err", "format invalid")})
+        if rule.get("min_value") is not None and sval:
+            try:
+                if float(sval) < rule["min_value"]:
+                    out.append({"severity": "error",
+                                "msg": f"value must be ≥ {rule['min_value']}"})
+            except ValueError:
+                out.append({"severity": "error", "msg": "must be numeric"})
+
+    # Banned-phrase scan on copy fields
+    if key in ("title", "description", "bullet_1", "bullet_2", "bullet_3", "bullet_4", "bullet_5"):
+        low = sval.lower()
+        for ph in _LAB_BANNED_PHRASES:
+            if ph in low:
+                out.append({"severity": "error", "msg": f"banned phrase: '{ph}'"})
+
+    # Gender alignment between title + bullets/description (style-scope only)
+    if style and key in ("description", "bullet_1", "bullet_2", "bullet_3", "bullet_4", "bullet_5"):
+        gen = style.get("_lab_generated") or {}
+        title = (gen.get("title") or style.get("title") or "").lower()
+        if "women's" in title or "women\u2019s" in title:
+            if re.search(r"\bmen\b|\bman\b|\bhe\b|\bhis\b", sval, flags=re.IGNORECASE):
+                out.append({"severity": "error",
+                            "msg": "title says women's, this cell uses male language"})
+        elif "men's" in title or "men\u2019s" in title:
+            if re.search(r"\bwomen\b|\bwoman\b|\bshe\b|\bher\b", sval, flags=re.IGNORECASE):
+                out.append({"severity": "error",
+                            "msg": "title says men's, this cell uses female language"})
+    return out
+
+
+@app.route("/api/lab/validate", methods=["POST"])
+def lab_validate_grid():
+    """Validate a single cell or a batch of rows. Body shape:
+      {style: <style_num>, group: <group_key>, rows: [...]} — returns
+      {violations: [{row, key, severity, msg}, …], cells_checked: N}.
+    Front-end calls this on every edit.
+    """
+    data = request.get_json(force=True) or {}
+    style_num = (data.get("style") or "").strip()
+    group_key = (data.get("group") or "").strip()
+    rows = data.get("rows") or []
+    style = _lab_session_get_style(style_num) if style_num else None
+    grp = LAB_GRID_GROUPS.get(group_key) or {}
+    columns = grp.get("columns") or []
+    violations = []
+    n = 0
+    for r_idx, row in enumerate(rows):
+        for col in columns:
+            if col.get("readonly"):
+                continue
+            key = col["key"]
+            if key in row:
+                n += 1
+                for v in _lab_validate_value(key, row.get(key), style):
+                    violations.append({"row": r_idx, "key": key, **v})
+    return jsonify({"ok": True, "violations": violations, "cells_checked": n})
+
+
+# ──── Single-cell LLM regenerate ──────────────────────────────────
+@app.route("/api/lab/regen-cell", methods=["POST"])
+def lab_regen_cell():
+    """Regenerate one copy field for one style with optional operator feedback.
+
+    Body: {style: <style_num>, key: 'title'|'bullet_1..5'|'description'|'backend_keywords',
+           feedback: '<freeform instruction>' (optional)}
+    Strategy: run the full content LLM with feedback appended to the
+    feedback_history string, then return only the requested key.
+    Reuses generate_content_llm + the gender-drift scrub.
+    """
+    if _anthropic_client is None:
+        return jsonify({"error": "LLM unavailable"}), 503
+    data = request.get_json(force=True) or {}
+    style_num = (data.get("style") or "").strip()
+    key = (data.get("key") or "").strip()
+    feedback = (data.get("feedback") or "").strip()
+    if key not in ("title", "description", "backend_keywords",
+                    "bullet_1", "bullet_2", "bullet_3", "bullet_4", "bullet_5"):
+        return jsonify({"error": f"key {key!r} not regen-able"}), 400
+    style = _lab_session_get_style(style_num)
+    if not style:
+        return jsonify({"error": f"style {style_num} not in session"}), 404
+
+    brand = lab_session.get("brand", "") or ""
+    brand_cfg = _load_brand_config_data(brand) or {}
+    feedback_history = f"- [{key}] {feedback}" if feedback else ""
+
+    try:
+        result = generate_content_llm(brand_cfg, brand, style, feedback_history)
+    except Exception as e:
+        return jsonify({"error": f"LLM call failed: {e}"}), 500
+    if not result:
+        return jsonify({"error": "LLM returned no result"}), 502
+
+    # Apply gender-drift scrub on the regen output
+    style_gender, _ = _derive_gender_department(style)
+    eff_g = style_gender or brand_cfg.get("gender", "") or ""
+    title = result.get("title", "") or ""
+    if eff_g not in ("Male", "Female") and title:
+        t = title.lower()
+        if "women's" in t or "women\u2019s" in t: eff_g = "Female"
+        elif "men's" in t or "men\u2019s" in t:  eff_g = "Male"
+    if key == "description":
+        result["description"] = _scrub_gender_drift(result.get("description", ""), eff_g)
+    if key.startswith("bullet_"):
+        result[key] = _scrub_gender_drift(result.get(key, ""), eff_g)
+
+    new_value = result.get(key, "") or ""
+    style.setdefault("_lab_generated", {})[key] = new_value
+    style["_lab_generated"]["_regen_at"] = datetime.utcnow().isoformat("T") + "Z"
+    _lab_session_persist()
+    return jsonify({"ok": True, "key": key, "value": new_value})
+
+
+# ──── Selective copy + locks ───────────────────────────────────
+_LAB_LOCK_KEY = "_lab_locks"  # stored on each style: {scope: 'style'|'group'|'field', group?: '...', key?: '...'}
+
+
+def _lab_is_locked(style, scope, group=None, key=None):
+    """Check whether a given target is locked on the style."""
+    locks = style.get(_LAB_LOCK_KEY) or []
+    for lk in locks:
+        if lk.get("scope") == "style" and scope in ("style", "group", "field"):
+            return True
+        if lk.get("scope") == "group" and lk.get("group") == group and scope in ("group", "field"):
+            return True
+        if lk.get("scope") == "field" and lk.get("group") == group and lk.get("key") == key and scope == "field":
+            return True
+    return False
+
+
+@app.route("/api/lab/lock", methods=["POST"])
+def lab_lock_toggle():
+    """Toggle a lock on the style. Body: {style, scope, group?, key?}.
+    Returns the new locks list for that style.
+    """
+    data = request.get_json(force=True) or {}
+    style_num = (data.get("style") or "").strip()
+    scope = (data.get("scope") or "").strip()
+    group = data.get("group")
+    key = data.get("key")
+    if scope not in ("style", "group", "field"):
+        return jsonify({"error": "scope must be style|group|field"}), 400
+    style = _lab_session_get_style(style_num)
+    if not style:
+        return jsonify({"error": f"style {style_num} not in session"}), 404
+    locks = style.setdefault(_LAB_LOCK_KEY, [])
+    target = {"scope": scope}
+    if group: target["group"] = group
+    if key:   target["key"]   = key
+    # toggle: drop matching, otherwise add
+    found = False
+    new_locks = []
+    for lk in locks:
+        if (lk.get("scope") == scope
+            and lk.get("group") == target.get("group")
+            and lk.get("key") == target.get("key")):
+            found = True
+            continue
+        new_locks.append(lk)
+    if not found:
+        new_locks.append(target)
+    style[_LAB_LOCK_KEY] = new_locks
+    _lab_session_persist()
+    return jsonify({"ok": True, "locked": not found, "locks": new_locks})
+
+
+@app.route("/api/lab/locks", methods=["GET"])
+def lab_locks_list():
+    """Return all locks across all styles — for the global Locks panel."""
+    out = []
+    for s in lab_session.get("styles", []):
+        for lk in s.get(_LAB_LOCK_KEY) or []:
+            out.append({
+                "style_num": s.get("style_num", ""),
+                "style_name": s.get("style_name", ""),
+                **lk,
+            })
+    return jsonify({"ok": True, "locks": out})
+
+
+@app.route("/api/lab/copy", methods=["POST"])
+def lab_copy_to_styles():
+    """Copy fields from a source style to a list of destination styles.
+
+    Body:
+      {source: <style_num>, group: <group_key>, key?: <single field>,
+       destinations: [<style_num>, ...], override_locks: bool}
+
+    If `key` is omitted, copies the entire group's writable values from
+    source to destinations. Lock guard rejects locked destinations unless
+    override_locks=True.
+    """
+    data = request.get_json(force=True) or {}
+    src_num = (data.get("source") or "").strip()
+    group_key = (data.get("group") or "").strip()
+    key = (data.get("key") or "").strip()
+    destinations = data.get("destinations") or []
+    override = bool(data.get("override_locks"))
+    grp = LAB_GRID_GROUPS.get(group_key)
+    if not grp:
+        return jsonify({"error": f"unknown group: {group_key}"}), 400
+    src = _lab_session_get_style(src_num)
+    if not src:
+        return jsonify({"error": f"source {src_num} not in session"}), 404
+
+    if grp.get("scope", "variant") != "style":
+        return jsonify({"error": "copy currently supports style-scope groups only"}), 400
+    src_row = _build_style_row(src)
+    writable_keys = [c["key"] for c in grp["columns"]
+                     if not c.get("readonly") and (not key or c["key"] == key)]
+    if not writable_keys:
+        return jsonify({"error": "no writable keys to copy"}), 400
+
+    summary = {"updated": [], "skipped_locked": [], "skipped_missing": []}
+    for dst_num in destinations:
+        dst = _lab_session_get_style(dst_num)
+        if not dst:
+            summary["skipped_missing"].append(dst_num)
+            continue
+        # Lock guard
+        any_locked = False
+        if not override:
+            for k in writable_keys:
+                if _lab_is_locked(dst, "field", group=group_key, key=k) \
+                   or _lab_is_locked(dst, "group", group=group_key) \
+                   or _lab_is_locked(dst, "style"):
+                    any_locked = True
+                    break
+        if any_locked:
+            summary["skipped_locked"].append(dst_num)
+            continue
+        # Apply
+        gen = dst.setdefault("_lab_generated", {})
+        for k in writable_keys:
+            new_val = src_row.get(k, "")
+            target_dict = gen if k in _STYLE_GENERATED_KEYS else dst
+            target_dict[k] = new_val
+        summary["updated"].append(dst_num)
+
+    _lab_session_persist()
+    return jsonify({"ok": True, "summary": summary, "keys": writable_keys})
+
+
+# ──── Bit-perfect Vendor-Central .xlsm download ──────────────────────
+@app.route("/api/lab/download-bulksheet", methods=["GET"])
+def lab_download_bulksheet():
+    """Emit one bit-perfect Vendor Central .xlsm per style + zip them.
+
+    Reuses do_xlsm_surgery() which already writes the parent + child rows
+    to the matching Amazon NIS template per PT — same code path Bulk Upload
+    uses, so the output drops into Vendor Central without manual edits.
+    """
+    if not lab_session.get("styles"):
+        return jsonify({"error": "No data in session. Upload first."}), 400
+    brand = lab_session.get("brand", "") or ""
+    brand_cfg = _load_brand_config_data(brand) or {}
+    vendor_code = brand_cfg.get("vendor_code_full", "") or ""
+
+    # Build per-style outputs
+    outdir = UPLOAD_PRODUCTS / f"lab_bulksheets_{re.sub(r'[^\\w]','_', brand)}"
+    outdir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for s in lab_session["styles"]:
+        sn = s.get("style_num", "")
+        # Resolve template path for this style's PT
+        pt = _resolve_style_product_type(s) or ""
+        tpl_for_pt = _template_path_for_pt(pt) or str(DEFAULT_TEMPLATE)
+        gen = s.get("_lab_generated") or {}
+        content = {
+            "title":             gen.get("title", "") or "",
+            "bullets":           [gen.get(f"bullet_{i}", "") for i in range(1, 6)],
+            "description":       gen.get("description", "") or "",
+            "backend_keywords":  gen.get("backend_keywords", "") or "",
+            "neck_type":         s.get("neck_type", ""),
+            "sleeve_type":       s.get("sleeve_type", ""),
+            "fit_type":          s.get("fit_type", ""),
+            "closure_type":      s.get("closure_type", ""),
+            "collar_style":      s.get("collar_style", ""),
+        }
+        # Skip styles with no generated copy (operator hasn't generated yet)
+        if not (content["title"] or any(content["bullets"])):
+            continue
+        try:
+            out_path = do_xlsm_surgery(tpl_for_pt, brand, brand_cfg, vendor_code, s, content)
+        except Exception as e:
+            print(f"[lab] xlsm surgery failed for {sn}: {e}", flush=True)
+            continue
+        if out_path and Path(out_path).exists():
+            written.append(out_path)
+
+    if not written:
+        return jsonify({"error": "No styles have generated copy yet. Run Generate first."}), 400
+
+    # Zip them
+    import zipfile
+    zip_path = UPLOAD_PRODUCTS / f"atlas_lab_bulksheets_{re.sub(r'[^\\w]','_', brand)}.zip"
+    with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in written:
+            zf.write(p, Path(p).name)
+    return send_file(
+        str(zip_path),
+        as_attachment=True,
+        download_name=zip_path.name,
+        mimetype="application/zip",
+    )
+
+
+def _template_path_for_pt(pt):
+    """Map an Amazon PT (COAT, DRESS, SHIRT, …) to the local template file."""
+    if not pt:
+        return None
+    pt = pt.upper()
+    fname = {
+        "COAT":            "Jackets_and_Coats.xlsm",
+        "DRESS":           "Dresses.xlsm",
+        "SHIRT":           "Other_Shirts.xlsm",
+        "BLAZER":          "Blazers.xlsm",
+        "BRA":             "Bras.xlsm",
+        "HAT":             "Hats.xlsm",
+        "ONE_PIECE_OUTFIT": "One-piece_Outfits.xlsm",
+        "OVERALLS":        "Overalls.xlsm",
+        "PANTS":           "Other_Pants.xlsm",
+        "SANDAL":          "Sandals.xlsm",
+        "SHORTS":          "Shorts.xlsm",
+        "SKIRT":           "Skirts.xlsm",
+        "SNOW_PANT":       "Snow_Pants.xlsm",
+        "SNOWSUIT":        "Snowsuits.xlsm",
+        "SWEATSHIRT":      "Sweatshirts.xlsm",
+        "SWIMWEAR":        "Swimwear.xlsm",
+    }.get(pt)
+    if not fname:
+        return None
+    p = UPLOAD_TEMPLATES / fname
+    return str(p) if p.exists() else None
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))

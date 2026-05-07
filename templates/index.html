@@ -3378,6 +3378,91 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   font-family: ui-monospace, Consolas, monospace; font-size: 10.5px;
   color: #64748B; letter-spacing: 0.4px; line-height: 1.5;
 }
+
+/* ═══ STAGE 4 — Modals (Improve, Copy) + Validation cells ═══ */
+.lab-modal {
+  position: fixed; inset: 0; background: rgba(8,17,26,0.85);
+  display: none; align-items: center; justify-content: center; z-index: 10000;
+}
+.lab-modal.active { display: flex; }
+.lab-modal-inner {
+  width: 540px; max-width: 92vw; padding: 24px;
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 12px;
+  color: #E2E8F0;
+}
+.lab-copy-inner { width: 720px; max-height: 84vh; overflow: auto; }
+.lab-modal-h {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 17px; font-weight: 700;
+  color: #E2E8F0; margin-bottom: 6px;
+}
+.lab-modal-meta {
+  font-family: ui-monospace, Consolas, monospace; font-size: 11.5px;
+  color: #94A3B8; letter-spacing: 0.4px; margin-bottom: 14px;
+}
+.lab-modal textarea {
+  width: 100%; box-sizing: border-box;
+  background: #13212F; border: 1px solid #1C2D40; border-radius: 6px;
+  color: #E2E8F0; font-family: Calibri, sans-serif; font-size: 13px;
+  padding: 10px 12px; resize: vertical; min-height: 80px;
+}
+.lab-modal textarea:focus { outline: 1px solid #5EEAD4; }
+.lab-modal-actions {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;
+}
+.lab-copy-filter-row {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.lab-copy-chip {
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+  letter-spacing: 0.5px; color: #5EEAD4;
+  background: rgba(94,234,212,0.06); border: 1px solid rgba(94,234,212,0.3);
+  padding: 5px 10px; border-radius: 4px; cursor: pointer;
+}
+.lab-copy-chip:hover { background: rgba(94,234,212,0.12); }
+.lab-copy-list {
+  display: flex; flex-direction: column; gap: 4px;
+  max-height: 380px; overflow: auto;
+  padding: 6px; background: #13212F; border: 1px solid #1C2D40; border-radius: 6px;
+}
+.lab-copy-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px; border-radius: 4px;
+  font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+  color: #CBD5E1; cursor: pointer;
+}
+.lab-copy-row:hover { background: rgba(94,234,212,0.04); }
+.lab-copy-row input { accent-color: #5EEAD4; }
+.lab-copy-row .pt-tag {
+  font-size: 10px; letter-spacing: 0.6px; color: #94A3B8;
+  padding: 1px 6px; border: 1px solid #1C2D40; border-radius: 3px;
+  margin-left: 6px;
+}
+.lab-copy-row .pt-mismatch {
+  color: #F59E0B; border-color: rgba(245,158,11,0.4);
+}
+.lab-copy-row .lock-tag {
+  color: #A78BFA; font-size: 11px; margin-left: 6px;
+}
+.lab-copy-summary {
+  font-family: ui-monospace, Consolas, monospace; font-size: 11.5px;
+  color: #5EEAD4; letter-spacing: 0.4px; margin-top: 10px;
+}
+
+/* Validation cell tints — Handsontable cells get extra classes via cells() */
+.lab-grid-host .htAtlasErr {
+  background: #FEE2E2 !important; color: #991B1B !important;
+}
+.lab-grid-host .htAtlasWarn {
+  background: #FEF3C7 !important; color: #92400E !important;
+}
+.lab-grid-host .htAtlasLocked {
+  background: #EDE9FE !important; color: #5B21B6 !important; font-style: italic;
+}
+
+/* Right-click context menu for cells (Handsontable extends its own; we add styles) */
+.htContextMenu .ht_master .htCore td {
+  font-family: Calibri, sans-serif !important; font-size: 12.5px !important;
+}
 </style>
 </head>
 <body>
@@ -3479,7 +3564,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
     <div class="nav-item-beta" id="nav-lab-grid" onclick="showLabGridPage()">
       <span class="nav-dot live"></span> Grid Editor
-      <span class="nav-pill nav-pill-beta">STAGE 3</span>
+      <span class="nav-pill nav-pill-beta">STAGE 4</span>
     </div>
 
     <div class="nav-section-divider"></div>
@@ -5683,7 +5768,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-upload-header">
       <div class="atlas-upload-eyebrow">
         <span class="atlas-pulse"></span>
-        LAB · GRID EDITOR · STAGE 3
+        LAB · GRID EDITOR · STAGE 4
       </div>
       <h1 class="atlas-upload-h1">Grid Editor</h1>
       <div class="atlas-status-sub" id="lab-grid-status-sub">No sheet loaded</div>
@@ -5750,7 +5835,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         <div class="lab-grid-actions">
           <button class="atlas-source-btn-secondary" onclick="labGenerateOne()" id="lab-gen-one-btn" title="Run LLM for the current style only">⚡ Regen this style</button>
           <button class="atlas-source-btn-secondary" onclick="labGenerateAll()" id="lab-gen-all-btn" title="Run LLM for every style in this session">✨ Generate all</button>
-          <a class="atlas-source-btn-secondary" href="/api/lab/download-xlsm" download id="lab-grid-download">⇩ .xlsx</a>
+          <button class="atlas-source-btn-secondary" onclick="labCopyOpen()" id="lab-copy-btn" title="Copy this group's values to other styles">⧉ Copy to…</button>
+          <button class="atlas-source-btn-secondary" onclick="labLockStyle()" id="lab-lock-style-btn" title="Lock this style — copy and regen will skip it">🔓 Lock style</button>
+          <a class="atlas-source-btn-secondary" href="/api/lab/download-bulksheet" download id="lab-grid-download" title="Bit-perfect Vendor Central .xlsm bundle">⇩ Bulksheet</a>
           <button class="atlas-source-btn-secondary" onclick="labGridReload()">↻ Reload</button>
           <button class="atlas-source-btn-primary" id="lab-grid-save-btn" onclick="labGridSave()">Save →</button>
         </div>
@@ -5758,8 +5845,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
       <!-- Honest note -->
       <div class="lab-grid-note">
-        // Stage 3 — LLM in the grid · Brand Voice editor · read-only Brand Rules · sessions persisted to disk.
-        Save persists per group. Live rule-engine validation arrives in Stage 4.
+        // Stage 4 — live validation on edit · right-click cell to regen / improve / lock · selective copy across styles · bit-perfect Vendor Central .xlsm.
       </div>
 
       <!-- The grid itself -->
@@ -5790,6 +5876,40 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       <div class="lab-gen-step" id="lab-gen-step">Initializing…</div>
       <div class="lab-gen-bar-wrap"><div class="lab-gen-bar-fill" id="lab-gen-bar"></div></div>
       <div class="lab-gen-note">// Each style ≈ 15–30s on the live server. Title · 5 bullets · description · backend keywords per ASIN.</div>
+    </div>
+  </div>
+
+  <!-- Stage 4 — Improve-with-feedback modal -->
+  <div id="lab-improve-modal" class="lab-modal">
+    <div class="lab-modal-inner">
+      <div class="lab-modal-h">Improve <span id="lab-improve-key">title</span></div>
+      <div class="lab-modal-meta" id="lab-improve-meta">Atlas will regenerate this cell with your feedback.</div>
+      <textarea id="lab-improve-input" rows="3" placeholder="e.g. Make it punchier. Replace 'tailored' with 'fitted'. Drop the brand from this bullet."></textarea>
+      <div class="lab-modal-actions">
+        <button class="atlas-source-btn-secondary" onclick="labImproveCancel()">Cancel</button>
+        <button class="atlas-source-btn-secondary" onclick="labImproveCommit('regen-only')">Regen with rules</button>
+        <button class="atlas-source-btn-primary"   onclick="labImproveCommit('regen-with-feedback')">Apply feedback →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 4 — Copy-to-styles modal -->
+  <div id="lab-copy-modal" class="lab-modal">
+    <div class="lab-modal-inner lab-copy-inner">
+      <div class="lab-modal-h">Copy <span id="lab-copy-group-label">this group</span> to other styles</div>
+      <div class="lab-modal-meta" id="lab-copy-meta">Source: <span id="lab-copy-source">—</span></div>
+      <div class="lab-copy-filter-row">
+        <button class="lab-copy-chip" onclick="labCopyFilterPT()">Same Product Type only</button>
+        <button class="lab-copy-chip" onclick="labCopySelectAll(true)">All</button>
+        <button class="lab-copy-chip" onclick="labCopySelectAll(false)">None</button>
+      </div>
+      <div class="lab-copy-list" id="lab-copy-list"></div>
+      <div class="lab-copy-summary" id="lab-copy-summary">0 destinations selected</div>
+      <div class="lab-modal-actions">
+        <button class="atlas-source-btn-secondary" onclick="labCopyCancel()">Cancel</button>
+        <button class="atlas-source-btn-secondary" id="lab-copy-override" onclick="labCopyCommit(true)" disabled>Override locks</button>
+        <button class="atlas-source-btn-primary"   onclick="labCopyCommit(false)">Apply to selected →</button>
+      </div>
     </div>
   </div>
 
@@ -6040,17 +6160,104 @@ function labGridRender(spec) {
       if (!colSpec) return cell;
       const rowData = spec.rows[row] || {};
       const val = rowData[colSpec.key];
-      if (colSpec.required && (val === '' || val === null || val === undefined)) {
-        cell.className = 'htInvalid';
-      }
+      const isEmpty = val === '' || val === null || val === undefined;
+      const cls = _labCellClass(row, colSpec, isEmpty);
+      if (cls) cell.className = cls;
       return cell;
     },
-    afterChange: function(changes, source) {
-      if (source === 'loadData') return;
+    afterChange: async function(changes, source) {
+      if (source === 'loadData' || !changes) return;
       labGridSetDirty(true);
+      // Live validation — push current rows to /api/lab/validate, repaint cells.
+      try {
+        const rows = labGridState.hot.getSourceData();
+        await labValidateRows(rows);
+        labGridState.hot.render();
+        const errCount = Object.values(_labCellViolations).reduce(
+          (a, m) => a + Object.values(m).reduce(
+            (b, vs) => b + vs.filter(v => v.severity === 'error').length, 0), 0);
+        const f = document.getElementById('lab-grid-footer');
+        if (errCount) {
+          f.className = 'lab-grid-footer warn';
+          f.textContent = `${errCount} cell error${errCount===1?'':'s'} — hover the red cells, fix or right-click → Regenerate.`;
+        }
+      } catch (e) {}
     },
     afterPaste: function() { labGridSetDirty(true); },
+    contextMenu: {
+      items: {
+        atlas_regen: {
+          name: () => '⚡ Regenerate this cell',
+          callback: function(_key, sel) {
+            if (!sel.length) return;
+            labImproveTargetIsRegenOnly(sel[0].start.row, sel[0].start.col);
+          }
+        },
+        atlas_improve: {
+          name: () => '✍ Improve with feedback…',
+          callback: function(_key, sel) {
+            if (!sel.length) return;
+            labImproveOpen(sel[0].start.row, sel[0].start.col);
+          }
+        },
+        sep1: '---------',
+        atlas_lock_field: {
+          name: () => '🔓 Lock this field',
+          callback: function(_key, sel) {
+            if (!sel.length) return;
+            labLockField(sel[0].start.row, sel[0].start.col);
+          }
+        },
+        atlas_lock_group: {
+          name: () => `🔓 Lock '${spec.group_label || labGridState.currentGroup}' group`,
+          callback: function() { labLockGroup(); }
+        },
+        sep2: '---------',
+        atlas_copy_to: {
+          name: () => '⧉ Copy this group to other styles…',
+          callback: function() { labCopyOpen(); }
+        },
+        sep3: '---------',
+        copy: {},
+        cut: {},
+        sep4: '---------',
+        undo: {},
+        redo: {},
+      }
+    },
   });
+
+  // Helper called by the context menu for the "Regenerate this cell" entry
+  // — same as Improve modal but skips the modal and runs immediately.
+  window.labImproveTargetIsRegenOnly = async function(rowIdx, colIdx) {
+    const colSpec = spec.columns[colIdx];
+    const REGENABLE = new Set(['title','description','backend_keywords','bullet_1','bullet_2','bullet_3','bullet_4','bullet_5']);
+    if (!colSpec || !REGENABLE.has(colSpec.key)) {
+      showToast('Only copy fields can be regenerated', 'warning');
+      return;
+    }
+    showToast(`Regenerating ${colSpec.title}…`, 'info');
+    try {
+      const r = await fetch('/api/lab/regen-cell', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ style: labGridState.currentStyle, key: colSpec.key, feedback: '' }),
+      });
+      const data = await r.json();
+      if (!r.ok || data.error) { showToast(data.error || 'Regen failed', 'error'); return; }
+      showToast(`✓ ${colSpec.title} regenerated`, 'success');
+      await labGridFetchAndRender();
+    } catch (e) { showToast('Regen error: ' + e.message, 'error'); }
+  };
+  // After render, run an initial validate pass so already-bad cells light up.
+  setTimeout(async () => {
+    await labLoadStyleLocks();
+    await labValidateRows(labGridState.hot.getSourceData());
+    labGridState.hot.render();
+    // Update lock-style button label
+    const btn = document.getElementById('lab-lock-style-btn');
+    const styleLocked = _labLocks.some(l => l.scope === 'style');
+    if (btn) btn.innerHTML = styleLocked ? '🔒 Unlock style' : '🔓 Lock style';
+  }, 100);
   // Footer
   const missing = (spec.rows || []).reduce((acc, r) => {
     return acc + (spec.columns || []).filter(c => c.required && (r[c.key] === '' || r[c.key] === null || r[c.key] === undefined)).length;
@@ -6365,6 +6572,234 @@ async function labGenerate(payload) {
       }
     } catch (e) { /* keep polling */ }
   }, 1000);
+}
+
+// ══════ STAGE 4 — validation, regen-cell, copy, locks ══════
+let _labCellViolations = {};   // {row_idx: {key: [{severity,msg}, ...]}}
+let _labLocks = [];            // global locks list (for current style)
+let _labImproveTarget = null;  // {row, col, key}
+let _labCopyState = null;      // {sourceStyle, group, sourcePT, destinations:[]}
+
+async function labValidateRows(rows) {
+  if (!labGridState.currentStyle || !rows || !rows.length) {
+    _labCellViolations = {}; return;
+  }
+  try {
+    const r = await fetch('/api/lab/validate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        style: labGridState.currentStyle,
+        group: labGridState.currentGroup,
+        rows,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) return;
+    const map = {};
+    (data.violations || []).forEach(v => {
+      const r = v.row;
+      const k = v.key;
+      if (!map[r]) map[r] = {};
+      if (!map[r][k]) map[r][k] = [];
+      map[r][k].push({ severity: v.severity, msg: v.msg });
+    });
+    _labCellViolations = map;
+  } catch (e) { /* tolerate */ }
+}
+
+// Build per-cell className for Handsontable's cells() callback. Looks at
+// _labCellViolations + _labLocks for the current style. Locked cells beat
+// validation cells visually; error beats warn.
+function _labCellClass(rowIdx, colSpec, valueIsEmpty) {
+  const k = colSpec.key;
+  // Lock check (style-scope locks via current-style locks list)
+  for (const lk of _labLocks) {
+    if (lk.scope === 'style') return 'htAtlasLocked';
+    if (lk.scope === 'group' && lk.group === labGridState.currentGroup) return 'htAtlasLocked';
+    if (lk.scope === 'field' && lk.group === labGridState.currentGroup && lk.key === k) return 'htAtlasLocked';
+  }
+  // Violations
+  const rowMap = _labCellViolations[rowIdx];
+  if (rowMap && rowMap[k]) {
+    const sev = rowMap[k].some(v => v.severity === 'error') ? 'err' : 'warn';
+    return sev === 'err' ? 'htAtlasErr' : 'htAtlasWarn';
+  }
+  // Empty required cell (orig Stage 1 behavior)
+  if (colSpec.required && valueIsEmpty) return 'htInvalid';
+  return '';
+}
+
+async function labLoadStyleLocks() {
+  if (!labGridState.currentStyle) { _labLocks = []; return; }
+  try {
+    const r = await fetch('/api/lab/locks');
+    const data = await r.json();
+    _labLocks = (data.locks || []).filter(l => l.style_num === labGridState.currentStyle);
+  } catch (e) { _labLocks = []; }
+}
+
+// ──── Right-click "Improve" ────────────────────────────────
+function labImproveOpen(rowIdx, colIdx) {
+  const colSpec = labGridState.spec.columns[colIdx];
+  const REGENABLE = new Set(['title','description','backend_keywords','bullet_1','bullet_2','bullet_3','bullet_4','bullet_5']);
+  if (!colSpec || !REGENABLE.has(colSpec.key)) {
+    showToast('Only copy fields (title/bullets/desc/keywords) can be improved', 'warning');
+    return;
+  }
+  _labImproveTarget = { row: rowIdx, col: colIdx, key: colSpec.key };
+  document.getElementById('lab-improve-key').textContent = colSpec.title || colSpec.key;
+  document.getElementById('lab-improve-meta').textContent =
+    `Style ${labGridState.currentStyle} · ${colSpec.title} · Atlas regenerates with current rules + your feedback.`;
+  document.getElementById('lab-improve-input').value = '';
+  document.getElementById('lab-improve-modal').classList.add('active');
+  setTimeout(() => document.getElementById('lab-improve-input').focus(), 50);
+}
+function labImproveCancel() { document.getElementById('lab-improve-modal').classList.remove('active'); }
+async function labImproveCommit(mode) {
+  if (!_labImproveTarget) return;
+  const fb = document.getElementById('lab-improve-input').value.trim();
+  const payload = {
+    style: labGridState.currentStyle,
+    key: _labImproveTarget.key,
+    feedback: mode === 'regen-with-feedback' ? fb : '',
+  };
+  document.getElementById('lab-improve-modal').classList.remove('active');
+  showToast(`Regenerating ${_labImproveTarget.key}…`, 'info');
+  try {
+    const r = await fetch('/api/lab/regen-cell', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) { showToast(data.error || 'Regen failed', 'error'); return; }
+    showToast(`✓ ${data.key} regenerated`, 'success');
+    await labGridFetchAndRender();
+  } catch (e) {
+    showToast('Regen error: ' + e.message, 'error');
+  }
+}
+
+// ──── Locks ──────────────────────────────────────────────
+async function labLockToggle(scope, opts) {
+  if (!labGridState.currentStyle) return;
+  const body = { style: labGridState.currentStyle, scope, ...(opts||{}) };
+  try {
+    const r = await fetch('/api/lab/lock', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) { showToast(data.error || 'Lock failed', 'error'); return; }
+    showToast(data.locked ? '🔒 locked' : '🔓 unlocked', 'success');
+    await labLoadStyleLocks();
+    await labGridFetchAndRender();
+    // update style-lock button label
+    const btn = document.getElementById('lab-lock-style-btn');
+    const styleLocked = _labLocks.some(l => l.scope === 'style');
+    if (btn) btn.innerHTML = styleLocked ? '🔒 Unlock style' : '🔓 Lock style';
+  } catch (e) { showToast('Lock error: ' + e.message, 'error'); }
+}
+function labLockStyle() { return labLockToggle('style'); }
+function labLockField(rowIdx, colIdx) {
+  const colSpec = labGridState.spec.columns[colIdx];
+  if (!colSpec) return;
+  return labLockToggle('field', { group: labGridState.currentGroup, key: colSpec.key });
+}
+function labLockGroup() { return labLockToggle('group', { group: labGridState.currentGroup }); }
+
+// ──── Copy-to-styles modal ───────────────────────────────────
+async function labCopyOpen() {
+  if (!labGridState.currentStyle || !labGridState.spec) {
+    showToast('Pick a source style first', 'warning'); return;
+  }
+  const grp = labGridState.spec;
+  if (grp.scope !== 'style') {
+    showToast('Copy currently supports style-scope groups (Title & Copy, Identity, Taxonomy, Compliance, Apparel, Pricing).', 'warning');
+    return;
+  }
+  const sourcePT = grp.product_type || '';
+  // Fetch all styles' PT to render the destination list
+  const otherStyles = labGridState.styles.filter(s => s.style_num !== labGridState.currentStyle);
+  if (!otherStyles.length) {
+    showToast('Only one style in this session.', 'warning'); return;
+  }
+  // Hit /api/lab/locks once for the lock badges
+  let allLocks = [];
+  try { const r = await fetch('/api/lab/locks'); const j = await r.json(); allLocks = j.locks || []; } catch (e) {}
+
+  _labCopyState = { sourceStyle: labGridState.currentStyle, group: labGridState.currentGroup, sourcePT, destinations: [], allLocks };
+  document.getElementById('lab-copy-group-label').textContent = grp.group_label || labGridState.currentGroup;
+  document.getElementById('lab-copy-source').textContent = labGridState.currentStyle;
+  // Build rows. For now we don't have per-style PT cached client-side, so we resolve via /api/lab/grid quick-fetch.
+  // Render with PT-preselect best-effort.
+  document.getElementById('lab-copy-list').innerHTML = otherStyles.map((s, i) => {
+    const styleLocked = allLocks.some(l => l.style_num === s.style_num &&
+      (l.scope === 'style' || (l.scope === 'group' && l.group === labGridState.currentGroup)));
+    const lockTag = styleLocked ? `<span class="lock-tag">\uD83D\uDD12 locked</span>` : '';
+    return `<label class="lab-copy-row">
+      <input type="checkbox" data-style="${s.style_num}" ${styleLocked ? '' : 'checked'}>
+      <span><b>${s.style_num}</b> · ${(s.style_name||'').slice(0,90)}</span>
+      ${lockTag}
+    </label>`;
+  }).join('');
+  // Wire change → update summary + override-button enable
+  document.querySelectorAll('#lab-copy-list input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', _labCopyUpdateSummary);
+  });
+  _labCopyUpdateSummary();
+  document.getElementById('lab-copy-modal').classList.add('active');
+}
+function _labCopyUpdateSummary() {
+  const checks = document.querySelectorAll('#lab-copy-list input[type=checkbox]:checked');
+  const allLocks = (_labCopyState && _labCopyState.allLocks) || [];
+  let lockedSelected = 0;
+  checks.forEach(cb => {
+    if (allLocks.some(l => l.style_num === cb.dataset.style && (l.scope === 'style' || l.scope === 'group'))) lockedSelected++;
+  });
+  document.getElementById('lab-copy-summary').textContent =
+    `${checks.length} destination${checks.length === 1 ? '' : 's'} selected`
+    + (lockedSelected ? ` · ${lockedSelected} locked (will be skipped unless override)` : '');
+  const override = document.getElementById('lab-copy-override');
+  if (override) override.disabled = lockedSelected === 0;
+}
+function labCopySelectAll(on) {
+  document.querySelectorAll('#lab-copy-list input[type=checkbox]').forEach(cb => { cb.checked = on; });
+  _labCopyUpdateSummary();
+}
+function labCopyFilterPT() {
+  // Stage 4 ships a no-op preselect chip for now; per-style PT fetch is
+  // a Stage 5 polish (we'd need /api/lab/styles-meta returning {style:pt}).
+  showToast('Same-PT filter — destinations preselected by default', 'info');
+}
+function labCopyCancel() { document.getElementById('lab-copy-modal').classList.remove('active'); }
+async function labCopyCommit(overrideLocks) {
+  if (!_labCopyState) return;
+  const dest = Array.from(document.querySelectorAll('#lab-copy-list input[type=checkbox]:checked'))
+    .map(cb => cb.dataset.style);
+  if (!dest.length) { showToast('Pick at least one destination.', 'warning'); return; }
+  document.getElementById('lab-copy-modal').classList.remove('active');
+  try {
+    const r = await fetch('/api/lab/copy', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source: _labCopyState.sourceStyle,
+        group: _labCopyState.group,
+        destinations: dest,
+        override_locks: overrideLocks,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) { showToast(data.error || 'Copy failed', 'error'); return; }
+    const s = data.summary || {};
+    const updated = (s.updated || []).length;
+    const locked = (s.skipped_locked || []).length;
+    let msg = `Copied to ${updated} style${updated === 1 ? '' : 's'}`;
+    if (locked) msg += ` · ${locked} locked skipped`;
+    showToast(msg, 'success');
+    await labGridFetchAndRender();
+  } catch (e) {
+    showToast('Copy error: ' + e.message, 'error');
+  }
 }
 
 // ═════════ BETA: Image → NIS — Step 5 init shell ═════════
