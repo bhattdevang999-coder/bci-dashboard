@@ -1545,6 +1545,57 @@ def generate_description(brand_cfg, brand, style_num, style_name, sub_subclass, 
 
     return " ".join(parts)[:2000]
 
+_BANNED_STOCK_PHRASES = [
+    (r"\bthe modern woman\b", "customers who value quality"),
+    (r"\bthe modern man\b", "customers who value quality"),
+    (r"\bthe modern individual\b", "customers who value quality"),
+    (r"\bwomen who refuse\b", "customers who refuse"),
+    (r"\bmen who refuse\b", "customers who refuse"),
+    (r"\bwoman on the move\b", "person on the move"),
+    (r"\bman on the move\b", "person on the move"),
+]
+
+def _scrub_gender_drift(text, expected_gender):
+    """Belt-and-suspenders defense against the LLM (or rule-based fallback)
+    leaking gender-mismatched phrases into a listing description.
+
+    expected_gender: 'Male', 'Female', or '' (unknown / unisex).
+
+    1. Strips known stock phrases ("the modern woman", "women who refuse", etc.)
+       regardless of gender so descriptions don't lean on filler.
+    2. When expected_gender is set, swaps any opposite-gender pronouns or
+       descriptors that slipped past the prompt rules. We do NOT touch
+       gender words inside an item-type phrase ("women's jacket") because
+       Amazon validation expects those to match department/title.
+    """
+    if not text:
+        return text
+    out = text
+    # 1) Banned stock phrases (always scrubbed)
+    for pat, repl in _BANNED_STOCK_PHRASES:
+        out = re.sub(pat, repl, out, flags=re.IGNORECASE)
+    # 2) Cross-gender swap when we know the gender. Only flip standalone
+    # pronouns/audience nouns, not item-type phrases like "men's jacket".
+    # Avoid touching apostrophe-s collocations ("women's" / "men's") because
+    # those carry item-type meaning and Amazon's department field expects them
+    # to align with the title. Only flip standalone audience words.
+    if expected_gender == "Male":
+        out = re.sub(r"\bwomen(?!')\b", "men", out, flags=re.IGNORECASE)
+        out = re.sub(r"\bwoman(?!')\b", "man", out, flags=re.IGNORECASE)
+        out = re.sub(r"\bshe\b", "he", out)
+        out = re.sub(r"\bher\b", "his", out)
+        out = re.sub(r"\bherself\b", "himself", out)
+        out = re.sub(r"\bladies\b", "gentlemen", out, flags=re.IGNORECASE)
+    elif expected_gender == "Female":
+        out = re.sub(r"\bmen(?!')\b", "women", out, flags=re.IGNORECASE)
+        out = re.sub(r"\bman(?!')\b", "woman", out, flags=re.IGNORECASE)
+        out = re.sub(r"\bhe\b", "she", out)
+        out = re.sub(r"\bhis\b", "her", out)
+        out = re.sub(r"\bhimself\b", "herself", out)
+        out = re.sub(r"\bgentlemen\b", "ladies", out, flags=re.IGNORECASE)
+    return out
+
+
 def qa_check_content(content, brand):
     """Run QA checks on generated content. Returns list of issues."""
     issues = []
@@ -1947,6 +1998,8 @@ Where a slot says 'USE THIS', return that bullet text VERBATIM (you may format t
 - Description <=2000.
 - Backend keywords <=249 bytes, lowercase, space-sep, no commas, no brand name, no overlap with title/bullets.
 - No promotional language. No competitor brand names. No 'dress' for non-dress items.
+- GENDER DISCIPLINE: every gender-marked phrase in the description must match the title's gender. If title says "Men's" the description must say "men" / "man" / "he" — never "woman" / "women" / "she". If title says "Women's" the description uses "women" / "woman" / "she" — never "man" / "men" / "he". If gender is unknown, write the description gender-neutral ("customer", "wearer", "you") — never default to "the modern woman" or "the modern man."
+- BANNED STOCK PHRASES (never use, regardless of gender): "the modern woman", "the modern man", "the modern individual", "women who refuse", "men who refuse", "woman on the move", "man on the move".
 
 Respond in this exact JSON format (no other text, no markdown):
 {{"title": "...", "bullet_1": "...", "bullet_2": "...", "bullet_3": "...", "bullet_4": "...", "bullet_5": "...", "description": "...", "backend_keywords": "..."}}"""
@@ -3360,6 +3413,23 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
             # Bullets: file wins, AI/rule-based fills gaps; normalize headline format on every slot
             pu_bullets = (style.get("bullets_from_upload") or []) + [""] * 5
             bullets = _cr.merge_bullets(pu_bullets[:5], bullets)
+
+        # ═══ Gender-drift scrub (Pass 12.7) ═══
+        # Runs after BOTH the LLM path and the rule-based fallback so a
+        # men's listing never ships with "the modern woman" or vice versa.
+        # If the explicit gender derived from the sheet is empty, fall back
+        # to the title we just wrote: if the title says "Men's" we treat
+        # the listing as male; same for "Women's". Otherwise stay neutral.
+        _expected_g = eff_gender_gen if eff_gender_gen in ("Male", "Female") else ""
+        if not _expected_g and title:
+            _t = title.lower()
+            # Check female first — "women's" contains "men's" as substring.
+            if "women's" in _t or "women\u2019s" in _t or "womens " in _t:
+                _expected_g = "Female"
+            elif "men's" in _t or "men\u2019s" in _t or "mens " in _t or _t.startswith("mens"):
+                _expected_g = "Male"
+        description = _scrub_gender_drift(description, _expected_g)
+        bullets = [_scrub_gender_drift(b, _expected_g) for b in bullets]
 
         content_progress["current_step"] = f"Crafting 5 unique bullet points..."
         time.sleep(0.2)
