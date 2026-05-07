@@ -12300,6 +12300,78 @@ def lab_copy_to_styles():
 
 
 # ──── Bit-perfect Vendor-Central .xlsm download ──────────────────────
+@app.route("/api/lab/styles-meta", methods=["GET"])
+def lab_styles_meta():
+    """Return per-style metadata used by the Listing Card view: style_num,
+    style_name, PT, generated/missing flags. Lets the front-end group by PT
+    in the left rail, render status badges, and show 'Download <PT> only'.
+    """
+    if not lab_session.get("styles"):
+        return jsonify({"ok": True, "brand": "", "styles": [], "by_pt": {}})
+    by_pt = {}
+    out = []
+    for s in lab_session["styles"]:
+        sn  = s.get("style_num", "") or ""
+        nm  = s.get("style_name", "") or ""
+        pt  = (_resolve_pt_for_style(s) or "").upper()
+        gen = s.get("_lab_generated") or {}
+        # "ready" = at least a title is present (LLM filled it in)
+        ready = bool((gen.get("title") or "").strip())
+        # bullet-coverage gives a softer "in progress" signal
+        bullets_filled = sum(1 for i in range(1, 6) if (gen.get(f"bullet_{i}") or "").strip())
+        rec = {
+            "style_num":      sn,
+            "style_name":     nm,
+            "product_type":   pt or "UNCLASSIFIED",
+            "variant_count":  len(s.get("variants", []) or []),
+            "ready":          ready,
+            "bullets_filled": bullets_filled,
+            "has_description": bool((gen.get("description") or "").strip()),
+            "has_keywords":   bool((gen.get("backend_keywords") or "").strip()),
+        }
+        out.append(rec)
+        by_pt.setdefault(rec["product_type"], []).append(sn)
+    return jsonify({
+        "ok":      True,
+        "brand":   lab_session.get("brand", "") or "",
+        "styles":  out,
+        "by_pt":   by_pt,
+        "pts":     sorted(by_pt.keys()),
+    })
+
+
+@app.route("/api/lab/listing-card", methods=["GET"])
+def lab_listing_card():
+    """Return the six promptable fields for ONE style, ready for the Listing
+    Card view: title, bullets[1..5], description, backend_keywords. Also
+    surfaces brand/style/PT/variant info so the card header renders without
+    a second round-trip.
+    """
+    style_num = (request.args.get("style") or "").strip()
+    if not style_num:
+        return jsonify({"error": "style param required"}), 400
+    style = _lab_session_get_style(style_num)
+    if not style:
+        return jsonify({"error": f"style {style_num} not in session"}), 404
+    gen = style.get("_lab_generated") or {}
+    bullets = [(gen.get(f"bullet_{i}") or "") for i in range(1, 6)]
+    locks = (lab_session.get("locks") or {}).get(style_num, {}) or {}
+    return jsonify({
+        "ok":              True,
+        "style_num":       style_num,
+        "style_name":      style.get("style_name", "") or "",
+        "brand":           lab_session.get("brand", "") or style.get("brand", "") or "",
+        "product_type":    (_resolve_pt_for_style(style) or "").upper(),
+        "variant_count":   len(style.get("variants", []) or []),
+        "title":           gen.get("title", "") or "",
+        "bullets":         bullets,
+        "description":     gen.get("description", "") or "",
+        "backend_keywords": gen.get("backend_keywords", "") or "",
+        "locks":           locks,
+        "is_generated":    bool((gen.get("title") or "").strip()),
+    })
+
+
 @app.route("/api/lab/download-bulksheet", methods=["GET"])
 def lab_download_bulksheet():
     """Emit one bit-perfect Vendor Central .xlsm per style + zip them.
@@ -12307,6 +12379,10 @@ def lab_download_bulksheet():
     Reuses do_xlsm_surgery() which already writes the parent + child rows
     to the matching Amazon NIS template per PT — same code path Bulk Upload
     uses, so the output drops into Vendor Central without manual edits.
+
+    Optional query params:
+        pt=COAT   -> only emit styles whose resolved PT equals 'COAT'
+        style=ABC -> only emit a single style (operator card-level export)
     """
     if not lab_session.get("styles"):
         return jsonify({"error": "No data in session. Upload first."}), 400
@@ -12314,11 +12390,21 @@ def lab_download_bulksheet():
     brand_cfg = _load_brand_config_data(brand) or {}
     vendor_code = brand_cfg.get("vendor_code_full", "") or ""
 
+    pt_filter    = (request.args.get("pt") or "").strip().upper()
+    style_filter = (request.args.get("style") or "").strip()
+
     # Build per-style outputs
     outdir = UPLOAD_PRODUCTS / f"lab_bulksheets_{re.sub(r'[^\\w]','_', brand)}"
     outdir.mkdir(parents=True, exist_ok=True)
     written = []
     for s in lab_session["styles"]:
+        # Apply optional filters
+        if style_filter and (s.get("style_num", "") or "") != style_filter:
+            continue
+        if pt_filter:
+            s_pt = (_resolve_pt_for_style(s) or "").upper()
+            if s_pt != pt_filter:
+                continue
         sn = s.get("style_num", "")
         # Resolve template path for this style's PT
         pt = _resolve_style_product_type(s) or ""

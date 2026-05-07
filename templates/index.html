@@ -3463,6 +3463,408 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .htContextMenu .ht_master .htCore td {
   font-family: Calibri, sans-serif !important; font-size: 12.5px !important;
 }
+
+/* ═══════════════ Atlas Lab · Stage 5 (Listing Card view) ═══════════════ */
+
+/* Sub-module switcher (Listing Lab · Image → NIS) */
+.lab-submod-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0 18px 0; border-bottom: 1px solid #1C2D40;
+  margin-bottom: 18px;
+}
+.lab-submod-pill {
+  background: transparent; border: 1px solid #1C2D40;
+  color: #94A3B8; padding: 6px 14px; border-radius: 999px;
+  font: 11.5px ui-monospace, Consolas, monospace; letter-spacing: .04em;
+  cursor: pointer; transition: color .18s, border-color .18s, background .18s;
+}
+.lab-submod-pill:hover { color: #E2E8F0; border-color: #2A4358; }
+.lab-submod-pill.active {
+  color: #08111A; background: #5EEAD4; border-color: #5EEAD4;
+  font-weight: 600;
+}
+.lab-submod-spacer { flex: 1; }
+
+/* Brand status header line */
+.lab-brand-status {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  font: 12px ui-monospace, Consolas, monospace; color: #94A3B8;
+  padding: 10px 0;
+}
+.lab-brand-status .lab-brand-name {
+  color: #E2E8F0; font-weight: 700; letter-spacing: .02em;
+}
+.lab-brand-status .lab-brand-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: #475569;
+  display: inline-block;
+}
+.lab-brand-status .lab-brand-dot.live  { background: #10B981; box-shadow: 0 0 0 3px rgba(16,185,129,.18); }
+.lab-brand-status .lab-brand-dot.warn  { background: #F59E0B; }
+.lab-brand-status .lab-brand-dot.muted { background: #475569; }
+.lab-brand-status .lab-brand-sep { opacity: .35; }
+.lab-brand-status .lab-brand-link {
+  color: #5EEAD4; cursor: pointer; text-decoration: none; border-bottom: 1px dotted transparent;
+}
+.lab-brand-status .lab-brand-link:hover { border-bottom-color: #5EEAD4; }
+
+/* Two-pane layout: PT rail (left) · cards (right) */
+.lab-stage5-shell {
+  display: grid; grid-template-columns: 240px 1fr; gap: 28px;
+  margin-top: 14px;
+}
+.lab-rail {
+  position: sticky; top: 80px; align-self: start;
+  font: 12px ui-monospace, Consolas, monospace;
+  max-height: calc(100vh - 100px); overflow-y: auto;
+  padding-right: 6px;
+}
+.lab-rail::-webkit-scrollbar { width: 6px; }
+.lab-rail::-webkit-scrollbar-thumb { background: #1C2D40; border-radius: 3px; }
+.lab-rail-eyebrow {
+  color: #64748B; font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; padding: 4px 0 10px 0;
+}
+.lab-rail-pt {
+  padding: 6px 0 4px 0; border-top: 1px solid #13212F;
+}
+.lab-rail-pt:first-of-type { border-top: 0; }
+.lab-rail-pt-h {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; padding: 6px 0; user-select: none;
+  color: #CBD5E1;
+}
+.lab-rail-pt-h:hover { color: #5EEAD4; }
+.lab-rail-pt-name { font-weight: 600; letter-spacing: .03em; }
+.lab-rail-pt-meta { color: #64748B; font-size: 11px; }
+.lab-rail-pt-caret { color: #475569; transition: transform .18s; margin-right: 2px; }
+.lab-rail-pt.collapsed .lab-rail-pt-caret { transform: rotate(-90deg); }
+.lab-rail-pt.collapsed .lab-rail-pt-list { display: none; }
+.lab-rail-pt-list { padding: 2px 0 6px 14px; }
+.lab-rail-style {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 8px; margin: 1px 0; border-radius: 6px;
+  cursor: pointer; color: #94A3B8;
+  border-left: 2px solid transparent;
+}
+.lab-rail-style:hover { color: #E2E8F0; background: #0E1A26; }
+.lab-rail-style.active {
+  color: #5EEAD4; background: #0E1A26;
+  border-left-color: #5EEAD4;
+}
+.lab-rail-style-num { font-weight: 600; }
+.lab-rail-style-badge {
+  margin-left: auto; font-size: 10px; opacity: .9;
+}
+.lab-rail-style-badge.ready { color: #10B981; }
+.lab-rail-style-badge.warn  { color: #F59E0B; }
+.lab-rail-style-badge.muted { color: #475569; }
+.lab-rail-pt-actions {
+  margin-top: 4px; padding-left: 14px;
+}
+.lab-rail-dl {
+  display: inline-block; padding: 3px 8px;
+  font: 10.5px ui-monospace, Consolas, monospace; letter-spacing: .04em;
+  color: #5EEAD4; border: 1px solid #1C2D40; border-radius: 4px;
+  text-decoration: none; cursor: pointer; background: transparent;
+}
+.lab-rail-dl:hover { border-color: #5EEAD4; }
+
+/* Card stack */
+.lab-cards-pane { min-width: 0; }
+.lab-cards-toolbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding-bottom: 14px; margin-bottom: 14px;
+  border-bottom: 1px solid #13212F;
+}
+.lab-cards-toolbar .toolbar-spacer { flex: 1; }
+.lab-tb-btn {
+  background: transparent; border: 1px solid #1C2D40;
+  color: #CBD5E1; padding: 6px 12px; border-radius: 6px;
+  font: 11.5px ui-monospace, Consolas, monospace; letter-spacing: .03em;
+  cursor: pointer; transition: border-color .18s, color .18s;
+}
+.lab-tb-btn:hover { border-color: #5EEAD4; color: #5EEAD4; }
+.lab-tb-btn.primary {
+  background: linear-gradient(180deg, #14B8A6 0%, #0D9488 100%);
+  border-color: #14B8A6; color: #08111A; font-weight: 700;
+}
+.lab-tb-btn.primary:hover { color: #08111A; }
+
+/* PT divider between style groups in card stack */
+.lab-pt-divider {
+  display: flex; align-items: center; gap: 12px;
+  font: 11px ui-monospace, Consolas, monospace; letter-spacing: .14em;
+  text-transform: uppercase; color: #64748B;
+  padding: 22px 0 10px 0;
+}
+.lab-pt-divider:first-of-type { padding-top: 4px; }
+.lab-pt-divider .line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, #1C2D40, transparent);
+}
+.lab-pt-divider .pt-meta { color: #475569; font-size: 10.5px; }
+
+/* Listing card */
+.lab-listing-card {
+  background: #0E1A26; border: 1px solid #13212F; border-radius: 10px;
+  padding: 22px 26px; margin-bottom: 16px;
+  transition: border-color .18s;
+}
+.lab-listing-card:hover { border-color: #1C2D40; }
+.lab-listing-card.active { border-color: #2A4358; }
+.lab-listing-card-h {
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.lab-listing-card-style {
+  font: 700 14px Trebuchet MS, sans-serif; color: #E2E8F0; letter-spacing: .02em;
+}
+.lab-listing-card-name {
+  color: #94A3B8; font: 13px Calibri, sans-serif;
+}
+.lab-listing-card-pt {
+  font: 10.5px ui-monospace, Consolas, monospace; color: #5EEAD4;
+  border: 1px solid #1C2D40; padding: 2px 8px; border-radius: 4px;
+  letter-spacing: .08em;
+}
+.lab-listing-card-meta { color: #64748B; font-size: 11.5px; margin-left: auto; }
+.lab-listing-card-actions { display: flex; gap: 6px; }
+.lab-card-mini {
+  background: transparent; border: 1px solid #1C2D40; color: #94A3B8;
+  padding: 4px 9px; border-radius: 5px;
+  font: 11px ui-monospace, Consolas, monospace; letter-spacing: .03em;
+  cursor: pointer;
+}
+.lab-card-mini:hover { border-color: #5EEAD4; color: #5EEAD4; }
+
+/* Promptable field block inside the card */
+.lab-field {
+  padding: 10px 0; border-top: 1px solid #13212F;
+}
+.lab-field:first-of-type { border-top: 0; padding-top: 4px; }
+.lab-field-label {
+  display: flex; align-items: center; gap: 8px;
+  font: 10.5px ui-monospace, Consolas, monospace; letter-spacing: .12em;
+  text-transform: uppercase; color: #64748B;
+  margin-bottom: 4px;
+}
+.lab-field-len { margin-left: auto; color: #475569; font-size: 10.5px; }
+.lab-field-len.over { color: #F87171; }
+.lab-field-locked {
+  color: #A78BFA; font-size: 10px;
+}
+.lab-field-text {
+  position: relative;
+  font: 13.5px Calibri, sans-serif; color: #E2E8F0; line-height: 1.55;
+  cursor: text; padding: 4px 0; min-height: 18px;
+  border-bottom: 1px solid transparent;
+  transition: border-color .25s, background .18s;
+}
+.lab-field-text.empty {
+  color: #64748B; font-style: italic;
+}
+.lab-field-text.promptable:hover {
+  border-bottom-color: rgba(94, 234, 212, .35);
+}
+.lab-field-text.promptable:hover .lab-train-pill {
+  opacity: 1; transform: translateY(0);
+}
+.lab-field-text.regenerating {
+  background: linear-gradient(90deg, transparent 0%, rgba(94,234,212,.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: labShimmer 1.4s linear infinite;
+}
+@keyframes labShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.lab-field-text.flash-success {
+  background: rgba(16,185,129,.10);
+  transition: background .35s;
+}
+.lab-field-text.title-text { font: 600 16px Calibri, sans-serif; color: #F1F5F9; line-height: 1.4; }
+.lab-field-bullets { list-style: none; padding: 0; margin: 0; }
+.lab-field-bullets li {
+  position: relative; padding: 6px 0 6px 18px;
+  border-bottom: 1px solid #13212F;
+}
+.lab-field-bullets li:last-of-type { border-bottom: 0; }
+.lab-field-bullets li::before {
+  content: "•"; position: absolute; left: 4px; top: 6px; color: #5EEAD4;
+}
+.lab-field-bullets li.empty { color: #64748B; font-style: italic; }
+
+/* Train pill (hover affordance) */
+.lab-train-pill {
+  position: absolute; right: 0; top: 50%; transform: translateY(2px);
+  background: #13212F; border: 1px solid #2A4358; color: #5EEAD4;
+  padding: 2px 8px; border-radius: 999px;
+  font: 10px ui-monospace, Consolas, monospace; letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: 0; transition: opacity .18s, transform .18s;
+  cursor: pointer; user-select: none;
+}
+.lab-train-pill:hover { background: #5EEAD4; color: #08111A; border-color: #5EEAD4; }
+
+/* Train popover (anchored to a field) */
+.lab-train-pop {
+  position: absolute; z-index: 80;
+  background: #0E1A26; border: 1px solid #2A4358; border-radius: 10px;
+  padding: 14px; min-width: 360px; max-width: 460px;
+  box-shadow: 0 10px 32px rgba(0,0,0,.45);
+  font: 12px Calibri, sans-serif; color: #E2E8F0;
+}
+.lab-train-pop-h {
+  font: 11px ui-monospace, Consolas, monospace; letter-spacing: .1em;
+  text-transform: uppercase; color: #5EEAD4; margin-bottom: 10px;
+}
+.lab-train-pop-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+}
+.lab-train-pop-chip {
+  background: transparent; border: 1px solid #1C2D40; color: #CBD5E1;
+  padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  font: 11px ui-monospace, Consolas, monospace;
+}
+.lab-train-pop-chip:hover { border-color: #5EEAD4; color: #5EEAD4; }
+.lab-train-pop textarea {
+  width: 100%; box-sizing: border-box;
+  background: #08111A; border: 1px solid #1C2D40; color: #E2E8F0;
+  border-radius: 6px; padding: 8px 10px;
+  font: 12.5px Calibri, sans-serif; resize: vertical; min-height: 56px;
+}
+.lab-train-pop textarea:focus { outline: 1px solid #5EEAD4; }
+.lab-train-pop-actions {
+  display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px;
+}
+.lab-train-pop-cancel {
+  background: transparent; border: 1px solid #1C2D40; color: #94A3B8;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  font: 11px ui-monospace, Consolas, monospace;
+}
+.lab-train-pop-apply {
+  background: linear-gradient(180deg, #14B8A6 0%, #0D9488 100%);
+  border: 1px solid #14B8A6; color: #08111A; font-weight: 700;
+  padding: 5px 14px; border-radius: 6px; cursor: pointer;
+  font: 11px ui-monospace, Consolas, monospace; letter-spacing: .04em;
+}
+
+/* Right drawer (Voice / Rules / History) */
+.lab-drawer-overlay {
+  position: fixed; inset: 0; background: rgba(8,17,26,.55);
+  z-index: 90; opacity: 0; pointer-events: none;
+  transition: opacity .22s;
+}
+.lab-drawer-overlay.open { opacity: 1; pointer-events: auto; }
+.lab-drawer {
+  position: fixed; top: 0; right: 0; height: 100vh;
+  width: 460px; max-width: 92vw;
+  background: #0E1A26; border-left: 1px solid #1C2D40;
+  box-shadow: -10px 0 32px rgba(0,0,0,.45);
+  z-index: 91; transform: translateX(100%);
+  transition: transform .26s cubic-bezier(.2,.7,.2,1);
+  display: flex; flex-direction: column;
+}
+.lab-drawer.open { transform: translateX(0); }
+.lab-drawer-h {
+  padding: 18px 22px; border-bottom: 1px solid #13212F;
+  display: flex; align-items: center; gap: 10px;
+}
+.lab-drawer-tabs {
+  display: flex; gap: 4px;
+}
+.lab-drawer-tab {
+  background: transparent; border: 1px solid #1C2D40; color: #94A3B8;
+  padding: 5px 11px; border-radius: 6px; cursor: pointer;
+  font: 11px ui-monospace, Consolas, monospace; letter-spacing: .04em;
+}
+.lab-drawer-tab:hover { color: #E2E8F0; }
+.lab-drawer-tab.active { color: #08111A; background: #5EEAD4; border-color: #5EEAD4; font-weight: 700; }
+.lab-drawer-close {
+  margin-left: auto; background: transparent; border: 0; color: #64748B;
+  font-size: 18px; cursor: pointer; padding: 0 4px;
+}
+.lab-drawer-close:hover { color: #E2E8F0; }
+.lab-drawer-body {
+  padding: 18px 22px; overflow-y: auto; flex: 1;
+  font: 13px Calibri, sans-serif; color: #CBD5E1;
+}
+.lab-drawer-body textarea {
+  width: 100%; box-sizing: border-box;
+  background: #08111A; border: 1px solid #1C2D40; color: #E2E8F0;
+  border-radius: 6px; padding: 10px 12px;
+  font: 13px Calibri, sans-serif; resize: vertical; min-height: 110px;
+}
+.lab-drawer-body textarea:focus { outline: 1px solid #5EEAD4; }
+.lab-drawer-section-h {
+  font: 11px ui-monospace, Consolas, monospace; letter-spacing: .12em;
+  text-transform: uppercase; color: #64748B;
+  margin: 16px 0 6px 0;
+}
+.lab-drawer-rule {
+  padding: 6px 0; border-bottom: 1px solid #13212F;
+  font: 12.5px Calibri, sans-serif;
+}
+.lab-drawer-session {
+  padding: 8px 10px; margin-bottom: 6px;
+  background: #08111A; border: 1px solid #1C2D40; border-radius: 6px;
+  cursor: pointer;
+}
+.lab-drawer-session:hover { border-color: #5EEAD4; }
+.lab-drawer-session-h {
+  display: flex; justify-content: space-between; align-items: center;
+  font: 12px ui-monospace, Consolas, monospace; color: #E2E8F0;
+}
+.lab-drawer-session-meta { color: #64748B; font-size: 11px; margin-top: 2px; }
+
+/* Quieter auto-gen banner replacing the overlay */
+.lab-genbanner {
+  display: none;
+  position: sticky; top: 0; z-index: 50;
+  background: #08111A; border: 1px solid #1C2D40; border-left: 3px solid #5EEAD4;
+  padding: 10px 16px; border-radius: 6px;
+  font: 12px ui-monospace, Consolas, monospace; color: #CBD5E1;
+  margin-bottom: 14px;
+  align-items: center; gap: 12px;
+}
+.lab-genbanner.on { display: flex; }
+.lab-genbanner-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #5EEAD4; box-shadow: 0 0 0 0 rgba(94,234,212,.6);
+  animation: labGenPulse 1.6s infinite;
+}
+@keyframes labGenPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(94,234,212,.55); }
+  70%  { box-shadow: 0 0 0 8px rgba(94,234,212,0); }
+  100% { box-shadow: 0 0 0 0 rgba(94,234,212,0); }
+}
+.lab-genbanner-counter { color: #5EEAD4; font-weight: 700; }
+.lab-genbanner-style { color: #94A3B8; }
+.lab-genbanner-spacer { flex: 1; }
+.lab-genbanner-toggle {
+  background: transparent; border: 1px solid #1C2D40; color: #94A3B8;
+  padding: 3px 9px; border-radius: 4px; cursor: pointer;
+  font: 10.5px ui-monospace, Consolas, monospace;
+}
+.lab-genbanner-toggle:hover { border-color: #5EEAD4; color: #5EEAD4; }
+
+/* Empty state */
+.lab-empty {
+  text-align: center; padding: 60px 20px;
+  font: 13px Calibri, sans-serif; color: #64748B;
+}
+.lab-empty-h {
+  font: 700 16px Trebuchet MS, sans-serif; color: #94A3B8;
+  letter-spacing: .03em; margin-bottom: 8px;
+}
+
+/* Hide-when-card-mode for old grid container */
+.lab-mode-cards #lab-grid-controls-row,
+.lab-mode-cards #lab-grid-container,
+.lab-mode-cards #lab-grid-footer { display: none !important; }
+.lab-mode-grid #lab-stage5-shell { display: none !important; }
+.lab-mode-grid .lab-cards-toolbar-only-cards { display: none !important; }
+
 </style>
 </head>
 <body>
@@ -5803,10 +6205,64 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
 
     <!-- Section 2: Grid editor (hidden until upload) -->
-    <div id="lab-grid-editor" style="display:none; margin-top:32px;">
+    <div id="lab-grid-editor" class="lab-mode-cards" style="display:none; margin-top:32px;">
 
-      <!-- Brand Voice editor (Stage 3) -->
-      <div class="lab-voice-card">
+      <!-- Stage 5 — sub-module switcher (Listing Lab · Image → NIS) -->
+      <div class="lab-submod-row" id="lab-submod-row">
+        <button class="lab-submod-pill active" id="lab-submod-grid" onclick="labSwitchSubmod('grid')">// LISTING LAB</button>
+        <button class="lab-submod-pill" id="lab-submod-image" onclick="labSwitchSubmod('image')">// IMAGE → NIS</button>
+        <div class="lab-submod-spacer"></div>
+        <button class="lab-tb-btn" onclick="labDrawerOpen('voice')" title="Brand Voice instructions">✎ Voice</button>
+        <button class="lab-tb-btn" onclick="labDrawerOpen('rules')" title="What Atlas applies on every Generate">§ Rules</button>
+        <button class="lab-tb-btn" onclick="labDrawerOpen('history')" title="Past Lab sessions">⧖ History</button>
+      </div>
+
+      <!-- Stage 5 — brand status header line -->
+      <div class="lab-brand-status" id="lab-brand-status">
+        <span class="lab-brand-dot muted" id="lab-brand-dot"></span>
+        <span class="lab-brand-name" id="lab-brand-status-name">No brand</span>
+        <span class="lab-brand-sep">│</span>
+        <span id="lab-brand-status-voice">Voice not set</span>
+        <span class="lab-brand-sep">│</span>
+        <span id="lab-brand-status-counts">0 styles</span>
+        <span class="lab-brand-sep">│</span>
+        <span id="lab-brand-status-ready">0 ready</span>
+      </div>
+
+      <!-- Stage 5 — quieter auto-gen banner (replaces overlay when card view is active) -->
+      <div class="lab-genbanner" id="lab-genbanner">
+        <span class="lab-genbanner-dot"></span>
+        <span class="lab-genbanner-counter" id="lab-genbanner-counter">Atlas is writing</span>
+        <span class="lab-genbanner-style" id="lab-genbanner-style">Preparing…</span>
+        <span class="lab-genbanner-spacer"></span>
+        <span style="color:#64748B;font-size:11px;" id="lab-genbanner-elapsed">—</span>
+        <button class="lab-genbanner-toggle" onclick="labGenBannerHide()" title="Hide — generation continues in the background">Hide</button>
+      </div>
+
+      <!-- ============= Stage 5 — Listing Card view (default) ============= -->
+      <div id="lab-stage5-shell" class="lab-stage5-shell">
+
+        <!-- Left rail: PT-grouped style list -->
+        <aside class="lab-rail" id="lab-rail">
+          <div class="lab-rail-eyebrow">// STYLES BY PRODUCT TYPE</div>
+          <div id="lab-rail-body"></div>
+        </aside>
+
+        <!-- Right pane: card stack (one per style) -->
+        <section class="lab-cards-pane">
+          <div class="lab-cards-toolbar">
+            <button class="lab-tb-btn" onclick="labGenerateAll()" title="Regenerate every style — voice + rules applied">✨ Generate all</button>
+            <button class="lab-tb-btn" onclick="labCardsToggleEditMode()" id="lab-mode-toggle" title="Switch to the spreadsheet editor">⚙ Edit fields (grid)</button>
+            <div class="toolbar-spacer"></div>
+            <a class="lab-tb-btn primary" href="/api/lab/download-bulksheet" download id="lab-cards-download" title="Bit-perfect Vendor Central .xlsm bundle — every PT, every style">⇩ Download all (.xlsm)</a>
+          </div>
+          <div id="lab-cards-stack"></div>
+        </section>
+
+      </div><!-- /lab-stage5-shell -->
+
+      <!-- Brand Voice editor (legacy in-page — hidden in card view via .lab-mode-cards) -->
+      <div class="lab-voice-card" style="display:none;">
         <div class="lab-voice-h">
           <span class="lab-voice-eyebrow">// BRAND VOICE</span>
           <span class="lab-voice-meta" id="lab-voice-meta">Atlas applies these instructions on every Generate</span>
@@ -5816,13 +6272,13 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
           placeholder="e.g. Always lead Bullet 1 with material. Never use 'luxurious'. Use 'tailored' over 'fitted'. Keep titles under 100 chars even though Amazon allows 120."></textarea>
       </div>
 
-      <div class="atlas-sources-h" style="margin-top:24px;">
+      <div class="atlas-sources-h" id="lab-grid-controls-row" style="margin-top:24px;">
         <div class="atlas-sources-eyebrow">// EDITING</div>
         <div class="atlas-sources-meta" id="lab-grid-edit-meta">—</div>
       </div>
 
       <!-- Style + group switcher -->
-      <div class="lab-grid-controls">
+      <div class="lab-grid-controls" id="lab-grid-controls-bar">
         <div class="lab-grid-control">
           <label class="lab-grid-label">Style</label>
           <select id="lab-grid-style-select" class="lab-grid-select"></select>
@@ -5854,14 +6310,61 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       <!-- Validation footer -->
       <div class="lab-grid-footer" id="lab-grid-footer">Awaiting data…</div>
 
-      <!-- Brand Rules panel (Stage 3 — read-only) -->
-      <div class="lab-rules-card" id="lab-rules-card">
+      <!-- Brand Rules panel (Stage 3 — read-only; legacy in-page, hidden in card mode) -->
+      <div class="lab-rules-card" id="lab-rules-card" style="display:none;">
         <div class="lab-rules-h" onclick="labRulesToggle()">
           <span class="lab-rules-eyebrow">// BRAND RULES</span>
           <span class="lab-rules-meta" id="lab-rules-meta">What Atlas applies on every Generate · read-only in Stage 3</span>
           <span class="lab-rules-caret" id="lab-rules-caret">▾</span>
         </div>
         <div class="lab-rules-body" id="lab-rules-body" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- ============= Stage 5 — right drawer (Voice / Rules / History) ============= -->
+    <div class="lab-drawer-overlay" id="lab-drawer-overlay" onclick="labDrawerClose()"></div>
+    <div class="lab-drawer" id="lab-drawer" role="dialog" aria-modal="true">
+      <div class="lab-drawer-h">
+        <div class="lab-drawer-tabs">
+          <button class="lab-drawer-tab active" data-tab="voice"   onclick="labDrawerSwitch('voice')">Voice</button>
+          <button class="lab-drawer-tab"        data-tab="rules"   onclick="labDrawerSwitch('rules')">Rules</button>
+          <button class="lab-drawer-tab"        data-tab="history" onclick="labDrawerSwitch('history')">History</button>
+        </div>
+        <button class="lab-drawer-close" onclick="labDrawerClose()" aria-label="Close">×</button>
+      </div>
+      <div class="lab-drawer-body">
+        <!-- Voice tab -->
+        <div class="lab-drawer-pane" data-pane="voice">
+          <div class="lab-drawer-section-h">// BRAND VOICE</div>
+          <div style="color:#64748B;font-size:11.5px;margin-bottom:10px;">Atlas applies this on every Generate. Persists per brand.</div>
+          <textarea id="lab-drawer-voice-input" rows="6" placeholder="e.g. Lead bullet 1 with material. Use 'tailored' over 'fitted'. Keep titles under 100 chars even though Amazon allows 120."></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+            <button class="lab-tb-btn primary" onclick="labDrawerVoiceSave()">Save voice →</button>
+          </div>
+          <div class="lab-drawer-section-h" style="margin-top:22px;">// LAST SAVED</div>
+          <div id="lab-drawer-voice-meta" style="color:#64748B;font-size:11.5px;">—</div>
+        </div>
+        <!-- Rules tab -->
+        <div class="lab-drawer-pane" data-pane="rules" style="display:none;">
+          <div class="lab-drawer-section-h">// WHAT ATLAS APPLIES ON EVERY GENERATE</div>
+          <div id="lab-drawer-rules-list" style="color:#94A3B8;font-size:12px;">Loading rules…</div>
+        </div>
+        <!-- History tab -->
+        <div class="lab-drawer-pane" data-pane="history" style="display:none;">
+          <div class="lab-drawer-section-h">// PAST LAB SESSIONS</div>
+          <div id="lab-drawer-history-list">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============= Stage 5 — Train popover (anchored, dynamically positioned) ============= -->
+    <div class="lab-train-pop" id="lab-train-pop" style="display:none;">
+      <div class="lab-train-pop-h" id="lab-train-pop-h">// TRAIN — TITLE</div>
+      <div class="lab-train-pop-chips" id="lab-train-pop-chips"></div>
+      <textarea id="lab-train-pop-input" placeholder="Or write your own instruction — e.g. drop the brand from this bullet."></textarea>
+      <div class="lab-train-pop-actions">
+        <button class="lab-train-pop-cancel" onclick="labTrainPopClose()">Cancel</button>
+        <button class="lab-train-pop-apply" onclick="labTrainPopApply()">Apply →</button>
       </div>
     </div>
 
@@ -6064,13 +6567,15 @@ async function labGridUpload(file) {
     await labLoadVoiceAndRules();
     await labLoadPastSessions();
 
+    // Stage 5 — render listing-card view as the default homepage
+    await labStage5Refresh();
+
     // ═══ Stage 5 (early ship) — auto-Generate on first upload ═══
-    // Backend kicks off generation when this is a brand-new brand. Mirror
-    // the same overlay we use for explicit ‘Generate all’ so the operator
-    // sees one consistent progress UX.
     if (data.auto_gen_started) {
-      showToast('First upload for this brand — Atlas is generating content now.', 'info');
-      _labGenAttachOverlayToRunningJob();
+      // Quieter banner instead of full overlay; cards animate in as styles finish
+      labGenBannerShow('First upload — Atlas is writing your listings');
+      _labGenAttachOverlayToRunningJob();   // keeps legacy overlay path alive for non-card mode
+      _labStage5StartGenPoll();
     }
   } catch (e) {
     document.getElementById('lab-grid-state').textContent = 'Upload error';
@@ -6482,6 +6987,7 @@ async function labLoadSession(filename) {
     await labGridReloadGroupList();
     await labGridFetchAndRender();
     await labLoadVoiceAndRules();
+    if (typeof labStage5Refresh === 'function') await labStage5Refresh();
   } catch (e) {
     showToast('Load error: ' + e.message, 'error');
   }
@@ -6555,6 +7061,7 @@ function _labGenAttachOverlayToRunningJob() {
         showToast(`Generated ${pg.completed} of ${pg.total} styles`, 'success');
         await labGridReloadGroupList();
         await labGridFetchAndRender();
+        if (typeof labStage5Refresh === 'function') await labStage5Refresh();
       }
     } catch (e) { /* keep polling */ }
   }, 1000);
@@ -6627,6 +7134,7 @@ async function labGenerate(payload) {
         // Refresh grid (LLM-generated copy now lives under _lab_generated)
         await labGridReloadGroupList();
         await labGridFetchAndRender();
+        if (typeof labStage5Refresh === 'function') await labStage5Refresh();
       }
     } catch (e) { /* keep polling */ }
   }, 1000);
@@ -6830,6 +7338,527 @@ function labCopyFilterPT() {
   showToast('Same-PT filter — destinations preselected by default', 'info');
 }
 function labCopyCancel() { document.getElementById('lab-copy-modal').classList.remove('active'); }
+// ══════════════════════════════ STAGE 5 ══════════════════════════════
+// Listing-Card view + PT-grouped left rail + promptable-cell popover.
+// The Stage-2 “spreadsheet editor” underneath is preserved — reachable via
+// the toolbar “⚙ Edit fields (grid)” toggle.
+//
+// Backend contract:
+//   /api/lab/styles-meta       -> {brand, styles:[...], by_pt, pts}
+//   /api/lab/listing-card?style=X -> {title, bullets[5], description, backend_keywords, locks, ...}
+//   /api/lab/regen-cell        -> already exists; we POST {style, key, feedback?}
+//   /api/lab/download-bulksheet?pt=COAT  -> Stage 5 PT-scoped download
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const labStage5State = {
+  meta: null,            // /api/lab/styles-meta payload
+  cards: {},             // {style_num: card payload}
+  collapsedPT: new Set(),// PTs the operator has collapsed in the rail
+  trainTarget: null,     // {style, key, fieldEl} -- active popover target
+  genPollTimer: null,    // banner ticker
+  genStartedAt: null,
+  cardMode: true,        // toggled by labCardsToggleEditMode()
+};
+
+const _LAB_TRAIN_CHIPS = {
+  title: ['Shorter', 'Punchier', 'More technical', 'Less brand-heavy', 'More benefit-focused', 'Lead with material'],
+  bullet_1: ['Shorter', 'Punchier', 'Lead with material', 'More benefit-focused', 'Drop the brand'],
+  bullet_2: ['Shorter', 'Punchier', 'More technical', 'More benefit-focused'],
+  bullet_3: ['Shorter', 'Punchier', 'More technical', 'More benefit-focused'],
+  bullet_4: ['Shorter', 'Punchier', 'More technical', 'More benefit-focused'],
+  bullet_5: ['Shorter', 'Punchier', 'More technical', 'More benefit-focused'],
+  description: ['Shorter', 'More editorial', 'More technical', 'Less brand-heavy', 'More benefit-focused'],
+  backend_keywords: ['More variants', 'Less repetitive', 'Drop trademark terms'],
+};
+
+// ===== Listing-Card refresh (called after upload, generate, regen) =====
+async function labStage5Refresh() {
+  try {
+    const meta = await (await fetch('/api/lab/styles-meta')).json();
+    if (!meta || !meta.ok) return;
+    labStage5State.meta = meta;
+    // Fetch every card payload in parallel — these are tiny JSON blobs.
+    const cards = await Promise.all((meta.styles || []).map(s =>
+      fetch('/api/lab/listing-card?style=' + encodeURIComponent(s.style_num))
+        .then(r => r.json()).catch(() => null)
+    ));
+    labStage5State.cards = {};
+    cards.forEach(c => { if (c && c.ok) labStage5State.cards[c.style_num] = c; });
+    labStage5RenderRail();
+    labStage5RenderCards();
+    labStage5RenderBrandStatus();
+  } catch (e) { console.warn('[lab stage5] refresh failed', e); }
+}
+
+function labStage5RenderBrandStatus() {
+  const m = labStage5State.meta || {};
+  const styles = m.styles || [];
+  const ready  = styles.filter(s => s.ready).length;
+  const total  = styles.length;
+  const dot    = document.getElementById('lab-brand-dot');
+  const nm     = document.getElementById('lab-brand-status-name');
+  const voice  = document.getElementById('lab-brand-status-voice');
+  const counts = document.getElementById('lab-brand-status-counts');
+  const rd     = document.getElementById('lab-brand-status-ready');
+  if (nm) nm.textContent = m.brand || 'No brand';
+  if (dot) {
+    dot.classList.remove('live','warn','muted');
+    dot.classList.add(total === 0 ? 'muted' : (ready === total ? 'live' : 'warn'));
+  }
+  if (counts) counts.textContent = total + ' style' + (total === 1 ? '' : 's');
+  if (rd) rd.textContent = ready + ' ready';
+  // Voice presence — read off the legacy textarea (already populated by labLoadVoiceAndRules)
+  const v = (document.getElementById('lab-voice-input')?.value || '').trim();
+  if (voice) voice.textContent = v ? 'Voice saved' : 'Voice not set';
+}
+
+function _esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function labStage5RenderRail() {
+  const body = document.getElementById('lab-rail-body');
+  if (!body) return;
+  const m = labStage5State.meta || {};
+  const styles = m.styles || [];
+  if (!styles.length) {
+    body.innerHTML = '<div style="color:#475569;font-size:11.5px;padding:8px 0;">Upload a sheet to populate.</div>';
+    return;
+  }
+  const pts = m.pts || [];
+  const html = pts.map(pt => {
+    const list = (m.by_pt[pt] || []).map(num => {
+      const s = styles.find(x => x.style_num === num) || {};
+      const badge = s.ready
+        ? '<span class="lab-rail-style-badge ready" title="Ready">✓</span>'
+        : (s.bullets_filled
+            ? '<span class="lab-rail-style-badge warn" title="In progress">⚠</span>'
+            : '<span class="lab-rail-style-badge muted" title="Not generated">✤</span>');
+      const active = (labGridState.currentStyle === num) ? ' active' : '';
+      return `<div class="lab-rail-style${active}" data-style="${_esc(num)}" onclick="labStage5SelectStyle('${_esc(num)}')">
+        <span class="lab-rail-style-num">${_esc(num)}</span>
+        ${badge}
+      </div>`;
+    }).join('');
+    const collapsed = labStage5State.collapsedPT.has(pt) ? ' collapsed' : '';
+    const ptCount   = (m.by_pt[pt] || []).length;
+    return `<div class="lab-rail-pt${collapsed}" data-pt="${_esc(pt)}">
+      <div class="lab-rail-pt-h" onclick="labStage5TogglePT('${_esc(pt)}')">
+        <span><span class="lab-rail-pt-caret">▾</span> <span class="lab-rail-pt-name">${_esc(pt)}</span></span>
+        <span class="lab-rail-pt-meta">${ptCount}</span>
+      </div>
+      <div class="lab-rail-pt-list">
+        ${list}
+        <div class="lab-rail-pt-actions">
+          <a class="lab-rail-dl" href="/api/lab/download-bulksheet?pt=${encodeURIComponent(pt)}" download title="Bit-perfect Vendor Central .xlsm — ${_esc(pt)} only">⇩ ${_esc(pt)} only</a>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  body.innerHTML = html;
+}
+
+function labStage5TogglePT(pt) {
+  if (labStage5State.collapsedPT.has(pt)) labStage5State.collapsedPT.delete(pt);
+  else labStage5State.collapsedPT.add(pt);
+  labStage5RenderRail();
+}
+
+function labStage5SelectStyle(num) {
+  labGridState.currentStyle = num;
+  // Sync legacy grid select so the spreadsheet view is ready when toggled
+  const ss = document.getElementById('lab-grid-style-select');
+  if (ss) ss.value = num;
+  labStage5RenderRail();
+  // Smooth-scroll to the card
+  const el = document.querySelector('.lab-listing-card[data-style="' + CSS.escape(num) + '"]');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Also kick the legacy grid — cheap and keeps mode-toggle instant
+  if (typeof labGridReloadGroupList === 'function') labGridReloadGroupList();
+  if (typeof labGridFetchAndRender === 'function') labGridFetchAndRender();
+}
+
+function labStage5RenderCards() {
+  const stack = document.getElementById('lab-cards-stack');
+  if (!stack) return;
+  const m = labStage5State.meta || {};
+  const styles = m.styles || [];
+  if (!styles.length) {
+    stack.innerHTML = '<div class="lab-empty"><div class="lab-empty-h">No styles loaded</div>Upload a sheet to begin.</div>';
+    return;
+  }
+  const pts = m.pts || [];
+  const parts = [];
+  pts.forEach(pt => {
+    parts.push(`<div class="lab-pt-divider"><span>${_esc(pt)}</span><span class="line"></span><span class="pt-meta">${(m.by_pt[pt]||[]).length} styles</span></div>`);
+    (m.by_pt[pt] || []).forEach(num => {
+      const c = labStage5State.cards[num];
+      if (c) parts.push(_labStage5CardHtml(c));
+    });
+  });
+  stack.innerHTML = parts.join('');
+}
+
+function _labStage5CardHtml(c) {
+  const empty = !(c.is_generated);
+  const fields = [];
+  // Title (full width, larger type)
+  fields.push(_labFieldHtml({
+    style: c.style_num, key: 'title', label: 'TITLE',
+    text: c.title, locked: !!(c.locks && c.locks.title),
+    cls: 'title-text', maxLen: 200,
+  }));
+  // Bullets 1-5 (one block, rendered as a list with per-bullet promptability)
+  fields.push(_labBulletsHtml(c));
+  // Description
+  fields.push(_labFieldHtml({
+    style: c.style_num, key: 'description', label: 'DESCRIPTION',
+    text: c.description, locked: !!(c.locks && c.locks.description),
+    maxLen: 2000,
+  }));
+  // Backend keywords
+  fields.push(_labFieldHtml({
+    style: c.style_num, key: 'backend_keywords', label: 'BACKEND KEYWORDS',
+    text: c.backend_keywords, locked: !!(c.locks && c.locks.backend_keywords),
+    maxLen: 250,
+  }));
+
+  const meta = `${c.variant_count || 0} variants${empty ? ' · not generated' : ''}`;
+  return `<div class="lab-listing-card" data-style="${_esc(c.style_num)}">
+    <div class="lab-listing-card-h">
+      <span class="lab-listing-card-style">${_esc(c.style_num)}</span>
+      <span class="lab-listing-card-name">${_esc(c.style_name || '')}</span>
+      <span class="lab-listing-card-pt">${_esc(c.product_type || '')}</span>
+      <span class="lab-listing-card-meta">${meta}</span>
+      <div class="lab-listing-card-actions">
+        <button class="lab-card-mini" onclick="labStage5RegenStyle('${_esc(c.style_num)}')" title="Regenerate this style">⚡ Regen</button>
+        <a class="lab-card-mini" href="/api/lab/download-bulksheet?style=${encodeURIComponent(c.style_num)}" download title="Download bit-perfect .xlsm for this style">⇩ .xlsm</a>
+        <button class="lab-card-mini" onclick="labStage5OpenInGrid('${_esc(c.style_num)}')" title="Open in spreadsheet editor">⚙ Edit fields</button>
+      </div>
+    </div>
+    ${fields.join('')}
+  </div>`;
+}
+
+function _labFieldHtml(o) {
+  const len = (o.text || '').length;
+  const over = (o.maxLen && len > o.maxLen);
+  const promptCls = o.locked ? '' : ' promptable';
+  const empty = !(o.text || '').trim();
+  const lockChip = o.locked ? '<span class="lab-field-locked">🔒 locked</span>' : '';
+  const lenLabel = o.maxLen
+    ? `<span class="lab-field-len${over?' over':''}">${len}/${o.maxLen}</span>`
+    : `<span class="lab-field-len">${len}</span>`;
+  const text = empty ? 'Not generated yet — hover to train' : _esc(o.text);
+  const trainPill = o.locked ? '' :
+    `<span class="lab-train-pill" onclick="event.stopPropagation();labTrainPopOpen(this,'${_esc(o.style)}','${_esc(o.key)}')">Train</span>`;
+  return `<div class="lab-field">
+    <div class="lab-field-label"><span>${_esc(o.label)}</span>${lockChip}${lenLabel}</div>
+    <div class="lab-field-text${promptCls}${empty?' empty':''}${o.cls?' '+o.cls:''}"
+         data-style="${_esc(o.style)}" data-key="${_esc(o.key)}"
+         onclick="labTrainPopOpen(this,'${_esc(o.style)}','${_esc(o.key)}')">
+      ${text}${trainPill}
+    </div>
+  </div>`;
+}
+
+function _labBulletsHtml(c) {
+  const items = (c.bullets || []).map((b, i) => {
+    const key = 'bullet_' + (i + 1);
+    const locked = !!(c.locks && c.locks[key]);
+    const empty = !(b || '').trim();
+    const promptCls = locked ? '' : ' promptable';
+    const len = (b || '').length;
+    const lenLabel = `<span class="lab-field-len${len>500?' over':''}">${len}/500</span>`;
+    const lockChip = locked ? '<span class="lab-field-locked">🔒</span>' : '';
+    const trainPill = locked ? '' :
+      `<span class="lab-train-pill" onclick="event.stopPropagation();labTrainPopOpen(this,'${_esc(c.style_num)}','${_esc(key)}')">Train</span>`;
+    const text = empty ? 'Bullet ' + (i + 1) + ' — not generated' : _esc(b);
+    return `<li class="${empty?'empty':''}">
+      <div class="lab-field-text${promptCls}${empty?' empty':''}"
+           data-style="${_esc(c.style_num)}" data-key="${_esc(key)}"
+           onclick="labTrainPopOpen(this,'${_esc(c.style_num)}','${_esc(key)}')">
+        ${text}${trainPill}
+      </div>
+      <div style="display:flex;justify-content:flex-end;">${lockChip}${lenLabel}</div>
+    </li>`;
+  }).join('');
+  return `<div class="lab-field">
+    <div class="lab-field-label"><span>BULLETS</span><span class="lab-field-len">5 lines</span></div>
+    <ul class="lab-field-bullets">${items}</ul>
+  </div>`;
+}
+
+// ===== Train popover (anchored under the field) =====
+function labTrainPopOpen(anchorEl, style, key) {
+  // anchorEl can be the .lab-field-text OR the .lab-train-pill inside it.
+  const fieldEl = anchorEl.closest('.lab-field-text') || anchorEl;
+  if (fieldEl.classList.contains('regenerating')) return;
+  labStage5State.trainTarget = { style, key, fieldEl };
+  const pop = document.getElementById('lab-train-pop');
+  if (!pop) return;
+  document.getElementById('lab-train-pop-h').textContent = '// TRAIN — ' + key.toUpperCase();
+  document.getElementById('lab-train-pop-input').value = '';
+  // Build chips
+  const chips = (_LAB_TRAIN_CHIPS[key] || ['Shorter', 'Punchier']).map(c =>
+    `<button class="lab-train-pop-chip" onclick="labTrainPopChip(this,'${_esc(c)}')">${_esc(c)}</button>`
+  ).join('');
+  document.getElementById('lab-train-pop-chips').innerHTML = chips;
+  // Position: under the field, clamped to viewport
+  const rect = fieldEl.getBoundingClientRect();
+  pop.style.display = 'block';
+  const popRect = pop.getBoundingClientRect();
+  let left = rect.left + window.scrollX;
+  let top  = rect.bottom + window.scrollY + 6;
+  const maxLeft = window.scrollX + document.documentElement.clientWidth - popRect.width - 12;
+  if (left > maxLeft) left = maxLeft;
+  if (left < 12) left = 12;
+  pop.style.left = left + 'px';
+  pop.style.top  = top + 'px';
+  document.getElementById('lab-train-pop-input').focus();
+}
+
+function labTrainPopChip(btn, label) {
+  const ta = document.getElementById('lab-train-pop-input');
+  // Append the chip text as a comma-separated nudge (lets operator stack chips)
+  const cur = (ta.value || '').trim();
+  ta.value = cur ? (cur + ', ' + label.toLowerCase()) : label;
+  ta.focus();
+}
+
+function labTrainPopClose() {
+  const pop = document.getElementById('lab-train-pop');
+  if (pop) pop.style.display = 'none';
+  labStage5State.trainTarget = null;
+}
+
+async function labTrainPopApply() {
+  const t = labStage5State.trainTarget;
+  if (!t) return labTrainPopClose();
+  const feedback = (document.getElementById('lab-train-pop-input').value || '').trim();
+  labTrainPopClose();
+  await _labStage5RegenField(t.style, t.key, feedback, t.fieldEl);
+}
+
+async function _labStage5RegenField(style, key, feedback, fieldEl) {
+  if (fieldEl) fieldEl.classList.add('regenerating');
+  try {
+    const r = await fetch('/api/lab/regen-cell', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style, key, feedback: feedback || '' }),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) { showToast(data.error || 'Regen failed', 'error'); return; }
+    // Refresh just this card
+    const card = await (await fetch('/api/lab/listing-card?style=' + encodeURIComponent(style))).json();
+    if (card && card.ok) {
+      labStage5State.cards[style] = card;
+      const el = document.querySelector('.lab-listing-card[data-style="' + CSS.escape(style) + '"]');
+      if (el) {
+        el.outerHTML = _labStage5CardHtml(card);
+        // Flash success on the freshly-rendered field
+        const newField = document.querySelector('.lab-field-text[data-style="' + CSS.escape(style) + '"][data-key="' + CSS.escape(key) + '"]');
+        if (newField) {
+          newField.classList.add('flash-success');
+          setTimeout(() => newField.classList.remove('flash-success'), 600);
+        }
+      }
+    }
+    showToast('Regenerated · ' + key, 'success');
+    // Refresh meta so rail badges update
+    labStage5RefreshMetaOnly();
+  } catch (e) {
+    showToast('Regen error: ' + e.message, 'error');
+    if (fieldEl) fieldEl.classList.remove('regenerating');
+  }
+}
+
+async function labStage5RefreshMetaOnly() {
+  try {
+    const meta = await (await fetch('/api/lab/styles-meta')).json();
+    if (!meta || !meta.ok) return;
+    labStage5State.meta = meta;
+    labStage5RenderRail();
+    labStage5RenderBrandStatus();
+  } catch (e) {}
+}
+
+async function labStage5RegenStyle(style) {
+  // Regenerate ALL fields for this style — reuse the existing /api/lab/generate
+  // endpoint with scope=style.
+  if (!confirm('Regenerate every field for ' + style + '?')) return;
+  labGenBannerShow('Regenerating ' + style);
+  try {
+    await fetch('/api/lab/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scope: 'style', style }),
+    });
+    _labStage5StartGenPoll();
+  } catch (e) { showToast('Regen error: ' + e.message, 'error'); labGenBannerHide(); }
+}
+
+function labStage5OpenInGrid(style) {
+  labGridState.currentStyle = style;
+  const ss = document.getElementById('lab-grid-style-select');
+  if (ss) ss.value = style;
+  labCardsToggleEditMode(true /* forceGrid */);
+  if (typeof labGridReloadGroupList === 'function') labGridReloadGroupList();
+  if (typeof labGridFetchAndRender === 'function') labGridFetchAndRender();
+}
+
+// ===== Mode toggle: card view vs grid view =====
+function labCardsToggleEditMode(forceGrid) {
+  const editor = document.getElementById('lab-grid-editor');
+  const btn = document.getElementById('lab-mode-toggle');
+  const goGrid = (forceGrid === true) ? true : editor.classList.contains('lab-mode-cards');
+  if (goGrid) {
+    editor.classList.remove('lab-mode-cards');
+    editor.classList.add('lab-mode-grid');
+    if (btn) btn.textContent = '▤ Back to cards';
+    labStage5State.cardMode = false;
+  } else {
+    editor.classList.remove('lab-mode-grid');
+    editor.classList.add('lab-mode-cards');
+    if (btn) btn.textContent = '⚙ Edit fields (grid)';
+    labStage5State.cardMode = true;
+    // Refresh cards in case grid edits changed values
+    labStage5Refresh();
+  }
+}
+
+// ===== Sub-module switcher (Listing Lab / Image→NIS) =====
+function labSwitchSubmod(which) {
+  if (which === 'image') {
+    // Send the operator to the existing Beta Image → NIS page
+    if (typeof showBetaImageNISPage === 'function') showBetaImageNISPage();
+    return;
+  }
+  document.getElementById('lab-submod-grid').classList.add('active');
+  document.getElementById('lab-submod-image').classList.remove('active');
+}
+
+// ===== Drawer (Voice / Rules / History) =====
+function labDrawerOpen(tab) {
+  document.getElementById('lab-drawer-overlay').classList.add('open');
+  document.getElementById('lab-drawer').classList.add('open');
+  labDrawerSwitch(tab || 'voice');
+  // Mirror current voice into the drawer textarea
+  const src = document.getElementById('lab-voice-input');
+  const dst = document.getElementById('lab-drawer-voice-input');
+  if (src && dst) dst.value = src.value || '';
+  // Mirror rules
+  const rulesHost = document.getElementById('lab-drawer-rules-list');
+  const legacyRules = document.getElementById('lab-rules-body');
+  if (rulesHost && legacyRules) rulesHost.innerHTML = legacyRules.innerHTML || 'No rules loaded.';
+  // Mirror history
+  const histHost = document.getElementById('lab-drawer-history-list');
+  const legacyHist = document.getElementById('lab-past-sessions-list');
+  if (histHost && legacyHist) histHost.innerHTML = legacyHist.innerHTML || 'No past sessions.';
+}
+function labDrawerClose() {
+  document.getElementById('lab-drawer-overlay').classList.remove('open');
+  document.getElementById('lab-drawer').classList.remove('open');
+}
+function labDrawerSwitch(tab) {
+  document.querySelectorAll('.lab-drawer-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.lab-drawer-pane').forEach(p =>
+    p.style.display = (p.dataset.pane === tab ? 'block' : 'none'));
+}
+async function labDrawerVoiceSave() {
+  const txt = document.getElementById('lab-drawer-voice-input').value || '';
+  // Mirror back to the legacy textarea before invoking the existing save fn
+  const legacy = document.getElementById('lab-voice-input');
+  if (legacy) legacy.value = txt;
+  if (typeof labVoiceSave === 'function') await labVoiceSave();
+  document.getElementById('lab-drawer-voice-meta').textContent =
+    'Saved ' + new Date().toLocaleTimeString();
+  labStage5RenderBrandStatus();
+}
+
+// ===== Auto-gen banner (replaces full-screen overlay in card mode) =====
+function labGenBannerShow(label) {
+  const b = document.getElementById('lab-genbanner');
+  if (!b) return;
+  b.classList.add('on');
+  document.getElementById('lab-genbanner-counter').textContent = label || 'Atlas is writing';
+  document.getElementById('lab-genbanner-style').textContent = 'Preparing…';
+  labStage5State.genStartedAt = Date.now();
+}
+function labGenBannerHide() {
+  const b = document.getElementById('lab-genbanner');
+  if (b) b.classList.remove('on');
+  if (labStage5State.genPollTimer) {
+    clearInterval(labStage5State.genPollTimer);
+    labStage5State.genPollTimer = null;
+  }
+}
+function _labStage5StartGenPoll() {
+  if (labStage5State.genPollTimer) clearInterval(labStage5State.genPollTimer);
+  labStage5State.genPollTimer = setInterval(async () => {
+    try {
+      const r = await fetch('/api/lab/generate-progress');
+      const pg = await r.json();
+      const counter = document.getElementById('lab-genbanner-counter');
+      const styleEl = document.getElementById('lab-genbanner-style');
+      const elapsed = document.getElementById('lab-genbanner-elapsed');
+      if (pg.total > 0 && counter) {
+        const idx = Math.min((pg.completed || 0) + 1, pg.total);
+        counter.textContent = `Style ${idx} of ${pg.total}`;
+      }
+      if (pg.current_style && styleEl) styleEl.textContent = pg.current_style;
+      if (elapsed && labStage5State.genStartedAt) {
+        const sec = Math.floor((Date.now() - labStage5State.genStartedAt) / 1000);
+        elapsed.textContent = sec + 's';
+      }
+      // Streaming refresh: when a new style flips to ready, re-render its card
+      if (pg.current_style) await labStage5MaybeRefreshCard(pg.current_style);
+      if (pg.status === 'done' || pg.status === 'error') {
+        labGenBannerHide();
+        await labStage5Refresh();
+        if (pg.status === 'done') showToast(`Generated ${pg.completed || 0} of ${pg.total || 0} styles`, 'success');
+        else showToast('Generation hit an error: ' + (pg.error || 'unknown'), 'error');
+      }
+    } catch (e) { /* keep polling */ }
+  }, 1500);
+}
+async function labStage5MaybeRefreshCard(num) {
+  // Re-fetch this card on each tick — cheap; only re-renders if changed.
+  try {
+    const card = await (await fetch('/api/lab/listing-card?style=' + encodeURIComponent(num))).json();
+    if (!card || !card.ok) return;
+    const prev = labStage5State.cards[num];
+    if (prev && JSON.stringify(prev) === JSON.stringify(card)) return;
+    labStage5State.cards[num] = card;
+    const el = document.querySelector('.lab-listing-card[data-style="' + CSS.escape(num) + '"]');
+    if (el) el.outerHTML = _labStage5CardHtml(card);
+  } catch (e) {}
+}
+
+// Close the popover on outside click / Esc
+document.addEventListener('click', (e) => {
+  const pop = document.getElementById('lab-train-pop');
+  if (!pop || pop.style.display === 'none') return;
+  if (pop.contains(e.target)) return;
+  if (e.target.closest('.lab-train-pill')) return;
+  if (e.target.closest('.lab-field-text.promptable')) return;
+  labTrainPopClose();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const pop = document.getElementById('lab-train-pop');
+    if (pop && pop.style.display !== 'none') labTrainPopClose();
+    if (document.getElementById('lab-drawer')?.classList.contains('open')) labDrawerClose();
+  }
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    const pop = document.getElementById('lab-train-pop');
+    if (pop && pop.style.display !== 'none') { e.preventDefault(); labTrainPopApply(); }
+  }
+});
+
+// ═══════════════════════════════════════ (end Stage 5) ═══════════════════════════════════════
+
 async function labCopyCommit(overrideLocks) {
   if (!_labCopyState) return;
   const dest = Array.from(document.querySelectorAll('#lab-copy-list input[type=checkbox]:checked'))
