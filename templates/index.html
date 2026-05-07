@@ -3349,7 +3349,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
     <div class="nav-item-beta" id="nav-lab-grid" onclick="showLabGridPage()">
       <span class="nav-dot live"></span> Grid Editor
-      <span class="nav-pill nav-pill-beta">STAGE 1</span>
+      <span class="nav-pill nav-pill-beta">STAGE 2</span>
     </div>
 
     <div class="nav-section-divider"></div>
@@ -5553,7 +5553,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-upload-header">
       <div class="atlas-upload-eyebrow">
         <span class="atlas-pulse"></span>
-        LAB · GRID EDITOR · STAGE 1
+        LAB · GRID EDITOR · STAGE 2
       </div>
       <h1 class="atlas-upload-h1">Grid Editor</h1>
       <div class="atlas-status-sub" id="lab-grid-status-sub">No sheet loaded</div>
@@ -5597,15 +5597,11 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         </div>
         <div class="lab-grid-control">
           <label class="lab-grid-label">Group</label>
-          <select id="lab-grid-group-select" class="lab-grid-select">
-            <option value="weight">Item Weight</option>
-            <option value="dimensions" disabled>Dimensions · Stage 2</option>
-            <option value="identity" disabled>Identity · Stage 2</option>
-            <option value="taxonomy" disabled>Taxonomy · Stage 2</option>
-          </select>
+          <select id="lab-grid-group-select" class="lab-grid-select"></select>
         </div>
         <div class="lab-grid-status" id="lab-grid-dirty-status">No unsaved changes</div>
         <div class="lab-grid-actions">
+          <a class="atlas-source-btn-secondary" href="/api/lab/download-xlsm" download id="lab-grid-download">⇩ .xlsx</a>
           <button class="atlas-source-btn-secondary" onclick="labGridReload()">↻ Reload</button>
           <button class="atlas-source-btn-primary" id="lab-grid-save-btn" onclick="labGridSave()">Save →</button>
         </div>
@@ -5613,8 +5609,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
       <!-- Honest note -->
       <div class="lab-grid-note">
-        // Stage 1 — single style · single group · drag-fill · paste-from-Excel · unit dropdown.
-        Save persists to the session. Download .xlsm comes in Stage 2.
+        // Stage 2 — 8 groups across every style · Amazon-NIS-shaped dropdowns · drag-fill · paste-from-Excel · download .xlsx.
+        Save persists per group. Live rule-engine validation arrives in Stage 4.
       </div>
 
       <!-- The grid itself -->
@@ -5703,9 +5699,10 @@ function labGridInit() {
   const ss = document.getElementById('lab-grid-style-select');
   if (ss && !ss._wired) {
     ss._wired = true;
-    ss.addEventListener('change', () => {
+    ss.addEventListener('change', async () => {
       labGridState.currentStyle = ss.value;
-      labGridFetchAndRender();
+      await labGridReloadGroupList();
+      await labGridFetchAndRender();
     });
   }
   const gs = document.getElementById('lab-grid-group-select');
@@ -5716,6 +5713,28 @@ function labGridInit() {
       labGridFetchAndRender();
     });
   }
+}
+
+async function labGridReloadGroupList() {
+  if (!labGridState.currentStyle) return;
+  try {
+    const r = await fetch('/api/lab/grid/groups?style=' + encodeURIComponent(labGridState.currentStyle));
+    const data = await r.json();
+    if (!r.ok || data.error) return;
+    const gs = document.getElementById('lab-grid-group-select');
+    const prev = labGridState.currentGroup;
+    gs.innerHTML = (data.groups || []).map(g => {
+      const badge = g.missing > 0 ? ` (${g.missing} missing)` : ' ✓';
+      return `<option value="${g.key}">${g.label}${badge}</option>`;
+    }).join('');
+    // restore selection if still valid
+    const valid = (data.groups || []).some(g => g.key === prev);
+    if (valid) gs.value = prev;
+    else if ((data.groups || [])[0]) {
+      gs.value = data.groups[0].key;
+      labGridState.currentGroup = data.groups[0].key;
+    }
+  } catch (e) { /* tolerate */ }
 }
 
 async function labGridUpload(file) {
@@ -5748,6 +5767,7 @@ async function labGridUpload(file) {
     if (data.warnings && data.warnings.length) {
       data.warnings.forEach(w => showToast(w, 'warning'));
     }
+    await labGridReloadGroupList();
     await labGridFetchAndRender();
   } catch (e) {
     document.getElementById('lab-grid-state').textContent = 'Upload error';
@@ -5786,15 +5806,22 @@ function labGridRender(spec) {
   const columns = (spec.columns || []).map(col => {
     const c = { data: col.key, title: col.title || col.key };
     if (col.readonly) c.readOnly = true;
+    if (col.width) c.width = col.width;
     if (col.type === 'dropdown') {
       c.type = 'dropdown';
       c.source = col.options || [];
-      c.allowInvalid = false;
+      // Amazon dropdowns can have 100+ options; allowInvalid:true lets the
+      // operator type freely if the option list is empty (PT not yet known).
+      c.allowInvalid = !(col.options && col.options.length);
     } else if (col.type === 'numeric') {
       c.type = 'numeric';
       c.numericFormat = { pattern: '0.[000]' };
     } else {
       c.type = 'text';
+    }
+    if (col.max_length) {
+      // Soft enforce: render an htInvalid class via cells() if exceeded
+      c._maxLength = col.max_length;
     }
     if (col.validator === 'positive_number') {
       c.validator = function(value, callback) {
@@ -5802,19 +5829,32 @@ function labGridRender(spec) {
         const n = parseFloat(value);
         callback(!isNaN(n) && n > 0);
       };
+    } else if (col.validator === 'upc_check') {
+      c.validator = function(value, callback) {
+        if (value === '' || value === null || value === undefined) { callback(true); return; }
+        const s = String(value).trim();
+        // 12 or 13 digits, all numeric
+        callback(/^[0-9]{12,13}$/.test(s));
+      };
     }
     return c;
   });
   const colHeaders = (spec.columns || []).map(c => c.title || c.key);
   // Render Handsontable
+  // For style-scope groups we have just one row — use a wider, more
+  // readable layout that doesn't try to stretch a single row across all cols.
+  const isStyleScope = spec.scope === 'style';
+  const nRows = (spec.rows || []).length;
   labGridState.hot = new Handsontable(host, {
     data: spec.rows || [],
     columns: columns,
     colHeaders: colHeaders,
     rowHeaders: true,
     width: '100%',
-    height: Math.max(220, Math.min(560, 60 + (spec.rows || []).length * 28)),
-    stretchH: 'all',
+    height: isStyleScope
+      ? Math.max(110, 80 + 30)
+      : Math.max(220, Math.min(560, 60 + nRows * 28)),
+    stretchH: isStyleScope ? 'none' : 'all',
     fillHandle: { autoInsertRow: false, direction: 'vertical' },
     contextMenu: ['copy','cut','---------','undo','redo'],
     manualColumnResize: true,
@@ -5843,11 +5883,16 @@ function labGridRender(spec) {
   }, 0);
   const footer = document.getElementById('lab-grid-footer');
   footer.className = missing > 0 ? 'lab-grid-footer warn' : 'lab-grid-footer ok';
+  const requiredCount = (spec.columns || []).filter(c => c.required).length;
+  const scopeLabel = isStyleScope ? 'style' : `${nRows} variants`;
   footer.textContent = missing > 0
-    ? `${missing} required cells need values across ${(spec.rows || []).length} variants. Drag a value down to fill.`
-    : `All ${(spec.rows || []).length} variants have ${(spec.columns || []).filter(c => c.required).length} required values populated.`;
+    ? `${missing} required cells need values across ${scopeLabel}. Drag a value down to fill, or paste from Excel.`
+    : `All ${requiredCount} required cells populated for this ${scopeLabel}.`;
+  const scopeMetaLabel = spec.scope === 'style'
+    ? '1 row'
+    : `${(spec.rows || []).length} variants`;
   document.getElementById('lab-grid-edit-meta').textContent =
-    `${labGridState.currentStyle} · ${spec.group_label || labGridState.currentGroup} · ${(spec.rows || []).length} variants`;
+    `${labGridState.currentStyle} · ${spec.group_label || labGridState.currentGroup} · ${scopeMetaLabel}`;
   labGridSetDirty(false);
 }
 
@@ -5880,6 +5925,7 @@ async function labGridSave() {
     }
     showToast(`Saved ${data.updated || 0} cells · ${labGridState.currentStyle}`, 'success');
     labGridSetDirty(false);
+    await labGridReloadGroupList();
     await labGridFetchAndRender();
   } catch (e) {
     showToast('Save error: ' + e.message, 'error');

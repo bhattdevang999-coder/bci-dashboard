@@ -11042,22 +11042,135 @@ lab_session = {
 }
 
 # Group definitions — each maps to a list of column specs the grid renders.
-# Stage 1 ships only "weight". Stage 2+ adds dimensions / identity / taxonomy / etc.
+# Two scopes per group:
+#   scope="variant"  → one row per variant (size/color/upc/weight/etc.)
+#   scope="style"    → one row per style (title/bullets/description/etc.)
+# The "All fields" view (Stage 2 stretch) joins everything into one wide sheet.
 LAB_GRID_GROUPS = {
+    "identity": {
+        "label": "Identity",
+        "scope": "style",
+        "columns": [
+            {"key": "style_num",     "title": "Style #",       "type": "text", "readonly": True, "required": True},
+            {"key": "style_name",    "title": "Style Name",    "type": "text", "required": True},
+            {"key": "brand",         "title": "Brand",         "type": "text", "required": True},
+            {"key": "vendor_code",   "title": "Vendor Code",   "type": "text"},
+            {"key": "subclass",      "title": "Sub-Class",     "type": "text", "required": True},
+            {"key": "sub_subclass",  "title": "Sub-Sub-Class", "type": "text"},
+            {"key": "product_type",  "title": "Amazon PT",     "type": "text", "readonly": True},
+        ],
+    },
+    "title_copy": {
+        "label": "Title & Copy",
+        "scope": "style",
+        "columns": [
+            {"key": "style_num",   "title": "Style #", "type": "text", "readonly": True},
+            {"key": "title",       "title": "Title",        "type": "text", "required": True, "max_length": 120, "width": 320},
+            {"key": "bullet_1",    "title": "Bullet 1",     "type": "text", "required": True, "max_length": 256, "width": 240},
+            {"key": "bullet_2",    "title": "Bullet 2",     "type": "text", "required": True, "max_length": 256, "width": 240},
+            {"key": "bullet_3",    "title": "Bullet 3",     "type": "text", "required": True, "max_length": 256, "width": 240},
+            {"key": "bullet_4",    "title": "Bullet 4",     "type": "text", "required": True, "max_length": 256, "width": 240},
+            {"key": "bullet_5",    "title": "Bullet 5",     "type": "text", "required": True, "max_length": 256, "width": 240},
+            {"key": "description", "title": "Description",  "type": "text", "required": True, "max_length": 2000, "width": 360},
+            {"key": "backend_keywords", "title": "Backend Keywords", "type": "text", "max_length": 250, "width": 240},
+        ],
+    },
+    "taxonomy": {
+        "label": "Taxonomy",
+        "scope": "style",
+        "columns": [
+            {"key": "style_num",        "title": "Style #",      "type": "text", "readonly": True},
+            {"key": "feed_product_type", "title": "Feed PT",     "type": "text", "required": True},
+            {"key": "item_type",        "title": "Item Type",    "type": "text", "required": True},
+            {"key": "department",       "title": "Department",   "type": "dropdown_dynamic", "dropdown_field": "department#1.value", "required": True},
+            {"key": "target_gender",    "title": "Target Gender","type": "dropdown_dynamic", "dropdown_field": "target_gender#1.value", "required": True},
+            {"key": "age_range",        "title": "Age Range",    "type": "dropdown_dynamic", "dropdown_field": "age_range_description#1.value"},
+            {"key": "lifestyle_1",      "title": "Lifestyle 1",  "type": "dropdown_dynamic", "dropdown_field": "lifestyle#1.value"},
+            {"key": "lifestyle_2",      "title": "Lifestyle 2",  "type": "dropdown_dynamic", "dropdown_field": "lifestyle#2.value"},
+        ],
+    },
+    "variants": {
+        "label": "Variants",
+        "scope": "variant",
+        "columns": [
+            {"key": "variant_id",  "title": "Variant ID", "type": "text", "readonly": True},
+            {"key": "sku",         "title": "SKU",        "type": "text"},
+            {"key": "upc",         "title": "UPC",        "type": "text", "required": True, "validator": "upc_check"},
+            {"key": "asin",        "title": "ASIN",       "type": "text"},
+            {"key": "color_name",  "title": "Color",      "type": "text",     "required": True},
+            {"key": "color_map",   "title": "Color Map",  "type": "dropdown_dynamic", "dropdown_field": "color_map#1.value"},
+            {"key": "size",        "title": "Size",       "type": "text",     "required": True},
+            {"key": "size_map",    "title": "Size Map",   "type": "dropdown_dynamic", "dropdown_field": "size_name#1.value"},
+        ],
+    },
     "weight": {
-        "label": "Item Weight",
+        "label": "Weight & Dimensions",
+        "scope": "variant",
         "columns": [
             {"key": "variant_id", "title": "Variant ID", "type": "text", "readonly": True},
-            {"key": "size", "title": "Size", "type": "text", "readonly": True},
+            {"key": "size",       "title": "Size",  "type": "text", "readonly": True},
             {"key": "color_name", "title": "Color", "type": "text", "readonly": True},
             {"key": "item_weight_value", "title": "Item Weight", "type": "numeric",
              "required": True, "validator": "positive_number"},
-            {"key": "item_weight_unit", "title": "Unit", "type": "dropdown",
-             "required": True,
-             "options": ["pounds", "ounces", "kilograms", "grams"]},
+            {"key": "item_weight_unit",  "title": "Wt Unit",     "type": "dropdown",
+             "required": True, "options": ["pounds", "ounces", "kilograms", "grams"]},
+            {"key": "item_length_value", "title": "Length", "type": "numeric", "validator": "positive_number"},
+            {"key": "item_width_value",  "title": "Width",  "type": "numeric", "validator": "positive_number"},
+            {"key": "item_height_value", "title": "Height", "type": "numeric", "validator": "positive_number"},
+            {"key": "item_dim_unit",     "title": "Dim Unit", "type": "dropdown",
+             "options": ["inches", "centimeters", "millimeters", "feet"]},
+        ],
+    },
+    "compliance": {
+        "label": "Compliance",
+        "scope": "style",
+        "columns": [
+            {"key": "style_num", "title": "Style #", "type": "text", "readonly": True},
+            {"key": "coo",      "title": "Country of Origin", "type": "text", "required": True},
+            {"key": "fabric",   "title": "Fabric / Material", "type": "text", "required": True},
+            {"key": "care",     "title": "Care Instructions", "type": "text", "required": True},
+            {"key": "upf",      "title": "UPF Rating", "type": "text"},
+            {"key": "contains_batteries", "title": "Contains Batteries", "type": "dropdown",
+             "options": ["No", "Yes"]},
+            {"key": "is_hazmat",          "title": "Hazardous Material", "type": "dropdown",
+             "options": ["No", "Yes"]},
+            {"key": "federal_contract_compliant", "title": "Berry Compliant", "type": "dropdown",
+             "options": ["No", "Yes"]},
+        ],
+    },
+    "apparel": {
+        "label": "Apparel Attributes",
+        "scope": "style",
+        "columns": [
+            {"key": "style_num",     "title": "Style #",     "type": "text", "readonly": True},
+            {"key": "sleeve_type",   "title": "Sleeve",      "type": "text"},
+            {"key": "neck_type",     "title": "Neck",        "type": "text"},
+            {"key": "fit_type",      "title": "Fit",         "type": "dropdown_dynamic", "dropdown_field": "fit_type#1.value"},
+            {"key": "closure_type",  "title": "Closure",     "type": "dropdown_dynamic", "dropdown_field": "closure_type#1.value"},
+            {"key": "collar_style",  "title": "Collar",      "type": "dropdown_dynamic", "dropdown_field": "collar_style#1.value"},
+            {"key": "occasion",      "title": "Occasion",    "type": "text"},
+            {"key": "special_feature_1", "title": "Special Feature 1", "type": "dropdown_dynamic", "dropdown_field": "special_feature#1.value"},
+            {"key": "special_feature_2", "title": "Special Feature 2", "type": "dropdown_dynamic", "dropdown_field": "special_feature#2.value"},
+        ],
+    },
+    "commercial": {
+        "label": "Pricing & Logistics",
+        "scope": "style",
+        "columns": [
+            {"key": "style_num",   "title": "Style #",       "type": "text",    "readonly": True},
+            {"key": "cost_price",  "title": "Cost (Wholesale)", "type": "numeric"},
+            {"key": "list_price",  "title": "List (Retail)",   "type": "numeric"},
+            {"key": "ship_date",   "title": "Ship Date",    "type": "text"},
+            {"key": "model_name",  "title": "Model Name",   "type": "text"},
+            {"key": "manufacturer", "title": "Manufacturer", "type": "text"},
+            {"key": "warranty",    "title": "Warranty",     "type": "text"},
         ],
     },
 }
+
+# Stage-1-compatible alias kept so old front-end calls still work.
+# Stage 1 used only "weight". Stage 2 now exposes the full set above.
+
 
 def _lab_session_get_style(style_num):
     for s in lab_session.get("styles", []):
@@ -11141,13 +11254,131 @@ def lab_upload():
         return jsonify({"error": f"Failed to parse: {str(e)[:200]}"}), 500
 
 
+def _resolve_pt_for_style(style):
+    """Resolve Amazon PT key (COAT/SHIRT/PANTS/etc.) for a style record.
+    Falls back to subclass-based mapping if not pre-resolved."""
+    pt = (style.get("product_type") or "").strip().upper()
+    if pt:
+        return pt
+    return (_resolve_style_product_type(style) or "").upper()
+
+
+def _hydrate_columns_with_dropdowns(columns, style_pt):
+    """For columns of type 'dropdown_dynamic', fill in 'options' from
+    Amazon's NIS template dropdown cache for the style's PT.
+
+    Returns a NEW columns list — does not mutate the LAB_GRID_GROUPS source.
+    """
+    if not style_pt:
+        return columns
+    try:
+        cache = load_dropdown_cache(style_pt) or {}
+    except Exception:
+        cache = {}
+    out = []
+    for col in columns:
+        if col.get("type") == "dropdown_dynamic":
+            field = col.get("dropdown_field", "")
+            opts = cache.get(field) or []
+            new_col = dict(col)
+            new_col["type"] = "dropdown"
+            new_col["options"] = opts
+            new_col["_pt"] = style_pt
+            new_col["_dropdown_field"] = field
+            out.append(new_col)
+        else:
+            out.append(col)
+    return out
+
+
+def _build_style_row(style):
+    """One row representing a single style for style-scope groups.
+    Pulls from the style record + any LLM-generated content stored under
+    style['_lab_generated'] (set by the upload step or a future regen).
+    """
+    gen = style.get("_lab_generated") or {}
+    return {
+        "style_num":      style.get("style_num", "") or "",
+        "style_name":     style.get("style_name", "") or "",
+        "brand":          style.get("brand", "") or "",
+        "vendor_code":    style.get("vendor_code", "") or "",
+        "subclass":       style.get("subclass", "") or "",
+        "sub_subclass":   style.get("sub_subclass", "") or "",
+        "product_type":   _resolve_pt_for_style(style) or "",
+        # LLM-generated copy (filled lazily by /api/lab/generate or empty)
+        "title":          gen.get("title", style.get("title", "")) or "",
+        "bullet_1":       gen.get("bullet_1", "") or "",
+        "bullet_2":       gen.get("bullet_2", "") or "",
+        "bullet_3":       gen.get("bullet_3", "") or "",
+        "bullet_4":       gen.get("bullet_4", "") or "",
+        "bullet_5":       gen.get("bullet_5", "") or "",
+        "description":    gen.get("description", "") or "",
+        "backend_keywords": gen.get("backend_keywords", "") or "",
+        # Taxonomy
+        "feed_product_type": style.get("feed_product_type", "") or _resolve_pt_for_style(style) or "",
+        "item_type":         style.get("item_type", "") or style.get("sub_subclass", "") or "",
+        "department":        style.get("department", "") or "",
+        "target_gender":     style.get("target_gender", style.get("gender", "")) or "",
+        "age_range":         style.get("age_range", "") or "",
+        "lifestyle_1":       style.get("lifestyle_1", "") or "",
+        "lifestyle_2":       style.get("lifestyle_2", "") or "",
+        # Compliance
+        "coo":               style.get("coo", "") or "",
+        "fabric":            style.get("fabric", "") or "",
+        "care":              style.get("care", "") or "",
+        "upf":               style.get("upf", "") or "",
+        "contains_batteries": style.get("contains_batteries", "No") or "No",
+        "is_hazmat":         style.get("is_hazmat", "No") or "No",
+        "federal_contract_compliant": style.get("federal_contract_compliant", "No") or "No",
+        # Apparel
+        "sleeve_type":   style.get("sleeve_type", "") or "",
+        "neck_type":     style.get("neck_type", "") or "",
+        "fit_type":      style.get("fit_type", "") or "",
+        "closure_type":  style.get("closure_type", "") or "",
+        "collar_style":  style.get("collar_style", "") or "",
+        "occasion":      style.get("occasion", "") or "",
+        "special_feature_1": style.get("special_feature_1", "") or "",
+        "special_feature_2": style.get("special_feature_2", "") or "",
+        # Commercial
+        "cost_price":   style.get("cost_price", "") or "",
+        "list_price":   style.get("list_price", "") or "",
+        "ship_date":    style.get("ship_date", "") or "",
+        "model_name":   style.get("model_name", "") or "",
+        "manufacturer": style.get("manufacturer", "") or style.get("brand", "") or "",
+        "warranty":     style.get("warranty", "") or "",
+    }
+
+
+def _build_variant_row(v, style):
+    """One row per variant for variant-scope groups.
+    Pulls from variant + falls back to style-level for size_map/color_map."""
+    return {
+        "variant_id": v.get("variant_id", "") or v.get("sku", "") or "",
+        "sku":        v.get("sku", "") or v.get("variant_id", "") or "",
+        "upc":        v.get("upc", "") or "",
+        "asin":       v.get("asin", "") or v.get("child_asin", "") or "",
+        "color_name": v.get("color_name", "") or "",
+        "color_map":  v.get("color_map", "") or "",
+        "size":       v.get("size", "") or "",
+        "size_map":   v.get("size_map", "") or "",
+        "item_weight_value": v.get("item_weight_value", v.get("weight", "")) or "",
+        "item_weight_unit":  v.get("item_weight_unit", "pounds") or "pounds",
+        "item_length_value": v.get("item_length_value", "") or "",
+        "item_width_value":  v.get("item_width_value", "") or "",
+        "item_height_value": v.get("item_height_value", "") or "",
+        "item_dim_unit":     v.get("item_dim_unit", "inches") or "inches",
+    }
+
+
 @app.route("/api/lab/grid", methods=["GET"])
 def lab_grid_get():
     """Return the grid spec (columns + rows) for one style + group.
 
     columns: spec for the grid's column config (type, options, validators).
-    rows:    one row per variant, pre-filled from the parsed sheet.
-    group_label: human-readable label.
+             dropdown_dynamic columns are hydrated with PT-specific options
+             from Amazon's NIS template dropdown cache.
+    rows:    one row per variant (variant-scope) or one row total
+             (style-scope), pre-filled from style + variant records.
     """
     style_num = request.args.get("style", "").strip()
     group_key = request.args.get("group", "weight").strip()
@@ -11160,35 +11391,75 @@ def lab_grid_get():
     if not style:
         return jsonify({"error": f"Style {style_num} not in session. Upload first."}), 404
 
-    # Build rows from variants. Pre-fill what we have, leave blank otherwise.
-    rows = []
-    for v in style.get("variants", []):
-        row = {
-            "variant_id": v.get("variant_id", "") or v.get("sku", "") or "",
-            "size": v.get("size", "") or "",
-            "color_name": v.get("color_name", "") or "",
-            # Pre-fill weight from variant if present; default unit pounds.
-            "item_weight_value": v.get("item_weight_value", v.get("weight", "")) or "",
-            "item_weight_unit": v.get("item_weight_unit", "pounds") or "pounds",
-        }
-        rows.append(row)
+    # Resolve PT and hydrate dropdown columns with Amazon's options.
+    style_pt = _resolve_pt_for_style(style)
+    columns = _hydrate_columns_with_dropdowns(grp["columns"], style_pt)
+
+    scope = grp.get("scope", "variant")
+    if scope == "style":
+        rows = [_build_style_row(style)]
+    else:
+        rows = [_build_variant_row(v, style) for v in style.get("variants", [])]
 
     return jsonify({
         "ok": True,
         "style_num": style_num,
         "group": group_key,
         "group_label": grp["label"],
-        "columns": grp["columns"],
+        "scope": scope,
+        "product_type": style_pt,
+        "columns": columns,
         "rows": rows,
     })
 
 
+@app.route("/api/lab/grid/groups", methods=["GET"])
+def lab_grid_groups():
+    """List the available groups + per-style missing-cell counts.
+    Front-end uses this to render the group switcher with badges.
+    """
+    style_num = request.args.get("style", "").strip()
+    style = _lab_session_get_style(style_num) if style_num else None
+    out = []
+    for key, grp in LAB_GRID_GROUPS.items():
+        missing = 0
+        if style:
+            scope = grp.get("scope", "variant")
+            if scope == "style":
+                row = _build_style_row(style)
+                missing = sum(1 for c in grp["columns"]
+                              if c.get("required") and not row.get(c["key"]))
+            else:
+                for v in style.get("variants", []):
+                    row = _build_variant_row(v, style)
+                    missing += sum(1 for c in grp["columns"]
+                                   if c.get("required") and not row.get(c["key"]))
+        out.append({
+            "key": key,
+            "label": grp["label"],
+            "scope": grp.get("scope", "variant"),
+            "missing": missing,
+            "col_count": len(grp["columns"]),
+        })
+    return jsonify({"ok": True, "groups": out})
+
+
+# Style-level keys we route into style["_lab_generated"] so they never
+# collide with the parsed-sheet "raw" fields.
+_STYLE_GENERATED_KEYS = {
+    "title", "bullet_1", "bullet_2", "bullet_3", "bullet_4", "bullet_5",
+    "description", "backend_keywords",
+}
+
+
 @app.route("/api/lab/grid/save", methods=["POST"])
 def lab_grid_save():
-    """Persist edits from the grid back into the lab_session variant records.
+    """Persist grid edits back into lab_session.
 
-    Stage 1 supports only the 'weight' group, which writes
-    item_weight_value + item_weight_unit onto each matching variant.
+    For variant-scope groups: write each editable column onto the matching
+    variant by variant_id.
+    For style-scope groups: write the single row's editable columns onto
+    the style record (LLM copy fields routed under style['_lab_generated']).
     """
     data = request.get_json(force=True) or {}
     style_num = (data.get("style") or "").strip()
@@ -11203,24 +11474,42 @@ def lab_grid_save():
     if not style:
         return jsonify({"error": f"Style {style_num} not in session"}), 404
 
-    # Index variants by variant_id for O(1) lookup
-    variants = style.get("variants", [])
-    index = {(v.get("variant_id") or v.get("sku") or "").strip(): v for v in variants}
+    writable_keys = [c["key"] for c in grp["columns"] if not c.get("readonly")]
+    scope = grp.get("scope", "variant")
     updated = 0
     skipped = 0
-    writable_keys = [c["key"] for c in grp["columns"] if not c.get("readonly")]
 
-    for row in rows:
-        vid = (row.get("variant_id") or "").strip()
-        v = index.get(vid)
-        if not v:
-            skipped += 1
-            continue
+    if scope == "style":
+        # One row expected; merge into the style record.
+        if not rows:
+            return jsonify({"ok": True, "updated": 0, "skipped_unmatched": 0})
+        row = rows[0]
+        gen = style.setdefault("_lab_generated", {})
         for k in writable_keys:
-            if k in row:
+            if k not in row:
+                continue
+            new = row.get(k)
+            new_norm = "" if new in (None, "") else new
+            target_dict = gen if k in _STYLE_GENERATED_KEYS else style
+            old = target_dict.get(k)
+            old_norm = "" if old in (None, "") else old
+            if old_norm != new_norm:
+                target_dict[k] = new_norm
+                updated += 1
+    else:
+        variants = style.get("variants", [])
+        index = {(v.get("variant_id") or v.get("sku") or "").strip(): v for v in variants}
+        for row in rows:
+            vid = (row.get("variant_id") or "").strip()
+            v = index.get(vid)
+            if not v:
+                skipped += 1
+                continue
+            for k in writable_keys:
+                if k not in row:
+                    continue
                 old = v.get(k)
                 new = row.get(k)
-                # Treat empty-string and None as the same
                 old_norm = "" if old in (None, "") else old
                 new_norm = "" if new in (None, "") else new
                 if old_norm != new_norm:
@@ -11231,9 +11520,87 @@ def lab_grid_save():
         "ok": True,
         "style_num": style_num,
         "group": group_key,
+        "scope": scope,
         "updated": updated,
         "skipped_unmatched": skipped,
     })
+
+
+@app.route("/api/lab/download-xlsm", methods=["GET"])
+def lab_download_xlsm():
+    """Emit the lab_session as a Vendor-Central-shaped .xlsm.
+
+    Stage 2 ships a *single sheet* per style with all the edited fields
+    flattened into a single header-row + data-rows shape. It's not yet a
+    bit-perfect Amazon NIS template (that arrives in Stage 4 alongside
+    the live rule-engine validation) — but it IS a clean, columnar export
+    of every cell the operator has touched, downloadable in one click.
+    """
+    if not lab_session.get("styles"):
+        return jsonify({"error": "No data in session. Upload first."}), 400
+
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Atlas Lab Export"
+
+    # Build header from union of all groups' columns.
+    header_keys = []
+    seen = set()
+    style_keys, variant_keys = [], []
+    for grp in LAB_GRID_GROUPS.values():
+        for c in grp["columns"]:
+            k = c["key"]
+            if k in seen:
+                continue
+            seen.add(k)
+            (style_keys if grp.get("scope") == "style" else variant_keys).append((k, c.get("title", k)))
+    header = [("variant_id", "Variant ID")]
+    for k, t in style_keys + variant_keys:
+        if k != "variant_id":
+            header.append((k, t))
+
+    # Header row
+    for ci, (_, title) in enumerate(header, start=1):
+        cell = ws.cell(row=1, column=ci, value=title)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="08111A")
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Data rows: one per variant, with style-level fields repeated.
+    rownum = 2
+    for s in lab_session["styles"]:
+        srow = _build_style_row(s)
+        for v in s.get("variants", []):
+            vrow = _build_variant_row(v, s)
+            merged = {**srow, **vrow}
+            for ci, (key, _) in enumerate(header, start=1):
+                ws.cell(row=rownum, column=ci, value=merged.get(key, "") or "")
+            rownum += 1
+
+    # Sensible column widths
+    for ci, (key, title) in enumerate(header, start=1):
+        col_letter = openpyxl.utils.get_column_letter(ci)
+        if key in ("title", "description"):
+            ws.column_dimensions[col_letter].width = 60
+        elif key.startswith("bullet_"):
+            ws.column_dimensions[col_letter].width = 40
+        elif key in ("backend_keywords",):
+            ws.column_dimensions[col_letter].width = 36
+        else:
+            ws.column_dimensions[col_letter].width = max(12, min(28, len(title) + 6))
+    ws.freeze_panes = "B2"
+
+    # Save and return
+    out_path = UPLOAD_PRODUCTS / f"atlas_lab_{lab_session.get('brand','export').replace(' ','_')}.xlsx"
+    wb.save(str(out_path))
+    return send_file(
+        str(out_path),
+        as_attachment=True,
+        download_name=out_path.name,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
 if __name__ == "__main__":
