@@ -14,3 +14,12 @@ snapshots/
 nis_engine/__pycache__/
 feedback/overrides_log.jsonl
 uploads/preupload/
+
+# Lab session snapshots are local-state, never committed
+lab_sessions/
+
+# Auto-saved brand configs are runtime state; only seeded brand presets
+# (Sage_Collective, Stella_Parker, Volcom, TestBrand) belong in the repo.
+brand_configs/Ben_Sherman.json
+brand_configs/_*.json
+brand_configs/__*.json

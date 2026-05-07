@@ -3248,6 +3248,136 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   background: #F1F5F9 !important; color: #64748B; font-style: italic;
 }
 #lab-grid-page { display: none; }
+
+/* ═══ STAGE 3 — Voice + Rules + Past Sessions ═══ */
+.lab-voice-card {
+  margin: 4px 4px 0;
+  padding: 14px 16px;
+  background: #0E1A26; border: 1px solid #1C2D40; border-left: 3px solid #5EEAD4;
+  border-radius: 0 10px 10px 0;
+}
+.lab-voice-h {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+}
+.lab-voice-eyebrow {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.6px; color: #5EEAD4; text-transform: uppercase; font-weight: 700;
+}
+.lab-voice-meta {
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+  color: #94A3B8; letter-spacing: 0.4px; flex: 1;
+}
+.lab-voice-input {
+  width: 100%; box-sizing: border-box;
+  background: #13212F; border: 1px solid #1C2D40; border-radius: 6px;
+  color: #E2E8F0; font-family: Calibri, sans-serif; font-size: 13px; line-height: 1.55;
+  padding: 10px 12px; resize: vertical; min-height: 64px;
+}
+.lab-voice-input:focus { outline: 1px solid #5EEAD4; }
+
+.lab-rules-card {
+  margin: 18px 4px 4px;
+  background: #0E1A26; border: 1px solid #1C2D40; border-left: 3px solid #A78BFA;
+  border-radius: 0 10px 10px 0;
+}
+.lab-rules-h {
+  display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+  cursor: pointer; user-select: none;
+}
+.lab-rules-h:hover { background: rgba(167,139,250,0.04); }
+.lab-rules-eyebrow {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.6px; color: #A78BFA; text-transform: uppercase; font-weight: 700;
+}
+.lab-rules-meta {
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+  color: #94A3B8; letter-spacing: 0.4px; flex: 1;
+}
+.lab-rules-caret { color: #A78BFA; font-size: 14px; transition: transform 0.18s; }
+.lab-rules-card.open .lab-rules-caret { transform: rotate(180deg); }
+.lab-rules-body {
+  padding: 6px 16px 16px;
+  border-top: 1px solid #1C2D40;
+  font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: #CBD5E1;
+  line-height: 1.6;
+}
+.lab-rules-section { margin: 12px 0; }
+.lab-rules-section-h {
+  font-size: 10.5px; letter-spacing: 1.4px; color: #5EEAD4;
+  text-transform: uppercase; font-weight: 700; margin-bottom: 4px;
+}
+.lab-rules-row { display: flex; gap: 12px; padding: 3px 0; }
+.lab-rules-key { color: #94A3B8; min-width: 180px; }
+.lab-rules-val { color: #E2E8F0; flex: 1; word-break: break-word; }
+.lab-rules-tag {
+  display: inline-block; background: rgba(167,139,250,0.12);
+  color: #C4B5FD; padding: 1px 8px; border-radius: 4px;
+  font-size: 10.5px; letter-spacing: 0.4px; margin: 1px 4px 1px 0;
+}
+
+.lab-past-sessions {
+  margin: 14px 4px 0;
+  padding: 10px 14px;
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 6px;
+}
+.lab-past-sessions-h {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.4px; color: #94A3B8; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 6px;
+}
+.lab-past-sessions-list { display: flex; flex-direction: column; gap: 4px; }
+.lab-past-session-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 10px; border: 1px solid #1C2D40; border-radius: 5px;
+  background: #13212F; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+  color: #CBD5E1; cursor: pointer; transition: border-color 0.12s;
+}
+.lab-past-session-row:hover { border-color: #5EEAD4; }
+.lab-past-session-brand { flex: 1; color: #E2E8F0; font-weight: 600; }
+.lab-past-session-meta { color: #64748B; font-size: 11px; }
+.lab-past-session-current { color: #10B981; font-size: 10.5px; letter-spacing: 1px; }
+
+/* Generate-progress overlay (Stage 3) reuses gen-overlay tokens but keeps a Lab-scoped id */
+#lab-gen-overlay {
+  position: fixed; inset: 0; background: rgba(8,17,26,0.92);
+  display: none; align-items: center; justify-content: center; z-index: 9999;
+}
+#lab-gen-overlay.active { display: flex; }
+.lab-gen-inner {
+  width: 520px; max-width: 90vw; padding: 32px;
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 14px;
+  text-align: center; color: #E2E8F0;
+}
+.lab-gen-counter {
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+  letter-spacing: 2.4px; color: #5EEAD4; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 8px;
+}
+.lab-gen-style {
+  font-family: 'Trebuchet MS', sans-serif; font-size: 18px; font-weight: 700;
+  color: #E2E8F0; line-height: 1.4;
+}
+.lab-gen-elapsed {
+  font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+  color: #94A3B8; margin-top: 6px;
+}
+.lab-gen-step {
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+  color: #CBD5E1; margin-top: 12px; min-height: 16px; letter-spacing: 0.4px;
+}
+.lab-gen-bar-wrap {
+  width: 100%; height: 6px; background: #13212F; border-radius: 3px;
+  margin-top: 16px; overflow: hidden;
+}
+.lab-gen-bar-fill {
+  height: 100%; background: linear-gradient(90deg, #14B8A6, #5EEAD4);
+  width: 0%; transition: width 0.3s;
+}
+.lab-gen-note {
+  margin-top: 10px;
+  font-family: ui-monospace, Consolas, monospace; font-size: 10.5px;
+  color: #64748B; letter-spacing: 0.4px; line-height: 1.5;
+}
 </style>
 </head>
 <body>
@@ -3349,7 +3479,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
     <div class="nav-item-beta" id="nav-lab-grid" onclick="showLabGridPage()">
       <span class="nav-dot live"></span> Grid Editor
-      <span class="nav-pill nav-pill-beta">STAGE 2</span>
+      <span class="nav-pill nav-pill-beta">STAGE 3</span>
     </div>
 
     <div class="nav-section-divider"></div>
@@ -5553,7 +5683,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-upload-header">
       <div class="atlas-upload-eyebrow">
         <span class="atlas-pulse"></span>
-        LAB · GRID EDITOR · STAGE 2
+        LAB · GRID EDITOR · STAGE 3
       </div>
       <h1 class="atlas-upload-h1">Grid Editor</h1>
       <div class="atlas-status-sub" id="lab-grid-status-sub">No sheet loaded</div>
@@ -5580,11 +5710,28 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
           </div>
         </div>
       </div>
+      <!-- Past Sessions picker (Stage 3) -->
+      <div class="lab-past-sessions" id="lab-past-sessions" style="display:none;">
+        <div class="lab-past-sessions-h">// PAST LAB SESSIONS</div>
+        <div class="lab-past-sessions-list" id="lab-past-sessions-list"></div>
+      </div>
     </div>
 
     <!-- Section 2: Grid editor (hidden until upload) -->
     <div id="lab-grid-editor" style="display:none; margin-top:32px;">
-      <div class="atlas-sources-h">
+
+      <!-- Brand Voice editor (Stage 3) -->
+      <div class="lab-voice-card">
+        <div class="lab-voice-h">
+          <span class="lab-voice-eyebrow">// BRAND VOICE</span>
+          <span class="lab-voice-meta" id="lab-voice-meta">Atlas applies these instructions on every Generate</span>
+          <button class="atlas-source-btn-secondary lab-voice-save" onclick="labVoiceSave()" id="lab-voice-save">Save Voice</button>
+        </div>
+        <textarea id="lab-voice-input" class="lab-voice-input" rows="3"
+          placeholder="e.g. Always lead Bullet 1 with material. Never use 'luxurious'. Use 'tailored' over 'fitted'. Keep titles under 100 chars even though Amazon allows 120."></textarea>
+      </div>
+
+      <div class="atlas-sources-h" style="margin-top:24px;">
         <div class="atlas-sources-eyebrow">// EDITING</div>
         <div class="atlas-sources-meta" id="lab-grid-edit-meta">—</div>
       </div>
@@ -5601,6 +5748,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         </div>
         <div class="lab-grid-status" id="lab-grid-dirty-status">No unsaved changes</div>
         <div class="lab-grid-actions">
+          <button class="atlas-source-btn-secondary" onclick="labGenerateOne()" id="lab-gen-one-btn" title="Run LLM for the current style only">⚡ Regen this style</button>
+          <button class="atlas-source-btn-secondary" onclick="labGenerateAll()" id="lab-gen-all-btn" title="Run LLM for every style in this session">✨ Generate all</button>
           <a class="atlas-source-btn-secondary" href="/api/lab/download-xlsm" download id="lab-grid-download">⇩ .xlsx</a>
           <button class="atlas-source-btn-secondary" onclick="labGridReload()">↻ Reload</button>
           <button class="atlas-source-btn-primary" id="lab-grid-save-btn" onclick="labGridSave()">Save →</button>
@@ -5609,7 +5758,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
       <!-- Honest note -->
       <div class="lab-grid-note">
-        // Stage 2 — 8 groups across every style · Amazon-NIS-shaped dropdowns · drag-fill · paste-from-Excel · download .xlsx.
+        // Stage 3 — LLM in the grid · Brand Voice editor · read-only Brand Rules · sessions persisted to disk.
         Save persists per group. Live rule-engine validation arrives in Stage 4.
       </div>
 
@@ -5618,9 +5767,31 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
       <!-- Validation footer -->
       <div class="lab-grid-footer" id="lab-grid-footer">Awaiting data…</div>
+
+      <!-- Brand Rules panel (Stage 3 — read-only) -->
+      <div class="lab-rules-card" id="lab-rules-card">
+        <div class="lab-rules-h" onclick="labRulesToggle()">
+          <span class="lab-rules-eyebrow">// BRAND RULES</span>
+          <span class="lab-rules-meta" id="lab-rules-meta">What Atlas applies on every Generate · read-only in Stage 3</span>
+          <span class="lab-rules-caret" id="lab-rules-caret">▾</span>
+        </div>
+        <div class="lab-rules-body" id="lab-rules-body" style="display:none;"></div>
+      </div>
     </div>
 
   </div><!-- /lab-grid-page -->
+
+  <!-- Lab generation progress overlay (Stage 3) -->
+  <div id="lab-gen-overlay">
+    <div class="lab-gen-inner">
+      <div class="lab-gen-counter" id="lab-gen-counter">Style 0 of 0</div>
+      <div class="lab-gen-style" id="lab-gen-style">Preparing…</div>
+      <div class="lab-gen-elapsed" id="lab-gen-elapsed">—</div>
+      <div class="lab-gen-step" id="lab-gen-step">Initializing…</div>
+      <div class="lab-gen-bar-wrap"><div class="lab-gen-bar-fill" id="lab-gen-bar"></div></div>
+      <div class="lab-gen-note">// Each style ≈ 15–30s on the live server. Title · 5 bullets · description · backend keywords per ASIN.</div>
+    </div>
+  </div>
 
 </div><!-- /main -->
 
@@ -5683,6 +5854,7 @@ function showLabGridPage() {
   const navEl = document.getElementById('nav-lab-grid');
   if (navEl) navEl.classList.add('active');
   labGridInit();
+  labLoadPastSessions();
 }
 
 function labGridInit() {
@@ -5769,6 +5941,8 @@ async function labGridUpload(file) {
     }
     await labGridReloadGroupList();
     await labGridFetchAndRender();
+    await labLoadVoiceAndRules();
+    await labLoadPastSessions();
   } catch (e) {
     document.getElementById('lab-grid-state').textContent = 'Upload error';
     showToast(e.message || 'Upload error', 'error');
@@ -5937,6 +6111,260 @@ async function labGridReload() {
     if (!confirm('Discard unsaved changes?')) return;
   }
   await labGridFetchAndRender();
+}
+
+// ══════ STAGE 3 — Voice / Rules / Sessions / Generate ══════
+async function labLoadVoiceAndRules() {
+  if (!labGridState.brand) return;
+  try {
+    const r = await fetch('/api/lab/brand-rules?brand=' + encodeURIComponent(labGridState.brand));
+    const data = await r.json();
+    if (!r.ok || data.error) return;
+    const ta = document.getElementById('lab-voice-input');
+    if (ta && (data.voice || '') !== (ta._lastSaved || '')) {
+      ta.value = data.voice || '';
+      ta._lastSaved = data.voice || '';
+    }
+    document.getElementById('lab-voice-meta').textContent =
+      data.voice ? `Saved · ${(data.voice||'').length} chars` : 'Atlas applies these instructions on every Generate';
+    labRenderRules(data.rules || {});
+  } catch (e) { /* tolerate */ }
+}
+
+async function labVoiceSave() {
+  if (!labGridState.brand) { showToast('No brand loaded', 'warning'); return; }
+  const ta = document.getElementById('lab-voice-input');
+  const voice = (ta.value || '').trim();
+  try {
+    const r = await fetch('/api/lab/brand-voice', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brand: labGridState.brand, voice }),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) { showToast(data.error || 'Save failed', 'error'); return; }
+    ta._lastSaved = voice;
+    document.getElementById('lab-voice-meta').textContent =
+      voice ? `Saved · ${voice.length} chars` : 'Atlas applies these instructions on every Generate';
+    showToast(`Voice saved · ${labGridState.brand}`, 'success');
+  } catch (e) {
+    showToast('Save error: ' + e.message, 'error');
+  }
+}
+
+function labRulesToggle() {
+  const card = document.getElementById('lab-rules-card');
+  const body = document.getElementById('lab-rules-body');
+  const open = card.classList.toggle('open');
+  body.style.display = open ? 'block' : 'none';
+}
+
+function _labRow(k, v) {
+  return `<div class="lab-rules-row"><div class="lab-rules-key">${k}</div><div class="lab-rules-val">${v}</div></div>`;
+}
+function _labTags(arr) {
+  return (arr || []).map(s => `<span class="lab-rules-tag">${(s+'').replace(/[<>]/g,'')}</span>`).join('');
+}
+function labRenderRules(rules) {
+  const body = document.getElementById('lab-rules-body');
+  if (!rules || !Object.keys(rules).length) { body.innerHTML = '<i>No rules loaded.</i>'; return; }
+  const t = rules.title || {};
+  const b = rules.bullets || {};
+  const d = rules.description || {};
+  const k = rules.backend_keywords || {};
+  const c = rules.compliance || {};
+  const def = rules.defaults || {};
+  body.innerHTML = `
+    <div class="lab-rules-section">
+      <div class="lab-rules-section-h">Title</div>
+      ${_labRow('Format', `<code>${t.format||''}</code>`)}
+      ${_labRow('Max chars', t.max_chars||'')}
+      ${_labRow('Required tokens', _labTags(t.required_tokens))}
+      ${_labRow('Forbidden words', _labTags(t.forbidden_words))}
+    </div>
+    <div class="lab-rules-section">
+      <div class="lab-rules-section-h">Bullets</div>
+      ${_labRow('Count', b.count||'')}
+      ${_labRow('Max chars (each)', b.max_chars_each||'')}
+      ${_labRow('Format', b.format||'')}
+      ${_labRow('Bullet 1 leads with', b.bullet_1_focus||'')}
+      ${_labRow('Forbidden words', _labTags(b.forbidden_words))}
+    </div>
+    <div class="lab-rules-section">
+      <div class="lab-rules-section-h">Description</div>
+      ${_labRow('Max chars', d.max_chars||'')}
+      ${_labRow('Banned stock phrases', _labTags(d.banned_stock_phrases))}
+      ${_labRow('Gender discipline', d.gender_discipline||'')}
+    </div>
+    <div class="lab-rules-section">
+      <div class="lab-rules-section-h">Backend Keywords</div>
+      ${_labRow('Max bytes', k.max_bytes||'')}
+      ${_labRow('Format', k.format||'')}
+      ${_labRow('Forbidden', _labTags(k.forbidden))}
+    </div>
+    <div class="lab-rules-section">
+      <div class="lab-rules-section-h">Compliance</div>
+      ${_labRow('Block UPF without test', c.block_upf_without_test ? 'On' : 'Off')}
+      ${_labRow('Block antimicrobial without EPA', c.block_antimicrobial_without_epa ? 'On' : 'Off')}
+      ${_labRow('Block promotional language', c.block_promotional_language ? 'On' : 'Off')}
+      ${_labRow('Block competitor brand names', c.block_competitor_brand_names ? 'On' : 'Off')}
+    </div>
+    <div class="lab-rules-section">
+      <div class="lab-rules-section-h">Brand Defaults</div>
+      ${_labRow('Care', def.care||'—')}
+      ${_labRow('Country of origin', def.coo||'—')}
+      ${_labRow('UPF', def.upf||'—')}
+      ${_labRow('Gender', def.gender||'—')}
+      ${_labRow('Vendor code', def.vendor_code_full||'—')}
+    </div>
+  `;
+}
+
+// ──── Past Sessions picker ───────────────────────────────
+async function labLoadPastSessions() {
+  try {
+    const r = await fetch('/api/lab/sessions');
+    const data = await r.json();
+    if (!r.ok || data.error) return;
+    const list = (data.sessions || []).filter(s => !s.is_current);
+    const wrap = document.getElementById('lab-past-sessions');
+    const host = document.getElementById('lab-past-sessions-list');
+    if (!list.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    host.innerHTML = list.slice(0, 12).map(s => {
+      const dt = (s.saved_at || '').replace('T', ' · ').slice(0, 19);
+      return `<div class="lab-past-session-row" onclick="labLoadSession('${s.file}')">
+        <span class="lab-past-session-brand">${s.brand || '—'}</span>
+        <span class="lab-past-session-meta">${s.style_count} styles · ${s.variant_count} variants · ${dt}</span>
+        <span class="lab-past-session-meta">load →</span>
+      </div>`;
+    }).join('');
+  } catch (e) { /* tolerate */ }
+}
+
+async function labLoadSession(filename) {
+  try {
+    const r = await fetch('/api/lab/load-session', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: filename }),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) { showToast(data.error || 'Load failed', 'error'); return; }
+    labGridState.styles = data.styles || [];
+    labGridState.brand = data.brand || '';
+    labGridState.currentStyle = labGridState.styles[0] && labGridState.styles[0].style_num;
+    document.getElementById('lab-grid-state').textContent =
+      `✓ Restored · ${labGridState.brand} · ${labGridState.styles.length} styles`;
+    document.getElementById('lab-grid-meta').textContent =
+      `${labGridState.styles.length} styles · ${labGridState.brand}`;
+    document.getElementById('lab-grid-status-sub').textContent =
+      `${labGridState.brand} · ${labGridState.styles.length} styles loaded`;
+    const ss = document.getElementById('lab-grid-style-select');
+    ss.innerHTML = labGridState.styles.map(s =>
+      `<option value="${s.style_num}">${s.style_num} · ${(s.style_name || '').slice(0,80)}</option>`).join('');
+    document.getElementById('lab-grid-editor').style.display = 'block';
+    if (data.warnings && data.warnings.length) data.warnings.forEach(w => showToast(w, 'success'));
+    await labGridReloadGroupList();
+    await labGridFetchAndRender();
+    await labLoadVoiceAndRules();
+  } catch (e) {
+    showToast('Load error: ' + e.message, 'error');
+  }
+}
+
+// ──── Generate ─────────────────────────────────────────
+let _labGenStyleStartedAt = 0;
+let _labGenLastStyle = '';
+let _labGenTicker = null;
+function _labGenStartTicker() {
+  if (_labGenTicker) return;
+  _labGenTicker = setInterval(() => {
+    const el = document.getElementById('lab-gen-elapsed');
+    if (el && _labGenStyleStartedAt) {
+      const sec = Math.floor((Date.now() - _labGenStyleStartedAt) / 1000);
+      el.textContent = `• ${sec}s on this style`;
+    }
+  }, 250);
+}
+function _labGenStopTicker() {
+  if (_labGenTicker) { clearInterval(_labGenTicker); _labGenTicker = null; }
+}
+
+async function labGenerateAll() { return labGenerate({ scope: 'all' }); }
+async function labGenerateOne() {
+  if (!labGridState.currentStyle) { showToast('No style selected', 'warning'); return; }
+  return labGenerate({ scope: 'style', style: labGridState.currentStyle });
+}
+
+async function labGenerate(payload) {
+  if (!labGridState.styles.length) { showToast('Upload a sheet first', 'warning'); return; }
+  // Guard: confirm regen overwrite if cells are dirty
+  if (labGridState.dirty) {
+    if (!confirm('You have unsaved grid changes. Generate will overwrite copy fields. Continue?')) return;
+  }
+  document.getElementById('lab-gen-overlay').classList.add('active');
+  document.getElementById('lab-gen-counter').textContent = 'Style 0 of —';
+  document.getElementById('lab-gen-style').textContent = 'Preparing…';
+  document.getElementById('lab-gen-step').textContent = 'Calling LLM…';
+  document.getElementById('lab-gen-bar').style.width = '0%';
+  document.getElementById('lab-gen-elapsed').textContent = '—';
+  _labGenStartTicker();
+
+  try {
+    const r = await fetch('/api/lab/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) {
+      _labGenStopTicker();
+      document.getElementById('lab-gen-overlay').classList.remove('active');
+      showToast(data.error || 'Generate failed', 'error');
+      return;
+    }
+  } catch (e) {
+    _labGenStopTicker();
+    document.getElementById('lab-gen-overlay').classList.remove('active');
+    showToast('Generate error: ' + e.message, 'error');
+    return;
+  }
+
+  // Poll progress
+  const poll = setInterval(async () => {
+    try {
+      const r = await fetch('/api/lab/generate-progress');
+      const pg = await r.json();
+      const counter = document.getElementById('lab-gen-counter');
+      const styleEl = document.getElementById('lab-gen-style');
+      const stepEl = document.getElementById('lab-gen-step');
+      const bar = document.getElementById('lab-gen-bar');
+      if (pg.total > 0) {
+        const idx = Math.min((pg.completed || 0) + 1, pg.total);
+        counter.textContent = `Style ${idx} of ${pg.total}`;
+      }
+      const styleKey = pg.current_style || '';
+      if (styleKey && styleKey !== _labGenLastStyle) {
+        _labGenLastStyle = styleKey;
+        _labGenStyleStartedAt = Date.now();
+        styleEl.textContent = styleKey;
+      }
+      if (pg.current_step) stepEl.textContent = pg.current_step;
+      if (pg.percent != null) bar.style.width = pg.percent + '%';
+      if (pg.status === 'done' || pg.status === 'error') {
+        clearInterval(poll);
+        _labGenStopTicker();
+        bar.style.width = '100%';
+        document.getElementById('lab-gen-overlay').classList.remove('active');
+        if (pg.status === 'error') {
+          showToast('Generate failed: ' + (pg.error || 'unknown'), 'error');
+          return;
+        }
+        showToast(`Generated ${pg.completed} of ${pg.total} styles`, 'success');
+        // Refresh grid (LLM-generated copy now lives under _lab_generated)
+        await labGridReloadGroupList();
+        await labGridFetchAndRender();
+      }
+    } catch (e) { /* keep polling */ }
+  }, 1000);
 }
 
 // ═════════ BETA: Image → NIS — Step 5 init shell ═════════

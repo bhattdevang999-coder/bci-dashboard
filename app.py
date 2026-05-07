@@ -632,6 +632,11 @@ BRAND_CONFIGS = {
         "title_formula": "{brand} Women's {style_descriptor} {product_type}, {color}, {size}",
         "never_words": [],
     },
+    # Ben Sherman: leave gender/department empty so per-style division_name
+    # drives the gender ('BEN SHERMAN MENS OUTERWEAR' → Male). The hardcoded
+    # Women's seed that used to live here was wrong — Ben Sherman is a men's
+    # heritage brand. Pass 12.7 stripped the bad cached file; this seed fix
+    # makes sure we don't recreate the bug from the in-memory map.
     "Ben Sherman": {
         "vendor_code_prefix": "",
         "vendor_code_full": "",
@@ -639,10 +644,10 @@ BRAND_CONFIGS = {
         "default_fabric": "",
         "default_coo": "",
         "default_care": "Machine Wash",
-        "gender": "Female",
-        "department": "Womens",
+        "gender": "",
+        "department": "",
         "bullet_1_focus": "British mod heritage style",
-        "title_formula": "{brand} Women's {style_descriptor} {product_type}, {color}, {size}",
+        "title_formula": "{brand} {gender} {style_descriptor} {product_type}, {color}, {size}",
         "never_words": [],
     },
     "Spyder": {
@@ -11241,6 +11246,10 @@ def lab_upload():
 
         lab_session["styles"] = styles  # full record kept server-side
         lab_session["brand"] = brand
+        # Reset snapshot name so a new upload starts a new timestamped file
+        lab_session["_snapshot_name"] = None
+        # Persist to disk so a server restart doesn't wipe edits
+        _lab_session_persist()
 
         return jsonify({
             "ok": True,
@@ -11516,6 +11525,8 @@ def lab_grid_save():
                     v[k] = new_norm
                     updated += 1
 
+    if updated:
+        _lab_session_persist()
     return jsonify({
         "ok": True,
         "style_num": style_num,
@@ -11601,6 +11612,376 @@ def lab_download_xlsm():
         download_name=out_path.name,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+# ══════════════════════════════════════════════════════════════
+# LAB · STAGE 3 — brain in the grid
+# generate • persist • sessions • brand voice • brand rules
+# ══════════════════════════════════════════════════════════════
+LAB_SESSIONS_DIR = BASE_DIR / "lab_sessions"
+LAB_SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _lab_session_persist():
+    """Write the current lab_session to disk.
+
+    File layout:
+      lab_sessions/
+        <Brand>_<YYYYMMDD-HHMMSS>.json    — timestamped snapshot per upload
+        <Brand>__current.json             — latest, used to restore after
+                                            server restart for the same brand
+
+    Idempotent. Best-effort — never raises into the request handler.
+    """
+    if not lab_session.get("brand") or not lab_session.get("styles"):
+        return None
+    brand_safe = re.sub(r"[^\w]", "_", lab_session["brand"])
+    payload = {
+        "brand": lab_session["brand"],
+        "styles": lab_session["styles"],
+        "file_path": lab_session.get("file_path", ""),
+        "saved_at": datetime.utcnow().isoformat("T") + "Z",
+        "style_count": len(lab_session.get("styles", [])),
+        "variant_count": sum(len(s.get("variants", [])) for s in lab_session.get("styles", [])),
+    }
+    # snapshot file
+    if not lab_session.get("_snapshot_name"):
+        ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+        lab_session["_snapshot_name"] = f"{brand_safe}_{ts}.json"
+    snap_path = LAB_SESSIONS_DIR / lab_session["_snapshot_name"]
+    cur_path = LAB_SESSIONS_DIR / f"{brand_safe}__current.json"
+    try:
+        with open(snap_path, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, indent=2, default=str)
+        with open(cur_path, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, indent=2, default=str)
+        return str(snap_path)
+    except Exception as e:
+        print(f"[lab] persist failed: {e}", flush=True)
+        return None
+
+
+@app.route("/api/lab/sessions", methods=["GET"])
+def lab_sessions_list():
+    """List saved Lab sessions newest first. Used by the Past Sessions picker."""
+    items = []
+    for p in sorted(LAB_SESSIONS_DIR.glob("*.json"),
+                    key=lambda x: x.stat().st_mtime, reverse=True):
+        try:
+            with open(p, encoding="utf-8") as fh:
+                meta = json.load(fh)
+        except Exception:
+            continue
+        items.append({
+            "file": p.name,
+            "brand": meta.get("brand", ""),
+            "saved_at": meta.get("saved_at", ""),
+            "style_count": meta.get("style_count", 0),
+            "variant_count": meta.get("variant_count", 0),
+            "is_current": p.name.endswith("__current.json"),
+        })
+    return jsonify({"ok": True, "sessions": items[:60]})
+
+
+@app.route("/api/lab/load-session", methods=["POST"])
+def lab_load_session():
+    """Restore a saved Lab session by filename.
+
+    Loads styles + brand + file_path back into lab_session and returns the
+    same payload shape as /api/lab/upload so the front-end can rerender.
+    """
+    data = request.get_json(force=True) or {}
+    fname = (data.get("file") or "").strip()
+    if not fname or "/" in fname or "\\\\" in fname:
+        return jsonify({"error": "file required"}), 400
+    p = LAB_SESSIONS_DIR / fname
+    if not p.exists():
+        return jsonify({"error": "session not found"}), 404
+    try:
+        with open(p, encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except Exception as e:
+        return jsonify({"error": f"load failed: {e}"}), 500
+    lab_session["brand"] = payload.get("brand", "")
+    lab_session["styles"] = payload.get("styles", [])
+    lab_session["file_path"] = payload.get("file_path", "")
+    lab_session["_snapshot_name"] = fname if not fname.endswith("__current.json") else None
+    client_styles = [{
+        "style_num": s.get("style_num", ""),
+        "style_name": s.get("style_name", ""),
+        "subclass": s.get("subclass", ""),
+        "variants": s.get("variants", []),
+    } for s in lab_session["styles"]]
+    return jsonify({
+        "ok": True,
+        "brand": lab_session["brand"],
+        "styles": client_styles,
+        "warnings": [f"Restored {len(client_styles)} styles from {fname}."],
+        "errors": [],
+    })
+
+
+# ──── Brand voice + rules ─────────────────────────────────────
+@app.route("/api/lab/brand-rules", methods=["GET"])
+def lab_brand_rules():
+    """Return the effective rules Atlas applies for a brand.
+
+    Stage 3 ships READ-ONLY — the operator sees what Atlas does today.
+    Stage 4 makes the structured rules editable. Voice IS editable today
+    via /api/lab/brand-voice.
+    """
+    brand = (request.args.get("brand") or "").strip() or lab_session.get("brand", "")
+    if not brand:
+        return jsonify({"error": "brand required"}), 400
+    cfg = _load_brand_config_data(brand) or {}
+    return jsonify({
+        "ok": True,
+        "brand": brand,
+        "voice": cfg.get("brand_voice", "") or cfg.get("voice", ""),
+        "rules": {
+            "title": {
+                "format": "{brand} {gender} {item_type} – {key_attribute}, {color}",
+                "max_chars": 120,
+                "required_tokens": ["brand", "gender", "item_type"],
+                "forbidden_words": list(cfg.get("never_words") or []) + [
+                    "luxurious", "ultimate", "perfect", "best",
+                ],
+            },
+            "bullets": {
+                "count": 5,
+                "max_chars_each": 256,
+                "format": "ALL-CAPS HEADLINE — sentence.",
+                "bullet_1_focus": cfg.get("bullet_1_focus") or "material",
+                "forbidden_words": ["luxurious", "ultimate", "perfect", "best"],
+            },
+            "description": {
+                "max_chars": 2000,
+                "banned_stock_phrases": [
+                    "the modern woman", "the modern man", "the modern individual",
+                    "women who refuse", "men who refuse",
+                    "woman on the move", "man on the move",
+                ],
+                "gender_discipline": (
+                    "Description must match the title's gender. Men's title → men/man/he. "
+                    "Women's title → women/woman/she. Unknown gender → customer/wearer/you."
+                ),
+            },
+            "backend_keywords": {
+                "max_bytes": 249,
+                "format": "lowercase, space-separated",
+                "forbidden": ["commas", "brand name", "overlap with title or bullets"],
+            },
+            "compliance": {
+                "block_upf_without_test": True,
+                "block_antimicrobial_without_epa": True,
+                "block_promotional_language": True,
+                "block_competitor_brand_names": True,
+            },
+            "defaults": {
+                "care":   cfg.get("default_care", ""),
+                "coo":    cfg.get("default_coo", ""),
+                "upf":    cfg.get("default_upf", ""),
+                "gender": cfg.get("gender", ""),
+                "vendor_code_full": cfg.get("vendor_code_full", ""),
+            },
+        },
+        # Tag the panel as read-only in Stage 3 so the front-end can show it that way.
+        "editable": False,
+        "voice_editable": True,
+    })
+
+
+@app.route("/api/lab/brand-voice", methods=["POST"])
+def lab_brand_voice_save():
+    """Save freeform brand voice text into the brand_config JSON.
+
+    Body: {brand, voice}. Voice persists under cfg['brand_voice'].
+    """
+    data = request.get_json(force=True) or {}
+    brand = (data.get("brand") or "").strip() or lab_session.get("brand", "").strip()
+    voice = (data.get("voice") or "").strip()
+    # Guard: brand must be ≥3 chars and contain at least one letter so we don't
+    # write garbage filenames like ___________.json from a stray empty submit.
+    if not brand or len(brand) < 3 or not re.search(r"[A-Za-z]", brand):
+        return jsonify({"error": "brand required"}), 400
+    cfg = _load_brand_config_data(brand) or {}
+    cfg["brand_voice"] = voice
+    brand_file = BRAND_CONFIGS_DIR / f"{re.sub(r'[^\\w]', '_', brand)}.json"
+    try:
+        with open(str(brand_file), "w", encoding="utf-8") as fh:
+            json.dump(cfg, fh, indent=2)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify({"ok": True, "brand": brand, "chars": len(voice)})
+
+
+# ──── Generate (LLM) ────────────────────────────────────────────
+lab_gen_progress = {
+    "total": 0, "completed": 0,
+    "current_style": "", "current_step": "",
+    "status": "idle",   # idle | running | done | error
+    "error": "", "started_at": None,
+}
+
+
+def _lab_run_generation(target_styles):
+    """Background worker. Runs the existing generate_content_llm pipeline
+    over the requested styles, then routes results into style['_lab_generated']
+    after the gender-drift scrub. Mirrors _run_content_generation_impl but
+    scoped to lab_session and only the few fields the grid surfaces.
+    """
+    global lab_gen_progress
+    try:
+        brand = lab_session.get("brand", "") or ""
+        brand_cfg = _load_brand_config_data(brand) or {}
+        feedback_history = ""  # Lab Stage 3 doesn't yet replay operator feedback
+        lab_gen_progress.update({
+            "total": len(target_styles),
+            "completed": 0,
+            "current_style": "",
+            "current_step": "Initializing…",
+            "status": "running",
+            "error": "",
+            "started_at": time.time(),
+        })
+        for i, style in enumerate(target_styles):
+            sn = style.get("style_num", f"row{i}")
+            name = (style.get("style_name", "") or "")[:80]
+            lab_gen_progress["current_style"] = f"{sn} — {name}"
+            lab_gen_progress["current_step"] = "Generating SEO-optimized title (max 120 chars)…"
+            try:
+                llm_result = None
+                if _anthropic_client is not None:
+                    try:
+                        llm_result = generate_content_llm(brand_cfg, brand, style, feedback_history)
+                    except Exception as e:
+                        print(f"[lab][LLM] {sn} fallback: {e}", flush=True)
+                if llm_result:
+                    title = llm_result.get("title", "") or ""
+                    bullets = [
+                        llm_result.get("bullet_1", ""),
+                        llm_result.get("bullet_2", ""),
+                        llm_result.get("bullet_3", ""),
+                        llm_result.get("bullet_4", ""),
+                        llm_result.get("bullet_5", ""),
+                    ]
+                    description = llm_result.get("description", "") or ""
+                    backend_kw = llm_result.get("backend_keywords", "") or ""
+                else:
+                    # Rule-based fallback (same shape as the live Bulk Upload pipeline)
+                    pt = (_resolve_style_product_type(style) or "").upper()
+                    style_gender, _ = _derive_gender_department(style)
+                    eff_gender = style_gender or brand_cfg.get("gender", "")
+                    subclass = style.get("subclass", "") or ""
+                    sub_subclass = style.get("sub_subclass", "") or ""
+                    fabric = parse_fabric(style.get("fabric", "")) or brand_cfg.get("default_fabric", "")
+                    care = style.get("care", "") or brand_cfg.get("default_care", "")
+                    upf = style.get("upf", "") or brand_cfg.get("default_upf", "")
+                    first_color = (style.get("variants", [{}])[0].get("color_name", "") if style.get("variants") else "") or ""
+                    first_size = (style.get("variants", [{}])[0].get("size", "") if style.get("variants") else "") or ""
+                    pt_label = subclass or sub_subclass or pt.replace("_", " ").title() or "Item"
+                    title = generate_title(brand_cfg, brand, style.get("style_name", ""), pt_label,
+                                           first_color, first_size, upf, style_gender=style_gender)
+                    bullets = generate_bullets(brand_cfg, brand, style.get("style_name", ""),
+                                               sub_subclass, fabric, care, first_color, upf,
+                                               subclass=subclass, gender=eff_gender, product_type=pt,
+                                               style_num=sn)
+                    description = generate_description(brand_cfg, brand, sn, style.get("style_name", ""),
+                                                       sub_subclass, fabric, care, first_color, upf,
+                                                       subclass=subclass, gender=eff_gender, product_type=pt)
+                    backend_kw = generate_backend_keywords(brand, style.get("style_name", ""),
+                                                            subclass, first_color, fabric, upf,
+                                                            subclass=subclass, gender=eff_gender, product_type=pt)
+
+                # Gender-drift scrub (Pass 12.7) — same belt-and-suspenders
+                style_gender2, _ = _derive_gender_department(style)
+                eff_g = style_gender2 or brand_cfg.get("gender", "") or ""
+                if eff_g not in ("Male", "Female") and title:
+                    t = title.lower()
+                    if "women's" in t or "women\u2019s" in t:
+                        eff_g = "Female"
+                    elif "men's" in t or "men\u2019s" in t:
+                        eff_g = "Male"
+                description = _scrub_gender_drift(description, eff_g)
+                bullets = [_scrub_gender_drift(b or "", eff_g) for b in bullets]
+
+                style["_lab_generated"] = {
+                    "title": title,
+                    "bullet_1": bullets[0] if len(bullets) > 0 else "",
+                    "bullet_2": bullets[1] if len(bullets) > 1 else "",
+                    "bullet_3": bullets[2] if len(bullets) > 2 else "",
+                    "bullet_4": bullets[3] if len(bullets) > 3 else "",
+                    "bullet_5": bullets[4] if len(bullets) > 4 else "",
+                    "description": description,
+                    "backend_keywords": backend_kw,
+                    "_generated_at": datetime.utcnow().isoformat("T") + "Z",
+                    "_llm_used": llm_result is not None,
+                }
+                lab_gen_progress["completed"] = i + 1
+                lab_gen_progress["current_step"] = f"✓ {sn} complete"
+            except Exception as style_err:
+                traceback.print_exc()
+                style["_lab_generated"] = {
+                    "_pipeline_error": True,
+                    "_error": f"{type(style_err).__name__}: {str(style_err)[:200]}",
+                }
+                lab_gen_progress["completed"] = i + 1
+                lab_gen_progress["current_step"] = f"⚠ {sn} — generation error"
+        # Persist after the run
+        _lab_session_persist()
+        lab_gen_progress["status"] = "done"
+        lab_gen_progress["current_style"] = ""
+        lab_gen_progress["current_step"] = ""
+    except Exception as worker_err:
+        traceback.print_exc()
+        lab_gen_progress["status"] = "error"
+        lab_gen_progress["error"] = f"{type(worker_err).__name__}: {str(worker_err)[:300]}"
+
+
+@app.route("/api/lab/generate", methods=["POST"])
+def lab_generate():
+    """Kick off generation for one style or all styles in lab_session.
+
+    Body: {scope: 'all' | 'style', style: <style_num> (when scope='style')}
+    Returns immediately; the front-end polls /api/lab/generate-progress.
+    """
+    if not lab_session.get("styles"):
+        return jsonify({"error": "No data in session. Upload first."}), 400
+    if lab_gen_progress.get("status") == "running":
+        return jsonify({"error": "Generation already running"}), 409
+    data = request.get_json(force=True) or {}
+    scope = (data.get("scope") or "all").strip()
+    if scope == "style":
+        sn = (data.get("style") or "").strip()
+        s = _lab_session_get_style(sn)
+        if not s:
+            return jsonify({"error": f"Style {sn} not found"}), 404
+        targets = [s]
+    else:
+        targets = lab_session["styles"]
+    threading.Thread(target=_lab_run_generation, args=(targets,), daemon=True).start()
+    return jsonify({"ok": True, "total": len(targets), "scope": scope})
+
+
+@app.route("/api/lab/generate-progress", methods=["GET"])
+def lab_generate_progress():
+    elapsed = "—"
+    if lab_gen_progress.get("started_at"):
+        secs = int(time.time() - lab_gen_progress["started_at"])
+        elapsed = f"{secs}s"
+    pct = 0.0
+    if lab_gen_progress.get("total"):
+        pct = round(lab_gen_progress["completed"] / lab_gen_progress["total"] * 100, 1)
+    return jsonify({
+        "total":   lab_gen_progress["total"],
+        "completed": lab_gen_progress["completed"],
+        "current_style": lab_gen_progress["current_style"],
+        "current_step":  lab_gen_progress["current_step"],
+        "status":  lab_gen_progress["status"],
+        "error":   lab_gen_progress.get("error", ""),
+        "elapsed": elapsed,
+        "percent": pct,
+    })
 
 
 if __name__ == "__main__":
