@@ -3521,8 +3521,14 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .lab-rail::-webkit-scrollbar { width: 6px; }
 .lab-rail::-webkit-scrollbar-thumb { background: #1C2D40; border-radius: 3px; }
 .lab-rail-eyebrow {
-  color: #64748B; font-size: 10.5px; letter-spacing: .12em;
-  text-transform: uppercase; padding: 4px 0 10px 0;
+  color: #CBD5E1; font: 700 11px Trebuchet MS, sans-serif;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 0 2px 0;
+}
+.lab-rail-subeyebrow {
+  color: #64748B; font: 10.5px Calibri, sans-serif;
+  letter-spacing: 0; text-transform: none;
+  padding: 0 0 12px 0; line-height: 1.4;
 }
 .lab-rail-pt {
   padding: 6px 0 4px 0; border-top: 1px solid #13212F;
@@ -3541,23 +3547,42 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .lab-rail-pt.collapsed .lab-rail-pt-list { display: none; }
 .lab-rail-pt-list { padding: 2px 0 6px 14px; }
 .lab-rail-style {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 8px; margin: 1px 0; border-radius: 6px;
-  cursor: pointer; color: #94A3B8;
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px; margin: 2px 0; border-radius: 6px;
+  cursor: pointer;
   border-left: 2px solid transparent;
+  transition: background .14s, border-left-color .14s;
 }
-.lab-rail-style:hover { color: #E2E8F0; background: #0E1A26; }
+.lab-rail-style:hover { background: #0E1A26; }
 .lab-rail-style.active {
-  color: #5EEAD4; background: #0E1A26;
+  background: #0E1A26;
   border-left-color: #5EEAD4;
 }
-.lab-rail-style-num { font-weight: 600; }
-.lab-rail-style-badge {
-  margin-left: auto; font-size: 10px; opacity: .9;
+.lab-rail-style-body { flex: 1; min-width: 0; }
+.lab-rail-style-name {
+  font: 12.5px Calibri, sans-serif; color: #E2E8F0;
+  line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.lab-rail-style-badge.ready { color: #10B981; }
-.lab-rail-style-badge.warn  { color: #F59E0B; }
-.lab-rail-style-badge.muted { color: #475569; }
+.lab-rail-style.active .lab-rail-style-name { color: #5EEAD4; font-weight: 600; }
+.lab-rail-style-meta {
+  font: 10px ui-monospace, Consolas, monospace; color: #64748B;
+  margin-top: 2px; letter-spacing: .02em;
+}
+.lab-rail-style-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  margin-top: 5px; flex-shrink: 0;
+  background: #475569;
+}
+.lab-rail-style-dot.ready { background: #10B981; box-shadow: 0 0 0 3px rgba(16,185,129,.15); }
+.lab-rail-style-dot.warn  { background: #F59E0B;
+  animation: labRailPulse 1.4s ease-in-out infinite;
+}
+.lab-rail-style-dot.muted { background: #334155; border: 1px solid #475569; }
+@keyframes labRailPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,.45); }
+  50%     { box-shadow: 0 0 0 5px rgba(245,158,11,0); }
+}
 .lab-rail-pt-actions {
   margin-top: 4px; padding-left: 14px;
 }
@@ -3644,9 +3669,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .lab-field:first-of-type { border-top: 0; padding-top: 4px; }
 .lab-field-label {
   display: flex; align-items: center; gap: 8px;
-  font: 10.5px ui-monospace, Consolas, monospace; letter-spacing: .12em;
-  text-transform: uppercase; color: #64748B;
-  margin-bottom: 4px;
+  font: 600 11px Trebuchet MS, sans-serif; letter-spacing: .04em;
+  text-transform: none; color: #94A3B8;
+  margin-bottom: 6px;
 }
 .lab-field-len { margin-left: auto; color: #475569; font-size: 10.5px; }
 .lab-field-len.over { color: #F87171; }
@@ -3962,11 +3987,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="nav-section-divider"></div>
     <div class="nav-label">
       <span class="nav-module-num">∇</span> Lab
-      <span class="nav-pill nav-pill-beta">EXPERIMENTAL</span>
     </div>
     <div class="nav-item-beta" id="nav-lab-grid" onclick="showLabGridPage()">
-      <span class="nav-dot live"></span> Grid Editor
-      <span class="nav-pill nav-pill-beta">STAGE 4</span>
+      <span class="nav-dot live"></span> Listing Lab
     </div>
 
     <div class="nav-section-divider"></div>
@@ -6170,16 +6193,16 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <div class="atlas-upload-header">
       <div class="atlas-upload-eyebrow">
         <span class="atlas-pulse"></span>
-        LAB · GRID EDITOR · STAGE 4
+        ATLAS · LAB
       </div>
-      <h1 class="atlas-upload-h1">Grid Editor</h1>
-      <div class="atlas-status-sub" id="lab-grid-status-sub">No sheet loaded</div>
+      <h1 class="atlas-upload-h1">Listing Lab</h1>
+      <div class="atlas-status-sub" id="lab-grid-status-sub">Drop one sheet. Atlas drafts every listing, validates against Amazon, and hands you a Vendor-Central file.</div>
     </div>
 
     <!-- Section 1: Upload row -->
     <div id="lab-grid-upload-section" style="margin-top:24px;">
       <div class="atlas-sources-h">
-        <div class="atlas-sources-eyebrow">// DATA SOURCE</div>
+        <div class="atlas-sources-eyebrow">Start here</div>
         <div class="atlas-sources-meta" id="lab-grid-meta">No file uploaded</div>
       </div>
       <div class="atlas-sources">
@@ -6200,7 +6223,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
       <!-- Past Sessions picker (Stage 3) -->
       <div class="lab-past-sessions" id="lab-past-sessions" style="display:none;">
-        <div class="lab-past-sessions-h">// PAST LAB SESSIONS</div>
+        <div class="lab-past-sessions-h">Continue a previous session</div>
         <div class="lab-past-sessions-list" id="lab-past-sessions-list"></div>
       </div>
     </div>
@@ -6208,10 +6231,10 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <!-- Section 2: Grid editor (hidden until upload) -->
     <div id="lab-grid-editor" class="lab-mode-cards" style="display:none; margin-top:32px;">
 
-      <!-- Stage 5 — sub-module switcher (Listing Lab · Image → NIS) -->
+      <!-- Stage 5 — sub-module switcher (From sheet · From photo) -->
       <div class="lab-submod-row" id="lab-submod-row">
-        <button class="lab-submod-pill active" id="lab-submod-grid" onclick="labSwitchSubmod('grid')">// LISTING LAB</button>
-        <button class="lab-submod-pill" id="lab-submod-image" onclick="labSwitchSubmod('image')">// IMAGE → NIS</button>
+        <button class="lab-submod-pill active" id="lab-submod-grid" onclick="labSwitchSubmod('grid')">From sheet</button>
+        <button class="lab-submod-pill" id="lab-submod-image" onclick="labSwitchSubmod('image')">From photo</button>
         <div class="lab-submod-spacer"></div>
         <button class="lab-tb-btn" onclick="labDrawerOpen('voice')" title="Brand Voice instructions">✎ Voice</button>
         <button class="lab-tb-btn" onclick="labDrawerOpen('rules')" title="What Atlas applies on every Generate">§ Rules</button>
@@ -6245,7 +6268,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
         <!-- Left rail: PT-grouped style list -->
         <aside class="lab-rail" id="lab-rail">
-          <div class="lab-rail-eyebrow">// STYLES BY PRODUCT TYPE</div>
+          <div class="lab-rail-eyebrow">Styles</div>
+          <div class="lab-rail-subeyebrow">Trained on 16 product types · 9,400+ Amazon values</div>
           <div id="lab-rail-body"></div>
         </aside>
 
@@ -6265,7 +6289,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       <!-- Brand Voice editor (legacy in-page — hidden in card view via .lab-mode-cards) -->
       <div class="lab-voice-card" style="display:none;">
         <div class="lab-voice-h">
-          <span class="lab-voice-eyebrow">// BRAND VOICE</span>
+          <span class="lab-voice-eyebrow">Brand voice</span>
           <span class="lab-voice-meta" id="lab-voice-meta">Atlas applies these instructions on every Generate</span>
           <button class="atlas-source-btn-secondary lab-voice-save" onclick="labVoiceSave()" id="lab-voice-save">Save Voice</button>
         </div>
@@ -6274,7 +6298,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
 
       <div class="atlas-sources-h" id="lab-grid-controls-row" style="margin-top:24px;">
-        <div class="atlas-sources-eyebrow">// EDITING</div>
+        <div class="atlas-sources-eyebrow">Spreadsheet editor</div>
         <div class="atlas-sources-meta" id="lab-grid-edit-meta">—</div>
       </div>
 
@@ -6300,9 +6324,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         </div>
       </div>
 
-      <!-- Honest note -->
+      <!-- Spreadsheet-mode helper note -->
       <div class="lab-grid-note">
-        // Stage 4 — live validation on edit · right-click cell to regen / improve / lock · selective copy across styles · bit-perfect Vendor Central .xlsm.
+        Edit any cell. Right-click for regen / improve / lock. Copy across styles. Download is the bit-perfect Vendor Central file.
       </div>
 
       <!-- The grid itself -->
@@ -6314,7 +6338,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       <!-- Brand Rules panel (Stage 3 — read-only; legacy in-page, hidden in card mode) -->
       <div class="lab-rules-card" id="lab-rules-card" style="display:none;">
         <div class="lab-rules-h" onclick="labRulesToggle()">
-          <span class="lab-rules-eyebrow">// BRAND RULES</span>
+          <span class="lab-rules-eyebrow">Brand rules</span>
           <span class="lab-rules-meta" id="lab-rules-meta">What Atlas applies on every Generate · read-only in Stage 3</span>
           <span class="lab-rules-caret" id="lab-rules-caret">▾</span>
         </div>
@@ -6336,23 +6360,23 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       <div class="lab-drawer-body">
         <!-- Voice tab -->
         <div class="lab-drawer-pane" data-pane="voice">
-          <div class="lab-drawer-section-h">// BRAND VOICE</div>
-          <div style="color:#64748B;font-size:11.5px;margin-bottom:10px;">Atlas applies this on every Generate. Persists per brand.</div>
+          <div class="lab-drawer-section-h">Brand voice</div>
+          <div style="color:#64748B;font-size:11.5px;margin-bottom:10px;">Atlas applies this on every draft. Persists per brand.</div>
           <textarea id="lab-drawer-voice-input" rows="6" placeholder="e.g. Lead bullet 1 with material. Use 'tailored' over 'fitted'. Keep titles under 100 chars even though Amazon allows 120."></textarea>
           <div style="display:flex;justify-content:flex-end;margin-top:8px;">
             <button class="lab-tb-btn primary" onclick="labDrawerVoiceSave()">Save voice →</button>
           </div>
-          <div class="lab-drawer-section-h" style="margin-top:22px;">// LAST SAVED</div>
+          <div class="lab-drawer-section-h" style="margin-top:22px;">Last saved</div>
           <div id="lab-drawer-voice-meta" style="color:#64748B;font-size:11.5px;">—</div>
         </div>
         <!-- Rules tab -->
         <div class="lab-drawer-pane" data-pane="rules" style="display:none;">
-          <div class="lab-drawer-section-h">// WHAT ATLAS APPLIES ON EVERY GENERATE</div>
+          <div class="lab-drawer-section-h">What Atlas applies on every draft</div>
           <div id="lab-drawer-rules-list" style="color:#94A3B8;font-size:12px;">Loading rules…</div>
         </div>
         <!-- History tab -->
         <div class="lab-drawer-pane" data-pane="history" style="display:none;">
-          <div class="lab-drawer-section-h">// PAST LAB SESSIONS</div>
+          <div class="lab-drawer-section-h">Past sessions</div>
           <div id="lab-drawer-history-list">—</div>
         </div>
       </div>
@@ -6360,7 +6384,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
     <!-- ============= Stage 5 — Train popover (anchored, dynamically positioned) ============= -->
     <div class="lab-train-pop" id="lab-train-pop" style="display:none;">
-      <div class="lab-train-pop-h" id="lab-train-pop-h">// TRAIN — TITLE</div>
+      <div class="lab-train-pop-h" id="lab-train-pop-h">Train · title</div>
       <div class="lab-train-pop-chips" id="lab-train-pop-chips"></div>
       <textarea id="lab-train-pop-input" placeholder="Or write your own instruction — e.g. drop the brand from this bullet."></textarea>
       <div class="lab-train-pop-actions">
@@ -6473,8 +6497,8 @@ const labGridState = {
 };
 
 function showLabGridPage() {
-  _showPage('lab-grid-page', 'Atlas · Lab · Grid Editor',
-    'Edit pre-filled NIS data inline — drag-fill, paste, save back. No Excel round-trip.');
+  _showPage('lab-grid-page', 'Atlas · Listing Lab',
+    'Drop one sheet — Atlas drafts every listing, validates against Amazon, hands back a Vendor-Central file.');
   const navEl = document.getElementById('nav-lab-grid');
   if (navEl) navEl.classList.add('active');
   labGridInit();
@@ -7378,6 +7402,14 @@ const labStage5State = {
   cardMode: true,        // toggled by labCardsToggleEditMode()
 };
 
+function _labKeyLabel(key) {
+  if (key === 'title')             return 'title';
+  if (key === 'description')       return 'description';
+  if (key === 'backend_keywords')  return 'backend keywords';
+  if (/^bullet_(\d)$/.test(key))   return 'bullet ' + key.split('_')[1];
+  return key.replace(/_/g, ' ');
+}
+
 const _LAB_TRAIN_CHIPS = {
   title: ['Shorter', 'Punchier', 'More technical', 'Less brand-heavy', 'More benefit-focused', 'Lead with material'],
   bullet_1: ['Shorter', 'Punchier', 'Lead with material', 'More benefit-focused', 'Drop the brand'],
@@ -7445,19 +7477,26 @@ function labStage5RenderRail() {
     body.innerHTML = '<div style="color:#475569;font-size:11.5px;padding:8px 0;">Upload a sheet to populate.</div>';
     return;
   }
+  // Friendly short label — first 4 words of the style name fits the 240px rail.
+  const _shortName = (nm) => {
+    const w = (nm || '').trim().split(/\s+/);
+    return w.slice(0, 4).join(' ') + (w.length > 4 ? '…' : '');
+  };
   const pts = m.pts || [];
   const html = pts.map(pt => {
     const list = (m.by_pt[pt] || []).map(num => {
       const s = styles.find(x => x.style_num === num) || {};
-      const badge = s.ready
-        ? '<span class="lab-rail-style-badge ready" title="Ready">✓</span>'
-        : (s.bullets_filled
-            ? '<span class="lab-rail-style-badge warn" title="In progress">⚠</span>'
-            : '<span class="lab-rail-style-badge muted" title="Not generated">✤</span>');
+      const dotCls = s.ready ? 'ready' : (s.bullets_filled ? 'warn' : 'muted');
+      const dot = `<span class="lab-rail-style-dot ${dotCls}" title="${s.ready?'Ready':(s.bullets_filled?'In progress':'Not started')}"></span>`;
       const active = (labGridState.currentStyle === num) ? ' active' : '';
-      return `<div class="lab-rail-style${active}" data-style="${_esc(num)}" onclick="labStage5SelectStyle('${_esc(num)}')">
-        <span class="lab-rail-style-num">${_esc(num)}</span>
-        ${badge}
+      const variants = s.variant_count || 0;
+      const nameTxt  = _shortName(s.style_name) || _esc(num);
+      return `<div class="lab-rail-style${active}" data-style="${_esc(num)}" onclick="labStage5SelectStyle('${_esc(num)}')" title="${_esc(s.style_name || num)}">
+        ${dot}
+        <div class="lab-rail-style-body">
+          <div class="lab-rail-style-name">${_esc(nameTxt)}</div>
+          <div class="lab-rail-style-meta">${_esc(num)} · ${variants} variant${variants===1?'':'s'}</div>
+        </div>
       </div>`;
     }).join('');
     const collapsed = labStage5State.collapsedPT.has(pt) ? ' collapsed' : '';
@@ -7524,7 +7563,7 @@ function _labStage5CardHtml(c) {
   const fields = [];
   // Title (full width, larger type)
   fields.push(_labFieldHtml({
-    style: c.style_num, key: 'title', label: 'TITLE',
+    style: c.style_num, key: 'title', label: 'Title',
     text: c.title, locked: !!(c.locks && c.locks.title),
     cls: 'title-text', maxLen: 200,
   }));
@@ -7532,13 +7571,13 @@ function _labStage5CardHtml(c) {
   fields.push(_labBulletsHtml(c));
   // Description
   fields.push(_labFieldHtml({
-    style: c.style_num, key: 'description', label: 'DESCRIPTION',
+    style: c.style_num, key: 'description', label: 'Description',
     text: c.description, locked: !!(c.locks && c.locks.description),
     maxLen: 2000,
   }));
   // Backend keywords
   fields.push(_labFieldHtml({
-    style: c.style_num, key: 'backend_keywords', label: 'BACKEND KEYWORDS',
+    style: c.style_num, key: 'backend_keywords', label: 'Backend keywords',
     text: c.backend_keywords, locked: !!(c.locks && c.locks.backend_keywords),
     maxLen: 250,
   }));
@@ -7604,7 +7643,7 @@ function _labBulletsHtml(c) {
     </li>`;
   }).join('');
   return `<div class="lab-field">
-    <div class="lab-field-label"><span>BULLETS</span><span class="lab-field-len">5 lines</span></div>
+    <div class="lab-field-label"><span>Bullets</span><span class="lab-field-len">5 lines</span></div>
     <ul class="lab-field-bullets">${items}</ul>
   </div>`;
 }
@@ -7617,7 +7656,7 @@ function labTrainPopOpen(anchorEl, style, key) {
   labStage5State.trainTarget = { style, key, fieldEl };
   const pop = document.getElementById('lab-train-pop');
   if (!pop) return;
-  document.getElementById('lab-train-pop-h').textContent = '// TRAIN — ' + key.toUpperCase();
+  document.getElementById('lab-train-pop-h').textContent = 'Train · ' + _labKeyLabel(key);
   document.getElementById('lab-train-pop-input').value = '';
   // Build chips
   const chips = (_LAB_TRAIN_CHIPS[key] || ['Shorter', 'Punchier']).map(c =>
