@@ -6183,11 +6183,12 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         <div class="atlas-sources-meta" id="lab-grid-meta">No file uploaded</div>
       </div>
       <div class="atlas-sources">
-        <div class="atlas-source-row" id="lab-grid-row">
+        <div class="atlas-source-row" id="lab-grid-row"
+             ondragover="labDragOver(event)" ondragleave="labDragLeave(event)" ondrop="labDrop(event)">
           <div class="atlas-source-icon">PU</div>
           <div class="atlas-source-info">
             <div class="atlas-source-name">Pre-upload sheet <span class="atlas-source-pill">REQUIRED</span></div>
-            <div class="atlas-source-detail">31 columns · Atlas template · .xlsx / .xls / .csv / .tsv</div>
+            <div class="atlas-source-detail">Drag & drop a file here · .xlsx / .xls / .xlsm / .csv / .tsv · 31 columns</div>
           </div>
           <div class="atlas-source-state" id="lab-grid-state"><span class="atlas-source-state-dot"></span> No file uploaded</div>
           <div class="atlas-source-actions">
@@ -7338,6 +7339,24 @@ function labCopyFilterPT() {
   showToast('Same-PT filter — destinations preselected by default', 'info');
 }
 function labCopyCancel() { document.getElementById('lab-copy-modal').classList.remove('active'); }
+
+// ─────── Drag-and-drop on the Lab upload zone (Stage 5 fix) ───────
+function labDragOver(e)  { e.preventDefault(); e.stopPropagation();
+  document.getElementById('lab-grid-row')?.classList.add('atlas-source-row-drag'); }
+function labDragLeave(e) { e.preventDefault(); e.stopPropagation();
+  document.getElementById('lab-grid-row')?.classList.remove('atlas-source-row-drag'); }
+function labDrop(e) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById('lab-grid-row')?.classList.remove('atlas-source-row-drag');
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!f) return;
+  if (!/\.(xlsx|xls|xlsm|csv|tsv)$/i.test(f.name || '')) {
+    showToast('That file type isn\u2019t supported — use .xlsx, .xls, .xlsm, .csv, or .tsv.', 'warning');
+    return;
+  }
+  if (typeof labGridUpload === 'function') labGridUpload(f);
+}
+
 // ══════════════════════════════ STAGE 5 ══════════════════════════════
 // Listing-Card view + PT-grouped left rail + promptable-cell popover.
 // The Stage-2 “spreadsheet editor” underneath is preserved — reachable via

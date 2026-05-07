@@ -820,6 +820,11 @@ ol.atlas-hb-list li::before {
   border-color: rgba(94,234,212,0.35);
   background: rgba(94,234,212,0.02);
 }
+.atlas-source-row-drag {
+  border-color: #5EEAD4 !important;
+  background: rgba(94,234,212,0.08) !important;
+  box-shadow: 0 0 0 3px rgba(94,234,212,0.12);
+}
 @media (max-width: 900px) {
   .atlas-source-row {
     grid-template-columns: 40px 1fr;
