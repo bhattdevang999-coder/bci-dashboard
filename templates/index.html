@@ -3251,6 +3251,29 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   color: #F59E0B;
   font-weight: 600;
 }
+
+/* Stage 6 — subheader above the grid: eyebrow + human breadcrumb */
+.lab-grid-subheader {
+  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  margin: 24px 4px 6px 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #13212F;
+}
+.lab-grid-sub-eyebrow {
+  font: 700 11px Trebuchet MS, sans-serif;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: #CBD5E1;
+}
+.lab-grid-sub-breadcrumb {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  font: 13px Calibri, sans-serif;
+  margin-left: auto;
+}
+.lab-grid-bc-name  { color: #E2E8F0; font-weight: 600; }
+.lab-grid-bc-sku   { color: #94A3B8; font: 12px ui-monospace, Consolas, monospace; }
+.lab-grid-bc-group { color: #5EEAD4; font-weight: 600; }
+.lab-grid-bc-meta  { color: #64748B; font-size: 12px; }
+.lab-grid-bc-sep   { color: #334155; }
 .lab-grid-note {
   margin: 12px 4px 14px;
   font-family: ui-monospace, Consolas, monospace; font-size: 11px;
@@ -3263,6 +3286,29 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 }
 .lab-grid-host .handsontable {
   font-family: Calibri, Arial, sans-serif; font-size: 13px; color: #1E293B;
+}
+/* Column headers — Excel/Seller Central feel: dark sentence-case on light gray bar */
+.lab-grid-host .handsontable thead th,
+.lab-grid-host .handsontable .ht_clone_top thead th,
+.lab-grid-host .handsontable .ht_clone_top_left_corner thead th,
+.lab-grid-host .handsontable th {
+  background: #F1F5F9 !important;
+  color: #334155 !important;
+  font: 600 11.5px Calibri, Arial, sans-serif !important;
+  text-transform: none !important;
+  letter-spacing: 0.02em !important;
+  border-color: #E2E8F0 !important;
+  padding: 6px 8px !important;
+}
+.lab-grid-host .handsontable thead th .relative {
+  padding: 0 !important;
+}
+/* Row header column (index numbers) — lighter, not competing with data */
+.lab-grid-host .handsontable tbody th.htDimmed,
+.lab-grid-host .handsontable .ht_clone_left tbody th {
+  background: #F8FAFC !important;
+  color: #94A3B8 !important;
+  font: 400 11px ui-monospace, Consolas, monospace !important;
 }
 .lab-grid-footer {
   margin: 14px 4px 4px;
@@ -3364,13 +3410,15 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .lab-past-sessions-list { display: flex; flex-direction: column; gap: 4px; }
 .lab-past-session-row {
   display: flex; align-items: center; gap: 12px;
-  padding: 8px 10px; border: 1px solid #1C2D40; border-radius: 5px;
-  background: #13212F; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
-  color: #CBD5E1; cursor: pointer; transition: border-color 0.12s;
+  padding: 9px 12px; border: 1px solid #1C2D40; border-radius: 6px;
+  background: #13212F; font: 13px Calibri, sans-serif;
+  color: #CBD5E1; cursor: pointer; transition: border-color 0.12s, background 0.12s;
 }
-.lab-past-session-row:hover { border-color: #5EEAD4; }
-.lab-past-session-brand { flex: 1; color: #E2E8F0; font-weight: 600; }
-.lab-past-session-meta { color: #64748B; font-size: 11px; }
+.lab-past-session-row:hover { border-color: #2A4358; background: #182939; }
+.lab-past-session-brand { color: #E2E8F0; font-weight: 600; min-width: 140px; }
+.lab-past-session-meta { flex: 1; color: #94A3B8; font-size: 12px; }
+.lab-past-session-load { color: #5EEAD4; font: 600 12px Calibri, sans-serif; }
+.lab-past-session-row:hover .lab-past-session-load { color: #99F6E4; }
 .lab-past-session-current { color: #10B981; font-size: 10.5px; letter-spacing: 1px; }
 
 /* Generate-progress overlay (Stage 3) reuses gen-overlay tokens but keeps a Lab-scoped id */
@@ -3618,8 +3666,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
 /* Brand status header line */
 .lab-brand-status {
-  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-  font: 12px ui-monospace, Consolas, monospace; color: #94A3B8;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  font: 13px Calibri, sans-serif; color: #94A3B8;
   padding: 10px 0;
 }
 .lab-brand-status .lab-brand-name {
@@ -3632,7 +3680,13 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .lab-brand-status .lab-brand-dot.live  { background: #10B981; box-shadow: 0 0 0 3px rgba(16,185,129,.18); }
 .lab-brand-status .lab-brand-dot.warn  { background: #F59E0B; }
 .lab-brand-status .lab-brand-dot.muted { background: #475569; }
-.lab-brand-status .lab-brand-sep { opacity: .35; }
+.lab-brand-status .lab-brand-sep {
+  display: inline-block;
+  width: 1px; height: 10px;
+  background: #334155;
+  margin: 0 2px;
+  vertical-align: middle;
+}
 .lab-brand-status .lab-brand-link {
   color: #5EEAD4; cursor: pointer; text-decoration: none; border-bottom: 1px dotted transparent;
 }
@@ -6435,20 +6489,20 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         <button class="lab-submod-pill active" id="lab-submod-grid" onclick="labSwitchSubmod('grid')">From sheet</button>
         <button class="lab-submod-pill" id="lab-submod-image" onclick="labSwitchSubmod('image')">From photo</button>
         <div class="lab-submod-spacer"></div>
-        <button class="lab-tb-btn" onclick="labDrawerOpen('voice')" title="Brand Voice instructions">✎ Voice</button>
-        <button class="lab-tb-btn" onclick="labDrawerOpen('rules')" title="What Atlas applies on every Generate">§ Rules</button>
-        <button class="lab-tb-btn" onclick="labDrawerOpen('history')" title="Past Lab sessions">⧖ History</button>
+        <button class="lab-tb-btn" onclick="labDrawerOpen('voice')" title="Brand voice — the rules Atlas applies on every draft">Voice</button>
+        <button class="lab-tb-btn" onclick="labDrawerOpen('rules')" title="What Atlas applies on every draft">Rules</button>
+        <button class="lab-tb-btn" onclick="labDrawerOpen('history')" title="Past Lab sessions">History</button>
       </div>
 
       <!-- Stage 5 — brand status header line -->
       <div class="lab-brand-status" id="lab-brand-status">
         <span class="lab-brand-dot muted" id="lab-brand-dot"></span>
         <span class="lab-brand-name" id="lab-brand-status-name">No brand</span>
-        <span class="lab-brand-sep">│</span>
+        <span class="lab-brand-sep"></span>
         <span id="lab-brand-status-voice">Voice not set</span>
-        <span class="lab-brand-sep">│</span>
+        <span class="lab-brand-sep"></span>
         <span id="lab-brand-status-counts">0 styles</span>
-        <span class="lab-brand-sep">│</span>
+        <span class="lab-brand-sep"></span>
         <span id="lab-brand-status-ready">0 ready</span>
       </div>
 
@@ -6496,9 +6550,9 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
           placeholder="e.g. Always lead Bullet 1 with material. Never use 'luxurious'. Use 'tailored' over 'fitted'. Keep titles under 100 chars even though Amazon allows 120."></textarea>
       </div>
 
-      <div class="atlas-sources-h" id="lab-grid-controls-row" style="margin-top:24px;">
-        <div class="atlas-sources-eyebrow">Spreadsheet editor</div>
-        <div class="atlas-sources-meta" id="lab-grid-edit-meta">—</div>
+      <div class="lab-grid-subheader" id="lab-grid-controls-row" style="margin-top:24px;">
+        <div class="lab-grid-sub-eyebrow">Spreadsheet editor</div>
+        <div class="lab-grid-sub-breadcrumb" id="lab-grid-edit-meta">—</div>
       </div>
 
       <!-- Style + group switcher -->
@@ -6524,8 +6578,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
 
       <!-- Spreadsheet-mode helper note -->
-      <div class="lab-grid-note">
-        Edit any cell. Right-click for regen / improve / lock. Copy across styles. Download is the bit-perfect Vendor Central file.
+      <div class="lab-grid-note" title="Right-click any cell for regen / improve / lock. Copy across styles. The Bulksheet button downloads the bit-perfect Vendor Central file.">
+        Right-click any cell for options. Download = Vendor-Central ready.
       </div>
 
       <!-- The grid itself -->
@@ -7020,8 +7074,18 @@ function labGridRender(spec) {
   const scopeMetaLabel = spec.scope === 'style'
     ? '1 row'
     : `${(spec.rows || []).length} variants`;
-  document.getElementById('lab-grid-edit-meta').textContent =
-    `${labGridState.currentStyle} · ${spec.group_label || labGridState.currentGroup} · ${scopeMetaLabel}`;
+  // Lookup the style name from session so the breadcrumb reads human-first
+  const sObj = (labGridState.styles || []).find(s => s.style_num === labGridState.currentStyle);
+  const sName = (sObj && sObj.style_name) ? sObj.style_name.trim() : '';
+  const sNameShort = sName.length > 70 ? (sName.slice(0, 67) + '…') : sName;
+  const bcEl = document.getElementById('lab-grid-edit-meta');
+  bcEl.innerHTML =
+    (sNameShort ? `<span class="lab-grid-bc-name">${sNameShort.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span><span class="lab-grid-bc-sep">·</span>` : '') +
+    `<span class="lab-grid-bc-sku">${labGridState.currentStyle}</span>` +
+    `<span class="lab-grid-bc-sep">·</span>` +
+    `<span class="lab-grid-bc-group">${spec.group_label || labGridState.currentGroup}</span>` +
+    `<span class="lab-grid-bc-sep">·</span>` +
+    `<span class="lab-grid-bc-meta">${scopeMetaLabel}</span>`;
   labGridSetDirty(false);
 }
 
@@ -7185,12 +7249,25 @@ async function labLoadPastSessions() {
     const host = document.getElementById('lab-past-sessions-list');
     if (!list.length) { wrap.style.display = 'none'; return; }
     wrap.style.display = 'block';
+    // Human-readable timestamp: 'today, 3:24 PM' / 'yesterday, 9:01 AM' / 'Mon May 5, 3:24 PM'
+    const _humanTs = (iso) => {
+      if (!iso) return '';
+      const d = new Date(iso.replace(' ', 'T'));
+      if (isNaN(d.getTime())) return iso.slice(0, 16);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      const y = new Date(now); y.setDate(now.getDate() - 1);
+      const sameYesterday = d.toDateString() === y.toDateString();
+      const hh = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      if (sameDay)       return 'today, ' + hh;
+      if (sameYesterday) return 'yesterday, ' + hh;
+      return d.toLocaleDateString([], { weekday:'short', month:'short', day:'numeric' }) + ', ' + hh;
+    };
     host.innerHTML = list.slice(0, 12).map(s => {
-      const dt = (s.saved_at || '').replace('T', ' · ').slice(0, 19);
       return `<div class="lab-past-session-row" onclick="labLoadSession('${s.file}')">
         <span class="lab-past-session-brand">${s.brand || '—'}</span>
-        <span class="lab-past-session-meta">${s.style_count} styles · ${s.variant_count} variants · ${dt}</span>
-        <span class="lab-past-session-meta">load →</span>
+        <span class="lab-past-session-meta">${s.style_count} styles · loaded ${_humanTs(s.saved_at)}</span>
+        <span class="lab-past-session-load">Load →</span>
       </div>`;
     }).join('');
   } catch (e) { /* tolerate */ }
@@ -7708,10 +7785,14 @@ function labStage5RenderRail() {
     body.innerHTML = '<div style="color:#475569;font-size:11.5px;padding:8px 0;">Upload a sheet to populate.</div>';
     return;
   }
-  // Friendly short label — first 4 words of the style name fits the 240px rail.
+  // Friendly short label — fit ~28 Calibri chars; break on the last full word.
   const _shortName = (nm) => {
-    const w = (nm || '').trim().split(/\s+/);
-    return w.slice(0, 4).join(' ') + (w.length > 4 ? '…' : '');
+    const s = (nm || '').trim();
+    if (!s) return '';
+    if (s.length <= 28) return s;
+    const cut = s.slice(0, 28);
+    const lastSpace = cut.lastIndexOf(' ');
+    return (lastSpace > 14 ? cut.slice(0, lastSpace) : cut) + '…';
   };
   const pts = m.pts || [];
   const html = pts.map(pt => {
