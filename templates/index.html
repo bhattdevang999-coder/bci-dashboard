@@ -3188,6 +3188,67 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .beta-notice-body { font-size:12px; color:#9a3412; line-height:1.5; }
 
 </style>
+
+<!-- ═══ Handsontable CE 6.x (MIT, free for commercial) — Lab Stage 1 ═══ -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@6.2.2/dist/handsontable.full.min.css">
+<script src="https://cdn.jsdelivr.net/npm/handsontable@6.2.2/dist/handsontable.full.min.js"></script>
+
+<style>
+/* ═══════ LAB · GRID EDITOR (Stage 1) ═══════ */
+#lab-grid-page { color: #E2E8F0; }
+.lab-grid-controls {
+  display: flex; align-items: flex-end; gap: 16px;
+  padding: 14px 16px; margin: 12px 4px 0;
+  background: #0E1A26; border: 1px solid #1C2D40; border-radius: 10px;
+}
+.lab-grid-control { display: flex; flex-direction: column; gap: 4px; }
+.lab-grid-label {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  letter-spacing: 1.4px; color: #5EEAD4; text-transform: uppercase; font-weight: 700;
+}
+.lab-grid-select {
+  background: #13212F; border: 1px solid #1C2D40; color: #E2E8F0;
+  padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: Calibri, sans-serif;
+  min-width: 280px; cursor: pointer;
+}
+.lab-grid-select:focus { outline: 1px solid #5EEAD4; }
+.lab-grid-status {
+  flex: 1; text-align: right;
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px; letter-spacing: 0.4px;
+  color: #94A3B8; padding-bottom: 6px;
+}
+.lab-grid-status.dirty { color: #F59E0B; }
+.lab-grid-actions { display: flex; gap: 8px; }
+.lab-grid-note {
+  margin: 12px 4px 14px;
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+  letter-spacing: 0.4px; color: #64748B; line-height: 1.5;
+}
+.lab-grid-host {
+  margin: 0 4px;
+  background: #FFFFFF; border: 1px solid #1C2D40; border-radius: 10px;
+  overflow: hidden; min-height: 240px;
+}
+.lab-grid-host .handsontable {
+  font-family: Calibri, Arial, sans-serif; font-size: 13px; color: #1E293B;
+}
+.lab-grid-footer {
+  margin: 14px 4px 4px;
+  padding: 10px 14px; background: #0E1A26; border: 1px solid #1C2D40;
+  border-left: 3px solid #5EEAD4; border-radius: 0 6px 6px 0;
+  font-family: ui-monospace, Consolas, monospace; font-size: 11.5px;
+  color: #CBD5E1; letter-spacing: 0.3px; line-height: 1.55;
+}
+.lab-grid-footer.warn { border-left-color: #F59E0B; color: #F59E0B; }
+.lab-grid-footer.ok { border-left-color: #10B981; color: #10B981; }
+.lab-grid-host .htInvalid {
+  background: #FEE2E2 !important; color: #991B1B;
+}
+.lab-grid-host .htDimmed {
+  background: #F1F5F9 !important; color: #64748B; font-style: italic;
+}
+#lab-grid-page { display: none; }
+</style>
 </head>
 <body>
 
@@ -3279,6 +3340,16 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
     <div class="nav-item-intel" id="nav-intel" onclick="showIntelPage()" style="display:none;">
       <span class="nav-intel-icon">&#9670;</span> Recommendations
+    </div>
+
+    <div class="nav-section-divider"></div>
+    <div class="nav-label">
+      <span class="nav-module-num">∇</span> Lab
+      <span class="nav-pill nav-pill-beta">EXPERIMENTAL</span>
+    </div>
+    <div class="nav-item-beta" id="nav-lab-grid" onclick="showLabGridPage()">
+      <span class="nav-dot live"></span> Grid Editor
+      <span class="nav-pill nav-pill-beta">STAGE 1</span>
     </div>
 
     <div class="nav-section-divider"></div>
@@ -5474,6 +5545,87 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     </div>
   </div><!-- /beta-image-page -->
 
+  <!-- ════════════════════════════════════════════════════════
+       LAB · GRID EDITOR (Stage 1) — Item Weight, single style proof
+       ═══════════════════════════════════════════════════════ -->
+  <div id="lab-grid-page" class="content content-wide" style="display:none;">
+    <!-- Atlas-style header -->
+    <div class="atlas-upload-header">
+      <div class="atlas-upload-eyebrow">
+        <span class="atlas-pulse"></span>
+        LAB · GRID EDITOR · STAGE 1
+      </div>
+      <h1 class="atlas-upload-h1">Grid Editor</h1>
+      <div class="atlas-status-sub" id="lab-grid-status-sub">No sheet loaded</div>
+    </div>
+
+    <!-- Section 1: Upload row -->
+    <div id="lab-grid-upload-section" style="margin-top:24px;">
+      <div class="atlas-sources-h">
+        <div class="atlas-sources-eyebrow">// DATA SOURCE</div>
+        <div class="atlas-sources-meta" id="lab-grid-meta">No file uploaded</div>
+      </div>
+      <div class="atlas-sources">
+        <div class="atlas-source-row" id="lab-grid-row">
+          <div class="atlas-source-icon">PU</div>
+          <div class="atlas-source-info">
+            <div class="atlas-source-name">Pre-upload sheet <span class="atlas-source-pill">REQUIRED</span></div>
+            <div class="atlas-source-detail">31 columns · Atlas template · .xlsx / .xls / .csv / .tsv</div>
+          </div>
+          <div class="atlas-source-state" id="lab-grid-state"><span class="atlas-source-state-dot"></span> No file uploaded</div>
+          <div class="atlas-source-actions">
+            <a class="atlas-source-btn-secondary" href="/api/download-sample-template" download>⇩ Template</a>
+            <button class="atlas-source-btn-primary" onclick="document.getElementById('lab-grid-file-input').click()">Upload →</button>
+            <input type="file" id="lab-grid-file-input" accept=".xlsx,.xls,.xlsm,.csv,.tsv" style="display:none;" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Grid editor (hidden until upload) -->
+    <div id="lab-grid-editor" style="display:none; margin-top:32px;">
+      <div class="atlas-sources-h">
+        <div class="atlas-sources-eyebrow">// EDITING</div>
+        <div class="atlas-sources-meta" id="lab-grid-edit-meta">—</div>
+      </div>
+
+      <!-- Style + group switcher -->
+      <div class="lab-grid-controls">
+        <div class="lab-grid-control">
+          <label class="lab-grid-label">Style</label>
+          <select id="lab-grid-style-select" class="lab-grid-select"></select>
+        </div>
+        <div class="lab-grid-control">
+          <label class="lab-grid-label">Group</label>
+          <select id="lab-grid-group-select" class="lab-grid-select">
+            <option value="weight">Item Weight</option>
+            <option value="dimensions" disabled>Dimensions · Stage 2</option>
+            <option value="identity" disabled>Identity · Stage 2</option>
+            <option value="taxonomy" disabled>Taxonomy · Stage 2</option>
+          </select>
+        </div>
+        <div class="lab-grid-status" id="lab-grid-dirty-status">No unsaved changes</div>
+        <div class="lab-grid-actions">
+          <button class="atlas-source-btn-secondary" onclick="labGridReload()">↻ Reload</button>
+          <button class="atlas-source-btn-primary" id="lab-grid-save-btn" onclick="labGridSave()">Save →</button>
+        </div>
+      </div>
+
+      <!-- Honest note -->
+      <div class="lab-grid-note">
+        // Stage 1 — single style · single group · drag-fill · paste-from-Excel · unit dropdown.
+        Save persists to the session. Download .xlsm comes in Stage 2.
+      </div>
+
+      <!-- The grid itself -->
+      <div id="lab-grid-container" class="lab-grid-host"></div>
+
+      <!-- Validation footer -->
+      <div class="lab-grid-footer" id="lab-grid-footer">Awaiting data…</div>
+    </div>
+
+  </div><!-- /lab-grid-page -->
+
 </div><!-- /main -->
 
 {# Boss theater retired — reverted to the simpler in-place status indicators below #}
@@ -5496,7 +5648,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page'];
+const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -5516,6 +5668,229 @@ function showBetaImageNISPage() {
   const navEl = document.getElementById('nav-beta-image');
   if (navEl) navEl.classList.add('active');
   if (typeof betaImageInit === 'function') betaImageInit();
+}
+
+// ══════════════ LAB · GRID EDITOR (Stage 1) ══════════════
+const labGridState = {
+  styles: [],          // [{style_num, style_name, variants:[...]}]
+  brand: '',
+  currentStyle: null,
+  currentGroup: 'weight',
+  hot: null,           // Handsontable instance
+  dirty: false,
+  spec: null,          // current grid spec from /api/lab/grid
+};
+
+function showLabGridPage() {
+  _showPage('lab-grid-page', 'Atlas · Lab · Grid Editor',
+    'Edit pre-filled NIS data inline — drag-fill, paste, save back. No Excel round-trip.');
+  const navEl = document.getElementById('nav-lab-grid');
+  if (navEl) navEl.classList.add('active');
+  labGridInit();
+}
+
+function labGridInit() {
+  // Wire upload input once
+  const fi = document.getElementById('lab-grid-file-input');
+  if (fi && !fi._wired) {
+    fi._wired = true;
+    fi.addEventListener('change', e => {
+      const f = e.target.files[0];
+      if (f) labGridUpload(f);
+      e.target.value = '';
+    });
+  }
+  const ss = document.getElementById('lab-grid-style-select');
+  if (ss && !ss._wired) {
+    ss._wired = true;
+    ss.addEventListener('change', () => {
+      labGridState.currentStyle = ss.value;
+      labGridFetchAndRender();
+    });
+  }
+  const gs = document.getElementById('lab-grid-group-select');
+  if (gs && !gs._wired) {
+    gs._wired = true;
+    gs.addEventListener('change', () => {
+      labGridState.currentGroup = gs.value;
+      labGridFetchAndRender();
+    });
+  }
+}
+
+async function labGridUpload(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  document.getElementById('lab-grid-state').innerHTML =
+    '<span class="atlas-source-state-dot"></span> Uploading…';
+  try {
+    const r = await fetch('/api/lab/upload', { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!r.ok || data.error) {
+      document.getElementById('lab-grid-state').textContent = 'Upload failed';
+      showToast(data.message || data.error || 'Upload failed', 'error');
+      return;
+    }
+    labGridState.styles = data.styles || [];
+    labGridState.brand = data.brand || '';
+    labGridState.currentStyle = labGridState.styles[0] && labGridState.styles[0].style_num;
+    document.getElementById('lab-grid-state').textContent =
+      `✓ ${labGridState.styles.length} styles loaded · ${labGridState.brand || 'unknown brand'}`;
+    document.getElementById('lab-grid-meta').textContent =
+      `${labGridState.styles.length} styles · ${labGridState.brand}`;
+    document.getElementById('lab-grid-status-sub').textContent =
+      `${labGridState.brand} · ${labGridState.styles.length} styles loaded`;
+    // Populate style select
+    const ss = document.getElementById('lab-grid-style-select');
+    ss.innerHTML = labGridState.styles.map(s =>
+      `<option value="${s.style_num}">${s.style_num} · ${(s.style_name || '').slice(0,80)}</option>`).join('');
+    document.getElementById('lab-grid-editor').style.display = 'block';
+    if (data.warnings && data.warnings.length) {
+      data.warnings.forEach(w => showToast(w, 'warning'));
+    }
+    await labGridFetchAndRender();
+  } catch (e) {
+    document.getElementById('lab-grid-state').textContent = 'Upload error';
+    showToast(e.message || 'Upload error', 'error');
+  }
+}
+
+async function labGridFetchAndRender() {
+  if (!labGridState.currentStyle) return;
+  document.getElementById('lab-grid-footer').textContent = 'Loading…';
+  document.getElementById('lab-grid-footer').className = 'lab-grid-footer';
+  try {
+    const r = await fetch(`/api/lab/grid?style=${encodeURIComponent(labGridState.currentStyle)}&group=${labGridState.currentGroup}`);
+    const data = await r.json();
+    if (!r.ok || data.error) {
+      document.getElementById('lab-grid-footer').textContent = 'Error: ' + (data.error || 'unknown');
+      document.getElementById('lab-grid-footer').className = 'lab-grid-footer warn';
+      return;
+    }
+    labGridState.spec = data;
+    labGridRender(data);
+  } catch (e) {
+    document.getElementById('lab-grid-footer').textContent = 'Error: ' + e.message;
+    document.getElementById('lab-grid-footer').className = 'lab-grid-footer warn';
+  }
+}
+
+function labGridRender(spec) {
+  const host = document.getElementById('lab-grid-container');
+  // Tear down previous instance
+  if (labGridState.hot) {
+    try { labGridState.hot.destroy(); } catch (e) {}
+    labGridState.hot = null;
+  }
+  // Build column config
+  const columns = (spec.columns || []).map(col => {
+    const c = { data: col.key, title: col.title || col.key };
+    if (col.readonly) c.readOnly = true;
+    if (col.type === 'dropdown') {
+      c.type = 'dropdown';
+      c.source = col.options || [];
+      c.allowInvalid = false;
+    } else if (col.type === 'numeric') {
+      c.type = 'numeric';
+      c.numericFormat = { pattern: '0.[000]' };
+    } else {
+      c.type = 'text';
+    }
+    if (col.validator === 'positive_number') {
+      c.validator = function(value, callback) {
+        if (value === '' || value === null || value === undefined) { callback(true); return; }
+        const n = parseFloat(value);
+        callback(!isNaN(n) && n > 0);
+      };
+    }
+    return c;
+  });
+  const colHeaders = (spec.columns || []).map(c => c.title || c.key);
+  // Render Handsontable
+  labGridState.hot = new Handsontable(host, {
+    data: spec.rows || [],
+    columns: columns,
+    colHeaders: colHeaders,
+    rowHeaders: true,
+    width: '100%',
+    height: Math.max(220, Math.min(560, 60 + (spec.rows || []).length * 28)),
+    stretchH: 'all',
+    fillHandle: { autoInsertRow: false, direction: 'vertical' },
+    contextMenu: ['copy','cut','---------','undo','redo'],
+    manualColumnResize: true,
+    manualRowResize: false,
+    licenseKey: 'non-commercial-and-evaluation',  // 6.x CE token
+    cells: function(row, col) {
+      const cell = {};
+      const colSpec = spec.columns[col];
+      if (!colSpec) return cell;
+      const rowData = spec.rows[row] || {};
+      const val = rowData[colSpec.key];
+      if (colSpec.required && (val === '' || val === null || val === undefined)) {
+        cell.className = 'htInvalid';
+      }
+      return cell;
+    },
+    afterChange: function(changes, source) {
+      if (source === 'loadData') return;
+      labGridSetDirty(true);
+    },
+    afterPaste: function() { labGridSetDirty(true); },
+  });
+  // Footer
+  const missing = (spec.rows || []).reduce((acc, r) => {
+    return acc + (spec.columns || []).filter(c => c.required && (r[c.key] === '' || r[c.key] === null || r[c.key] === undefined)).length;
+  }, 0);
+  const footer = document.getElementById('lab-grid-footer');
+  footer.className = missing > 0 ? 'lab-grid-footer warn' : 'lab-grid-footer ok';
+  footer.textContent = missing > 0
+    ? `${missing} required cells need values across ${(spec.rows || []).length} variants. Drag a value down to fill.`
+    : `All ${(spec.rows || []).length} variants have ${(spec.columns || []).filter(c => c.required).length} required values populated.`;
+  document.getElementById('lab-grid-edit-meta').textContent =
+    `${labGridState.currentStyle} · ${spec.group_label || labGridState.currentGroup} · ${(spec.rows || []).length} variants`;
+  labGridSetDirty(false);
+}
+
+function labGridSetDirty(d) {
+  labGridState.dirty = d;
+  const el = document.getElementById('lab-grid-dirty-status');
+  if (el) {
+    el.textContent = d ? '⚠ Unsaved changes' : 'No unsaved changes';
+    el.classList.toggle('dirty', d);
+  }
+}
+
+async function labGridSave() {
+  if (!labGridState.hot) return;
+  const rows = labGridState.hot.getSourceData();
+  try {
+    const r = await fetch('/api/lab/grid/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        style: labGridState.currentStyle,
+        group: labGridState.currentGroup,
+        rows,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) {
+      showToast(data.error || 'Save failed', 'error');
+      return;
+    }
+    showToast(`Saved ${data.updated || 0} cells · ${labGridState.currentStyle}`, 'success');
+    labGridSetDirty(false);
+    await labGridFetchAndRender();
+  } catch (e) {
+    showToast('Save error: ' + e.message, 'error');
+  }
+}
+
+async function labGridReload() {
+  if (labGridState.dirty) {
+    if (!confirm('Discard unsaved changes?')) return;
+  }
+  await labGridFetchAndRender();
 }
 
 // ═════════ BETA: Image → NIS — Step 5 init shell ═════════

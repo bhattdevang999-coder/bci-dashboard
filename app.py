@@ -11030,6 +11030,212 @@ def api_beta_image_nis_image(session_id):
     return send_file(p)
 
 
+# ══════════════════════════════════════════════════════════════
+# LAB · GRID EDITOR (Stage 1) — separate session bucket so it never
+# touches the live Bulk Upload session_data. Single-style scoped grid
+# returning {columns, rows} for the front-end to render in Handsontable.
+# ══════════════════════════════════════════════════════════════
+lab_session = {
+    "styles": [],
+    "brand": "",
+    "file_path": "",
+}
+
+# Group definitions — each maps to a list of column specs the grid renders.
+# Stage 1 ships only "weight". Stage 2+ adds dimensions / identity / taxonomy / etc.
+LAB_GRID_GROUPS = {
+    "weight": {
+        "label": "Item Weight",
+        "columns": [
+            {"key": "variant_id", "title": "Variant ID", "type": "text", "readonly": True},
+            {"key": "size", "title": "Size", "type": "text", "readonly": True},
+            {"key": "color_name", "title": "Color", "type": "text", "readonly": True},
+            {"key": "item_weight_value", "title": "Item Weight", "type": "numeric",
+             "required": True, "validator": "positive_number"},
+            {"key": "item_weight_unit", "title": "Unit", "type": "dropdown",
+             "required": True,
+             "options": ["pounds", "ounces", "kilograms", "grams"]},
+        ],
+    },
+}
+
+def _lab_session_get_style(style_num):
+    for s in lab_session.get("styles", []):
+        if str(s.get("style_num", "")) == str(style_num):
+            return s
+    return None
+
+
+@app.route("/api/lab/upload", methods=["POST"])
+def lab_upload():
+    """Upload a pre-upload sheet into the Lab session bucket.
+
+    Reuses parse_product_file + the same template-example-row guard that
+    the live Bulk Upload uses, but writes into lab_session instead of
+    session_data so the two flows stay isolated.
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    f = request.files["file"]
+    ext = Path(f.filename).suffix.lower()
+    if ext not in [".xlsx", ".xls", ".xlsm", ".csv", ".tsv"]:
+        return jsonify({"error": f"Unsupported file type: {ext}"}), 400
+
+    save_path = UPLOAD_PRODUCTS / f"lab_{f.filename}"
+    f.save(str(save_path))
+    lab_session["file_path"] = str(save_path)
+
+    try:
+        styles, errors, warnings = parse_product_file(str(save_path))
+        # Reuse the same example-row strip from the Bulk Upload route
+        TEMPLATE_EXAMPLE_STYLES = {"436008622"}
+        if styles:
+            from collections import Counter as _C
+            brand_counter = _C((s.get("brand") or "").strip() for s in styles)
+            total_rows = len(styles)
+            stripped, removed = [], []
+            for s in styles:
+                sn = (s.get("style_num") or "").strip()
+                br = (s.get("brand") or "").strip()
+                if sn in TEMPLATE_EXAMPLE_STYLES:
+                    removed.append({"style_num": sn, "brand": br}); continue
+                if br and brand_counter.get(br, 0) <= 1 and total_rows >= 4:
+                    maj = brand_counter.most_common(1)[0]
+                    if maj[1] >= 3 and maj[0] != br:
+                        removed.append({"style_num": sn, "brand": br}); continue
+                stripped.append(s)
+            if removed and stripped:
+                styles = stripped
+                for ex in removed:
+                    warnings.append(f"Skipped template example row — style {ex['style_num']} ({ex['brand']}).")
+
+        # Reject multi-brand uploads (same rule as live Bulk Upload)
+        brands_found = set(s.get("brand", "") for s in styles if s.get("brand"))
+        if len(brands_found) > 1:
+            return jsonify({
+                "error": "Multiple brands detected",
+                "message": f"This file contains {len(brands_found)} brands: {', '.join(sorted(brands_found))}. Upload one brand at a time.",
+            }), 400
+        brand = next(iter(brands_found)) if brands_found else ""
+
+        # Trim payload sent back to the client — only what Stage 1 needs
+        client_styles = [{
+            "style_num": s.get("style_num", ""),
+            "style_name": s.get("style_name", ""),
+            "subclass":   s.get("subclass", ""),
+            "variants":   s.get("variants", []),
+        } for s in styles]
+
+        lab_session["styles"] = styles  # full record kept server-side
+        lab_session["brand"] = brand
+
+        return jsonify({
+            "ok": True,
+            "brand": brand,
+            "styles": client_styles,
+            "warnings": warnings,
+            "errors": errors,
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": f"Failed to parse: {str(e)[:200]}"}), 500
+
+
+@app.route("/api/lab/grid", methods=["GET"])
+def lab_grid_get():
+    """Return the grid spec (columns + rows) for one style + group.
+
+    columns: spec for the grid's column config (type, options, validators).
+    rows:    one row per variant, pre-filled from the parsed sheet.
+    group_label: human-readable label.
+    """
+    style_num = request.args.get("style", "").strip()
+    group_key = request.args.get("group", "weight").strip()
+    if not style_num:
+        return jsonify({"error": "style param required"}), 400
+    grp = LAB_GRID_GROUPS.get(group_key)
+    if not grp:
+        return jsonify({"error": f"Unknown group: {group_key}"}), 400
+    style = _lab_session_get_style(style_num)
+    if not style:
+        return jsonify({"error": f"Style {style_num} not in session. Upload first."}), 404
+
+    # Build rows from variants. Pre-fill what we have, leave blank otherwise.
+    rows = []
+    for v in style.get("variants", []):
+        row = {
+            "variant_id": v.get("variant_id", "") or v.get("sku", "") or "",
+            "size": v.get("size", "") or "",
+            "color_name": v.get("color_name", "") or "",
+            # Pre-fill weight from variant if present; default unit pounds.
+            "item_weight_value": v.get("item_weight_value", v.get("weight", "")) or "",
+            "item_weight_unit": v.get("item_weight_unit", "pounds") or "pounds",
+        }
+        rows.append(row)
+
+    return jsonify({
+        "ok": True,
+        "style_num": style_num,
+        "group": group_key,
+        "group_label": grp["label"],
+        "columns": grp["columns"],
+        "rows": rows,
+    })
+
+
+@app.route("/api/lab/grid/save", methods=["POST"])
+def lab_grid_save():
+    """Persist edits from the grid back into the lab_session variant records.
+
+    Stage 1 supports only the 'weight' group, which writes
+    item_weight_value + item_weight_unit onto each matching variant.
+    """
+    data = request.get_json(force=True) or {}
+    style_num = (data.get("style") or "").strip()
+    group_key = (data.get("group") or "weight").strip()
+    rows = data.get("rows") or []
+    if not style_num:
+        return jsonify({"error": "style required"}), 400
+    grp = LAB_GRID_GROUPS.get(group_key)
+    if not grp:
+        return jsonify({"error": f"Unknown group: {group_key}"}), 400
+    style = _lab_session_get_style(style_num)
+    if not style:
+        return jsonify({"error": f"Style {style_num} not in session"}), 404
+
+    # Index variants by variant_id for O(1) lookup
+    variants = style.get("variants", [])
+    index = {(v.get("variant_id") or v.get("sku") or "").strip(): v for v in variants}
+    updated = 0
+    skipped = 0
+    writable_keys = [c["key"] for c in grp["columns"] if not c.get("readonly")]
+
+    for row in rows:
+        vid = (row.get("variant_id") or "").strip()
+        v = index.get(vid)
+        if not v:
+            skipped += 1
+            continue
+        for k in writable_keys:
+            if k in row:
+                old = v.get(k)
+                new = row.get(k)
+                # Treat empty-string and None as the same
+                old_norm = "" if old in (None, "") else old
+                new_norm = "" if new in (None, "") else new
+                if old_norm != new_norm:
+                    v[k] = new_norm
+                    updated += 1
+
+    return jsonify({
+        "ok": True,
+        "style_num": style_num,
+        "group": group_key,
+        "updated": updated,
+        "skipped_unmatched": skipped,
+    })
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))
