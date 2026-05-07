@@ -3466,6 +3466,97 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
 /* ═══════════════ Atlas Lab · Stage 5 (Listing Card view) ═══════════════ */
 
+/* Stage 5b — Before / During / After hero strip */
+.lab-pitch {
+  position: relative;
+  background: linear-gradient(180deg, #0E1A26 0%, #0B1721 100%);
+  border: 1px solid #13212F;
+  border-radius: 12px;
+  padding: 24px 28px 22px 28px;
+  margin: 22px 0 8px 0;
+  overflow: hidden;
+}
+.lab-pitch::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(94,234,212,.4), transparent);
+}
+.lab-pitch-collapse {
+  position: absolute; top: 12px; right: 14px;
+  background: transparent; border: 1px solid #1C2D40; color: #94A3B8;
+  width: 22px; height: 22px; border-radius: 4px; cursor: pointer;
+  font: 14px Calibri, sans-serif; line-height: 18px; padding: 0;
+}
+.lab-pitch-collapse:hover { color: #5EEAD4; border-color: #5EEAD4; }
+.lab-pitch-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 28px; align-items: stretch;
+  position: relative;
+}
+.lab-pitch-grid::before, .lab-pitch-grid::after {
+  content: "→";
+  position: absolute; top: 24px; color: #475569; font-size: 16px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+.lab-pitch-grid::before { left: 33.33%; transform: translateX(-50%); }
+.lab-pitch-grid::after  { left: 66.66%; transform: translateX(-50%); }
+.lab-pitch-col { min-width: 0; }
+.lab-pitch-label {
+  font: 700 11px Trebuchet MS, sans-serif;
+  letter-spacing: .14em; text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.lab-pitch-label.before { color: #94A3B8; }
+.lab-pitch-label.during { color: #5EEAD4; }
+.lab-pitch-label.after  { color: #10B981; }
+.lab-pitch-list {
+  display: flex; flex-direction: column; gap: 6px;
+  font: 12.5px Calibri, sans-serif; color: #CBD5E1;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+.lab-pitch-list span { padding-left: 14px; position: relative; }
+.lab-pitch-list span::before {
+  content: "·"; position: absolute; left: 4px; top: -2px;
+  color: #475569; font-size: 18px; line-height: 1;
+}
+.lab-pitch-stamp {
+  font: 11px ui-monospace, Consolas, monospace;
+  letter-spacing: .03em;
+  padding-top: 10px;
+  border-top: 1px solid #13212F;
+}
+.lab-pitch-stamp.stamp-before { color: #64748B; }
+.lab-pitch-stamp.stamp-during { color: #5EEAD4; }
+.lab-pitch-stamp.stamp-after  { color: #10B981; }
+
+/* Ribbon (collapsed state) */
+.lab-pitch-ribbon {
+  display: none;
+  align-items: center; gap: 10px;
+  padding: 10px 16px; margin: 14px 0 6px 0;
+  background: #0B1721; border: 1px solid #13212F; border-radius: 8px;
+  font: 12px ui-monospace, Consolas, monospace;
+  letter-spacing: .04em;
+  cursor: pointer; transition: border-color .18s;
+}
+.lab-pitch-ribbon:hover { border-color: #2A4358; }
+.lab-pitch-ribbon .rib-before { color: #94A3B8; }
+.lab-pitch-ribbon .rib-during { color: #5EEAD4; }
+.lab-pitch-ribbon .rib-after  { color: #10B981; }
+.lab-pitch-ribbon .rib-arrow  { color: #475569; }
+.lab-pitch-ribbon .rib-note   { color: #64748B; margin-left: 4px; }
+.lab-pitch-ribbon .rib-expand { margin-left: auto; color: #94A3B8; font-size: 11px; }
+
+.lab-pitch.collapsed { display: none; }
+.lab-pitch-ribbon.on { display: flex; }
+
+@media (max-width: 1100px) {
+  .lab-pitch-grid { grid-template-columns: 1fr; gap: 18px; }
+  .lab-pitch-grid::before, .lab-pitch-grid::after { display: none; }
+}
+
+
 /* Sub-module switcher (Listing Lab · Image → NIS) */
 .lab-submod-row {
   display: flex; align-items: center; gap: 12px;
@@ -3706,6 +3797,24 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .lab-field-text.flash-success {
   background: rgba(16,185,129,.10);
   transition: background .35s;
+}
+.lab-field-text.editing {
+  cursor: default;
+  padding: 0;
+  border-bottom: 1px solid transparent;
+}
+.lab-field-edit {
+  width: 100%; box-sizing: border-box;
+  background: #0B1721; border: 1px solid #2A4358; border-radius: 6px;
+  color: #E2E8F0;
+  font: 13.5px Calibri, sans-serif; line-height: 1.55;
+  padding: 8px 10px;
+  resize: vertical;
+  outline: none;
+}
+.lab-field-edit:focus { border-color: #5EEAD4; box-shadow: 0 0 0 2px rgba(94,234,212,.14); }
+.lab-field-edit.edit-title {
+  font: 600 16px Calibri, sans-serif; line-height: 1.4; color: #F1F5F9;
 }
 .lab-field-text.title-text { font: 600 16px Calibri, sans-serif; color: #F1F5F9; line-height: 1.4; }
 .lab-field-bullets { list-style: none; padding: 0; margin: 0; }
@@ -6199,6 +6308,56 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       <div class="atlas-status-sub" id="lab-grid-status-sub">Drop one sheet. Atlas drafts every listing, validates against Amazon, and hands you a Vendor-Central file.</div>
     </div>
 
+    <!-- Stage 5b — Before / During / After hero strip. Collapses after upload. -->
+    <div class="lab-pitch" id="lab-pitch">
+      <button class="lab-pitch-collapse" id="lab-pitch-collapse" onclick="labPitchToggle()" title="Collapse">−</button>
+      <div class="lab-pitch-grid">
+        <div class="lab-pitch-col">
+          <div class="lab-pitch-label before">Before</div>
+          <div class="lab-pitch-list">
+            <span>Helium 10 · keyword research</span>
+            <span>Brand Analytics · csv exports</span>
+            <span>ChatGPT · string the bullets</span>
+            <span>Fight NIS dropdowns</span>
+            <span>Upload · rejected · retry</span>
+          </div>
+          <div class="lab-pitch-stamp stamp-before">3–4 days · 4 tools · 1 brand</div>
+        </div>
+        <div class="lab-pitch-col">
+          <div class="lab-pitch-label during">During</div>
+          <div class="lab-pitch-list">
+            <span>Drop the pre-upload sheet</span>
+            <span>Atlas reads 31 columns</span>
+            <span>Picks the product type</span>
+            <span>Drafts title · bullets · description</span>
+            <span>Fills backend keywords</span>
+          </div>
+          <div class="lab-pitch-stamp stamp-during">One upload · ≈15–30s per style</div>
+        </div>
+        <div class="lab-pitch-col">
+          <div class="lab-pitch-label after">After</div>
+          <div class="lab-pitch-list">
+            <span>Review cards side-by-side</span>
+            <span>Train any line — Atlas remembers</span>
+            <span>Download Vendor-Central .xlsm</span>
+            <span>Opens in Excel, no edits needed</span>
+            <span>Voice persists to the next batch</span>
+          </div>
+          <div class="lab-pitch-stamp stamp-after">Trained on 16 product types · 9,400+ values</div>
+        </div>
+      </div>
+    </div>
+    <!-- Ribbon shown after upload when the pitch is collapsed -->
+    <div class="lab-pitch-ribbon" id="lab-pitch-ribbon" onclick="labPitchToggle()">
+      <span class="rib-before">Before</span>
+      <span class="rib-arrow">→</span>
+      <span class="rib-during">During</span>
+      <span class="rib-arrow">→</span>
+      <span class="rib-after">After</span>
+      <span class="rib-note">— 3–4 days and 4 tools, now one upload</span>
+      <span class="rib-expand">Show ▾</span>
+    </div>
+
     <!-- Section 1: Upload row -->
     <div id="lab-grid-upload-section" style="margin-top:24px;">
       <div class="atlas-sources-h">
@@ -6594,12 +6753,12 @@ async function labGridUpload(file) {
 
     // Stage 5 — render listing-card view as the default homepage
     await labStage5Refresh();
+    // Collapse the Before/During/After pitch so the cards own the screen
+    labPitchAutoCollapse();
 
-    // ═══ Stage 5 (early ship) — auto-Generate on first upload ═══
+    // ═══ Stage 5b — auto-Generate on every fresh upload ═══
     if (data.auto_gen_started) {
-      // Quieter banner instead of full overlay; cards animate in as styles finish
-      labGenBannerShow('First upload — Atlas is writing your listings');
-      _labGenAttachOverlayToRunningJob();   // keeps legacy overlay path alive for non-card mode
+      labGenBannerShow('Atlas is writing your listings');
       _labStage5StartGenPoll();
     }
   } catch (e) {
@@ -7013,6 +7172,7 @@ async function labLoadSession(filename) {
     await labGridFetchAndRender();
     await labLoadVoiceAndRules();
     if (typeof labStage5Refresh === 'function') await labStage5Refresh();
+    labPitchAutoCollapse();
   } catch (e) {
     showToast('Load error: ' + e.message, 'error');
   }
@@ -7381,6 +7541,27 @@ function labDrop(e) {
   if (typeof labGridUpload === 'function') labGridUpload(f);
 }
 
+// ─── Before / During / After hero collapse toggle ───
+function labPitchToggle() {
+  const hero = document.getElementById('lab-pitch');
+  const rib  = document.getElementById('lab-pitch-ribbon');
+  if (!hero || !rib) return;
+  const goCollapse = !hero.classList.contains('collapsed');
+  if (goCollapse) { hero.classList.add('collapsed'); rib.classList.add('on'); }
+  else            { hero.classList.remove('collapsed'); rib.classList.remove('on'); }
+  try { sessionStorage.setItem('labPitchCollapsed', goCollapse ? '1' : '0'); } catch (e) {}
+}
+function labPitchAutoCollapse() {
+  // Called on upload success — fold the pitch into a ribbon so the cards own the screen.
+  const hero = document.getElementById('lab-pitch');
+  const rib  = document.getElementById('lab-pitch-ribbon');
+  if (!hero || !rib) return;
+  if (!hero.classList.contains('collapsed')) {
+    hero.classList.add('collapsed');
+    rib.classList.add('on');
+  }
+}
+
 // ══════════════════════════════ STAGE 5 ══════════════════════════════
 // Listing-Card view + PT-grouped left rail + promptable-cell popover.
 // The Stage-2 “spreadsheet editor” underneath is preserved — reachable via
@@ -7608,18 +7789,32 @@ function _labFieldHtml(o) {
   const lenLabel = o.maxLen
     ? `<span class="lab-field-len${over?' over':''}">${len}/${o.maxLen}</span>`
     : `<span class="lab-field-len">${len}</span>`;
-  const text = empty ? 'Not generated yet — hover to train' : _esc(o.text);
+  const hintText = (o.key === 'title')            ? 'Brand + key feature + fit + silhouette — hover to train'
+                 : (o.key === 'description')      ? 'Editorial narrative — sets the scene for the product'
+                 : (o.key === 'backend_keywords') ? 'Search terms buyers type but don’t see — no repeats, no trademarks'
+                 : 'Hover to train';
+  const text = empty ? hintText : _esc(o.text);
   const trainPill = o.locked ? '' :
-    `<span class="lab-train-pill" onclick="event.stopPropagation();labTrainPopOpen(this,'${_esc(o.style)}','${_esc(o.key)}')">Train</span>`;
+    `<span class="lab-train-pill" onclick="event.stopPropagation();labTrainPopOpen(this,'${_esc(o.style)}','${_esc(o.key)}')" title="Ask Atlas to rewrite this \u2014 chips or freeform">✨ Train</span>`;
+  const editClick = o.locked ? ''
+    : `onclick="labFieldEditStart(this,'${_esc(o.style)}','${_esc(o.key)}','${o.maxLen||0}')"`;
   return `<div class="lab-field">
     <div class="lab-field-label"><span>${_esc(o.label)}</span>${lockChip}${lenLabel}</div>
     <div class="lab-field-text${promptCls}${empty?' empty':''}${o.cls?' '+o.cls:''}"
          data-style="${_esc(o.style)}" data-key="${_esc(o.key)}"
-         onclick="labTrainPopOpen(this,'${_esc(o.style)}','${_esc(o.key)}')">
+         ${editClick}>
       ${text}${trainPill}
     </div>
   </div>`;
 }
+
+const _LAB_BULLET_HINTS = [
+  'Lead feature — material, fit, silhouette',
+  'Primary benefit — what it does for the wearer',
+  'Secondary benefit — occasion, styling',
+  'Technical detail — construction, hardware, lining',
+  'Brand line — heritage, manufacturing, story',
+];
 
 function _labBulletsHtml(c) {
   const items = (c.bullets || []).map((b, i) => {
@@ -7631,12 +7826,14 @@ function _labBulletsHtml(c) {
     const lenLabel = `<span class="lab-field-len${len>500?' over':''}">${len}/500</span>`;
     const lockChip = locked ? '<span class="lab-field-locked">🔒</span>' : '';
     const trainPill = locked ? '' :
-      `<span class="lab-train-pill" onclick="event.stopPropagation();labTrainPopOpen(this,'${_esc(c.style_num)}','${_esc(key)}')">Train</span>`;
-    const text = empty ? 'Bullet ' + (i + 1) + ' — not generated' : _esc(b);
+      `<span class="lab-train-pill" onclick="event.stopPropagation();labTrainPopOpen(this,'${_esc(c.style_num)}','${_esc(key)}')" title="Ask Atlas to rewrite this">✨ Train</span>`;
+    const text = empty ? _esc(_LAB_BULLET_HINTS[i] || 'Bullet ' + (i+1)) : _esc(b);
+    const editClick = locked ? ''
+      : `onclick="labFieldEditStart(this,'${_esc(c.style_num)}','${_esc(key)}',500)"`;
     return `<li class="${empty?'empty':''}">
       <div class="lab-field-text${promptCls}${empty?' empty':''}"
            data-style="${_esc(c.style_num)}" data-key="${_esc(key)}"
-           onclick="labTrainPopOpen(this,'${_esc(c.style_num)}','${_esc(key)}')">
+           ${editClick}>
         ${text}${trainPill}
       </div>
       <div style="display:flex;justify-content:flex-end;">${lockChip}${lenLabel}</div>
@@ -7646,6 +7843,87 @@ function _labBulletsHtml(c) {
     <div class="lab-field-label"><span>Bullets</span><span class="lab-field-len">5 lines</span></div>
     <ul class="lab-field-bullets">${items}</ul>
   </div>`;
+}
+
+// ===== Inline edit (Excel feel) =====
+// Single-click on a card field swaps in a textarea sized to the existing
+// content. Blur or Cmd/Ctrl+Enter saves; Esc cancels. Train pill on the
+// right of the field still opens the LLM popover — manual + AI on one row.
+let _labFieldEditing = null;  // { style, key, fieldEl, original }
+function labFieldEditStart(fieldEl, style, key, maxLen) {
+  if (!fieldEl || _labFieldEditing) return;
+  // Don't enter edit-mode if the operator clicked the Train pill itself
+  if (event && event.target && event.target.closest && event.target.closest('.lab-train-pill')) return;
+  // Capture the current text — ignore the trailing Train-pill span if present
+  const trainPill = fieldEl.querySelector('.lab-train-pill');
+  if (trainPill) trainPill.remove();
+  const original = (fieldEl.textContent || '').trim();
+  // Empty fields show a hint; clear it so the operator can type into a blank.
+  const seedValue = fieldEl.classList.contains('empty') ? '' : original;
+  // Build the textarea inline
+  const ta = document.createElement('textarea');
+  ta.className = 'lab-field-edit';
+  ta.value = seedValue;
+  ta.rows = Math.max(1, Math.min(10, Math.ceil(seedValue.length / 80) || 1));
+  if (maxLen && +maxLen > 0) ta.maxLength = +maxLen;
+  // Match parent font visually for in-place feel
+  if (fieldEl.classList.contains('title-text')) ta.classList.add('edit-title');
+  // Replace contents
+  fieldEl.classList.add('editing');
+  fieldEl.innerHTML = '';
+  fieldEl.appendChild(ta);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  _labFieldEditing = { style, key, fieldEl, original, maxLen: +maxLen || 0 };
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); labFieldEditCancel(); }
+    else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); labFieldEditCommit(); }
+  });
+  ta.addEventListener('blur', () => labFieldEditCommit());
+}
+
+function labFieldEditCancel() {
+  const ed = _labFieldEditing;
+  if (!ed) return;
+  _labFieldEditing = null;
+  // Force a card re-render to restore exact original markup (incl. Train pill)
+  labStage5MaybeRefreshCard(ed.style);
+}
+
+async function labFieldEditCommit() {
+  const ed = _labFieldEditing;
+  if (!ed) return;
+  const ta = ed.fieldEl.querySelector('textarea');
+  if (!ta) return;
+  const newVal = (ta.value || '').trim();
+  _labFieldEditing = null;
+  if (newVal === (ed.original || '')) {
+    // No change — just re-render to restore the field markup
+    return labStage5MaybeRefreshCard(ed.style);
+  }
+  try {
+    const r = await fetch('/api/lab/save-field', {
+      method: 'POST', headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ style: ed.style, key: ed.key, value: newVal }),
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) {
+      showToast(data.error || 'Save failed', 'error');
+      return labStage5MaybeRefreshCard(ed.style);
+    }
+    // Refresh just this card so length counter, empty-state, status all update
+    const card = await (await fetch('/api/lab/listing-card?style=' + encodeURIComponent(ed.style))).json();
+    if (card && card.ok) {
+      labStage5State.cards[ed.style] = card;
+      const el = document.querySelector('.lab-listing-card[data-style="' + CSS.escape(ed.style) + '"]');
+      if (el) el.outerHTML = _labStage5CardHtml(card);
+    }
+    if (data.updated) showToast('Saved · ' + ed.key.replace('_', ' '), 'success');
+    labStage5RefreshMetaOnly();   // rail badges
+  } catch (e) {
+    showToast('Save error: ' + e.message, 'error');
+    labStage5MaybeRefreshCard(ed.style);
+  }
 }
 
 // ===== Train popover (anchored under the field) =====

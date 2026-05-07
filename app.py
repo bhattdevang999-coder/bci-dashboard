@@ -11251,20 +11251,22 @@ def lab_upload():
         # Persist to disk so a server restart doesn't wipe edits
         _lab_session_persist()
 
-        # ═══ Stage 5 (early ship) — auto-generate on first upload ═══
+        # ═══ Stage 5b — auto-generate on every fresh upload ═══
         # Kick off LLM generation in the background so the operator drops a
-        # sheet and walks straight into a populated grid 2-3 min later.
-        # Skipped when:
+        # sheet and walks straight into populated cards 2-3 min later.
+        # Skipped only when:
         #   • LLM unavailable (offline mode)
-        #   • the brand has saved voice/rules (returning brand — they likely
-        #     have prior session content; explicit Generate button still works)
-        # The frontend reads `auto_gen_started` and opens the same progress
-        # overlay used by ?? Generate all, no UX divergence.
+        #   • a generation job is already running
+        #   • every style in this batch already carries _lab_generated content
+        #     (re-upload of the same brand mid-session — don't blow away edits)
+        # The frontend reads `auto_gen_started` and opens the streaming banner.
         auto_gen_started = False
         if _anthropic_client is not None and lab_gen_progress.get("status") != "running":
-            existing_voice = (_load_brand_config_data(brand) or {}).get("brand_voice", "")
-            looks_returning = bool(existing_voice)
-            if not looks_returning:
+            already_drafted = all(
+                bool((s.get("_lab_generated") or {}).get("title"))
+                for s in styles
+            ) if styles else False
+            if not already_drafted:
                 threading.Thread(
                     target=_lab_run_generation, args=(list(styles),), daemon=True
                 ).start()
@@ -12300,6 +12302,41 @@ def lab_copy_to_styles():
 
 
 # ──── Bit-perfect Vendor-Central .xlsm download ──────────────────────
+@app.route("/api/lab/save-field", methods=["POST"])
+def lab_save_field():
+    """Stage 5b — single-field save for the inline-edit (Excel feel) flow.
+
+    Body: {style: '...', key: 'title|bullet_1..5|description|backend_keywords', value: '...'}
+    Persists into style['_lab_generated'][key]. Lock-aware: returns 409 if the
+    field/group/style is locked.
+    """
+    data = request.get_json(force=True) or {}
+    style_num = (data.get("style") or "").strip()
+    key       = (data.get("key") or "").strip()
+    value     = data.get("value")
+    if not style_num or not key:
+        return jsonify({"error": "style and key required"}), 400
+    if key not in _STYLE_GENERATED_KEYS:
+        return jsonify({"error": f"Field '{key}' not editable via this endpoint"}), 400
+    style = _lab_session_get_style(style_num)
+    if not style:
+        return jsonify({"error": f"Style {style_num} not in session"}), 404
+
+    # Lock check (mirror the regen-cell behaviour)
+    locks = (lab_session.get("locks") or {}).get(style_num, {}) or {}
+    if locks.get(key) or locks.get("_style") or locks.get("_group_copy"):
+        return jsonify({"error": f"Field {key} on {style_num} is locked"}), 409
+
+    new = "" if value in (None,) else str(value)
+    gen = style.setdefault("_lab_generated", {})
+    old = gen.get(key, "") or ""
+    if old != new:
+        gen[key] = new
+        _lab_session_persist()
+        return jsonify({"ok": True, "updated": True, "style": style_num, "key": key})
+    return jsonify({"ok": True, "updated": False, "style": style_num, "key": key})
+
+
 @app.route("/api/lab/styles-meta", methods=["GET"])
 def lab_styles_meta():
     """Return per-style metadata used by the Listing Card view: style_num,
