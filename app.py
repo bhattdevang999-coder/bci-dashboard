@@ -11251,12 +11251,32 @@ def lab_upload():
         # Persist to disk so a server restart doesn't wipe edits
         _lab_session_persist()
 
+        # ═══ Stage 5 (early ship) — auto-generate on first upload ═══
+        # Kick off LLM generation in the background so the operator drops a
+        # sheet and walks straight into a populated grid 2-3 min later.
+        # Skipped when:
+        #   • LLM unavailable (offline mode)
+        #   • the brand has saved voice/rules (returning brand — they likely
+        #     have prior session content; explicit Generate button still works)
+        # The frontend reads `auto_gen_started` and opens the same progress
+        # overlay used by ?? Generate all, no UX divergence.
+        auto_gen_started = False
+        if _anthropic_client is not None and lab_gen_progress.get("status") != "running":
+            existing_voice = (_load_brand_config_data(brand) or {}).get("brand_voice", "")
+            looks_returning = bool(existing_voice)
+            if not looks_returning:
+                threading.Thread(
+                    target=_lab_run_generation, args=(list(styles),), daemon=True
+                ).start()
+                auto_gen_started = True
+
         return jsonify({
             "ok": True,
             "brand": brand,
             "styles": client_styles,
             "warnings": warnings,
             "errors": errors,
+            "auto_gen_started": auto_gen_started,
         })
     except Exception as e:
         traceback.print_exc()
