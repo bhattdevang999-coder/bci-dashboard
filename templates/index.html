@@ -3197,28 +3197,60 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 /* ═══════ LAB · GRID EDITOR (Stage 1) ═══════ */
 #lab-grid-page { color: #E2E8F0; }
 .lab-grid-controls {
-  display: flex; align-items: flex-end; gap: 16px;
+  display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
   padding: 14px 16px; margin: 12px 4px 0;
   background: #0E1A26; border: 1px solid #1C2D40; border-radius: 10px;
 }
 .lab-grid-control { display: flex; flex-direction: column; gap: 4px; }
 .lab-grid-label {
-  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
-  letter-spacing: 1.4px; color: #5EEAD4; text-transform: uppercase; font-weight: 700;
+  font: 600 11px Trebuchet MS, sans-serif;
+  letter-spacing: 0.04em; color: #CBD5E1; text-transform: none;
 }
 .lab-grid-select {
-  background: #13212F; border: 1px solid #1C2D40; color: #E2E8F0;
+  background: #13212F; border: 1px solid #2A4358; color: #E2E8F0;
   padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: Calibri, sans-serif;
-  min-width: 280px; cursor: pointer;
+  min-width: 220px; cursor: pointer;
 }
-.lab-grid-select:focus { outline: 1px solid #5EEAD4; }
+.lab-grid-select:focus { outline: 1px solid #5EEAD4; border-color: #5EEAD4; }
 .lab-grid-status {
   flex: 1; text-align: right;
-  font-family: ui-monospace, Consolas, monospace; font-size: 11px; letter-spacing: 0.4px;
+  font: 12px Calibri, sans-serif; letter-spacing: 0;
   color: #94A3B8; padding-bottom: 6px;
 }
-.lab-grid-status.dirty { color: #F59E0B; }
-.lab-grid-actions { display: flex; gap: 8px; }
+.lab-grid-status.dirty { color: #F59E0B; font-weight: 600; }
+.lab-grid-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+/* Toolbar overrides — the atlas-source-btn-secondary base reads as a thin
+   uppercase chip; in a 7-button toolbar that's hard to scan. Bump the
+   contrast and switch to sentence-case Calibri. */
+.lab-grid-actions .atlas-source-btn-secondary {
+  background: #13212F !important;
+  border: 1px solid #2A4358 !important;
+  color: #E2E8F0 !important;
+  font: 600 12px Calibri, sans-serif !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  padding: 7px 11px !important;
+  border-radius: 6px !important;
+  white-space: nowrap;
+}
+.lab-grid-actions .atlas-source-btn-secondary:hover {
+  background: #1B2D3F !important;
+  border-color: #5EEAD4 !important;
+  color: #5EEAD4 !important;
+}
+.lab-grid-actions .atlas-source-btn-primary {
+  font: 700 12.5px Calibri, sans-serif !important;
+  letter-spacing: 0.02em !important;
+  padding: 7px 16px !important;
+  text-transform: none !important;
+  white-space: nowrap;
+}
+/* Group select — 'Weight & Dimensions (10 missing)' should signal severity */
+.lab-grid-select.has-missing {
+  border-color: #F59E0B;
+  color: #F59E0B;
+  font-weight: 600;
+}
 .lab-grid-note {
   margin: 12px 4px 14px;
   font-family: ui-monospace, Consolas, monospace; font-size: 11px;
@@ -3241,11 +3273,15 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 }
 .lab-grid-footer.warn { border-left-color: #F59E0B; color: #F59E0B; }
 .lab-grid-footer.ok { border-left-color: #10B981; color: #10B981; }
+/* Soft, readable invalid/warn cells — accent-bar + muted tint, not floodfill.
+   The grid background is white for data-editing clarity; errors should draw the
+   eye without screaming. */
 .lab-grid-host .htInvalid {
-  background: #FEE2E2 !important; color: #991B1B;
+  background: #FFF4F4 !important; color: #B91C1C;
+  box-shadow: inset 3px 0 0 #EF4444;
 }
 .lab-grid-host .htDimmed {
-  background: #F1F5F9 !important; color: #64748B; font-style: italic;
+  background: #F8FAFC !important; color: #64748B; font-style: italic;
 }
 #lab-grid-page { display: none; }
 
@@ -3448,15 +3484,19 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   color: #5EEAD4; letter-spacing: 0.4px; margin-top: 10px;
 }
 
-/* Validation cell tints — Handsontable cells get extra classes via cells() */
+/* Validation cell tints — soft tint + left accent bar.
+   Text stays near-black for legibility; the bar does the signaling. */
 .lab-grid-host .htAtlasErr {
-  background: #FEE2E2 !important; color: #991B1B !important;
+  background: #FFF4F4 !important; color: #B91C1C !important;
+  box-shadow: inset 3px 0 0 #EF4444;
 }
 .lab-grid-host .htAtlasWarn {
-  background: #FEF3C7 !important; color: #92400E !important;
+  background: #FFFBEB !important; color: #92400E !important;
+  box-shadow: inset 3px 0 0 #F59E0B;
 }
 .lab-grid-host .htAtlasLocked {
-  background: #EDE9FE !important; color: #5B21B6 !important; font-style: italic;
+  background: #F7F3FF !important; color: #5B21B6 !important; font-style: italic;
+  box-shadow: inset 3px 0 0 #8B5CF6;
 }
 
 /* Right-click context menu for cells (Handsontable extends its own; we add styles) */
@@ -6713,8 +6753,18 @@ async function labGridReloadGroupList() {
       gs.value = data.groups[0].key;
       labGridState.currentGroup = data.groups[0].key;
     }
+    // Severity signal on the select itself
+    const cur = (data.groups || []).find(g => g.key === gs.value);
+    gs.classList.toggle('has-missing', !!(cur && cur.missing > 0));
   } catch (e) { /* tolerate */ }
 }
+// Keep the amber tint synced when the operator picks a different group manually
+document.addEventListener('change', (e) => {
+  if (e.target && e.target.id === 'lab-grid-group-select') {
+    const lbl = e.target.options[e.target.selectedIndex]?.textContent || '';
+    e.target.classList.toggle('has-missing', /missing/i.test(lbl));
+  }
+});
 
 async function labGridUpload(file) {
   const fd = new FormData();
