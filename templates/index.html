@@ -3319,6 +3319,95 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 }
 .lab-grid-footer.warn { border-left-color: #F59E0B; color: #F59E0B; }
 .lab-grid-footer.ok { border-left-color: #10B981; color: #10B981; }
+/* Stage 6b — row height + horizontal padding for readability. Don't add
+   vertical padding (Handsontable measures rows from height; padding stacks). */
+.lab-grid-host .handsontable .htCore tbody td,
+.lab-grid-host .ht_master .htCore tbody td,
+.lab-grid-host .handsontable tbody td {
+  padding: 0 12px !important;
+  font-size: 13px !important;
+  vertical-align: middle !important;
+  line-height: 44px !important;
+  box-sizing: border-box !important;
+  height: 44px !important;
+}
+.lab-grid-host .handsontable td .htAutocompleteArrow {
+  color: #94A3B8 !important;
+  font-size: 10px !important;
+  font-weight: normal !important;
+  float: right;
+  padding-top: 2px;
+}
+/* Style # cells render as italic underlined link-blue by default — normalize. */
+.lab-grid-host .handsontable td a,
+.lab-grid-host .handsontable td .htLink {
+  color: #1E293B !important;
+  text-decoration: none !important;
+  font-style: normal !important;
+}
+/* Stage 6b — dropdown editor sizing. Default popup is ~107x23 (1 row); make
+   it real. Min width 240, ~10 rows tall, dark-on-white, scrolls when long. */
+.handsontableInputHolder {
+  min-width: 240px !important;
+}
+/* Outer editor container (listbox class == open state).
+   In Handsontable 6.x the wrapper has inline height:0; overflow:hidden, and the
+   actual list lives inside .ht_master at 220px+. We break the wrapper open and
+   let the inner master spill out so the dropdown is actually usable. */
+.handsontableInputHolder .autocompleteEditor.listbox,
+.handsontableInputHolder .handsontableEditor.listbox,
+.handsontable .autocompleteEditor.listbox {
+  min-width: 240px !important;
+  max-width: 360px !important;
+  height: auto !important;
+  overflow: visible !important;
+  border: 1px solid #2A4358 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35) !important;
+  background: #FFFFFF !important;
+  font: 13px Calibri, sans-serif !important;
+}
+.handsontableInputHolder .autocompleteEditor .ht_master {
+  min-width: 240px !important;
+  height: auto !important;
+  max-height: 320px !important;
+  overflow: auto !important;
+  background: #FFFFFF !important;
+}
+/* The inner wtHolder gets height set by JS based on row count; just ensure width */
+.handsontableInputHolder .autocompleteEditor .ht_master .wtHolder {
+  min-width: 240px !important;
+}
+.handsontableInputHolder .autocompleteEditor td,
+.handsontableInputHolder .autocompleteEditor .htCore td {
+  padding: 0 12px !important;
+  line-height: 32px !important;
+  height: 32px !important;
+  font-size: 13px !important;
+  color: #1E293B !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+.handsontableInputHolder .autocompleteEditor td.current,
+.handsontableInputHolder .autocompleteEditor td.highlight,
+.handsontableInputHolder .autocompleteEditor td.current.highlight {
+  background: #ECFDF5 !important;
+  color: #065F46 !important;
+  font-weight: 600 !important;
+}
+/* The text input that sits above the dropdown list during type-to-search */
+.handsontableInput {
+  font: 13px Calibri, sans-serif !important;
+  padding: 6px 10px !important;
+  border: 1px solid #14B8A6 !important;
+  border-radius: 4px !important;
+  background: #FFFFFF !important;
+  color: #1E293B !important;
+  box-shadow: 0 0 0 2px rgba(94,234,212,0.18) !important;
+}
+
 /* Soft, readable invalid/warn cells — accent-bar + muted tint, not floodfill.
    The grid background is white for data-editing clarity; errors should draw the
    eye without screaming. */
@@ -3632,7 +3721,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .lab-pitch-ribbon .rib-before { color: #94A3B8; }
 .lab-pitch-ribbon .rib-during { color: #5EEAD4; }
 .lab-pitch-ribbon .rib-after  { color: #10B981; }
-.lab-pitch-ribbon .rib-arrow  { color: #475569; }
+.lab-pitch-ribbon .rib-arrow  { color: #5EEAD4; font-weight: 600; }
 .lab-pitch-ribbon .rib-note   { color: #64748B; margin-left: 4px; }
 .lab-pitch-ribbon .rib-expand { margin-left: auto; color: #94A3B8; font-size: 11px; }
 
@@ -3682,8 +3771,8 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 .lab-brand-status .lab-brand-dot.muted { background: #475569; }
 .lab-brand-status .lab-brand-sep {
   display: inline-block;
-  width: 1px; height: 10px;
-  background: #334155;
+  width: 3px; height: 3px; border-radius: 50%;
+  background: #475569;
   margin: 0 2px;
   vertical-align: middle;
 }
@@ -3711,9 +3800,19 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   padding: 4px 0 2px 0;
 }
 .lab-rail-subeyebrow {
-  color: #64748B; font: 10.5px Calibri, sans-serif;
+  display: inline-flex; align-items: center;
+  gap: 6px;
+  color: #5EEAD4; font: 600 10.5px Calibri, sans-serif;
   letter-spacing: 0; text-transform: none;
-  padding: 0 0 12px 0; line-height: 1.4;
+  padding: 4px 8px; margin: 4px 0 14px 0;
+  background: rgba(94,234,212,0.08);
+  border: 1px solid rgba(94,234,212,0.20);
+  border-radius: 4px;
+  line-height: 1.3;
+}
+.lab-rail-subeyebrow::before {
+  content: "◆";
+  color: #5EEAD4; font-size: 9px;
 }
 .lab-rail-pt {
   padding: 6px 0 4px 0; border-top: 1px solid #13212F;
@@ -3788,12 +3887,14 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 }
 .lab-cards-toolbar .toolbar-spacer { flex: 1; }
 .lab-tb-btn {
-  background: transparent; border: 1px solid #1C2D40;
-  color: #CBD5E1; padding: 6px 12px; border-radius: 6px;
-  font: 11.5px ui-monospace, Consolas, monospace; letter-spacing: .03em;
-  cursor: pointer; transition: border-color .18s, color .18s;
+  background: #13212F; border: 1px solid #2A4358;
+  color: #E2E8F0; padding: 7px 14px; border-radius: 6px;
+  font: 600 12px Calibri, sans-serif; letter-spacing: 0;
+  cursor: pointer; transition: border-color .18s, color .18s, background .18s;
 }
-.lab-tb-btn:hover { border-color: #5EEAD4; color: #5EEAD4; }
+.lab-tb-btn:hover {
+  border-color: #5EEAD4; color: #5EEAD4; background: #182C3D;
+}
 .lab-tb-btn.primary {
   background: linear-gradient(180deg, #14B8A6 0%, #0D9488 100%);
   border-color: #14B8A6; color: #08111A; font-weight: 700;
@@ -3826,11 +3927,21 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
   margin-bottom: 14px;
 }
+/* Stage 6b — hierarchy: SKU is reference, name is the human label.
+   SKU shrinks to mono pill, name leads in larger Calibri semibold. */
 .lab-listing-card-style {
-  font: 700 14px Trebuchet MS, sans-serif; color: #E2E8F0; letter-spacing: .02em;
+  font: 11px ui-monospace, Consolas, monospace;
+  color: #64748B;
+  background: #0B1721;
+  border: 1px solid #1C2D40;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: .02em;
 }
 .lab-listing-card-name {
-  color: #94A3B8; font: 13px Calibri, sans-serif;
+  color: #F1F5F9; font: 600 16px Calibri, sans-serif;
+  letter-spacing: 0;
+  flex: 1; min-width: 0;
 }
 .lab-listing-card-pt {
   font: 10.5px ui-monospace, Consolas, monospace; color: #5EEAD4;
@@ -6906,9 +7017,13 @@ function labGridRender(spec) {
     if (col.type === 'dropdown') {
       c.type = 'dropdown';
       c.source = col.options || [];
-      // Amazon dropdowns can have 100+ options; allowInvalid:true lets the
-      // operator type freely if the option list is empty (PT not yet known).
       c.allowInvalid = !(col.options && col.options.length);
+      // Stage 6b — bigger, scannable dropdown popup.
+      // trimDropdown=false so the popup isn't constrained to column width.
+      c.trimDropdown = false;
+      c.visibleRows = 10;
+      c.strict = !!(col.options && col.options.length);
+      c.filter = true;
     } else if (col.type === 'numeric') {
       c.type = 'numeric';
       c.numericFormat = { pattern: '0.[000]' };
@@ -6948,8 +7063,9 @@ function labGridRender(spec) {
     rowHeaders: true,
     width: '100%',
     height: isStyleScope
-      ? Math.max(110, 80 + 30)
-      : Math.max(220, Math.min(560, 60 + nRows * 28)),
+      ? Math.max(130, 100 + 44)
+      : Math.max(260, Math.min(640, 70 + nRows * 44)),
+    rowHeights: 44,
     stretchH: isStyleScope ? 'none' : 'all',
     fillHandle: { autoInsertRow: false, direction: 'vertical' },
     contextMenu: ['copy','cut','---------','undo','redo'],
@@ -7897,9 +8013,9 @@ function _labStage5CardHtml(c) {
   const meta = `${c.variant_count || 0} variants${empty ? ' · not generated' : ''}`;
   return `<div class="lab-listing-card" data-style="${_esc(c.style_num)}">
     <div class="lab-listing-card-h">
-      <span class="lab-listing-card-style">${_esc(c.style_num)}</span>
-      <span class="lab-listing-card-name">${_esc(c.style_name || '')}</span>
+      <span class="lab-listing-card-name">${_esc(c.style_name || c.style_num)}</span>
       <span class="lab-listing-card-pt">${_esc(c.product_type || '')}</span>
+      <span class="lab-listing-card-style">${_esc(c.style_num)}</span>
       <span class="lab-listing-card-meta">${meta}</span>
       <div class="lab-listing-card-actions">
         <button class="lab-card-mini" onclick="labStage5RegenStyle('${_esc(c.style_num)}')" title="Regenerate this style">⚡ Regen</button>
