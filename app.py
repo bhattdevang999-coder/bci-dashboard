@@ -12377,6 +12377,198 @@ def lab_styles_meta():
     })
 
 
+# ═════════════ STAGE 7 · NIS rule-engine wiring ═════════════
+# Map our short Lab column keys to the engine's field_keys, then expose the
+# rule-engine verdict (required / conditionally required / recommended /
+# optional) per column AND the trigger cells that explain *why* a conditional
+# field becomes required.
+
+# Lab key -> engine field_key. We can derive most of these from the column
+# spec (col.dropdown_field), but copy fields and identity columns aren't
+# dropdown_dynamic, so we encode the mapping explicitly here.
+_LAB_KEY_TO_ENGINE_FIELD = {
+    "title":             "item_name#1.value",
+    "bullet_1":          "bullet_point#1.value",
+    "bullet_2":          "bullet_point#2.value",
+    "bullet_3":          "bullet_point#3.value",
+    "bullet_4":          "bullet_point#4.value",
+    "bullet_5":          "bullet_point#5.value",
+    "description":       "product_description#1.value",
+    "backend_keywords":  "generic_keyword#1.value",
+    "brand":             "brand#1.value",
+    "vendor_code":       "rtip_vendor_code#1.value",
+    "item_type":         "item_type_keyword#1.value",
+    "feed_product_type": "feed_product_type#1.value",
+    "department":        "department#1.value",
+    "target_gender":     "target_gender#1.value",
+    "age_range":         "age_range_description#1.value",
+    "lifestyle_1":       "lifestyle#1.value",
+    "lifestyle_2":       "lifestyle#2.value",
+    "item_weight":       "item_weight#1.value",
+    "item_weight_unit":  "item_weight#1.unit",
+    "item_length":       "item_length_width_height#1.length.value",
+    "item_width":        "item_length_width_height#1.width.value",
+    "item_height":       "item_length_width_height#1.height.value",
+    "item_dim_unit":     "item_length_width_height#1.length.unit",
+}
+
+_REQ_TIER_RANK = {
+    "REQUIRED": 4,
+    "CONDITIONALLY REQUIRED": 3,
+    "RECOMMENDED": 2,
+    "OPTIONAL": 1,
+}
+
+
+def _engine_field_for_lab_key(col):
+    """Resolve engine field_key for a Lab column spec dict."""
+    if col.get("dropdown_field"):
+        return col["dropdown_field"]
+    return _LAB_KEY_TO_ENGINE_FIELD.get(col["key"])
+
+
+def _engine_requirements_for_pt(pt, form_state=None):
+    """Run nis_engine.evaluate_form for the given PT and return a dict keyed by
+    engine field_key with {tier, verdict, trigger_field_keys}.
+    Cheap and cached per (pt, frozen-state-key) within the request lifetime.
+    """
+    if not pt:
+        return {}
+    try:
+        result = _nis_engine.evaluate_form(
+            pt, form_state or {},
+            include_dropdowns=False,
+            apply_apparel_defaults=True,
+        )
+    except Exception as e:
+        print(f"[lab] engine evaluate failed for {pt}: {e}")
+        return {}
+    fields = result.get("fields") or {}
+    # Build a column-letter -> field_key map so we can resolve trigger_cells
+    # back to engine field_keys for the frontend.
+    col_to_fkey = {col_letter: f.get("field_key") for col_letter, f in fields.items() if f.get("field_key")}
+    out = {}
+    for col_letter, f in fields.items():
+        fkey = f.get("field_key")
+        if not fkey:
+            continue
+        # trigger_cells come back as 'A7', 'D7' — strip the row to get column letter
+        triggers = []
+        for tc in (f.get("trigger_cells") or []):
+            col_only = "".join(c for c in tc if not c.isdigit())
+            tk = col_to_fkey.get(col_only)
+            if tk and tk != fkey:
+                triggers.append(tk)
+        out[fkey] = {
+            "tier":     (f.get("base_requirement") or "OPTIONAL").upper(),
+            "verdict":  f.get("verdict") or "optional",
+            "label":    f.get("label") or "",
+            "section":  f.get("section") or "",
+            "triggers": list(dict.fromkeys(triggers)),  # dedupe, preserve order
+        }
+    return out
+
+
+def _lab_state_for_engine(style):
+    """Build a flat form_state dict keyed by engine field_keys from a Lab style.
+    Reads both style['_lab_generated'] (copy fields) and style[k] (NIS attrs).
+    """
+    if not style:
+        return {}
+    gen = style.get("_lab_generated") or {}
+    state = {}
+    # Walk every Lab column we know about and copy into engine-keyed state
+    for grp in LAB_GRID_GROUPS.values():
+        for col in grp.get("columns", []):
+            if col.get("scope") == "variant":
+                continue
+            fkey = _engine_field_for_lab_key(col)
+            if not fkey:
+                continue
+            v = gen.get(col["key"]) if col["key"] in gen and gen.get(col["key"]) is not None \
+                else style.get(col["key"])
+            if v is None or v == "":
+                continue
+            state[fkey] = str(v)
+    return state
+
+
+@app.route("/api/lab/requirements", methods=["GET"])
+def lab_requirements():
+    """Return requirement tiers + dependency hints for one style.
+
+    Used by:
+      - Cell picker header (chip showing Required / Conditional / Recommended)
+      - Grid validation footer (live dependency hints)
+      - Matrix header (column-level requirement chips)
+
+    Query: ?style=<style_num>
+    Response:
+      {
+        product_type: 'COAT',
+        columns: { lab_key: { tier, verdict, triggers:[lab_keys] } },
+        summary: { required: N, missing: N, conditional: N, recommended: N }
+      }
+    """
+    style_num = (request.args.get("style") or "").strip()
+    style = _lab_session_get_style(style_num) if style_num else None
+    if not style and style_num:
+        return jsonify({"error": f"Style {style_num} not in session"}), 404
+    pt = (_resolve_pt_for_style(style) if style else "") or (request.args.get("pt") or "").upper()
+    if not pt:
+        return jsonify({"ok": True, "product_type": "", "columns": {}, "summary": {}})
+
+    state = _lab_state_for_engine(style) if style else {}
+    eng_results = _engine_requirements_for_pt(pt, state)
+
+    # Reverse map engine field_key -> lab key
+    fkey_to_labkey = {}
+    for grp in LAB_GRID_GROUPS.values():
+        for col in grp.get("columns", []):
+            fk = _engine_field_for_lab_key(col)
+            if fk:
+                fkey_to_labkey[fk] = col["key"]
+
+    columns = {}
+    summary = {"REQUIRED": 0, "CONDITIONALLY REQUIRED": 0, "RECOMMENDED": 0, "OPTIONAL": 0,
+               "required_missing": 0, "required_ok": 0}
+    for grp in LAB_GRID_GROUPS.values():
+        for col in grp.get("columns", []):
+            if col.get("scope") == "variant":
+                continue
+            fk = _engine_field_for_lab_key(col)
+            if not fk:
+                # Fall back to spec-declared required flag
+                if col.get("required"):
+                    columns[col["key"]] = {"tier": "REQUIRED", "verdict": "required", "triggers": []}
+                continue
+            info = eng_results.get(fk)
+            if not info:
+                if col.get("required"):
+                    columns[col["key"]] = {"tier": "REQUIRED", "verdict": "required", "triggers": []}
+                continue
+            triggers_lab = [fkey_to_labkey[t] for t in info["triggers"] if t in fkey_to_labkey]
+            columns[col["key"]] = {
+                "tier":     info["tier"],
+                "verdict":  info["verdict"],
+                "triggers": triggers_lab,
+                "engine_label": info["label"],
+            }
+            summary[info["tier"]] = summary.get(info["tier"], 0) + 1
+            if info["verdict"] == "required_missing":
+                summary["required_missing"] += 1
+            elif info["verdict"] == "required_ok":
+                summary["required_ok"] += 1
+
+    return jsonify({
+        "ok":           True,
+        "product_type": pt,
+        "style":        style_num,
+        "columns":      columns,
+        "summary":      summary,
+    })
+
+
 @app.route("/api/lab/pt-matrix", methods=["GET"])
 def lab_pt_matrix():
     """Stage 7 · PT-aggregated compliance view.
@@ -12426,6 +12618,16 @@ def lab_pt_matrix():
     matrices = []
     for pt in sorted(by_pt.keys()):
         pt_styles = by_pt[pt]
+        # Engine-driven tier per column: run evaluate_form once with the FIRST
+        # style's state so conditional-required fields are exposed correctly.
+        sample_state = _lab_state_for_engine(pt_styles[0]) if pt_styles else {}
+        eng_results = _engine_requirements_for_pt(pt, sample_state) if pt != "UNCLASSIFIED" else {}
+        # Map lab key -> tier for our column list
+        col_tiers = {}
+        for c in attribute_cols:
+            fk = _engine_field_for_lab_key(c)
+            tier = (eng_results.get(fk) or {}).get("tier") if fk else None
+            col_tiers[c["key"]] = tier or "REQUIRED"   # default if engine doesn't know
         rows = []
         col_missing = {c["key"]: 0 for c in attribute_cols}
         for s in pt_styles:
@@ -12459,9 +12661,11 @@ def lab_pt_matrix():
                 "ready":   ready_n,
                 "missing": missing_n,
             })
+        # Attach tier to each attribute column for this PT
+        cols_with_tiers = [{**c, "tier": col_tiers.get(c["key"], "REQUIRED")} for c in attribute_cols]
         matrices.append({
             "product_type": pt,
-            "columns":      attribute_cols,
+            "columns":      cols_with_tiers,
             "rows":         rows,
             "col_missing":  col_missing,
             "total_styles": len(rows),

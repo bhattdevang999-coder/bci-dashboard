@@ -3413,6 +3413,18 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 }
 .lab-grid-footer.warn { border-left-color: #F59E0B; color: #F59E0B; }
 .lab-grid-footer.ok { border-left-color: #10B981; color: #10B981; }
+.lab-grid-footer .lab-engine-hint {
+  display: block;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #1C2D40;
+  font: 12px Calibri, sans-serif;
+  color: #FBBF24;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+}
+.lab-grid-footer .lab-engine-hint strong { color: #FDE68A; font-weight: 700; }
+.lab-grid-footer .lab-engine-hint .more { color: #94A3B8; font-size: 11px; }
 /* Stage 6b — row height + horizontal padding for readability. Don't add
    vertical padding (Handsontable measures rows from height; padding stacks). */
 .lab-grid-host .handsontable .htCore tbody td,
@@ -4149,12 +4161,46 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   display: flex; flex-direction: column;
   overflow: hidden;
 }
+.lab-cell-picker-head-row {
+  display: flex; align-items: center; gap: 8px;
+  background: #F1F5F9;
+  padding: 8px 12px;
+  border-bottom: 1px solid #E2E8F0;
+}
 .lab-cell-picker-h {
   font: 600 11px Trebuchet MS, sans-serif;
   letter-spacing: 0.06em; text-transform: uppercase;
-  color: #475569; background: #F1F5F9;
-  padding: 8px 12px; border-bottom: 1px solid #E2E8F0;
+  color: #334155;
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.lab-cell-picker-tier {
+  font: 700 9px ui-monospace, Consolas, monospace;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 3px;
+  flex-shrink: 0;
+}
+.lab-cell-picker-tier.tier-required {
+  background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5;
+}
+.lab-cell-picker-tier.tier-conditional {
+  background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;
+}
+.lab-cell-picker-tier.tier-recommended {
+  background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7;
+}
+.lab-cell-picker-tier.tier-optional {
+  background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1;
+}
+.lab-cell-picker-why {
+  background: #FFFBEB;
+  border-bottom: 1px solid #FCD34D;
+  padding: 8px 12px;
+  font: 12px Calibri, sans-serif;
+  color: #92400E;
+  line-height: 1.45;
+}
+.lab-cell-picker-why strong { color: #78350F; font-weight: 600; }
 .lab-cell-picker-search {
   width: 100%; box-sizing: border-box;
   border: 0; border-bottom: 1px solid #E2E8F0;
@@ -4298,6 +4344,29 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-bottom: 2px;
+}
+.lab-matrix-table th .col-title-row {
+  display: flex; align-items: center; gap: 6px;
+}
+.lab-matrix-table th .col-title { flex: 1; min-width: 0; }
+.lab-matrix-table th .col-tier-chip {
+  font: 700 8px ui-monospace, Consolas, monospace;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.lab-matrix-table th .col-tier-chip.tier-required {
+  background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5;
+}
+.lab-matrix-table th .col-tier-chip.tier-conditional {
+  background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;
+}
+.lab-matrix-table th .col-tier-chip.tier-recommended {
+  background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7;
+}
+.lab-matrix-table th .col-tier-chip.tier-optional {
+  background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1;
 }
 .lab-matrix-table td {
   padding: 7px 10px !important;
@@ -7123,7 +7192,11 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
 
     <!-- ============= Stage 7 — Cell picker (replaces Handsontable dropdown) ============= -->
     <div class="lab-cell-picker" id="lab-cell-picker" style="display:none;">
-      <div class="lab-cell-picker-h" id="lab-cell-picker-head">Attribute</div>
+      <div class="lab-cell-picker-head-row">
+        <div class="lab-cell-picker-h" id="lab-cell-picker-head">Attribute</div>
+        <span class="lab-cell-picker-tier" id="lab-cell-picker-tier"></span>
+      </div>
+      <div class="lab-cell-picker-why" id="lab-cell-picker-why" style="display:none;"></div>
       <input type="text" class="lab-cell-picker-search" id="lab-cell-picker-search"
         placeholder="Search…" oninput="_labCellPickerOnInput(event)" onkeydown="_labCellPickerOnKey(event)">
       <div class="lab-cell-picker-list" id="lab-cell-picker-list"></div>
@@ -7389,7 +7462,7 @@ async function labGridFetchAndRender() {
   }
 }
 
-function labGridRender(spec) {
+async function labGridRender(spec) {
   const host = document.getElementById('lab-grid-container');
   // Tear down previous instance
   if (labGridState.hot) {
@@ -7592,6 +7665,10 @@ function labGridRender(spec) {
   footer.textContent = missing > 0
     ? `${missing} required cells need values across ${scopeLabel}. Drag a value down to fill, or paste from Excel.`
     : `All ${requiredCount} required cells populated for this ${scopeLabel}.`;
+  // Stage 7 — rule-engine layer: surface conditional-required-missing fields
+  // as a second-line hint. "You set closure_type=zipper → full_zipper_length
+  // is now required."
+  await _labApplyEngineHints(footer);
   const scopeMetaLabel = spec.scope === 'style'
     ? '1 row'
     : `${(spec.rows || []).length} variants`;
@@ -7620,6 +7697,9 @@ function labGridRender(spec) {
 
 function labGridSetDirty(d) {
   labGridState.dirty = d;
+  // Bump save-sequence on every change so the requirements cache invalidates
+  // and the picker re-fetches dependency info on next open.
+  labGridState.lastSaveSeq = (labGridState.lastSaveSeq || 0) + 1;
   const el = document.getElementById('lab-grid-dirty-status');
   if (el) {
     el.textContent = d ? '⚠ Unsaved changes' : 'No unsaved changes';
@@ -8041,6 +8121,8 @@ function labCellPickerOpen(td, row, col, colSpec) {
     : 'Type a value';
   // Render the list (or hide it if no options)
   _labCellPickerRenderList(options, currentValue, '');
+  // Stage 7 — requirement chip + "why required" hint from the rule engine
+  _labCellPickerApplyRequirement(colSpec.key);
   // Position under the cell, clamped to viewport
   const rect = td.getBoundingClientRect();
   pop.style.display = 'block';
@@ -8105,6 +8187,117 @@ function labCellPickerClose() {
   const pop = document.getElementById('lab-cell-picker');
   if (pop) pop.style.display = 'none';
   _labPickerState = null;
+}
+
+// Stage 7 — grid-footer engine hint. Walks fetched requirements for the
+// current style and appends "closure_type → full_zipper_length is now required"
+// style hints under the standard missing-cells footer line.
+async function _labApplyEngineHints(footerEl) {
+  if (!footerEl) return;
+  // Drop any prior hint span
+  const old = footerEl.querySelector('.lab-engine-hint');
+  if (old) old.remove();
+  const reqs = await _labFetchRequirements();
+  if (!reqs || !reqs.columns) return;
+  // Find conditional-required-missing fields with named triggers
+  const hits = [];
+  for (const [key, info] of Object.entries(reqs.columns)) {
+    if (info.tier !== 'CONDITIONALLY REQUIRED') continue;
+    if (info.verdict !== 'required_missing') continue;
+    if (!info.triggers || !info.triggers.length) continue;
+    hits.push({ key, label: _labLookupColTitle(key), triggers: info.triggers.slice(0, 2) });
+  }
+  if (!hits.length) return;
+  // Render up to 3 hints inline
+  const top = hits.slice(0, 3);
+  const lines = top.map(h => {
+    const trigLbl = h.triggers.map(t => _labLookupColTitle(t)).join(' + ');
+    return `<strong>${h.label}</strong> needs a value (because of ${trigLbl})`;
+  });
+  const hint = document.createElement('div');
+  hint.className = 'lab-engine-hint';
+  hint.innerHTML = `⚠ Conditional rules: ${lines.join(' · ')}` +
+    (hits.length > 3 ? ` <span class="more">+${hits.length-3} more</span>` : '');
+  footerEl.appendChild(hint);
+  if (footerEl.classList.contains('ok')) {
+    footerEl.classList.remove('ok');
+    footerEl.classList.add('warn');
+  }
+}
+
+// Stage 7 — requirement chip + dependency hint inside the picker.
+// Cached on labGridState.requirements; fetched lazily from /api/lab/requirements
+// once per (style, change) cycle.
+async function _labFetchRequirements(forceRefresh) {
+  const style = labGridState.currentStyle;
+  if (!style) return null;
+  const cacheKey = style + '|' + (labGridState.lastSaveSeq || 0);
+  if (!forceRefresh && labGridState.requirements && labGridState.requirements._key === cacheKey) {
+    return labGridState.requirements;
+  }
+  try {
+    const r = await fetch('/api/lab/requirements?style=' + encodeURIComponent(style));
+    const data = await r.json();
+    if (!data.ok) return null;
+    data._key = cacheKey;
+    labGridState.requirements = data;
+    return data;
+  } catch (e) { return null; }
+}
+
+// Lookup a column's user-facing title from LAB_GRID_GROUPS-equivalent in spec
+function _labLookupColTitle(labKey) {
+  const sp = labGridState.spec;
+  if (sp && sp.columns) {
+    const c = sp.columns.find(x => x.key === labKey);
+    if (c) return c.title || labKey;
+  }
+  return labKey.replace(/_/g, ' ');
+}
+
+async function _labCellPickerApplyRequirement(labKey) {
+  const tierEl = document.getElementById('lab-cell-picker-tier');
+  const whyEl  = document.getElementById('lab-cell-picker-why');
+  if (!tierEl || !whyEl) return;
+  // Reset
+  tierEl.className = 'lab-cell-picker-tier';
+  tierEl.textContent = '';
+  whyEl.style.display = 'none';
+  whyEl.innerHTML = '';
+
+  const reqs = await _labFetchRequirements();
+  if (!reqs || !reqs.columns) return;
+  const info = reqs.columns[labKey];
+  if (!info) return;
+
+  // Tier chip
+  const TIER_LABEL = {
+    'REQUIRED':                'Required',
+    'CONDITIONALLY REQUIRED':  info.verdict === 'required_missing' ? 'Now required' : 'Conditional',
+    'RECOMMENDED':             'Recommended',
+    'OPTIONAL':                'Optional',
+  };
+  const TIER_CLASS = {
+    'REQUIRED':                'tier-required',
+    'CONDITIONALLY REQUIRED':  info.verdict === 'required_missing' ? 'tier-required' : 'tier-conditional',
+    'RECOMMENDED':             'tier-recommended',
+    'OPTIONAL':                'tier-optional',
+  };
+  tierEl.classList.add(TIER_CLASS[info.tier] || 'tier-optional');
+  tierEl.textContent = TIER_LABEL[info.tier] || 'Optional';
+
+  // Why-required hint (only when conditional and triggered)
+  if (info.tier === 'CONDITIONALLY REQUIRED' && info.triggers && info.triggers.length) {
+    const triggerLabels = info.triggers.slice(0, 3).map(t => _labLookupColTitle(t));
+    const verb = info.verdict === 'required_missing'
+      ? 'Required because you set'
+      : 'Becomes required when you set';
+    whyEl.innerHTML = `${verb} <strong>${triggerLabels.join('</strong> + <strong>')}</strong>.`;
+    whyEl.style.display = 'block';
+  } else if (info.tier === 'CONDITIONALLY REQUIRED' && info.verdict === 'required_missing') {
+    whyEl.innerHTML = `This is required for Amazon to accept the listing.`;
+    whyEl.style.display = 'block';
+  }
 }
 
 function _labCellPickerOnInput(e) {
@@ -8934,9 +9127,22 @@ function _labMatrixRenderPt(m) {
   const readyCells   = totalCells - missingCells;
   const pctReady = totalCells ? Math.round(100 * readyCells / totalCells) : 0;
 
-  const ths = cols.map(c =>
-    `<th><span class="col-group">${_labMatrixEscape(c.group)}</span>${_labMatrixEscape(c.title)}</th>`
-  ).join('');
+  const TIER_CHIP = {
+    'REQUIRED':                { cls: 'tier-required',    lbl: 'REQ' },
+    'CONDITIONALLY REQUIRED':  { cls: 'tier-conditional', lbl: 'COND' },
+    'RECOMMENDED':             { cls: 'tier-recommended', lbl: 'REC' },
+    'OPTIONAL':                { cls: 'tier-optional',    lbl: 'OPT' },
+  };
+  const ths = cols.map(c => {
+    const chip = TIER_CHIP[c.tier] || TIER_CHIP['REQUIRED'];
+    return `<th>
+      <span class="col-group">${_labMatrixEscape(c.group)}</span>
+      <span class="col-title-row">
+        <span class="col-title">${_labMatrixEscape(c.title)}</span>
+        <span class="col-tier-chip ${chip.cls}" title="${_labMatrixEscape(c.tier)}">${chip.lbl}</span>
+      </span>
+    </th>`;
+  }).join('');
 
   const trs = rows.map(r => {
     const nameEsc = _labMatrixEscape(r.style_name || r.style_num);
