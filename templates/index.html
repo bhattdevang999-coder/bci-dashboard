@@ -8748,7 +8748,7 @@ function _labStage5CardHtml(c) {
   fields.push(_labFieldHtml({
     style: c.style_num, key: 'title', label: 'Title',
     text: c.title, locked: !!(c.locks && c.locks.title),
-    cls: 'title-text', maxLen: 200,
+    cls: 'title-text', maxLen: 120,
   }));
   // Bullets 1-5 (one block, rendered as a list with per-bullet promptability)
   fields.push(_labBulletsHtml(c));
@@ -9036,25 +9036,47 @@ async function labStage5RegenStyle(style) {
   } catch (e) { showToast('Regen error: ' + e.message, 'error'); labGenBannerHide(); }
 }
 
-function labStage5OpenInGrid(style) {
+function labStage5OpenInGrid(style, groupHint) {
   labGridState.currentStyle = style;
   const ss = document.getElementById('lab-grid-style-select');
   if (ss) ss.value = style;
+  // Land on Title & Copy by default — that's what the card was showing.
+  // Operators should see the same fields they were just looking at, now
+  // editable in the spreadsheet view.
+  labGridState.currentGroup = groupHint || 'title_copy';
   labCardsToggleEditMode(true /* forceGrid */);
-  if (typeof labGridReloadGroupList === 'function') labGridReloadGroupList();
-  if (typeof labGridFetchAndRender === 'function') labGridFetchAndRender();
+  (async () => {
+    if (typeof labGridReloadGroupList === 'function') await labGridReloadGroupList();
+    // labGridReloadGroupList preserves currentGroup if valid; force it again
+    // in case it wasn't.
+    const gs = document.getElementById('lab-grid-group-select');
+    if (gs && labGridState.currentGroup) {
+      gs.value = labGridState.currentGroup;
+      gs.classList.toggle('has-missing', /missing/i.test(gs.options[gs.selectedIndex]?.textContent || ''));
+    }
+    if (typeof labGridFetchAndRender === 'function') await labGridFetchAndRender();
+  })();
 }
 
 // ===== Mode toggle: card view vs grid view =====
 function labCardsToggleEditMode(forceGrid) {
   const editor = document.getElementById('lab-grid-editor');
   const btn = document.getElementById('lab-mode-toggle');
-  const goGrid = (forceGrid === true) ? true : editor.classList.contains('lab-mode-cards');
+  const wasCards = editor.classList.contains('lab-mode-cards');
+  const goGrid = (forceGrid === true) ? true : wasCards;
   if (goGrid) {
     editor.classList.remove('lab-mode-cards');
     editor.classList.add('lab-mode-grid');
     if (btn) btn.textContent = '▤ Back to cards';
     labStage5State.cardMode = false;
+    // Coming from cards: default to Title & Copy so the operator sees the
+    // same fields they were just looking at, now editable in the spreadsheet.
+    if (wasCards && labGridState.currentGroup !== 'title_copy') {
+      labGridState.currentGroup = 'title_copy';
+      const gs = document.getElementById('lab-grid-group-select');
+      if (gs) gs.value = 'title_copy';
+      if (typeof labGridFetchAndRender === 'function') labGridFetchAndRender();
+    }
   } else {
     editor.classList.remove('lab-mode-grid');
     editor.classList.add('lab-mode-cards');
