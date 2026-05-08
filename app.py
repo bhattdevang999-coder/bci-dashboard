@@ -12208,10 +12208,73 @@ def lab_regen_cell():
         result[key] = _scrub_gender_drift(result.get(key, ""), eff_g)
 
     new_value = result.get(key, "") or ""
-    style.setdefault("_lab_generated", {})[key] = new_value
-    style["_lab_generated"]["_regen_at"] = datetime.utcnow().isoformat("T") + "Z"
+    # Stage 7 endgame: regen is a PROPOSAL, not a commit. The new value goes
+    # into _lab_proposed; _lab_generated (what downloads read) stays untouched
+    # until the operator hits Accept. This prevents hallucinated / off-brand
+    # regens from silently shipping into the NIS file.
+    current = (style.get("_lab_generated") or {}).get(key, "") or ""
+    proposed = style.setdefault("_lab_proposed", {})
+    proposed[key] = {
+        "value":       new_value,
+        "prev":        current,
+        "feedback":    feedback,
+        "proposed_at": datetime.utcnow().isoformat("T") + "Z",
+    }
     _lab_session_persist()
-    return jsonify({"ok": True, "key": key, "value": new_value})
+    return jsonify({
+        "ok":       True,
+        "key":      key,
+        "value":    new_value,
+        "prev":     current,
+        "proposed": True,
+    })
+
+
+@app.route("/api/lab/proposal/accept", methods=["POST"])
+def lab_proposal_accept():
+    """Promote a pending proposal into _lab_generated. One key at a time.
+
+    Body: {style, key}
+    Only then does the new text become part of the downloadable NIS file.
+    """
+    data = request.get_json(force=True) or {}
+    style_num = (data.get("style") or "").strip()
+    key       = (data.get("key") or "").strip()
+    if key not in _STYLE_GENERATED_KEYS:
+        return jsonify({"error": f"{key!r} not accept-able"}), 400
+    style = _lab_session_get_style(style_num)
+    if not style:
+        return jsonify({"error": f"style {style_num} not in session"}), 404
+    proposals = style.get("_lab_proposed") or {}
+    if key not in proposals:
+        return jsonify({"error": f"no pending proposal for {key}"}), 404
+    new_val = proposals[key].get("value", "") or ""
+    style.setdefault("_lab_generated", {})[key] = new_val
+    style["_lab_generated"]["_regen_at"] = datetime.utcnow().isoformat("T") + "Z"
+    del proposals[key]
+    if not proposals:
+        style.pop("_lab_proposed", None)
+    _lab_session_persist()
+    return jsonify({"ok": True, "key": key, "value": new_val})
+
+
+@app.route("/api/lab/proposal/revert", methods=["POST"])
+def lab_proposal_revert():
+    """Throw away a pending proposal. _lab_generated is unchanged."""
+    data = request.get_json(force=True) or {}
+    style_num = (data.get("style") or "").strip()
+    key       = (data.get("key") or "").strip()
+    style = _lab_session_get_style(style_num)
+    if not style:
+        return jsonify({"error": f"style {style_num} not in session"}), 404
+    proposals = style.get("_lab_proposed") or {}
+    if key not in proposals:
+        return jsonify({"error": f"no pending proposal for {key}"}), 404
+    del proposals[key]
+    if not proposals:
+        style.pop("_lab_proposed", None)
+    _lab_session_persist()
+    return jsonify({"ok": True, "key": key})
 
 
 # ──── Selective copy + locks ───────────────────────────────────
@@ -12753,6 +12816,10 @@ def lab_listing_card():
         "backend_keywords": gen.get("backend_keywords", "") or "",
         "locks":           locks,
         "is_generated":    bool((gen.get("title") or "").strip()),
+        # Pending regen proposals — frontend renders Accept / Revert affordances.
+        # Until accepted, these do NOT flow into _lab_generated and are NOT
+        # included in any download (.xlsm or NIS bulksheet).
+        "proposals":       style.get("_lab_proposed") or {},
     })
 
 

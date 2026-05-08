@@ -4151,6 +4151,61 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 }
 .lab-train-pill:hover { background: #5EEAD4; color: #08111A; border-color: #5EEAD4; }
 
+/* ═══ Atlas regen proposals (Accept / Revert / Try again) ═══ */
+.lab-field.has-proposal { border-left: 3px solid #F59E0B; padding-left: 10px; }
+.lab-field-bullets li.has-proposal { border-left: 3px solid #F59E0B; padding-left: 10px; margin-left: -13px; }
+.lab-proposal {
+  margin-top: 10px; padding: 12px 14px;
+  background: #1A1505; border: 1px solid #4D3A0F; border-radius: 8px;
+  font-size: 13px; color: #E5E7EB;
+}
+.lab-proposal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 8px;
+}
+.lab-proposal-badge {
+  font: 600 10px ui-monospace, Consolas, monospace; letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #FCD34D; background: #2A2008; border: 1px solid #4D3A0F;
+  padding: 3px 8px; border-radius: 999px;
+}
+.lab-proposal-actions { display: flex; gap: 6px; }
+.lab-proposal-btn {
+  font: 600 11px ui-sans-serif, system-ui, sans-serif;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  border: 1px solid #2A4358; background: #13212F; color: #CBD5E1;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.lab-proposal-btn:hover { background: #1F344A; color: #fff; }
+.lab-proposal-btn.accept { border-color: #14532D; background: #14532D; color: #BBF7D0; }
+.lab-proposal-btn.accept:hover { background: #166534; color: #fff; }
+.lab-proposal-btn.revert { border-color: #4D1D1D; background: #4D1D1D; color: #FECACA; }
+.lab-proposal-btn.revert:hover { background: #7F1D1D; color: #fff; }
+.lab-proposal-feedback {
+  font-size: 12px; color: #FCD34D; margin-bottom: 8px; font-style: italic;
+}
+.lab-proposal-diff {
+  display: grid; grid-template-columns: 1fr; gap: 8px;
+}
+.lab-proposal-prev, .lab-proposal-next {
+  padding: 10px 12px; border-radius: 6px; line-height: 1.5;
+}
+.lab-proposal-prev {
+  background: #1F1614; border: 1px solid #4D2D2D;
+  color: #9CA3AF; text-decoration: line-through; text-decoration-color: #6B4040;
+}
+.lab-proposal-next {
+  background: #0F2517; border: 1px solid #14532D; color: #BBF7D0;
+}
+.lab-proposal-prev .tag, .lab-proposal-next .tag {
+  display: inline-block; margin-right: 8px;
+  font: 600 9px ui-monospace, monospace; letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 2px 6px; border-radius: 4px;
+  background: rgba(255,255,255,.06);
+  text-decoration: none;
+}
+
 /* Stage 7 — Cell picker (replaces Handsontable's clipped autocompleteEditor) */
 .lab-cell-picker {
   position: absolute; z-index: 95;
@@ -8744,11 +8799,12 @@ function labStage5RenderCards() {
 function _labStage5CardHtml(c) {
   const empty = !(c.is_generated);
   const fields = [];
+  const proposals = c.proposals || {};
   // Title (full width, larger type)
   fields.push(_labFieldHtml({
     style: c.style_num, key: 'title', label: 'Title',
     text: c.title, locked: !!(c.locks && c.locks.title),
-    cls: 'title-text', maxLen: 120,
+    cls: 'title-text', maxLen: 120, proposals,
   }));
   // Bullets 1-5 (one block, rendered as a list with per-bullet promptability)
   fields.push(_labBulletsHtml(c));
@@ -8756,13 +8812,13 @@ function _labStage5CardHtml(c) {
   fields.push(_labFieldHtml({
     style: c.style_num, key: 'description', label: 'Description',
     text: c.description, locked: !!(c.locks && c.locks.description),
-    maxLen: 2000,
+    maxLen: 2000, proposals,
   }));
   // Backend keywords
   fields.push(_labFieldHtml({
     style: c.style_num, key: 'backend_keywords', label: 'Backend keywords',
     text: c.backend_keywords, locked: !!(c.locks && c.locks.backend_keywords),
-    maxLen: 250,
+    maxLen: 250, proposals,
   }));
 
   const meta = `${c.variant_count || 0} variants${empty ? ' · not generated' : ''}`;
@@ -8783,6 +8839,7 @@ function _labStage5CardHtml(c) {
 }
 
 function _labFieldHtml(o) {
+  const proposal = (o.proposals && o.proposals[o.key]) || null;
   const len = (o.text || '').length;
   const over = (o.maxLen && len > o.maxLen);
   const promptCls = o.locked ? '' : ' promptable';
@@ -8800,12 +8857,44 @@ function _labFieldHtml(o) {
     `<span class="lab-train-pill" onclick="event.stopPropagation();labTrainPopOpen(this,'${_esc(o.style)}','${_esc(o.key)}')" title="Ask Atlas to rewrite this \u2014 chips or freeform">✨ Train</span>`;
   const editClick = o.locked ? ''
     : `onclick="labFieldEditStart(this,'${_esc(o.style)}','${_esc(o.key)}','${o.maxLen||0}')"`;
-  return `<div class="lab-field">
+  // If Atlas has regenerated this field and the operator hasn't accepted
+  // yet, show a proposal strip: previous text (struck through) + new text
+  // highlighted, with Accept / Revert / Try again. Downloads read from
+  // committed content only — proposals never ship until accepted.
+  const proposalBlock = proposal ? _labProposalHtml(o.style, o.key, proposal) : '';
+  return `<div class="lab-field${proposal?' has-proposal':''}">
     <div class="lab-field-label"><span>${_esc(o.label)}</span>${lockChip}${lenLabel}</div>
     <div class="lab-field-text${promptCls}${empty?' empty':''}${o.cls?' '+o.cls:''}"
          data-style="${_esc(o.style)}" data-key="${_esc(o.key)}"
          ${editClick}>
       ${text}${trainPill}
+    </div>
+    ${proposalBlock}
+  </div>`;
+}
+
+// Renders the Accept / Revert / Try again strip for a single pending regen
+// proposal. Kept separate so the bullets list can call it too.
+function _labProposalHtml(style, key, proposal) {
+  const prev = _esc(proposal.prev || '(empty)');
+  const next = _esc(proposal.value || '(empty)');
+  const feedback = (proposal.feedback || '').trim();
+  const fbLine = feedback
+    ? `<div class="lab-proposal-feedback">Your note: “${_esc(feedback)}”</div>`
+    : '';
+  return `<div class="lab-proposal" data-style="${_esc(style)}" data-key="${_esc(key)}">
+    <div class="lab-proposal-head">
+      <span class="lab-proposal-badge">Atlas proposal · not yet saved</span>
+      <div class="lab-proposal-actions">
+        <button class="lab-proposal-btn accept" onclick="labProposalAccept('${_esc(style)}','${_esc(key)}')">Accept</button>
+        <button class="lab-proposal-btn revert" onclick="labProposalRevert('${_esc(style)}','${_esc(key)}')">Revert</button>
+        <button class="lab-proposal-btn retry"  onclick="labTrainPopOpen(this,'${_esc(style)}','${_esc(key)}')">Try again</button>
+      </div>
+    </div>
+    ${fbLine}
+    <div class="lab-proposal-diff">
+      <div class="lab-proposal-prev"><span class="tag">Before</span>${prev}</div>
+      <div class="lab-proposal-next"><span class="tag">After</span>${next}</div>
     </div>
   </div>`;
 }
@@ -8832,19 +8921,59 @@ function _labBulletsHtml(c) {
     const text = empty ? _esc(_LAB_BULLET_HINTS[i] || 'Bullet ' + (i+1)) : _esc(b);
     const editClick = locked ? ''
       : `onclick="labFieldEditStart(this,'${_esc(c.style_num)}','${_esc(key)}',500)"`;
-    return `<li class="${empty?'empty':''}">
+    const proposal = (c.proposals && c.proposals[key]) || null;
+    const proposalBlock = proposal ? _labProposalHtml(c.style_num, key, proposal) : '';
+    return `<li class="${empty?'empty':''}${proposal?' has-proposal':''}">
       <div class="lab-field-text${promptCls}${empty?' empty':''}"
            data-style="${_esc(c.style_num)}" data-key="${_esc(key)}"
            ${editClick}>
         ${text}${trainPill}
       </div>
       <div style="display:flex;justify-content:flex-end;">${lockChip}${lenLabel}</div>
+      ${proposalBlock}
     </li>`;
   }).join('');
   return `<div class="lab-field">
     <div class="lab-field-label"><span>Bullets</span><span class="lab-field-len">5 lines</span></div>
     <ul class="lab-field-bullets">${items}</ul>
   </div>`;
+}
+
+// ═══ Proposal accept / revert wiring ═══
+// Both call the backend then refresh just this card — no full page reload.
+async function labProposalAccept(style, key) {
+  try {
+    const r = await fetch('/api/lab/proposal/accept', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style, key }),
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) { showToast(d.error || 'Accept failed', 'error'); return; }
+    await _labRefreshOneCard(style);
+    showToast('Accepted · ' + key + ' is now in the NIS file', 'success');
+    labStage5RefreshMetaOnly();
+  } catch (e) { showToast('Accept error: ' + e.message, 'error'); }
+}
+async function labProposalRevert(style, key) {
+  try {
+    const r = await fetch('/api/lab/proposal/revert', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style, key }),
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) { showToast(d.error || 'Revert failed', 'error'); return; }
+    await _labRefreshOneCard(style);
+    showToast('Reverted · kept your previous ' + key, 'info');
+  } catch (e) { showToast('Revert error: ' + e.message, 'error'); }
+}
+async function _labRefreshOneCard(style) {
+  try {
+    const card = await (await fetch('/api/lab/listing-card?style=' + encodeURIComponent(style))).json();
+    if (!card || !card.ok) return;
+    labStage5State.cards[style] = card;
+    const el = document.querySelector('.lab-listing-card[data-style="' + CSS.escape(style) + '"]');
+    if (el) el.outerHTML = _labStage5CardHtml(card);
+  } catch (e) {}
 }
 
 // ===== Inline edit (Excel feel) =====
