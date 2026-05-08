@@ -4206,6 +4206,66 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   text-decoration: none;
 }
 
+/* ═══ View toggle (Editable / Template mirror) ═══ */
+.lab-view-toggle {
+  display: inline-flex; gap: 0; border: 1px solid #2A4358;
+  border-radius: 8px; overflow: hidden;
+}
+.lab-view-btn {
+  background: #08111A; color: #94A3B8;
+  font: 600 12px ui-sans-serif, system-ui, sans-serif;
+  padding: 7px 14px; border: 0; cursor: pointer;
+  border-right: 1px solid #2A4358;
+  transition: background .15s, color .15s;
+}
+.lab-view-btn:last-child { border-right: 0; }
+.lab-view-btn:hover { background: #13212F; color: #CBD5E1; }
+.lab-view-btn.active { background: #5EEAD4; color: #08111A; }
+.lab-view-btn.active:hover { background: #5EEAD4; color: #08111A; }
+
+/* ═══ Template mirror table (read-only Vendor Central .xlsm preview) ═══ */
+.lab-template-mirror {
+  background: #08111A; border: 1px solid #1E2A3A; border-radius: 8px;
+  padding: 14px; margin-top: 12px;
+}
+.lab-template-mirror-meta {
+  font: 12px ui-monospace, monospace; color: #94A3B8;
+  margin-bottom: 10px; padding-bottom: 8px;
+  border-bottom: 1px dashed #2A4358;
+}
+.lab-template-mirror-name {
+  color: #5EEAD4; font-weight: 700;
+}
+.lab-template-mirror-host {
+  overflow: auto; max-height: 70vh;
+  border: 1px solid #1E2A3A; border-radius: 6px; background: #0B1620;
+}
+.lab-template-mirror-empty {
+  padding: 60px 20px; text-align: center; color: #64748B;
+  font: 13px ui-sans-serif, system-ui, sans-serif;
+}
+.lab-template-mirror-empty.err { color: #F87171; }
+.lab-template-mirror-table {
+  border-collapse: collapse; font: 11px ui-monospace, Consolas, monospace;
+  white-space: nowrap; color: #CBD5E1;
+}
+.lab-template-mirror-table th, .lab-template-mirror-table td {
+  border: 1px solid #1E2A3A; padding: 4px 8px;
+  min-width: 60px; max-width: 220px; overflow: hidden;
+  text-overflow: ellipsis; vertical-align: top;
+}
+.lab-template-mirror-table .hdr th {
+  background: #13212F; color: #5EEAD4;
+  font-weight: 700; position: sticky; top: 0; z-index: 1;
+}
+.lab-template-mirror-table tr:nth-child(even) td { background: #0F1B27; }
+.lab-template-mirror-rownum {
+  background: #1A2735 !important; color: #64748B !important;
+  font-weight: 600; text-align: right; padding: 4px 6px !important;
+  position: sticky; left: 0; z-index: 1;
+  min-width: 32px !important;
+}
+
 /* Stage 7 — Cell picker (replaces Handsontable's clipped autocompleteEditor) */
 .lab-cell-picker {
   position: absolute; z-index: 95;
@@ -7175,6 +7235,13 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
           <label class="lab-grid-label">Group</label>
           <select id="lab-grid-group-select" class="lab-grid-select"></select>
         </div>
+        <div class="lab-grid-control">
+          <label class="lab-grid-label">View</label>
+          <div class="lab-view-toggle" role="tablist">
+            <button id="lab-view-edit"     class="lab-view-btn active" onclick="labGridSetView('edit')"     title="Editable spreadsheet of every NIS field">Editable</button>
+            <button id="lab-view-template" class="lab-view-btn"        onclick="labGridSetView('template')" title="Read-only mirror of the Vendor Central .xlsm">Template mirror</button>
+          </div>
+        </div>
         <div class="lab-grid-status" id="lab-grid-dirty-status">No unsaved changes</div>
         <div class="lab-grid-actions">
           <button class="atlas-source-btn-secondary" onclick="labGenerateOne()" id="lab-gen-one-btn" title="Run LLM for the current style only">⚡ Regen this style</button>
@@ -7194,6 +7261,12 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
 
       <!-- The grid itself -->
       <div id="lab-grid-container" class="lab-grid-host"></div>
+
+      <!-- Template mirror (read-only Vendor Central .xlsm view) -->
+      <div id="lab-template-mirror" class="lab-template-mirror" style="display:none;">
+        <div class="lab-template-mirror-meta" id="lab-template-mirror-meta"></div>
+        <div class="lab-template-mirror-host" id="lab-template-mirror-host">Loading template…</div>
+      </div>
 
       <!-- Validation footer -->
       <div class="lab-grid-footer" id="lab-grid-footer">Awaiting data…</div>
@@ -8938,6 +9011,81 @@ function _labBulletsHtml(c) {
     <ul class="lab-field-bullets">${items}</ul>
   </div>`;
 }
+
+// ═══ Template mirror view (read-only Vendor Central .xlsm) ═══
+// Operators toggle between the Editable spreadsheet (live _lab_generated
+// edits) and the Template mirror (bit-perfect .xlsm as it downloads).
+let _labViewMode = 'edit';
+async function labGridSetView(mode) {
+  _labViewMode = mode;
+  const editBtn = document.getElementById('lab-view-edit');
+  const tplBtn  = document.getElementById('lab-view-template');
+  const grid    = document.getElementById('lab-grid-container');
+  const mirror  = document.getElementById('lab-template-mirror');
+  if (!editBtn || !tplBtn || !grid || !mirror) return;
+  if (mode === 'template') {
+    editBtn.classList.remove('active');
+    tplBtn.classList.add('active');
+    grid.style.display = 'none';
+    mirror.style.display = 'block';
+    await _labTemplateMirrorLoad();
+  } else {
+    tplBtn.classList.remove('active');
+    editBtn.classList.add('active');
+    mirror.style.display = 'none';
+    grid.style.display = '';
+    // Re-render the grid in case it was detached
+    if (typeof labGridFetchAndRender === 'function') labGridFetchAndRender();
+  }
+}
+async function _labTemplateMirrorLoad() {
+  const host = document.getElementById('lab-template-mirror-host');
+  const meta = document.getElementById('lab-template-mirror-meta');
+  if (!labGridState.currentStyle) {
+    host.innerHTML = '<div class="lab-template-mirror-empty">Pick a style first.</div>';
+    return;
+  }
+  host.innerHTML = '<div class="lab-template-mirror-empty">Building Vendor Central file…</div>';
+  try {
+    const r = await fetch('/api/lab/template-preview?style=' + encodeURIComponent(labGridState.currentStyle));
+    const d = await r.json();
+    if (!r.ok || d.error) {
+      host.innerHTML = `<div class="lab-template-mirror-empty err">${_esc(d.error || 'Template preview failed')}</div>`;
+      return;
+    }
+    const headerIdx = d.header_row_index || 0;
+    // Render as an HTML table. Style the header rows (first 3, which are
+    // Amazon's "valid values / required / data type" annotation rows) with
+    // a distinct background so operators can tell them apart from data.
+    let html = '<table class="lab-template-mirror-table">';
+    (d.rows || []).forEach((row, i) => {
+      const isHeader = i <= 2;  // first 3 rows are Amazon's annotation layer
+      const tag = isHeader ? 'th' : 'td';
+      const cls = isHeader ? ' class="hdr"' : '';
+      html += `<tr${cls}>`;
+      html += `<${tag} class="lab-template-mirror-rownum">${i+1}</${tag}>`;
+      row.forEach(cell => {
+        const v = cell == null ? '' : String(cell);
+        html += `<${tag} title="${_esc(v).slice(0,200)}">${_esc(v).slice(0,80)}</${tag}>`;
+      });
+      html += '</tr>';
+    });
+    html += '</table>';
+    host.innerHTML = html;
+    meta.innerHTML = `<span class="lab-template-mirror-name">${_esc(d.template_name || '')}</span> · ` +
+      `${d.total_rows} rows × ${d.total_cols} cols total` +
+      (d.truncated ? ` (showing first ${d.row_count}×${d.col_count})` : '');
+  } catch (e) {
+    host.innerHTML = `<div class="lab-template-mirror-empty err">Error: ${_esc(e.message||e)}</div>`;
+  }
+}
+
+// When the operator switches style while on the template view, refetch
+document.addEventListener('change', (e) => {
+  if (e.target && e.target.id === 'lab-grid-style-select' && _labViewMode === 'template') {
+    setTimeout(() => _labTemplateMirrorLoad(), 50);
+  }
+});
 
 // ═══ Proposal accept / revert wiring ═══
 // Both call the backend then refresh just this card — no full page reload.

@@ -11220,6 +11220,34 @@ LAB_GRID_GROUPS = {
 # Stage 1 used only "weight". Stage 2 now exposes the full set above.
 
 
+def _lab_build_full_group():
+    """Build the synthetic 'Full NIS sheet' group by unioning every column
+    from LAB_GRID_GROUPS. One row per variant; style-level fields repeat
+    across all variants of the same style (matching the NIS .xlsm layout).
+
+    Column order: variant anchor first (variant_id/sku/upc), then style
+    identity, then title & copy, then taxonomy, then apparel attributes,
+    then compliance, then weight & dimensions, then commercial.
+    """
+    seen = set()
+    cols = []
+    order = ["variants", "identity", "title_copy", "taxonomy", "apparel",
+            "compliance", "weight", "commercial"]
+    for gkey in order:
+        grp = LAB_GRID_GROUPS.get(gkey) or {}
+        for col in grp.get("columns", []):
+            k = col["key"]
+            if k in seen:
+                continue
+            seen.add(k)
+            # Tag each column with its source group so the frontend can
+            # render a soft section divider or color band.
+            cols.append({**col, "source_group": gkey})
+    # Full view is always variant-scoped — one row per SKU is how the Amazon
+    # NIS template expresses a multi-variant style.
+    return {"label": "Full NIS sheet", "scope": "variant", "columns": cols}
+
+
 def _lab_session_get_style(style_num):
     for s in lab_session.get("styles", []):
         if str(s.get("style_num", "")) == str(style_num):
@@ -11458,7 +11486,14 @@ def lab_grid_get():
     group_key = request.args.get("group", "weight").strip()
     if not style_num:
         return jsonify({"error": "style param required"}), 400
-    grp = LAB_GRID_GROUPS.get(group_key)
+    # "__full__" is a synthetic group: union of every style-scope and
+    # variant-scope column from LAB_GRID_GROUPS, flattened onto one row
+    # per variant with style-level fields repeated. This is the "Full NIS
+    # sheet" view — what the operator sees matches what ships in the .xlsm.
+    if group_key == "__full__":
+        grp = _lab_build_full_group()
+    else:
+        grp = LAB_GRID_GROUPS.get(group_key)
     if not grp:
         return jsonify({"error": f"Unknown group: {group_key}"}), 400
     style = _lab_session_get_style(style_num)
@@ -11470,7 +11505,20 @@ def lab_grid_get():
     columns = _hydrate_columns_with_dropdowns(grp["columns"], style_pt)
 
     scope = grp.get("scope", "variant")
-    if scope == "style":
+    if group_key == "__full__":
+        # Variant rows with style-level fields merged in, so the operator
+        # sees title/bullets/taxonomy repeated on every SKU row — just like
+        # the downloaded .xlsm does.
+        srow = _build_style_row(style)
+        rows = []
+        for v in style.get("variants", []) or []:
+            vrow = _build_variant_row(v, style)
+            rows.append({**srow, **vrow})
+        if not rows:
+            # No variants yet — still return one row so the operator can see
+            # the style-level fields.
+            rows = [srow]
+    elif scope == "style":
         rows = [_build_style_row(style)]
     else:
         rows = [_build_variant_row(v, style) for v in style.get("variants", [])]
@@ -11495,6 +11543,24 @@ def lab_grid_groups():
     style_num = request.args.get("style", "").strip()
     style = _lab_session_get_style(style_num) if style_num else None
     out = []
+    # Prepend the synthetic "Full NIS sheet" view so it's the first option
+    # in the group switcher — default landing for anyone hitting 'Full view'.
+    full_grp = _lab_build_full_group()
+    full_missing = 0
+    if style:
+        srow = _build_style_row(style)
+        variants = style.get("variants", []) or [None]
+        for v in variants:
+            row = {**srow, **(_build_variant_row(v, style) if v else {})}
+            full_missing += sum(1 for c in full_grp["columns"]
+                                 if c.get("required") and not row.get(c["key"]))
+    out.append({
+        "key": "__full__",
+        "label": full_grp["label"],
+        "scope": full_grp["scope"],
+        "missing": full_missing,
+        "col_count": len(full_grp["columns"]),
+    })
     for key, grp in LAB_GRID_GROUPS.items():
         missing = 0
         if style:
@@ -11541,7 +11607,10 @@ def lab_grid_save():
     rows = data.get("rows") or []
     if not style_num:
         return jsonify({"error": "style required"}), 400
-    grp = LAB_GRID_GROUPS.get(group_key)
+    if group_key == "__full__":
+        grp = _lab_build_full_group()
+    else:
+        grp = LAB_GRID_GROUPS.get(group_key)
     if not grp:
         return jsonify({"error": f"Unknown group: {group_key}"}), 400
     style = _lab_session_get_style(style_num)
@@ -11553,7 +11622,52 @@ def lab_grid_save():
     updated = 0
     skipped = 0
 
-    if scope == "style":
+    # Full NIS view: rows are variant-scoped but carry style-level fields
+    # merged in. Save style-level keys once (from the first row) onto the
+    # style record, and variant-level keys onto each matching variant.
+    if group_key == "__full__":
+        # Classify writable keys by source group
+        style_keys = {c["key"] for c in _lab_build_full_group()["columns"]
+                      if not c.get("readonly")
+                      and c.get("source_group") in ("identity", "title_copy", "taxonomy",
+                                                    "apparel", "compliance", "commercial")}
+        variant_keys = set(writable_keys) - style_keys
+        # Style-level: take from first row only (all variant rows carry the
+        # same merged style fields, but we only want to write once).
+        if rows:
+            first = rows[0]
+            gen = style.setdefault("_lab_generated", {})
+            for k in style_keys:
+                if k not in first:
+                    continue
+                new = first.get(k)
+                new_norm = "" if new in (None, "") else new
+                target_dict = gen if k in _STYLE_GENERATED_KEYS else style
+                old = target_dict.get(k)
+                old_norm = "" if old in (None, "") else old
+                if old_norm != new_norm:
+                    target_dict[k] = new_norm
+                    updated += 1
+        # Variant-level: per-row, matched by variant_id
+        variants = style.get("variants", [])
+        index = {(v.get("variant_id") or v.get("sku") or "").strip(): v for v in variants}
+        for row in rows:
+            vid = (row.get("variant_id") or "").strip()
+            v = index.get(vid)
+            if not v:
+                skipped += 1
+                continue
+            for k in variant_keys:
+                if k not in row:
+                    continue
+                old = v.get(k)
+                new = row.get(k)
+                old_norm = "" if old in (None, "") else old
+                new_norm = "" if new in (None, "") else new
+                if old_norm != new_norm:
+                    v[k] = new_norm
+                    updated += 1
+    elif scope == "style":
         # One row expected; merge into the style record.
         if not rows:
             return jsonify({"ok": True, "updated": 0, "skipped_unmatched": 0})
@@ -12820,6 +12934,93 @@ def lab_listing_card():
         # Until accepted, these do NOT flow into _lab_generated and are NOT
         # included in any download (.xlsm or NIS bulksheet).
         "proposals":       style.get("_lab_proposed") or {},
+    })
+
+
+@app.route("/api/lab/template-preview", methods=["GET"])
+def lab_template_preview():
+    """Return the bit-perfect NIS template for one style as JSON for preview.
+
+    Reuses do_xlsm_surgery() to write the Vendor Central .xlsm exactly as
+    it will be downloaded, then reads the 'Template' sheet back with openpyxl
+    and serializes the first ~60 rows + first ~80 columns as a 2D array.
+    The frontend renders this read-only so the operator can see "this is
+    what ships to Amazon" in the same dashboard.
+
+    Body query: ?style=<style_num>
+    """
+    style_num = (request.args.get("style") or "").strip()
+    if not style_num:
+        return jsonify({"error": "style param required"}), 400
+    style = _lab_session_get_style(style_num)
+    if not style:
+        return jsonify({"error": f"Style {style_num} not in session"}), 404
+    pt = _resolve_style_product_type(style) or ""
+    tpl_for_pt = _template_path_for_pt(pt) or str(DEFAULT_TEMPLATE)
+    brand = lab_session.get("brand", "") or ""
+    brand_cfg = _load_brand_config_data(brand) or {}
+    vendor_code = brand_cfg.get("vendor_code_full", "") or ""
+    gen = style.get("_lab_generated") or {}
+    content = {
+        "title":             gen.get("title", "") or "",
+        "bullets":           [gen.get(f"bullet_{i}", "") for i in range(1, 6)],
+        "description":       gen.get("description", "") or "",
+        "backend_keywords":  gen.get("backend_keywords", "") or "",
+        "neck_type":         style.get("neck_type", ""),
+        "sleeve_type":       style.get("sleeve_type", ""),
+        "fit_type":          style.get("fit_type", ""),
+        "closure_type":      style.get("closure_type", ""),
+        "collar_style":      style.get("collar_style", ""),
+    }
+    try:
+        out_path = do_xlsm_surgery(tpl_for_pt, brand, brand_cfg, vendor_code, style, content)
+    except Exception as e:
+        return jsonify({"error": f"Template build failed: {e}"}), 500
+    if not out_path or not Path(out_path).exists():
+        return jsonify({"error": "Template output missing after build"}), 500
+
+    # Read the Template sheet back as a 2D array. Limit to a sensible
+    # viewport so the response stays snappy — the real file has 200+ columns
+    # of mostly-empty Amazon attribute slots.
+    import openpyxl
+    wb = openpyxl.load_workbook(out_path, data_only=False, keep_vba=False)
+    ws = wb.active
+    # Vendor Central templates use "Template-COAT" / "Template-DRESS" / etc.
+    # Match any sheet whose name starts with "Template" (case-insensitive)
+    # since that's where the operator-edited rows actually live.
+    for n in wb.sheetnames:
+        if n.lower().startswith("template"):
+            ws = wb[n]
+            break
+
+    # The Vendor Central template has 3 header rows + 3 data rows (parent
+    # + children) + empty rows. Keep a small vertical viewport and a wide
+    # horizontal one so the demo shows the full attribute column span.
+    MAX_ROWS = 30
+    MAX_COLS = 150  # covers all COAT fields (actual total is ~243)
+    data = []
+    for r in ws.iter_rows(min_row=1, max_row=min(ws.max_row, MAX_ROWS),
+                           max_col=min(ws.max_column, MAX_COLS), values_only=True):
+        data.append([("" if v is None else str(v)) for v in r])
+    # Also tag which row is the operator's parent / child rows by detecting
+    # the first non-empty row after the template's frozen header block.
+    header_row_index = 0
+    for i, row in enumerate(data):
+        if any((cell or "").strip() for cell in row[:5]):
+            header_row_index = i
+            break
+    return jsonify({
+        "ok":          True,
+        "style_num":   style_num,
+        "product_type": pt,
+        "template_name": Path(tpl_for_pt).name,
+        "rows":        data,
+        "row_count":   len(data),
+        "col_count":   len(data[0]) if data else 0,
+        "truncated":   ws.max_row > MAX_ROWS or ws.max_column > MAX_COLS,
+        "total_rows":  ws.max_row,
+        "total_cols":  ws.max_column,
+        "header_row_index": header_row_index,
     })
 
 
