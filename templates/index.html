@@ -4045,6 +4045,86 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 }
 .lab-train-pill:hover { background: #5EEAD4; color: #08111A; border-color: #5EEAD4; }
 
+/* Stage 7 — Cell picker (replaces Handsontable's clipped autocompleteEditor) */
+.lab-cell-picker {
+  position: absolute; z-index: 95;
+  background: #FFFFFF; border: 1px solid #2A4358; border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.45);
+  width: 280px; max-width: 92vw;
+  font: 13px Calibri, sans-serif; color: #1E293B;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.lab-cell-picker-h {
+  font: 600 11px Trebuchet MS, sans-serif;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: #475569; background: #F1F5F9;
+  padding: 8px 12px; border-bottom: 1px solid #E2E8F0;
+}
+.lab-cell-picker-search {
+  width: 100%; box-sizing: border-box;
+  border: 0; border-bottom: 1px solid #E2E8F0;
+  padding: 9px 12px; font: 13px Calibri, sans-serif;
+  outline: none; color: #1E293B;
+}
+.lab-cell-picker-search:focus { background: #F8FAFC; }
+.lab-cell-picker-list {
+  max-height: 280px; overflow-y: auto;
+  padding: 4px 0;
+}
+.lab-cell-picker-list::-webkit-scrollbar { width: 8px; }
+.lab-cell-picker-list::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+.lab-cell-picker-row {
+  padding: 7px 14px;
+  cursor: pointer;
+  font: 13px Calibri, sans-serif;
+  color: #1E293B;
+  border-left: 3px solid transparent;
+}
+.lab-cell-picker-row:hover {
+  background: #F1F5F9;
+}
+.lab-cell-picker-row.selected {
+  background: #ECFDF5;
+  color: #065F46;
+  font-weight: 600;
+  border-left-color: #10B981;
+}
+.lab-cell-picker-empty {
+  padding: 16px 14px;
+  font: 12.5px Calibri, sans-serif;
+  color: #64748B; font-style: italic;
+}
+.lab-cell-picker-more {
+  padding: 7px 14px;
+  font: 11px ui-monospace, Consolas, monospace;
+  color: #94A3B8;
+  text-align: center;
+}
+.lab-cell-picker-hint {
+  padding: 6px 12px;
+  font: 10.5px ui-monospace, Consolas, monospace;
+  color: #94A3B8;
+  background: #F8FAFC;
+  border-top: 1px solid #E2E8F0;
+  letter-spacing: 0.02em;
+}
+/* Subtle caret on dropdown cells so the operator knows they're clickable */
+.lab-grid-host .handsontable td.lab-dd-cell {
+  cursor: pointer !important;
+  position: relative;
+}
+.lab-grid-host .handsontable td.lab-dd-cell::after {
+  content: "▾";
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  color: #94A3B8;
+  font-size: 11px;
+  pointer-events: none;
+}
+.lab-grid-host .handsontable td.lab-dd-cell:hover::after {
+  color: #14B8A6;
+}
+
 /* Train popover (anchored to a field) */
 .lab-train-pop {
   position: absolute; z-index: 80;
@@ -6746,6 +6826,18 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
       </div>
     </div>
 
+    <!-- ============= Stage 7 — Cell picker (replaces Handsontable dropdown) ============= -->
+    <div class="lab-cell-picker" id="lab-cell-picker" style="display:none;">
+      <div class="lab-cell-picker-h" id="lab-cell-picker-head">Attribute</div>
+      <input type="text" class="lab-cell-picker-search" id="lab-cell-picker-search"
+        placeholder="Search…" oninput="_labCellPickerOnInput(event)" onkeydown="_labCellPickerOnKey(event)">
+      <div class="lab-cell-picker-list" id="lab-cell-picker-list"></div>
+      <div class="lab-cell-picker-empty" id="lab-cell-picker-empty" style="display:none;">
+        No preset values for this column. Type a value and press Enter.
+      </div>
+      <div class="lab-cell-picker-hint">↑↓ navigate · Enter commit · Esc cancel</div>
+    </div>
+
     <!-- ============= Stage 5 — Train popover (anchored, dynamically positioned) ============= -->
     <div class="lab-train-pop" id="lab-train-pop" style="display:none;">
       <div class="lab-train-pop-h" id="lab-train-pop-h">Train · title</div>
@@ -7015,15 +7107,14 @@ function labGridRender(spec) {
     if (col.readonly) c.readOnly = true;
     if (col.width) c.width = col.width;
     if (col.type === 'dropdown') {
-      c.type = 'dropdown';
-      c.source = col.options || [];
+      // Stage 7 — we replaced Handsontable's broken autocompleteEditor with our
+      // own popover (see labCellPickerOpen). Treat the cell as plain text so
+      // Handsontable doesn't try to render its tiny clipped editor; we'll catch
+      // clicks and open the picker via the .lab-dd-cell className hook below.
+      c.type = 'text';
       c.allowInvalid = !(col.options && col.options.length);
-      // Stage 6b — bigger, scannable dropdown popup.
-      // trimDropdown=false so the popup isn't constrained to column width.
-      c.trimDropdown = false;
-      c.visibleRows = 10;
-      c.strict = !!(col.options && col.options.length);
-      c.filter = true;
+      c._dropdownOptions = col.options || [];   // stash for the picker
+      c.className = 'lab-dd-cell';
     } else if (col.type === 'numeric') {
       c.type = 'numeric';
       c.numericFormat = { pattern: '0.[000]' };
@@ -7081,7 +7172,26 @@ function labGridRender(spec) {
       const isEmpty = val === '' || val === null || val === undefined;
       const cls = _labCellClass(row, colSpec, isEmpty);
       if (cls) cell.className = cls;
+      // Stage 7 dropdown cells — stack the dropdown class on top of any
+      // err/warn/locked class so our picker hook can still catch the click.
+      if (colSpec.type === 'dropdown') {
+        cell.className = (cell.className ? cell.className + ' ' : '') + 'lab-dd-cell';
+      }
       return cell;
+    },
+    beforeOnCellMouseDown: function(event, coords, td) {
+      // Intercept clicks on dropdown-typed cells and open our own picker.
+      // Return false aborts Handsontable's default edit flow.
+      const colSpec = spec.columns[coords.col];
+      if (!colSpec || colSpec.type !== 'dropdown') return;
+      if (colSpec.readonly) return;
+      // Right-click keeps the Handsontable context menu
+      if (event.button === 2) return;
+      // Defer so Handsontable finishes selection first
+      setTimeout(() => labCellPickerOpen(td, coords.row, coords.col, colSpec), 0);
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return false;
     },
     afterChange: async function(changes, source) {
       if (source === 'loadData' || !changes) return;
@@ -7601,7 +7711,156 @@ async function labValidateRows(rows) {
   } catch (e) { /* tolerate */ }
 }
 
-// Build per-cell className for Handsontable's cells() callback. Looks at
+// ════════════════ STAGE 7 · Custom cell picker ════════════════
+// Replaces Handsontable 6.x autocompleteEditor (which clips to height:0 by
+// design and is unfixable via CSS). Opens an anchored popover with a search
+// box + filtered list of options. Same pattern as the Train popover, just
+// pointed at column.options instead of LLM regen.
+let _labPickerState = null;   // { row, col, colSpec, td, query }
+
+function labCellPickerOpen(td, row, col, colSpec) {
+  if (!td || !colSpec) return;
+  labCellPickerClose();
+  const pop = document.getElementById('lab-cell-picker');
+  if (!pop) return;
+  const options = colSpec.options || [];
+  const currentValue = (labGridState.hot && labGridState.hot.getDataAtCell(row, col)) || '';
+  _labPickerState = { row, col, colSpec, td, query: '' };
+  // Header
+  const head = document.getElementById('lab-cell-picker-head');
+  head.textContent = colSpec.title || colSpec.key;
+  // If the column has no options (PT not yet known) we show a free-text
+  // input fallback so the operator can still type a value.
+  const search = document.getElementById('lab-cell-picker-search');
+  search.value = currentValue || '';
+  search.placeholder = options.length
+    ? 'Search ' + options.length + ' values…'
+    : 'Type a value';
+  // Render the list (or hide it if no options)
+  _labCellPickerRenderList(options, currentValue, '');
+  // Position under the cell, clamped to viewport
+  const rect = td.getBoundingClientRect();
+  pop.style.display = 'block';
+  const popRect = pop.getBoundingClientRect();
+  let left = rect.left + window.scrollX;
+  let top  = rect.bottom + window.scrollY + 4;
+  const maxLeft = window.scrollX + document.documentElement.clientWidth - popRect.width - 12;
+  if (left > maxLeft) left = maxLeft;
+  if (left < 12) left = 12;
+  // If popover would overflow bottom, anchor above the cell instead
+  if (top + popRect.height > window.scrollY + document.documentElement.clientHeight - 12) {
+    top = rect.top + window.scrollY - popRect.height - 4;
+  }
+  pop.style.left = left + 'px';
+  pop.style.top  = top + 'px';
+  // Focus the search input + select all so typing replaces the value
+  setTimeout(() => { search.focus(); search.select(); }, 0);
+}
+
+function _labCellPickerRenderList(allOptions, currentValue, query) {
+  const list = document.getElementById('lab-cell-picker-list');
+  if (!list) return;
+  const empty = document.getElementById('lab-cell-picker-empty');
+  if (!allOptions.length) {
+    list.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  list.style.display = 'block';
+  const q = (query || '').trim().toLowerCase();
+  const matches = q
+    ? allOptions.filter(opt => String(opt).toLowerCase().includes(q))
+    : allOptions;
+  // Cap render to first 200 to keep DOM cheap; search narrows further.
+  const slice = matches.slice(0, 200);
+  list.innerHTML = slice.map((opt, i) => {
+    const sel = (opt === currentValue) ? ' selected' : '';
+    const e = String(opt).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return `<div class="lab-cell-picker-row${sel}" data-val="${e}" tabindex="-1">${e}</div>`;
+  }).join('') + (matches.length > 200
+    ? `<div class="lab-cell-picker-more">${matches.length - 200} more — keep typing to narrow</div>`
+    : '');
+  // Click delegation
+  list.onclick = (e) => {
+    const row = e.target.closest('.lab-cell-picker-row');
+    if (!row) return;
+    labCellPickerCommit(row.dataset.val);
+  };
+}
+
+function labCellPickerCommit(value) {
+  const st = _labPickerState;
+  if (!st) return;
+  if (labGridState.hot) {
+    labGridState.hot.setDataAtCell(st.row, st.col, value);
+  }
+  labCellPickerClose();
+}
+
+function labCellPickerClose() {
+  const pop = document.getElementById('lab-cell-picker');
+  if (pop) pop.style.display = 'none';
+  _labPickerState = null;
+}
+
+function _labCellPickerOnInput(e) {
+  const st = _labPickerState;
+  if (!st) return;
+  const v = e.target.value || '';
+  st.query = v;
+  // Preserve currentValue so the selected row keeps its green highlight even
+  // while filtering; list renders in filter-narrowed form.
+  const currentValue = (labGridState.hot && labGridState.hot.getDataAtCell(st.row, st.col)) || '';
+  _labCellPickerRenderList(st.colSpec.options || [], currentValue, v);
+  // Auto-highlight first row so Enter commits something sensible
+  const first = document.querySelector('#lab-cell-picker-list .lab-cell-picker-row');
+  if (first && !document.querySelector('#lab-cell-picker-list .lab-cell-picker-row.selected')) {
+    first.classList.add('selected');
+  }
+}
+
+function _labCellPickerOnKey(e) {
+  const st = _labPickerState;
+  if (!st) return;
+  if (e.key === 'Escape') {
+    e.preventDefault(); labCellPickerClose();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    const list = document.getElementById('lab-cell-picker-list');
+    const sel = list?.querySelector('.lab-cell-picker-row.selected') || list?.querySelector('.lab-cell-picker-row');
+    if (sel) labCellPickerCommit(sel.dataset.val);
+    else if (st.colSpec.allowInvalid !== false) {
+      // Free-text value (PT-less column or operator override)
+      labCellPickerCommit(e.target.value || '');
+    }
+  } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const list = document.getElementById('lab-cell-picker-list');
+    const rows = list?.querySelectorAll('.lab-cell-picker-row');
+    if (!rows || !rows.length) return;
+    let idx = -1;
+    rows.forEach((r, i) => { if (r.classList.contains('selected')) idx = i; });
+    rows.forEach(r => r.classList.remove('selected'));
+    idx = e.key === 'ArrowDown'
+      ? Math.min(rows.length - 1, idx + 1)
+      : Math.max(0, idx - 1);
+    if (idx < 0) idx = 0;
+    rows[idx].classList.add('selected');
+    rows[idx].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+// Close on outside click
+document.addEventListener('mousedown', (e) => {
+  const pop = document.getElementById('lab-cell-picker');
+  if (!pop || pop.style.display === 'none') return;
+  if (pop.contains(e.target)) return;
+  // Don't close if click was on a dropdown cell (Hot will reopen it)
+  if (e.target.closest('.lab-dd-cell')) return;
+  labCellPickerClose();
+}, true);
+
 // _labCellViolations + _labLocks for the current style. Locked cells beat
 // validation cells visually; error beats warn.
 function _labCellClass(rowIdx, colSpec, valueIsEmpty) {
