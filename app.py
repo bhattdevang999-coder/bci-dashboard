@@ -1865,15 +1865,24 @@ def load_brand_feedback(brand):
     return "\n".join(lines)
 
 
-def generate_content_llm(brand_cfg, brand, style, feedback_history):
+def generate_content_llm(brand_cfg, brand, style, feedback_history, regen_keys=None):
     """
     Use Claude to generate Amazon listing content for a style.
     Falls back to rule-based generation if LLM is unavailable.
     Returns a content dict with title, bullet_1-5, description, backend_keywords.
+
+    regen_keys (optional): set of field keys the operator is explicitly
+    regenerating. For those keys we DROP the 'pre-upload USE THIS' lock
+    on bullets and DROP the merge_bullets override so the LLM's new text
+    actually replaces the prior content. Without this, a regen request
+    on bullet_2 returns the same words because the prompt forces VERBATIM
+    and merge_bullets overwrites the LLM output with pre-upload text.
     """
     global _anthropic_client
     if _anthropic_client is None:
         return None  # Caller will fall back to rule-based
+    regen_keys = set(regen_keys or [])
+    regen_bullets = {k for k in regen_keys if k.startswith("bullet_")}
 
     clean_brand = clean_brand_name(brand)
     style_num = style["style_num"]
@@ -1925,6 +1934,16 @@ def generate_content_llm(brand_cfg, brand, style, feedback_history):
     pu_bullets = style.get("bullets_from_upload") or []
     # Pad to 5 — each slot is either pre-upload text or empty (AI will fill empty slots)
     pu_bullets = (list(pu_bullets) + [""] * 5)[:5]
+    # If the operator explicitly asked to regenerate a bullet (and possibly
+    # gave feedback for it), DROP the pre-upload lock for that slot so the
+    # LLM is allowed to write fresh copy. Without this, the prompt tells
+    # Claude to return the pre-upload text VERBATIM and merge_bullets would
+    # overwrite the LLM output anyway.
+    if regen_bullets:
+        for i in range(5):
+            slot_key = f"bullet_{i+1}"
+            if slot_key in regen_bullets:
+                pu_bullets[i] = ""
     pu_bullets_block = "\n".join(
         f"  Bullet {i+1}: {('USE THIS — ' + b) if b and b.strip() else 'WRITE THIS — (operator did not provide)'}"
         for i, b in enumerate(pu_bullets)
@@ -1936,9 +1955,25 @@ def generate_content_llm(brand_cfg, brand, style, feedback_history):
     sleeve  = style.get("sleeve_type", "") or ""
     fit     = style.get("fit_type", "") or ""
 
+    # When the operator is explicitly regenerating one or more fields with
+    # feedback, surface that as the FIRST instruction so Claude actually
+    # acts on it rather than burying it in LEARNED PREFERENCES at the end.
+    regen_directive = ""
+    if regen_keys:
+        keys_str = ", ".join(sorted(regen_keys))
+        feedback_inline = feedback_history.strip() or "(no specific feedback — just rewrite with fresh language)"
+        regen_directive = f"""=== OPERATOR REGEN REQUEST (HIGHEST PRIORITY) ===
+The operator is explicitly asking you to REWRITE these fields: {keys_str}.
+DO NOT return the previous text. You MUST produce different wording for these fields.
+Operator feedback for this regen:
+{feedback_inline}
+If the feedback contradicts a baseline rule (length, format, gender), follow the baseline rule but adjust everything else per feedback.
+
+"""
+
     prompt = f"""You are an Amazon NIS (New Item Setup) content expert. You create SEO-healthy, buyer-focused content that converts on Amazon.com.
 
-=== BASELINE CONTENT RULES (apply to EVERY listing, every brand) ===
+{regen_directive}=== BASELINE CONTENT RULES (apply to EVERY listing, every brand) ===
 TITLE — hard cap 120 chars (Vendor Central apparel). Target 100-118.
   Format: {{Brand}} {{Women's|Men's}} {{Function/Use}} {{Item Type}} - {{Top Feature}}, {{Top Feature}}
   - Front-load the top 3-5 search keywords inside the first 80 chars (mobile preview).
@@ -2046,7 +2081,15 @@ Respond in this exact JSON format (no other text, no markdown):
         # ═══ v0.7.6: enforce baseline content rules + merge pre-upload bullets ═══
         from nis_engine import content_rules as _cr
         ai_bullets = [str(parsed.get(f"bullet_{i}", ""))[:256] for i in range(1, 6)]
-        merged_bullets = _cr.merge_bullets(pu_bullets, ai_bullets)
+        # For slots being regenerated, force the AI output through (the
+        # pre-upload value was already cleared above, so merge_bullets
+        # would pick AI anyway, but we belt-and-suspenders it here).
+        merge_pu = list(pu_bullets)
+        if regen_bullets:
+            for i in range(5):
+                if f"bullet_{i+1}" in regen_bullets:
+                    merge_pu[i] = ""
+        merged_bullets = _cr.merge_bullets(merge_pu, ai_bullets)
 
         # Title: hard cap 120, never the style number, never #N/A
         title_raw = str(parsed.get("title", "")).strip()
@@ -12145,7 +12188,7 @@ def lab_regen_cell():
     feedback_history = f"- [{key}] {feedback}" if feedback else ""
 
     try:
-        result = generate_content_llm(brand_cfg, brand, style, feedback_history)
+        result = generate_content_llm(brand_cfg, brand, style, feedback_history, regen_keys={key})
     except Exception as e:
         return jsonify({"error": f"LLM call failed: {e}"}), 500
     if not result:
