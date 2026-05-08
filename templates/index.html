@@ -3195,7 +3195,101 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
 
 <style>
 /* ═══════ LAB · GRID EDITOR (Stage 1) ═══════ */
-#lab-grid-page { color: #E2E8F0; }
+/* Stage 7 contrast fix — the dashboard root body is a cream tone (#F7F6F2)
+   for legacy non-Atlas pages. Lab pages assume the deep-navy palette from
+   the Atlas system. Setting a real background on #lab-grid-page so all the
+   Lab text colors land on the dark surface they were designed for. */
+#lab-grid-page {
+  color: #E2E8F0;
+  background: #08111A;
+  min-height: 100vh;
+  padding: 24px 32px 80px;
+  margin: 0;
+}
+
+/* Stage 7 contrast bumps — the Lab uses a lot of slate grays (64748B, 475569,
+   334155) for "muted secondary" text. On #0E1A26 / #13212F / #0B1721 cards
+   those land at contrast ratios 2.3–3.9 which are hard to read even for
+   someone with 20/20 vision in a conference room. Everything here bumps one
+   step lighter so every label reads cleanly.
+   Scope: only #lab-grid-page (don't leak into the other legacy pages). */
+#lab-grid-page .lab-brand-status,
+#lab-grid-page .atlas-status-sub,
+#lab-grid-page .atlas-sources-meta,
+#lab-grid-page .lab-past-session-meta,
+#lab-grid-page .lab-rail-pt-meta,
+#lab-grid-page .lab-rail-style-meta,
+#lab-grid-page .lab-listing-card-style,
+#lab-grid-page .lab-listing-card-meta,
+#lab-grid-page .lab-field-len,
+#lab-grid-page .lab-field-label,
+#lab-grid-page .lab-grid-note,
+#lab-grid-page .lab-drawer-section-h,
+#lab-grid-page .lab-drawer-close,
+#lab-grid-page .lab-submod-pill,
+#lab-grid-page .lab-pt-divider,
+#lab-grid-page .lab-pt-divider .pt-meta,
+#lab-grid-page .lab-rail-pt-caret,
+#lab-grid-page .lab-pitch-ribbon .rib-note,
+#lab-grid-page .lab-past-sessions-h,
+#lab-grid-page .lab-rail-eyebrow,
+#lab-grid-page .lab-rail-pt-name,
+#lab-grid-page .lab-rail-style-name,
+#lab-grid-page .lab-grid-bc-sku,
+#lab-grid-page .lab-grid-bc-meta,
+#lab-grid-page .lab-grid-status {
+  /* Same intent each kept, just lighter text */
+}
+#lab-grid-page .lab-brand-status { color: #CBD5E1; }
+#lab-grid-page .atlas-status-sub { color: #CBD5E1 !important; }
+#lab-grid-page .atlas-sources-meta { color: #CBD5E1; }
+#lab-grid-page .lab-past-session-meta { color: #CBD5E1; }
+#lab-grid-page .lab-rail-pt-meta { color: #94A3B8; }
+#lab-grid-page .lab-rail-style-meta { color: #94A3B8; }
+#lab-grid-page .lab-listing-card-style {
+  color: #94A3B8; background: #13212F; border-color: #2A4358;
+}
+#lab-grid-page .lab-listing-card-meta { color: #94A3B8; }
+#lab-grid-page .lab-field-len { color: #94A3B8; }
+#lab-grid-page .lab-field-label { color: #CBD5E1; }
+#lab-grid-page .lab-grid-note { color: #94A3B8; }
+#lab-grid-page .lab-drawer-section-h { color: #94A3B8; }
+#lab-grid-page .lab-drawer-close { color: #94A3B8; }
+#lab-grid-page .lab-drawer-body,
+#lab-grid-page .lab-drawer-body > div:not(.lab-drawer-section-h) {
+  color: #CBD5E1 !important;
+}
+#lab-grid-page .lab-submod-pill { color: #CBD5E1; }
+#lab-grid-page .lab-pt-divider,
+#lab-grid-page .lab-pt-divider > span:first-child { color: #94A3B8; }
+#lab-grid-page .lab-pt-divider .pt-meta { color: #64748B; }
+#lab-grid-page .lab-rail-pt-caret { color: #94A3B8; }
+#lab-grid-page .lab-pitch-ribbon .rib-note { color: #94A3B8; }
+#lab-grid-page .lab-grid-status { color: #CBD5E1; }
+
+/* Rail subeyebrow — teal-on-teal was 1:1 contrast. Pop it onto dark navy. */
+#lab-grid-page .lab-rail-subeyebrow {
+  background: #0E1A26;
+  color: #99F6E4;
+  border-color: rgba(94,234,212,0.35);
+}
+
+/* Field empty-state hints (bullet placeholders) were #64748B italic on navy —
+   easy to miss as hints rather than errors. Lighten + italicize only. */
+#lab-grid-page .lab-field-text.empty { color: #94A3B8; font-style: italic; }
+
+/* Breadcrumb name on dark navy (was 1.14 ratio on cream before bg fix — now
+   4.1 on navy; bump style name slightly brighter for scannability) */
+#lab-grid-page .lab-grid-bc-sku { color: #CBD5E1; }
+#lab-grid-page .lab-grid-bc-meta { color: #94A3B8; }
+
+/* Matrix contrast bumps */
+#lab-grid-page .lab-matrix-table th .col-group { color: #CBD5E1; }
+#lab-grid-page .lab-matrix-pt-stats .stat-sep { color: #64748B; }
+#lab-grid-page .lab-matrix-table td.cell-stats { color: #94A3B8; }
+#lab-grid-page .lab-matrix-table td.cell-stats .stat-ok { color: #10B981; }
+#lab-grid-page .lab-matrix-table td.cell-stats .stat-miss { color: #D97706; }
+
 .lab-grid-controls {
   display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
   padding: 14px 16px; margin: 12px 4px 0;
@@ -4109,6 +4203,196 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
   border-top: 1px solid #E2E8F0;
   letter-spacing: 0.02em;
 }
+/* Stage 7 — PT-aggregated catalog matrix */
+.lab-matrix-shell {
+  margin-top: 14px;
+  font: 13px Calibri, sans-serif;
+  color: #E2E8F0;
+}
+.lab-matrix-explain {
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+  border-left: 3px solid #5EEAD4;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font: 12.5px Calibri, sans-serif;
+  color: #CBD5E1;
+  margin-bottom: 18px;
+  line-height: 1.55;
+}
+.lab-matrix-pt {
+  margin: 28px 0 16px 0;
+  background: #FFFFFF;
+  border: 1px solid #1C2D40;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.lab-matrix-pt-h {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px 18px;
+  background: #0E1A26;
+  border-bottom: 1px solid #1C2D40;
+  color: #E2E8F0;
+}
+.lab-matrix-pt-name {
+  font: 700 16px Trebuchet MS, sans-serif;
+  color: #F1F5F9;
+  letter-spacing: 0.04em;
+}
+.lab-matrix-pt-count {
+  font: 12px ui-monospace, Consolas, monospace;
+  color: #5EEAD4;
+  background: rgba(94,234,212,0.08);
+  border: 1px solid rgba(94,234,212,0.20);
+  padding: 3px 9px; border-radius: 4px;
+}
+.lab-matrix-pt-stats {
+  margin-left: auto;
+  font: 12px Calibri, sans-serif;
+  color: #94A3B8;
+}
+.lab-matrix-pt-stats .stat-good { color: #10B981; font-weight: 600; }
+.lab-matrix-pt-stats .stat-warn { color: #F59E0B; font-weight: 600; }
+.lab-matrix-pt-stats .stat-sep  { color: #334155; margin: 0 8px; }
+.lab-matrix-table-wrap {
+  overflow-x: auto;
+  background: #FFFFFF;
+}
+.lab-matrix-table-wrap::-webkit-scrollbar { height: 10px; }
+.lab-matrix-table-wrap::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 5px; }
+.lab-matrix-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 800px;
+  font: 12.5px Calibri, sans-serif;
+  color: #1E293B;
+}
+.lab-matrix-table th {
+  background: #F1F5F9 !important;
+  color: #334155 !important;
+  font: 600 11px Calibri, Arial, sans-serif !important;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 8px 10px !important;
+  text-align: left;
+  border-bottom: 1px solid #E2E8F0 !important;
+  border-right: 1px solid #F1F5F9 !important;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.lab-matrix-table th.col-style {
+  position: sticky; left: 0; z-index: 4;
+  background: #F1F5F9 !important;
+  border-right: 1px solid #CBD5E1 !important;
+  min-width: 200px;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.04);
+}
+.lab-matrix-table th.col-stats {
+  text-align: right;
+  min-width: 90px;
+}
+.lab-matrix-table th .col-group {
+  display: block;
+  font: 9px ui-monospace, Consolas, monospace;
+  color: #94A3B8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.lab-matrix-table td {
+  padding: 7px 10px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  border-right: 1px solid #F8FAFC !important;
+  font-size: 12.5px !important;
+  line-height: 1.4 !important;
+  vertical-align: middle;
+  background: #FFFFFF;
+  color: #1E293B;
+}
+.lab-matrix-table td.cell-style {
+  position: sticky; left: 0; z-index: 3;
+  background: #FAFBFC !important;
+  border-right: 1px solid #CBD5E1 !important;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.03);
+  cursor: pointer;
+}
+.lab-matrix-table td.cell-style:hover {
+  background: #ECFDF5 !important;
+}
+.lab-matrix-table .cell-style-name {
+  color: #1E293B; font-weight: 600;
+  display: block; line-height: 1.3;
+  max-width: 220px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lab-matrix-table .cell-style-sku {
+  color: #64748B; font: 10px ui-monospace, Consolas, monospace;
+  display: block; margin-top: 2px;
+}
+.lab-matrix-table td.cell-data {
+  cursor: pointer;
+  position: relative;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lab-matrix-table td.cell-data:hover {
+  background: #F8FAFC !important;
+  color: #0F172A;
+}
+.lab-matrix-table td.cell-data.status-ready {
+  color: #1E293B;
+  border-left: 3px solid #10B981 !important;
+}
+.lab-matrix-table td.cell-data.status-missing {
+  color: #92400E;
+  background: #FFFBEB !important;
+  border-left: 3px solid #F59E0B !important;
+  font-style: italic;
+}
+.lab-matrix-table td.cell-data.status-missing::before {
+  content: "missing";
+  color: #92400E;
+  font: 11px Calibri, sans-serif;
+}
+.lab-matrix-table td.cell-stats {
+  text-align: right;
+  font: 11.5px ui-monospace, Consolas, monospace;
+  color: #64748B;
+  white-space: nowrap;
+}
+.lab-matrix-table td.cell-stats .stat-ok   { color: #10B981; font-weight: 600; }
+.lab-matrix-table td.cell-stats .stat-miss { color: #F59E0B; font-weight: 600; }
+.lab-matrix-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748B;
+  font: 13px Calibri, sans-serif;
+}
+.lab-mode-matrix #lab-stage5-shell { display: none !important; }
+.lab-mode-matrix #lab-grid-controls-row,
+.lab-mode-matrix #lab-grid-controls-bar,
+.lab-mode-matrix #lab-grid-container,
+.lab-mode-matrix #lab-grid-footer,
+.lab-mode-matrix .lab-grid-note { display: none !important; }
+
+/* Polish: Lab upload row — mute the Template button so Upload reads as the
+   primary action. (Global secondary style stays teal for other pages.) */
+a.atlas-source-btn-secondary.lab-tpl-btn {
+  background: transparent !important;
+  border: 1px solid #334155 !important;
+  color: #94A3B8 !important;
+  font: 600 12px Calibri, sans-serif !important;
+  text-transform: none !important;
+  letter-spacing: 0.02em !important;
+}
+a.atlas-source-btn-secondary.lab-tpl-btn:hover {
+  border-color: #5EEAD4 !important;
+  color: #5EEAD4 !important;
+  background: rgba(94,234,212,0.05) !important;
+}
+
 /* Subtle caret on dropdown cells so the operator knows they're clickable */
 .lab-grid-host .handsontable td.lab-dd-cell {
   cursor: pointer !important;
@@ -6659,7 +6943,7 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
           </div>
           <div class="atlas-source-state" id="lab-grid-state"><span class="atlas-source-state-dot"></span> No file uploaded</div>
           <div class="atlas-source-actions">
-            <a class="atlas-source-btn-secondary" href="/api/download-sample-template" download>⇩ Template</a>
+            <a class="atlas-source-btn-secondary lab-tpl-btn" href="/api/download-sample-template" download>⇩ Template</a>
             <button class="atlas-source-btn-primary" onclick="document.getElementById('lab-grid-file-input').click()">Upload →</button>
             <input type="file" id="lab-grid-file-input" accept=".xlsx,.xls,.xlsm,.csv,.tsv" style="display:none;" />
           </div>
@@ -6675,9 +6959,10 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
     <!-- Section 2: Grid editor (hidden until upload) -->
     <div id="lab-grid-editor" class="lab-mode-cards" style="display:none; margin-top:32px;">
 
-      <!-- Stage 5 — sub-module switcher (From sheet · From photo) -->
+      <!-- Stage 5/7 — sub-module switcher -->
       <div class="lab-submod-row" id="lab-submod-row">
         <button class="lab-submod-pill active" id="lab-submod-grid" onclick="labSwitchSubmod('grid')">From sheet</button>
+        <button class="lab-submod-pill" id="lab-submod-matrix" onclick="labSwitchSubmod('matrix')">Catalog matrix</button>
         <button class="lab-submod-pill" id="lab-submod-image" onclick="labSwitchSubmod('image')">From photo</button>
         <div class="lab-submod-spacer"></div>
         <button class="lab-tb-btn" onclick="labDrawerOpen('voice')" title="Brand voice — the rules Atlas applies on every draft">Voice</button>
@@ -6729,6 +7014,16 @@ details.ws-fields-group[open] > .ws-fields-group-title::before {
         </section>
 
       </div><!-- /lab-stage5-shell -->
+
+      <!-- Stage 7 — Catalog matrix view (one table per PT, compliance dots) -->
+      <div id="lab-matrix-shell" class="lab-matrix-shell" style="display:none;">
+        <div class="lab-matrix-explain">
+          One row per style. One column per required Amazon NIS attribute.
+          Green cells are populated. Amber cells are missing required values.
+          Click any cell to jump into the editor for that style.
+        </div>
+        <div id="lab-matrix-body"></div>
+      </div>
 
       <!-- Brand Voice editor (legacy in-page — hidden in card view via .lab-mode-cards) -->
       <div class="lab-voice-card" style="display:none;">
@@ -7303,10 +7598,18 @@ function labGridRender(spec) {
   // Lookup the style name from session so the breadcrumb reads human-first
   const sObj = (labGridState.styles || []).find(s => s.style_num === labGridState.currentStyle);
   const sName = (sObj && sObj.style_name) ? sObj.style_name.trim() : '';
-  const sNameShort = sName.length > 70 ? (sName.slice(0, 67) + '…') : sName;
+  // Smart truncation: break on last word boundary inside 70 chars, not mid-word.
+  let sNameShort = sName;
+  if (sName.length > 70) {
+    const cut = sName.slice(0, 70);
+    const lastSpace = cut.lastIndexOf(' ');
+    sNameShort = (lastSpace > 40 ? cut.slice(0, lastSpace) : cut) + '…';
+  }
   const bcEl = document.getElementById('lab-grid-edit-meta');
+  const escName = sNameShort.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const escFull = sName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
   bcEl.innerHTML =
-    (sNameShort ? `<span class="lab-grid-bc-name">${sNameShort.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span><span class="lab-grid-bc-sep">·</span>` : '') +
+    (sNameShort ? `<span class="lab-grid-bc-name" title="${escFull}">${escName}</span><span class="lab-grid-bc-sep">·</span>` : '') +
     `<span class="lab-grid-bc-sku">${labGridState.currentStyle}</span>` +
     `<span class="lab-grid-bc-sep">·</span>` +
     `<span class="lab-grid-bc-group">${spec.group_label || labGridState.currentGroup}</span>` +
@@ -8576,8 +8879,127 @@ function labSwitchSubmod(which) {
     if (typeof showBetaImageNISPage === 'function') showBetaImageNISPage();
     return;
   }
-  document.getElementById('lab-submod-grid').classList.add('active');
-  document.getElementById('lab-submod-image').classList.remove('active');
+  const pills = {
+    grid:   document.getElementById('lab-submod-grid'),
+    matrix: document.getElementById('lab-submod-matrix'),
+    image:  document.getElementById('lab-submod-image'),
+  };
+  Object.values(pills).forEach(p => p && p.classList.remove('active'));
+  if (pills[which]) pills[which].classList.add('active');
+
+  const editor = document.getElementById('lab-grid-editor');
+  const matrix = document.getElementById('lab-matrix-shell');
+  if (which === 'matrix') {
+    editor.classList.remove('lab-mode-cards', 'lab-mode-grid');
+    editor.classList.add('lab-mode-matrix');
+    if (matrix) matrix.style.display = 'block';
+    labMatrixRefresh();
+  } else {
+    // default: back to card view
+    editor.classList.remove('lab-mode-matrix', 'lab-mode-grid');
+    editor.classList.add('lab-mode-cards');
+    if (matrix) matrix.style.display = 'none';
+  }
+}
+
+// ════════════ Stage 7 · PT-aggregated Catalog Matrix ════════════
+async function labMatrixRefresh() {
+  const body = document.getElementById('lab-matrix-body');
+  if (!body) return;
+  body.innerHTML = '<div class="lab-matrix-empty">Loading catalog matrix…</div>';
+  try {
+    const data = await (await fetch('/api/lab/pt-matrix')).json();
+    if (!data.ok || !(data.matrices || []).length) {
+      body.innerHTML = '<div class="lab-matrix-empty">No styles loaded. Upload a sheet to see the catalog matrix.</div>';
+      return;
+    }
+    const parts = (data.matrices || []).map(m => _labMatrixRenderPt(m));
+    body.innerHTML = parts.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="lab-matrix-empty">Matrix failed to load — try again in a moment.</div>';
+  }
+}
+
+function _labMatrixEscape(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function _labMatrixRenderPt(m) {
+  const cols = m.columns || [];
+  const rows = m.rows || [];
+  const totalCells   = rows.length * cols.length;
+  const missingCells = rows.reduce((acc, r) => acc + (r.missing || 0), 0);
+  const readyCells   = totalCells - missingCells;
+  const pctReady = totalCells ? Math.round(100 * readyCells / totalCells) : 0;
+
+  const ths = cols.map(c =>
+    `<th><span class="col-group">${_labMatrixEscape(c.group)}</span>${_labMatrixEscape(c.title)}</th>`
+  ).join('');
+
+  const trs = rows.map(r => {
+    const nameEsc = _labMatrixEscape(r.style_name || r.style_num);
+    const skuEsc  = _labMatrixEscape(r.style_num);
+    const cellsHtml = (r.cells || []).map(cell => {
+      const cls = cell.status === 'ready' ? 'status-ready' : 'status-missing';
+      const display = cell.status === 'ready'
+        ? _labMatrixEscape(cell.value || '—')
+        : '';
+      const title = cell.status === 'ready' ? _labMatrixEscape(cell.value || '') : 'Missing required value';
+      return `<td class="cell-data ${cls}" title="${title}"
+                   onclick="labMatrixJumpToStyle('${_labMatrixEscape(r.style_num)}','${_labMatrixEscape(cell.key)}')">${display}</td>`;
+    }).join('');
+    const missCls = r.missing > 0 ? 'stat-miss' : 'stat-ok';
+    return `<tr>
+      <td class="cell-style" onclick="labMatrixJumpToStyle('${_labMatrixEscape(r.style_num)}')">
+        <span class="cell-style-name" title="${nameEsc}">${nameEsc}</span>
+        <span class="cell-style-sku">${skuEsc} · ${r.variant_count || 0} variants</span>
+      </td>
+      ${cellsHtml}
+      <td class="cell-stats">
+        <span class="stat-ok">${r.ready}</span>/<span class="${missCls}">${cols.length}</span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="lab-matrix-pt">
+    <div class="lab-matrix-pt-h">
+      <span class="lab-matrix-pt-name">${_labMatrixEscape(m.product_type || 'UNCLASSIFIED')}</span>
+      <span class="lab-matrix-pt-count">${rows.length} styles · ${cols.length} required attributes</span>
+      <span class="lab-matrix-pt-stats">
+        <span class="stat-good">${readyCells}</span> ready
+        <span class="stat-sep">·</span>
+        <span class="stat-warn">${missingCells}</span> missing
+        <span class="stat-sep">·</span>
+        <span>${pctReady}% complete</span>
+      </span>
+    </div>
+    <div class="lab-matrix-table-wrap">
+      <table class="lab-matrix-table">
+        <thead><tr>
+          <th class="col-style">Style</th>
+          ${ths}
+          <th class="col-stats">Ready</th>
+        </tr></thead>
+        <tbody>${trs}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function labMatrixJumpToStyle(style, fieldKey) {
+  // Jump into the editor for that style.
+  labGridState.currentStyle = style;
+  const ss = document.getElementById('lab-grid-style-select');
+  if (ss) ss.value = style;
+  // Switch to card view as the landing surface
+  labSwitchSubmod('grid');
+  // The cards render immediately; scroll-to happens in labStage5SelectStyle.
+  if (typeof labStage5SelectStyle === 'function') labStage5SelectStyle(style);
+  if (typeof labStage5Refresh === 'function') labStage5Refresh();
+  // If a specific cell was clicked, flag it in a toast so the operator knows where to focus.
+  if (fieldKey) showToast('Opened ' + style + ' — edit the “' + fieldKey.replace(/_/g,' ') + '” field', 'info');
 }
 
 // ===== Drawer (Voice / Rules / History) =====

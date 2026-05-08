@@ -12377,6 +12377,106 @@ def lab_styles_meta():
     })
 
 
+@app.route("/api/lab/pt-matrix", methods=["GET"])
+def lab_pt_matrix():
+    """Stage 7 · PT-aggregated compliance view.
+
+    Returns one matrix per Product Type. Each matrix has:
+      - columns: required attribute keys + titles for that PT (we use
+        LAB_GRID_GROUPS to enumerate every required key, then de-dupe)
+      - rows: one per style in this PT, each cell carries
+          {value, status: 'ready'|'missing'|'override'}
+      - totals: {ready, missing} per style and per column
+
+    Status is computed from style['_lab_generated'] for copy fields and
+    from style[k] / style['variants'][...][k] for everything else, mirroring
+    how the grid editor reads.
+    """
+    if not lab_session.get("styles"):
+        return jsonify({"ok": True, "matrices": []})
+
+    # Build the unified "required attributes" list once — every group's
+    # required keys, deduped. We exclude variant-scope keys from this matrix
+    # (color/size/upc are per-variant, handled in their own group).
+    seen = set()
+    attribute_cols = []
+    for grp_key, grp in LAB_GRID_GROUPS.items():
+        if grp.get("scope") != "style":
+            continue
+        for col in grp.get("columns", []):
+            if not col.get("required"):
+                continue
+            k = col["key"]
+            if k in seen or col.get("readonly"):
+                continue
+            seen.add(k)
+            attribute_cols.append({
+                "key":   k,
+                "title": col.get("title", k),
+                "group": grp.get("label", grp_key),
+                "group_key": grp_key,
+            })
+
+    # Group styles by PT
+    by_pt = {}
+    for s in lab_session["styles"]:
+        pt = (_resolve_pt_for_style(s) or "UNCLASSIFIED").upper()
+        by_pt.setdefault(pt, []).append(s)
+
+    matrices = []
+    for pt in sorted(by_pt.keys()):
+        pt_styles = by_pt[pt]
+        rows = []
+        col_missing = {c["key"]: 0 for c in attribute_cols}
+        for s in pt_styles:
+            sn  = s.get("style_num", "") or ""
+            nm  = s.get("style_name", "") or ""
+            gen = s.get("_lab_generated") or {}
+            cells = []
+            ready_n  = 0
+            missing_n = 0
+            for c in attribute_cols:
+                k = c["key"]
+                # _lab_generated wins for copy fields; otherwise read from style
+                v = gen.get(k) if k in gen and gen.get(k) is not None else s.get(k)
+                v_str = ("" if v is None else str(v)).strip()
+                status = "ready" if v_str else "missing"
+                if status == "missing":
+                    missing_n += 1
+                    col_missing[k] += 1
+                else:
+                    ready_n += 1
+                cells.append({
+                    "key":    k,
+                    "value":  v_str[:80],   # truncate for the matrix display
+                    "status": status,
+                })
+            rows.append({
+                "style_num":  sn,
+                "style_name": nm,
+                "variant_count": len(s.get("variants", []) or []),
+                "cells":   cells,
+                "ready":   ready_n,
+                "missing": missing_n,
+            })
+        matrices.append({
+            "product_type": pt,
+            "columns":      attribute_cols,
+            "rows":         rows,
+            "col_missing":  col_missing,
+            "total_styles": len(rows),
+            "total_required": len(attribute_cols),
+        })
+
+    return jsonify({
+        "ok":       True,
+        "brand":    lab_session.get("brand", "") or "",
+        "matrices": matrices,
+        "attribute_count": len(attribute_cols),
+    })
+
+
+
 @app.route("/api/lab/listing-card", methods=["GET"])
 def lab_listing_card():
     """Return the six promptable fields for ONE style, ready for the Listing
