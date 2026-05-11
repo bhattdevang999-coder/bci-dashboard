@@ -11864,74 +11864,74 @@ def lab_sessions_list():
 
 @app.route("/api/atlas/home-state", methods=["GET"])
 def atlas_home_state():
-    """Return the numbers the Home page "This Week" region displays.
+    """Return the numbers the Home page "In Progress" region displays.
 
-    Only returns things we can honestly compute from real session data.
-    No synthesized revenue, no fake hours-saved formulas.
+    Strictly counts only what Atlas can directly observe inside its own
+    sessions. No claims about shipping, going live, suppression prevention,
+    or time saved — Atlas has no integration with Vendor Central or the
+    brand's actual ops yet, so those would be unverifiable.
 
-    - listings_kept_live: styles where Atlas has generated content that
-      the operator accepted (proxy for "Atlas finished the work so the
-      team didn't have to")
-    - rejections_prevented: conditional-required fields Atlas filled in
-      that would have caused a Vendor Central rejection
-    - suppressions_flagged / prevented: placeholder zeros until the
-      Monitor module ships. We surface the field anyway so the visual
-      structure is complete and the day Monitor goes live the numbers
-      flow in automatically.
-    - hours_skipped: conservatively estimated at 15 minutes per style
-      with accepted generated content (industry-standard NIS time is
-      30–45 min per SKU; 15 min is deliberately under-claimed).
-    - continue_lab: the most recent in-progress session so the Home
-      "Continue" row points somewhere real.
+    - drafts_ready: styles where the operator has accepted all required
+      fields (title + 5 bullets + description + backend_keywords). Means
+      "this style is fully drafted and the operator can choose to ship it."
+      Atlas does NOT claim it was shipped — only that the draft is ready.
+    - drafts_in_progress: styles where some required content exists but
+      not all (operator is mid-review).
+    - styles_total: total style count in active sessions
+    - active_brand: the brand of the most recent session, for surfacing
+      "<brand> in progress" copy honestly.
+    - continue: same as before — most recent session as Continue target.
     """
-    # Accepted proposals — count of _lab_generated cells across all saved sessions
-    listings_kept_live = 0
-    rejections_prevented = 0
-    hours_skipped_minutes = 0
+    REQUIRED_KEYS = ("title", "description", "backend_keywords",
+                     "bullet_1", "bullet_2", "bullet_3", "bullet_4", "bullet_5")
+    drafts_ready = 0
+    drafts_in_progress = 0
+    styles_total = 0
     continue_meta = None
     most_recent_mtime = 0.0
+    active_brand = ""
 
     try:
         for p in LAB_SESSIONS_DIR.glob("*.json"):
+            # Only count the "__current.json" snapshots so the numbers
+            # represent live work, not the full archive of every session
+            # ever saved. Otherwise restoring a past session would bump
+            # counts as if work was redone.
+            if not p.name.endswith("__current.json"):
+                continue
             try:
                 with open(p, encoding="utf-8") as fh:
                     meta = json.load(fh)
             except Exception:
                 continue
             for style in meta.get("styles", []) or []:
+                styles_total += 1
                 gen = style.get("_lab_generated") or {}
-                has_title = bool((gen.get("title") or "").strip())
-                # Count this style as "kept live" if Atlas wrote a title
-                if has_title:
-                    listings_kept_live += 1
-                    hours_skipped_minutes += 15
-                # Count each filled required cell as a rejection-prevented
-                for k in ("title", "description", "backend_keywords",
-                         "bullet_1", "bullet_2", "bullet_3", "bullet_4", "bullet_5"):
-                    if (gen.get(k) or "").strip():
-                        rejections_prevented += 1
-            # Track the most recently saved session as "continue" target
+                filled = sum(1 for k in REQUIRED_KEYS if (gen.get(k) or "").strip())
+                if filled == len(REQUIRED_KEYS):
+                    drafts_ready += 1
+                elif filled > 0:
+                    drafts_in_progress += 1
             mt = p.stat().st_mtime
             if mt > most_recent_mtime:
                 most_recent_mtime = mt
+                active_brand = meta.get("brand", "") or ""
                 continue_meta = {
                     "file":         p.name,
-                    "brand":        meta.get("brand", ""),
+                    "brand":        active_brand,
                     "style_count":  meta.get("style_count", len(meta.get("styles", []))),
-                    "is_current":   p.name.endswith("__current.json"),
+                    "is_current":   True,
                 }
     except Exception:
         pass
 
-    hours_skipped = round(hours_skipped_minutes / 60.0, 1)
     return jsonify({
         "ok": True,
-        "this_week": {
-            "listings_kept_live":         listings_kept_live,
-            "rejections_prevented":       rejections_prevented,
-            "suppressions_flagged":       0,        # Monitor not live yet
-            "suppressions_prevented":     0,        # Monitor not live yet
-            "hours_skipped":              hours_skipped,
+        "in_progress": {
+            "drafts_ready":       drafts_ready,
+            "drafts_in_progress": drafts_in_progress,
+            "styles_total":       styles_total,
+            "active_brand":       active_brand,
         },
         "continue":  continue_meta,
     })

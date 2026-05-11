@@ -10413,39 +10413,43 @@ function showAtlasPage() {
   atlasHomeLoadState();
 }
 
-// Fetches /api/atlas/home-state and paints THIS WEEK + WHAT NEEDS YOU.
-// Numbers come from real session data — never invented. Empty state shows —.
+// Fetches /api/atlas/home-state and paints the IN PROGRESS region
+// + the Continue meta on WHAT NEEDS YOU. Numbers come from real Atlas
+// session data only — no inferred outcomes, no shipping claims, no
+// suppression metrics (Atlas has no integration with Vendor Central yet).
 async function atlasHomeLoadState() {
   try {
     const r = await fetch('/api/atlas/home-state');
     if (!r.ok) return;
     const d = await r.json();
     if (!d || !d.ok) return;
-    const tw = d.this_week || {};
-    // Paint THIS WEEK
+    const ip = d.in_progress || {};
+
+    // Eyebrow: "· Ben Sherman in progress" if a brand is loaded
+    const eyebrow = document.getElementById('atlas-state-eyebrow');
+    if (eyebrow) {
+      eyebrow.textContent = ip.active_brand
+        ? `· ${ip.active_brand} · in progress`
+        : '· Your work, right now';
+    }
+
     const paint = (key, val) => {
       const line = document.querySelector(`.atlas-state-line[data-key="${key}"]`);
       if (!line) return;
       const num = line.querySelector('.atlas-state-num');
-      if (num) num.textContent = (val === 0 || val === null || val === undefined) ? '—' : val;
+      if (num) num.textContent = (val === null || val === undefined) ? '—' : val;
       if (val && val > 0) line.classList.add('atlas-state-line--has-data');
     };
-    paint('listings',     tw.listings_kept_live);
-    paint('rejections',   tw.rejections_prevented);
-    paint('suppressions', tw.suppressions_flagged);
-    paint('hours',        tw.hours_skipped);
-    const sp = document.getElementById('atlas-state-supp-prevented');
-    if (sp) sp.textContent = tw.suppressions_prevented || 0;
+    paint('ready',       ip.drafts_ready);
+    paint('in_progress', ip.drafts_in_progress);
 
-    // Paint WHAT NEEDS YOU — "Continue" target if there's a session
+    // WHAT NEEDS YOU — Continue meta
     const cont = d.continue;
     const meta = document.getElementById('atlas-needs-lab-meta');
     if (meta) {
-      if (cont && cont.brand) {
-        meta.textContent = `${cont.brand} · ${cont.style_count} styles`;
-      } else {
-        meta.textContent = '';
-      }
+      meta.textContent = (cont && cont.brand)
+        ? `${cont.brand} · ${cont.style_count} styles`
+        : '';
     }
   } catch(e) { /* silent — home state is non-critical */ }
 }

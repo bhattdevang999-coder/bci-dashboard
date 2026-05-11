@@ -1312,28 +1312,23 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
       </p>
     </div>
 
-    <!-- ═══ THIS WEEK · Outcome metrics (operational truth, business language) ═══ -->
-    <div class="atlas-state" id="atlas-state-week">
+    <!-- ═══ IN PROGRESS · Honest session state, no claims about what shipped ═══ -->
+    <div class="atlas-state" id="atlas-state-inprogress">
       <div class="atlas-state-head">
-        <span class="atlas-state-eyebrow">· This week · through the Atlas lens</span>
+        <span class="atlas-state-eyebrow" id="atlas-state-eyebrow">· Your work, right now</span>
       </div>
       <div class="atlas-state-grid" id="atlas-state-grid">
-        <!-- Populated by atlasHomeLoadState() — empty placeholders until first data arrives -->
-        <div class="atlas-state-line" data-key="listings">
+        <div class="atlas-state-line" data-key="ready">
           <span class="atlas-state-num">—</span>
-          <span class="atlas-state-label">listings kept live without your team touching them</span>
+          <span class="atlas-state-label">styles fully drafted · ready for your Vendor Central upload</span>
         </div>
-        <div class="atlas-state-line" data-key="rejections">
+        <div class="atlas-state-line" data-key="in_progress">
           <span class="atlas-state-num">—</span>
-          <span class="atlas-state-label">Amazon rejections prevented before they cost you sell-time</span>
+          <span class="atlas-state-label">styles still in draft · waiting on your review</span>
         </div>
-        <div class="atlas-state-line" data-key="suppressions">
-          <span class="atlas-state-num">—</span>
-          <span class="atlas-state-label">suppression risks flagged · <em id="atlas-state-supp-prevented">0</em> prevented</span>
-        </div>
-        <div class="atlas-state-line" data-key="hours">
-          <span class="atlas-state-num">—</span>
-          <span class="atlas-state-label">hours of catalog work your team skipped</span>
+        <div class="atlas-state-line atlas-state-line--static" data-key="rules">
+          <span class="atlas-state-num">9,400</span>
+          <span class="atlas-state-label">Amazon rules applied to every field before you ship anything</span>
         </div>
       </div>
     </div>
@@ -1357,47 +1352,12 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
       </div>
     </div>
 
-<!-- ═══ SECTION 1 · SCALE — multi-brand portfolio infrastructure ═══ -->
-    <div class="atlas-scale">
-      <div class="atlas-scale-matrix">
-        <div class="atlas-scale-matrix-h">
-          <div class="atlas-scale-matrix-cell-h"></div>
-          <div class="atlas-scale-matrix-cell-h">CREATE</div>
-          <div class="atlas-scale-matrix-cell-h">MONITOR</div>
-          <div class="atlas-scale-matrix-cell-h">MANAGE</div>
-          <div class="atlas-scale-matrix-cell-h">PROMOTE</div>
-        </div>
-        <div class="atlas-scale-matrix-row">
-          <div class="atlas-scale-brand">Brand 01</div>
-          <div class="atlas-scale-cell"><span class="dot dot-create"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-monitor"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-manage"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-promote"></span></div>
-        </div>
-        <div class="atlas-scale-matrix-row">
-          <div class="atlas-scale-brand">Brand 02</div>
-          <div class="atlas-scale-cell"><span class="dot dot-create"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-monitor"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-manage"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-promote"></span></div>
-        </div>
-        <div class="atlas-scale-matrix-row">
-          <div class="atlas-scale-brand">Brand 03</div>
-          <div class="atlas-scale-cell"><span class="dot dot-create"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-monitor"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-manage"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-promote"></span></div>
-        </div>
-        <div class="atlas-scale-matrix-row ghost">
-          <div class="atlas-scale-brand">…</div>
-          <div class="atlas-scale-cell"><span class="dot dot-empty"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-empty"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-empty"></span></div>
-          <div class="atlas-scale-cell"><span class="dot dot-empty"></span></div>
-        </div>
-      </div>
-      
-    </div>
+    <!-- Scale matrix removed: the Brand 01/02/03 placeholder data was not
+         earned. Atlas currently has one active brand (whichever session
+         is loaded). We surface that truthfully in the IN PROGRESS region
+         above and via the Continue target in WHAT NEEDS YOU. When real
+         portfolio data exists across multiple brands, we'll build a
+         matrix from that — not from placeholder text. -->
 
     <!-- ═══ MODULE CARDS ═══ -->
 
@@ -1410,34 +1370,34 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
         </div>
         <div class="atlas-mod-name">CREATE</div>
         <div class="atlas-mod-tagline">Make new listings.</div>
-        <div class="atlas-mod-desc">Drop a photo or a spreadsheet. Atlas turns it into a real Amazon listing — title, copy, every required field, ready to upload.</div>
+        <div class="atlas-mod-desc">Drop a photo or a spreadsheet. Atlas drafts the full Amazon listing — title, copy, every required field — then hands it to you to review before you ship.</div>
         <div class="atlas-mod-subs">
           <div class="atlas-sub-item live" onclick="showNISPage()">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Bulk Upload</span>
-              <div class="atlas-sub-item-note">50 products at once. Spreadsheet to Amazon-ready in minutes.</div>
+              <div class="atlas-sub-item-note">Up to 50 styles at once — spreadsheet in, Vendor Central‑clean drafts out.</div>
             </div>
           </div>
           <div class="atlas-sub-item live" onclick="showBetaImageNISPage()">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Image → NIS <span class="atlas-sub-pill beta">BETA</span></span>
-              <div class="atlas-sub-item-note">One photo, one brand, one click. Done.</div>
+              <div class="atlas-sub-item-note">One product photo in, full draft listing out for your review.</div>
             </div>
           </div>
           <div class="atlas-sub-item soon" onclick="showPreviewPage('photo-brief')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Photo Brief <span class="atlas-sub-pill soon">SOON</span></span>
-              <div class="atlas-sub-item-note">Tells your photographer what to shoot. Trained on top sellers in your category.</div>
+              <div class="atlas-sub-item-note">Will tell your photographer what to shoot for Amazon's image rules.</div>
             </div>
           </div>
           <div class="atlas-sub-item soon" onclick="showPreviewPage('voice-tuner')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Voice Tuner <span class="atlas-sub-pill soon">SOON</span></span>
-              <div class="atlas-sub-item-note">Learns your brand's voice from listings you've already nailed.</div>
+              <div class="atlas-sub-item-note">Will learn your brand's voice from listings you've already nailed.</div>
             </div>
           </div>
         </div>
@@ -1452,34 +1412,34 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
         </div>
         <div class="atlas-mod-name">MONITOR</div>
         <div class="atlas-mod-tagline">Watch what's already live.</div>
-        <div class="atlas-mod-desc">Atlas checks your live ASINs every day. If Amazon adds a required field, suppresses a listing, or changes a rule — you find out before your sales drop.</div>
+        <div class="atlas-mod-desc">A preview of what's coming next. Atlas will check live ASINs every day and surface the moment Amazon adds a required field, hides a listing, or changes a rule — before sales drop.</div>
         <div class="atlas-mod-subs">
           <div class="atlas-sub-item soon" onclick="showPreviewPage('catalog-health')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Catalog Health</span>
-              <div class="atlas-sub-item-note">Daily x-ray of your catalog. Spots what's broken before Amazon does.</div>
+              <div class="atlas-sub-item-note">Will give your catalog a daily x-ray and surface what's broken before Amazon does.</div>
             </div>
           </div>
           <div class="atlas-sub-item soon" onclick="showPreviewPage('suppression')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Suppression Watch</span>
-              <div class="atlas-sub-item-note">The moment Amazon hides a listing, you know — and why.</div>
+              <div class="atlas-sub-item-note">Will tell you the moment Amazon hides a listing — and why.</div>
             </div>
           </div>
           <div class="atlas-sub-item soon" onclick="showPreviewPage('image-audit')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Image Audit</span>
-              <div class="atlas-sub-item-note">Finds every photo that breaks Amazon's rules across your catalog.</div>
+              <div class="atlas-sub-item-note">Will find every photo that breaks Amazon's rules across your catalog.</div>
             </div>
           </div>
           <div class="atlas-sub-item soon" onclick="showPreviewPage('compliance')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Compliance</span>
-              <div class="atlas-sub-item-note">Tracks regulatory changes — DG, GHS, age — and flags what needs updates.</div>
+              <div class="atlas-sub-item-note">Will track regulatory changes — DG, GHS, age — and flag what needs updates.</div>
             </div>
           </div>
         </div>
@@ -1494,20 +1454,20 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
         </div>
         <div class="atlas-mod-name">MANAGE</div>
         <div class="atlas-mod-tagline">Edit at scale.</div>
-        <div class="atlas-mod-desc">Update prices, refresh copy, fix variations across hundreds of ASINs in one click. The work that takes a week now takes an hour.</div>
+        <div class="atlas-mod-desc">A preview of what's coming next. Atlas will let you update prices, refresh copy, and fix variations across hundreds of ASINs in one place — with the same review-before-ship discipline as Create.</div>
         <div class="atlas-mod-subs">
           <div class="atlas-sub-item soon" onclick="showPreviewPage('bulk-price')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Bulk Price Sync</span>
-              <div class="atlas-sub-item-note">One field, 200 ASINs, one click. Pushed to Amazon via SP-API.</div>
+              <div class="atlas-sub-item-note">Will let you change one field across 200 ASINs and push to Amazon via SP-API.</div>
             </div>
           </div>
           <div class="atlas-sub-item soon" onclick="showPreviewPage('content-refresh')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Content Refresh</span>
-              <div class="atlas-sub-item-note">Old listing reads stale? Atlas rewrites it in your current brand voice.</div>
+              <div class="atlas-sub-item-note">Will rewrite stale listings in your current brand voice.</div>
             </div>
           </div>
           <div class="atlas-sub-item live" onclick="showMergePage()">
@@ -1521,7 +1481,7 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">A/B Test</span>
-              <div class="atlas-sub-item-note">Two title options, head-to-head on real traffic. Winner wins.</div>
+              <div class="atlas-sub-item-note">Will let you run two title options head-to-head on real traffic.</div>
             </div>
           </div>
         </div>
@@ -1536,34 +1496,34 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
         </div>
         <div class="atlas-mod-name">PROMOTE</div>
         <div class="atlas-mod-tagline">Drive demand.</div>
-        <div class="atlas-mod-desc">Atlas pulls product data into your ad campaigns automatically. Tracks what shoppers actually search for, and which fields on your detail pages drive sales.</div>
+        <div class="atlas-mod-desc">A preview of what's coming next. Atlas will pull product data into ad campaigns, track what shoppers actually search for, and show which fields drive conversion.</div>
         <div class="atlas-mod-subs">
           <div class="atlas-sub-item soon" onclick="showPreviewPage('ad-bulksheet')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Ad Bulksheet</span>
-              <div class="atlas-sub-item-note">Every product attribute auto-loaded into your ad templates. No more double-keying.</div>
+              <div class="atlas-sub-item-note">Will auto-load every product attribute into your ad templates.</div>
             </div>
           </div>
           <div class="atlas-sub-item soon" onclick="showPreviewPage('keywords')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Keywords</span>
-              <div class="atlas-sub-item-note">Tracks share-of-voice for every keyword that matters.</div>
+              <div class="atlas-sub-item-note">Will track share-of-voice for the keywords that matter to your brand.</div>
             </div>
           </div>
           <div class="atlas-sub-item soon" onclick="showPreviewPage('pdp-optimizer')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">PDP Optimizer</span>
-              <div class="atlas-sub-item-note">Tells you which fields drive conversion — and what to change.</div>
+              <div class="atlas-sub-item-note">Will surface which detail-page fields drive conversion — and what to change.</div>
             </div>
           </div>
           <div class="atlas-sub-item soon" onclick="showPreviewPage('reviews')">
             <div class="mark"></div>
             <div class="atlas-sub-item-body">
               <span class="atlas-sub-item-name">Reviews</span>
-              <div class="atlas-sub-item-note">Surfaces what customers actually complain about, per product.</div>
+              <div class="atlas-sub-item-note">Will surface what customers actually complain about, per product.</div>
             </div>
           </div>
         </div>
@@ -1573,44 +1533,9 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 
     
 
-    <!-- ═══ DATA SPEC DOORWAYS ═══ -->
-    <div class="atlas-data-doors">
-      <div class="atlas-data-doors-h">// THE DATA ATLAS READS</div>
-      <div class="atlas-data-doors-grid">
-        <a class="atlas-data-door" onclick="showNISPage(); return false;">
-          <span class="atlas-data-door-icon">PU</span>
-          <div class="atlas-data-door-body">
-            <div class="atlas-data-door-name">Pre-upload sheet</div>
-            <div class="atlas-data-door-spec">31 columns · 12 required</div>
-          </div>
-          <span class="atlas-data-door-arrow">→</span>
-        </a>
-        <a class="atlas-data-door" onclick="showCatalogPage(); return false;">
-          <span class="atlas-data-door-icon">CE</span>
-          <div class="atlas-data-door-body">
-            <div class="atlas-data-door-name">Catalog export</div>
-            <div class="atlas-data-door-spec">50 fields · 8 clusters</div>
-          </div>
-          <span class="atlas-data-door-arrow">→</span>
-        </a>
-        <a class="atlas-data-door" onclick="showCatalogPage(); return false;">
-          <span class="atlas-data-door-icon">SR</span>
-          <div class="atlas-data-door-body">
-            <div class="atlas-data-door-name">Sales report</div>
-            <div class="atlas-data-door-spec">12 fields · per ASIN</div>
-          </div>
-          <span class="atlas-data-door-arrow">→</span>
-        </a>
-        <a class="atlas-data-door" onclick="showCatalogPage(); return false;">
-          <span class="atlas-data-door-icon">AB</span>
-          <div class="atlas-data-door-body">
-            <div class="atlas-data-door-name">Ad eligibility bulksheet</div>
-            <div class="atlas-data-door-spec">6 fields · ground truth</div>
-          </div>
-          <span class="atlas-data-door-arrow">→</span>
-        </a>
-      </div>
-    </div>
+    <!-- Data-spec doorways removed: "31 columns · 12 required" etc. are
+         builder metrics no buyer cares about. The relevant data sources
+         are accessible directly through the modules above. -->
 
   </div><!-- /atlas-shell -->
 </div><!-- /atlas-page -->
