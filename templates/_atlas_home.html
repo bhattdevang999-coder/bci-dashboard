@@ -7,16 +7,8 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 .main:has(#atlas-page[style*="block"]) .topbar-title { color:#E2E8F0; }
 .main:has(#atlas-page[style*="block"]) .topbar-sub { color:#94A3B8; }
 
-/* Atlas logo in sidebar */
-.atlas-logo { padding:22px 20px 18px; border-bottom:1px solid #1C2D40; }
-.atlas-wordmark {
-  font-family:'Trebuchet MS', system-ui, sans-serif;
-  font-size:28px; font-weight:700; letter-spacing:4px;
-  background:linear-gradient(90deg,#14B8A6,#5EEAD4);
-  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
-  line-height:1;
-}
-.atlas-sublogo { font-size:10px; color:#64748B; letter-spacing:1.5px; margin-top:6px; text-transform:uppercase; }
+/* Atlas sidebar masthead is now defined in index.html main <style>.
+   This block intentionally left empty so the new lockup wins. */
 
 /* Atlas sidebar overrides */
 .atlas-nav .nav-label {
@@ -883,7 +875,121 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 }
 .atlas-depth-foot b { color: #A78BFA; font-weight: 700; }
 
-/* === Section 3 · Click moment === */
+/* ═══ Hero (new) — lion lockup + vision statement ═══ */
+.atlas-hero {
+  margin: 0 0 32px;
+  padding: 48px 40px 44px;
+  background: linear-gradient(180deg, rgba(94,234,212,0.06) 0%, #0E1A26 70%);
+  border: 1px solid rgba(94,234,212,0.18);
+  border-radius: 16px;
+  position: relative; overflow: hidden;
+}
+.atlas-hero::before {
+  content:''; position:absolute; top:-60%; right:-15%; width:80%; height:220%;
+  background: radial-gradient(ellipse at center, rgba(94,234,212,0.05) 0%, transparent 65%);
+  pointer-events:none;
+}
+.atlas-hero-lockup {
+  display: flex; align-items: center; gap: 24px;
+  position: relative; z-index: 1;
+  margin-bottom: 28px;
+}
+.atlas-hero-mark {
+  width: 96px; height: 96px; flex: 0 0 96px;
+  display: block;
+}
+.atlas-hero-text { display: flex; flex-direction: column; line-height: 1; }
+.atlas-hero-wordmark {
+  font: 400 56px 'Bodoni 72','Didot','GT Sectra','Playfair Display','Times New Roman',serif;
+  letter-spacing: 0.16em;
+  color: #E5E7EB;
+  padding-left: 0.16em;
+  line-height: 1;
+}
+.atlas-hero-tagline {
+  margin-top: 12px;
+  font: 600 11px ui-monospace, 'JetBrains Mono', Consolas, monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #94A3B8;
+}
+.atlas-hero-vision {
+  position: relative; z-index: 1;
+  margin: 0; max-width: 720px;
+  font: 400 22px/1.5 'Bodoni 72','Didot','GT Sectra','Playfair Display','Times New Roman',serif;
+  color: #CBD5E1;
+  letter-spacing: 0.005em;
+}
+.atlas-hero-vision .accent { color: #5EEAD4; font-weight: 500; }
+
+/* ═══ This Week — outcome state ═══ */
+.atlas-state {
+  margin: 0 0 24px;
+  padding: 28px 36px 24px;
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+  border-radius: 14px;
+}
+.atlas-state-head { margin-bottom: 20px; }
+.atlas-state-eyebrow {
+  font: 600 10px ui-monospace, 'JetBrains Mono', Consolas, monospace;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: #5EEAD4;
+}
+.atlas-state-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px 36px;
+}
+.atlas-state-line {
+  display: flex; align-items: baseline; gap: 14px;
+  padding: 6px 0;
+}
+.atlas-state-num {
+  font: 400 38px 'Bodoni 72','Didot','GT Sectra','Playfair Display','Times New Roman',serif;
+  color: #E5E7EB;
+  flex: 0 0 auto;
+  min-width: 60px;
+  line-height: 1;
+}
+.atlas-state-line.atlas-state-line--has-data .atlas-state-num { color: #5EEAD4; }
+.atlas-state-label {
+  font: 400 14px ui-sans-serif, system-ui, sans-serif;
+  color: #94A3B8; line-height: 1.4;
+}
+.atlas-state-label em { color: #5EEAD4; font-style: normal; font-weight: 600; }
+
+/* ═══ What Needs You — triage ═══ */
+.atlas-needs {
+  margin: 0 0 36px;
+  padding: 28px 36px 24px;
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+  border-radius: 14px;
+}
+.atlas-needs-head { margin-bottom: 18px; }
+.atlas-needs-list { display: flex; flex-direction: column; gap: 8px; }
+.atlas-needs-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: #13212F; border: 1px solid #1E2A3A; border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .1s;
+  color: #CBD5E1;
+  font: 400 14px ui-sans-serif, system-ui, sans-serif;
+  text-decoration: none;
+}
+.atlas-needs-item:hover {
+  background: #182838; border-color: rgba(94,234,212,0.4);
+}
+.atlas-needs-item:active { transform: translateY(1px); }
+.atlas-needs-arrow { color: #5EEAD4; font-weight: 600; }
+.atlas-needs-text { flex: 1; }
+.atlas-needs-meta {
+  font: 600 11px ui-monospace, Consolas, monospace;
+  letter-spacing: 0.08em; color: #64748B;
+  text-transform: uppercase;
+}
+
+/* === Section 3 · Click moment (LEGACY — kept for back-compat, no longer rendered) === */
 .atlas-click {
   margin: 0 0 28px; padding: 36px 36px 30px;
   background: linear-gradient(180deg, rgba(94,234,212,0.06) 0%, #0E1A26 60%);
@@ -1187,41 +1293,67 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 <div class="content content-wide" id="atlas-page">
   <div class="atlas-shell">
 
-        <!-- ═══ SECTION 3 · CLICK MOMENT — embedded Image → NIS, real vision ═══ -->
-    <div class="atlas-click">
-      <div class="atlas-click-eyebrow"><span class="live-dot"></span>VISION · LIVE</div>
-      <h2 class="atlas-click-h">Drop a product photo.</h2>
-      
-
-      <div class="atlas-click-stage">
-        <!-- Drop zone -->
-        <div class="atlas-click-drop" id="atlas-click-drop">
-          <input type="file" id="atlas-click-file" accept="image/*" style="display:none;" onchange="atlasClickRun(this.files)">
-          <div class="atlas-click-icon-wrap">
-            <svg class="atlas-click-icon" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.6"/>
-              <path d="M7 14L10 11L14 15L17 12L21 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="9" cy="8" r="1.5" stroke="currentColor" stroke-width="1.6"/>
-            </svg>
-          </div>
-          <div class="atlas-click-headline">Drop a photo, or <span class="accent">click to browse</span></div>
-          <div class="atlas-click-formats">JPG · PNG · WebP — vision returns in 3–5 seconds</div>
-          <button type="button" class="atlas-click-btn" onclick="document.getElementById('atlas-click-file').click()">Browse →</button>
-          
+    <!-- ═══ HERO · Lens-framed vision statement ═══ -->
+    <div class="atlas-hero">
+      <div class="atlas-hero-lockup">
+        <img class="atlas-hero-mark"
+             src="/static/atlas_lion_144.png"
+             srcset="/static/atlas_lion_144.png 1x, /static/atlas_lion_192.png 2x"
+             alt="Atlas"/>
+        <div class="atlas-hero-text">
+          <div class="atlas-hero-wordmark">ATLAS</div>
+          <div class="atlas-hero-tagline">runs the work behind your storefront</div>
         </div>
+      </div>
+      <p class="atlas-hero-vision">
+        Atlas runs your Amazon business through one lens &mdash; so every decision
+        your team makes is <span class="accent">sharper</span>,
+        <span class="accent">faster</span>, and <span class="accent">worth more</span>.
+      </p>
+    </div>
 
-        <!-- Right pane: vision readout -->
-        <div class="atlas-click-readout" id="atlas-click-readout">
-          <div class="atlas-click-readout-empty">
-            <div class="readout-eyebrow">// VISION JSON · LIVE</div>
-            <div class="readout-line"><span class="k">detected_pt:</span> <span class="v dim">awaiting photo</span></div>
-            <div class="readout-line"><span class="k">brand_voice:</span> <span class="v dim">applied per brand_code</span></div>
-            <div class="readout-line"><span class="k">attributes:</span> <span class="v dim">~60 fields with confidence</span></div>
-            <div class="readout-line"><span class="k">image_quality:</span> <span class="v dim">flags surfaced inline</span></div>
-            <div class="readout-line"><span class="k">narrative:</span> <span class="v dim">human-readable summary</span></div>
-            <div class="readout-pulse"></div>
-          </div>
+    <!-- ═══ THIS WEEK · Outcome metrics (operational truth, business language) ═══ -->
+    <div class="atlas-state" id="atlas-state-week">
+      <div class="atlas-state-head">
+        <span class="atlas-state-eyebrow">· This week · through the Atlas lens</span>
+      </div>
+      <div class="atlas-state-grid" id="atlas-state-grid">
+        <!-- Populated by atlasHomeLoadState() — empty placeholders until first data arrives -->
+        <div class="atlas-state-line" data-key="listings">
+          <span class="atlas-state-num">—</span>
+          <span class="atlas-state-label">listings kept live without your team touching them</span>
         </div>
+        <div class="atlas-state-line" data-key="rejections">
+          <span class="atlas-state-num">—</span>
+          <span class="atlas-state-label">Amazon rejections prevented before they cost you sell-time</span>
+        </div>
+        <div class="atlas-state-line" data-key="suppressions">
+          <span class="atlas-state-num">—</span>
+          <span class="atlas-state-label">suppression risks flagged · <em id="atlas-state-supp-prevented">0</em> prevented</span>
+        </div>
+        <div class="atlas-state-line" data-key="hours">
+          <span class="atlas-state-num">—</span>
+          <span class="atlas-state-label">hours of catalog work your team skipped</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ WHAT NEEDS YOU · Triage, not navigation ═══ -->
+    <div class="atlas-needs" id="atlas-needs">
+      <div class="atlas-needs-head">
+        <span class="atlas-state-eyebrow">· What needs you</span>
+      </div>
+      <div class="atlas-needs-list" id="atlas-needs-list">
+        <!-- Populated by atlasHomeLoadState() -->
+        <a class="atlas-needs-item atlas-needs-item--neutral" onclick="showLabGridPage()">
+          <span class="atlas-needs-arrow">→</span>
+          <span class="atlas-needs-text">Continue in Listing Lab</span>
+          <span class="atlas-needs-meta" id="atlas-needs-lab-meta">loading…</span>
+        </a>
+        <a class="atlas-needs-item atlas-needs-item--neutral" onclick="showLabGridPage()">
+          <span class="atlas-needs-arrow">→</span>
+          <span class="atlas-needs-text">Drop a new sheet to start a fresh session</span>
+        </a>
       </div>
     </div>
 

@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Atlas · Amazon Operations Platform</title>
+<link rel="icon"             type="image/png" sizes="32x32" href="{{ url_for('static', filename='atlas_favicon_32.png') }}">
+<link rel="icon"             type="image/png" sizes="16x16" href="{{ url_for('static', filename='atlas_favicon_16.png') }}">
+<link rel="apple-touch-icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='atlas_lion_192.png') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='atlas-upload.css') }}">
 <style>
   /* ── Design tokens ─────────────────────────────────── */
@@ -57,6 +60,79 @@
   .sidebar-logo {
     padding: 24px 20px 20px;
     border-bottom: 1px solid var(--border);
+  }
+
+  /* ═ Masthead lockup: lion + serif wordmark + mono tagline ═ */
+  .atlas-masthead {
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    padding: 20px 18px 20px;
+    transition: background .15s;
+  }
+  .atlas-masthead:hover { background: rgba(94, 234, 212, 0.04); }
+  .atlas-mark {
+    width: 36px; height: 36px; flex: 0 0 36px;
+    display: block;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  .atlas-lockup {
+    display: flex; flex-direction: column; justify-content: center;
+    line-height: 1;
+    min-width: 0;
+  }
+  .atlas-wordmark {
+    font: 400 22px 'Bodoni 72','Didot','GT Sectra','Playfair Display','Times New Roman',serif;
+    letter-spacing: 0.16em;
+    color: var(--text);
+    line-height: 1;
+    padding-left: 0.16em; /* visually center vs. mark despite tracking */
+  }
+  .atlas-tagline {
+    margin-top: 6px;
+    font: 600 8.5px ui-monospace, 'JetBrains Mono', Consolas, monospace;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-sec);
+    line-height: 1.3;
+    max-width: 150px;
+  }
+
+  /* ═ Splash screen — first-load only ═ */
+  .atlas-splash {
+    position: fixed; inset: 0; z-index: 99999;
+    background: #08111A;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 1;
+    transition: opacity 600ms ease-out;
+    pointer-events: none;
+  }
+  .atlas-splash.atlas-splash--hide { opacity: 0; }
+  .atlas-splash.atlas-splash--gone { display: none; }
+  .atlas-splash-inner {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 18px;
+    animation: atlas-splash-rise 700ms ease-out both;
+  }
+  @keyframes atlas-splash-rise {
+    from { transform: translateY(8px); opacity: 0; }
+    to   { transform: translateY(0);  opacity: 1; }
+  }
+  .atlas-splash-mark {
+    width: 96px; height: 96px; display: block;
+  }
+  .atlas-splash-wordmark {
+    font: 400 36px 'Bodoni 72','Didot','GT Sectra','Playfair Display','Times New Roman',serif;
+    letter-spacing: 0.18em;
+    color: #E5E7EB;
+    padding-left: 0.18em;
+    line-height: 1;
+  }
+  .atlas-splash-tagline {
+    font: 600 10px ui-monospace, 'JetBrains Mono', Consolas, monospace;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #64748B;
+    margin-top: 2px;
   }
 
   .logo-mark {
@@ -4756,11 +4832,28 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
 </head>
 <body>
 
+<!-- Splash screen. Plays ONCE on first-load per session — full lockup
+     fades in for ~1s then fades out as the dashboard renders beneath.
+     Hidden immediately for anyone returning via client-side navigation. -->
+<div id="atlas-splash" class="atlas-splash" aria-hidden="true">
+  <div class="atlas-splash-inner">
+    <img class="atlas-splash-mark" src="{{ url_for('static', filename='atlas_lion_192.png') }}" alt=""/>
+    <div class="atlas-splash-wordmark">ATLAS</div>
+    <div class="atlas-splash-tagline">runs the work behind your storefront</div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════ SIDEBAR ═══════════════════════════ -->
 <aside class="sidebar">
-  <div class="sidebar-logo atlas-logo" onclick="showAtlasPage()" style="cursor:pointer;">
-    <div class="atlas-wordmark">ATLAS</div>
-    <div class="atlas-sublogo">by The Levy Group</div>
+  <!-- Masthead lockup: lion mark + serif wordmark. Clean and quiet —
+       the tagline lives on the splash + Home hero only, not in chrome.
+       Clickable as a whole to return to Home. -->
+  <div class="sidebar-logo atlas-masthead" onclick="showAtlasPage()">
+    <img class="atlas-mark" src="/static/atlas_lion_72.png" alt="Atlas"
+         srcset="/static/atlas_lion_72.png 1x, /static/atlas_lion_144.png 2x"/>
+    <div class="atlas-lockup">
+      <div class="atlas-wordmark">ATLAS</div>
+    </div>
   </div>
 
   <nav class="sidebar-nav atlas-nav">
@@ -10314,9 +10407,47 @@ function showNISPage() {
 
 // ═══════════════════ ATLAS HOME + PREVIEW PAGES ═══════════════════
 function showAtlasPage() {
-  _showPage('atlas-page', 'Atlas · Home', 'The operating system for modern Amazon commerce.');
+  _showPage('atlas-page', 'Atlas · Home', 'The decision lens for your Amazon business.');
   const nav = document.getElementById('nav-atlas');
   if (nav) nav.classList.add('active');
+  atlasHomeLoadState();
+}
+
+// Fetches /api/atlas/home-state and paints THIS WEEK + WHAT NEEDS YOU.
+// Numbers come from real session data — never invented. Empty state shows —.
+async function atlasHomeLoadState() {
+  try {
+    const r = await fetch('/api/atlas/home-state');
+    if (!r.ok) return;
+    const d = await r.json();
+    if (!d || !d.ok) return;
+    const tw = d.this_week || {};
+    // Paint THIS WEEK
+    const paint = (key, val) => {
+      const line = document.querySelector(`.atlas-state-line[data-key="${key}"]`);
+      if (!line) return;
+      const num = line.querySelector('.atlas-state-num');
+      if (num) num.textContent = (val === 0 || val === null || val === undefined) ? '—' : val;
+      if (val && val > 0) line.classList.add('atlas-state-line--has-data');
+    };
+    paint('listings',     tw.listings_kept_live);
+    paint('rejections',   tw.rejections_prevented);
+    paint('suppressions', tw.suppressions_flagged);
+    paint('hours',        tw.hours_skipped);
+    const sp = document.getElementById('atlas-state-supp-prevented');
+    if (sp) sp.textContent = tw.suppressions_prevented || 0;
+
+    // Paint WHAT NEEDS YOU — "Continue" target if there's a session
+    const cont = d.continue;
+    const meta = document.getElementById('atlas-needs-lab-meta');
+    if (meta) {
+      if (cont && cont.brand) {
+        meta.textContent = `${cont.brand} · ${cont.style_count} styles`;
+      } else {
+        meta.textContent = '';
+      }
+    }
+  } catch(e) { /* silent — home state is non-critical */ }
 }
 
 const ATLAS_PREVIEWS = {
@@ -11553,6 +11684,25 @@ function showToast(msg, type = 'info') {
 
 // ═══════════════════════ INIT ═══════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+  // Splash: fade out once the dashboard is ready. Plays once per page load.
+  // Using a short hold (~900ms) so the lockup is perceptible but never feels
+  // slow. Total perceived load cost is ~1.2s including fade-out.
+  (function atlasDismissSplash() {
+    const s = document.getElementById('atlas-splash');
+    if (!s) return;
+    setTimeout(() => s.classList.add('atlas-splash--hide'), 900);
+    setTimeout(() => s.classList.add('atlas-splash--gone'), 1550);
+  })();
+
+  // On default page-load, the Home page is visible without showAtlasPage()
+  // ever firing. Populate the THIS WEEK numbers + topbar subtitle here so
+  // the operator sees real data without having to click Home.
+  if (typeof atlasHomeLoadState === 'function') atlasHomeLoadState();
+  const topbarSub = document.getElementById('topbar-sub');
+  if (topbarSub && topbarSub.textContent.includes('operating system')) {
+    topbarSub.textContent = 'The decision lens for your Amazon business.';
+  }
+
   _initDropzones();
 
   // Load default template silently
