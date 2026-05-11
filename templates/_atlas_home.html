@@ -284,6 +284,65 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 }
 .atlas-mod-cta.ghost:hover { border-color:#5EEAD4; color:#5EEAD4; box-shadow:none; }
 
+/* ═ Four-beat module breakdown (read · decide · remember · show) ═
+   Lives inside each module card. Expandable so the home stays compact. */
+.atlas-mod-flow {
+  margin-top: 14px;
+  border-top: 1px solid #1C2D40;
+  padding-top: 14px;
+}
+.atlas-mod-flow-toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 600 10px ui-monospace, 'JetBrains Mono', Consolas, monospace;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: #5EEAD4; cursor: pointer;
+  background: none; border: 0; padding: 0;
+  transition: opacity .15s;
+}
+.atlas-mod-flow-toggle:hover { opacity: 0.75; }
+.atlas-mod-flow-toggle-arrow {
+  font-size: 8px; transition: transform .2s;
+  display: inline-block;
+}
+.atlas-mod-flow.open .atlas-mod-flow-toggle-arrow { transform: rotate(90deg); }
+.atlas-mod-flow-body {
+  display: none;
+  margin-top: 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px;
+}
+.atlas-mod-flow:not(.open) .atlas-mod-flow-body { display: none; }
+.atlas-mod-flow.open .atlas-mod-flow-body { display: grid; }
+.atlas-mod-flow-block { }
+.atlas-mod-flow-h {
+  font: 600 9.5px ui-monospace, 'JetBrains Mono', Consolas, monospace;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: #94A3B8;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.atlas-mod-flow-h .marker {
+  display: inline-block; width: 4px; height: 4px; border-radius: 50%;
+  background: #5EEAD4;
+}
+.atlas-mod-flow-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.atlas-mod-flow-list li {
+  font-size: 12px; line-height: 1.45; color: #CBD5E1;
+  padding-left: 12px; position: relative;
+}
+.atlas-mod-flow-list li::before {
+  content: '·'; position: absolute; left: 0; top: -1px;
+  color: #5EEAD4; font-weight: 700;
+}
+.atlas-mod-flow-list li .src {
+  color: #64748B; font: 11px ui-monospace, Consolas, monospace;
+}
+@media (max-width: 720px) {
+  .atlas-mod-flow-body { grid-template-columns: 1fr; }
+}
+
 /* HOW IT WORKS */
 .atlas-how {
   background:#0E1A26; border:1px solid #1C2D40; border-radius:14px;
@@ -1401,6 +1460,49 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
             </div>
           </div>
         </div>
+
+        <!-- Four-beat: read · decide · remember · show. Present tense — live module. -->
+        <div class="atlas-mod-flow" data-flow="create">
+          <button class="atlas-mod-flow-toggle" onclick="atlasFlowToggle(this)" aria-expanded="false">
+            <span class="atlas-mod-flow-toggle-arrow">▶</span>
+            How Create works
+          </button>
+          <div class="atlas-mod-flow-body">
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Reads</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Your pre-upload spreadsheet <span class="src">31 columns</span></li>
+                <li>Your product photos <span class="src">JPG / PNG</span></li>
+                <li>Amazon field rules <span class="src">9,400+ per product type</span></li>
+                <li>Your brand voice <span class="src">learned from past listings</span></li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Decides</div>
+              <ul class="atlas-mod-flow-list">
+                <li>What your product is — category, subclass, attributes</li>
+                <li>What to write for every required field</li>
+                <li>Which fields are missing — and what to do about each</li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Remembers</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Every correction your team makes</li>
+                <li>The phrases your brand wins with</li>
+                <li>The phrases Amazon rejects</li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Shows you</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Every draft side by side — accept, revert, rewrite</li>
+                <li>A Vendor-Central file when you're ready to ship</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <a class="atlas-mod-cta" onclick="showBetaImageNISPage()">Enter Create <span>→</span></a>
       </div>
 
@@ -1443,6 +1545,50 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
             </div>
           </div>
         </div>
+
+        <!-- Four-beat: read · decide · remember · show. Future tense — preview. -->
+        <div class="atlas-mod-flow" data-flow="monitor">
+          <button class="atlas-mod-flow-toggle" onclick="atlasFlowToggle(this)" aria-expanded="false">
+            <span class="atlas-mod-flow-toggle-arrow">▶</span>
+            How Monitor will work
+          </button>
+          <div class="atlas-mod-flow-body">
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Will read</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Your live ASIN status <span class="src">Amazon SP-API</span></li>
+                <li>Your keyword rankings <span class="src">Helium 10</span></li>
+                <li>Your content history <span class="src">Atlas Listing Lab</span></li>
+                <li>Your Amazon rejection emails <span class="src">forwarded by your team</span></li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Will decide</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Which listings are at risk — and why</li>
+                <li>Which keywords dropped rank — and by how much</li>
+                <li>Which catalog changes broke a rule Amazon is about to flag</li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Will remember</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Every fix your team applied</li>
+                <li>Every decision to ignore — and why</li>
+                <li>Every rule that saved you from a rejection</li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>You'll see</div>
+              <ul class="atlas-mod-flow-list">
+                <li>A weekly digest of what Atlas caught</li>
+                <li>What your team acted on — and what they ignored</li>
+                <li>Trends across every brand in your portfolio</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <a class="atlas-mod-cta ghost" onclick="showPreviewPage('catalog-health')">Preview Monitor <span>→</span></a>
       </div>
 
@@ -1485,6 +1631,49 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
             </div>
           </div>
         </div>
+
+        <!-- Four-beat: read · decide · remember · show. Future tense — preview. -->
+        <div class="atlas-mod-flow" data-flow="manage">
+          <button class="atlas-mod-flow-toggle" onclick="atlasFlowToggle(this)" aria-expanded="false">
+            <span class="atlas-mod-flow-toggle-arrow">▶</span>
+            How Manage will work
+          </button>
+          <div class="atlas-mod-flow-body">
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Will read</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Your live listings <span class="src">Amazon SP-API</span></li>
+                <li>Your latest pricing and inventory <span class="src">Vendor Central</span></li>
+                <li>Your Atlas content history <span class="src">every draft, every approved version</span></li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Will decide</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Which listings are stale and need refreshing</li>
+                <li>Which variation families are broken and need reuniting</li>
+                <li>Which price changes can be safely pushed in bulk</li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Will remember</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Every bulk edit your team made — and why</li>
+                <li>Every refresh that improved rank or conversion</li>
+                <li>Every rollback when an edit made things worse</li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>You'll see</div>
+              <ul class="atlas-mod-flow-list">
+                <li>One screen per brand</li>
+                <li>One click to refresh hundreds of ASINs at once</li>
+                <li>The same review-before-ship discipline as Create</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <a class="atlas-mod-cta ghost" onclick="showPreviewPage('bulk-price')">Preview Manage <span>→</span></a>
       </div>
 
@@ -1527,6 +1716,50 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
             </div>
           </div>
         </div>
+
+        <!-- Four-beat: read · decide · remember · show. Future tense — preview. -->
+        <div class="atlas-mod-flow" data-flow="promote">
+          <button class="atlas-mod-flow-toggle" onclick="atlasFlowToggle(this)" aria-expanded="false">
+            <span class="atlas-mod-flow-toggle-arrow">▶</span>
+            How Promote will work
+          </button>
+          <div class="atlas-mod-flow-body">
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Will read</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Your live listings <span class="src">Amazon SP-API</span></li>
+                <li>Your ad performance <span class="src">Amazon Ads API</span></li>
+                <li>Your keyword share-of-voice <span class="src">Helium 10</span></li>
+                <li>Your sales and conversion data <span class="src">Vendor Central</span></li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Will decide</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Which keywords your ads should target</li>
+                <li>Which detail-page fields drive conversion per product</li>
+                <li>Which reviews are telling you something your listing doesn't say</li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>Will remember</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Which ad creatives actually converted — per ASIN</li>
+                <li>Which keywords your brand has historically won</li>
+                <li>Which product-data changes bumped conversion</li>
+              </ul>
+            </div>
+            <div class="atlas-mod-flow-block">
+              <div class="atlas-mod-flow-h"><span class="marker"></span>You'll see</div>
+              <ul class="atlas-mod-flow-list">
+                <li>Ad bulksheets auto-populated with live product data</li>
+                <li>Keyword gap reports tied to specific ASINs</li>
+                <li>PDP suggestions backed by your own conversion data</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <a class="atlas-mod-cta ghost" onclick="showPreviewPage('ad-bulksheet')">Preview Promote <span>→</span></a>
       </div>
     </div>
@@ -1541,6 +1774,17 @@ body:has(#atlas-page[style*="block"]) { background:#08111A; }
 </div><!-- /atlas-page -->
 
 <script>
+// Toggle the four-beat "How X works" block on a module card.
+// Pure DOM toggle — no fetches, no state. Plays an immediate visual
+// expand so the operator (or Sheik) feels the response is instant.
+function atlasFlowToggle(btn) {
+  const flow = btn.closest('.atlas-mod-flow');
+  if (!flow) return;
+  const isOpen = flow.classList.toggle('open');
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+window.atlasFlowToggle = atlasFlowToggle;
+
 // ═══════ ATLAS CLICK MOMENT — live vision wiring ═══════
 (function(){
   function init() {
