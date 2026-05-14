@@ -3360,6 +3360,28 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
     total_qa_warnings = 0
     feedback_count = len([l for l in feedback_history.splitlines() if l.strip()]) if feedback_history else 0
 
+    # ─── Atlas substrate: open a session for this batch ────────────────
+    # Every NIS upload is one session. All decision_events written below
+    # tag with this session_id so the batch can be replayed end-to-end.
+    # If the substrate module is missing or fails, generation continues
+    # unaffected — substrate writes are best-effort, never blocking.
+    _atlas_session = None
+    _atlas_workspace = (brand or "tlg").lower().replace(" ", "_") or "tlg"
+    _atlas_operator = session_data.get("operator_id") or "devang"
+    _atlas_brand_profile_version = brand_cfg.get("_version") or f"{_atlas_workspace}_legacy"
+    try:
+        from substrate.logger import open_session as _atlas_open_session
+        from substrate.schema import Module as _AtlasModule
+        _atlas_session = _atlas_open_session(
+            workspace_id=_atlas_workspace,
+            operator_id=_atlas_operator,
+            module=_AtlasModule.NIS,
+        )
+        content_progress["session_id"] = _atlas_session.session_id
+    except Exception as _atlas_exc:
+        print(f"[atlas] session open skipped: {_atlas_exc}", flush=True)
+        _atlas_session = None
+
     for i, style in enumerate(styles):
       try:
         style_num = style["style_num"]
@@ -3541,6 +3563,60 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
         total_qa_errors += sum(1 for iss in issues if iss["severity"] == "error")
         total_qa_warnings += sum(1 for iss in issues if iss["severity"] == "warning")
 
+        # ─── Atlas substrate: log decision_events for this style ───────
+        # Logs one event per field the substrate filter accepts (strategic
+        # fields are always logged; others gate on confidence + rule density).
+        # Never blocks generation — any exception is swallowed with a print.
+        if _atlas_session is not None:
+            try:
+                from substrate.logger import log_field_decision as _atlas_log
+                from substrate.schema import Module as _AtlasModule
+                _atlas_field_outputs = [
+                    ("item_name", entry.get("title", "")),
+                    ("bullet_1", entry.get("bullet_1", "")),
+                    ("bullet_2", entry.get("bullet_2", "")),
+                    ("bullet_3", entry.get("bullet_3", "")),
+                    ("bullet_4", entry.get("bullet_4", "")),
+                    ("bullet_5", entry.get("bullet_5", "")),
+                    ("description", entry.get("description", "")),
+                    ("backend_keywords", entry.get("backend_keywords", "")),
+                ]
+                # Confidence proxy at v1.0.0: high when LLM produced output
+                # cleanly with no QA errors, lower otherwise. Computed by
+                # Atlas, not asked from the LLM (per substrate principle).
+                _err_count = sum(1 for iss in issues if iss["severity"] == "error")
+                _warn_count = sum(1 for iss in issues if iss["severity"] == "warning")
+                if entry.get("llm_generated") and _err_count == 0:
+                    _atlas_conf = 0.85 if _warn_count == 0 else 0.72
+                else:
+                    _atlas_conf = 0.55
+                # Minimal rule trace: marker rules so the event is replayable.
+                # Full rule trace will be added once the engine layer ships.
+                _atlas_rules = [
+                    {"rule_id": "nis.engine.compose_v0_7_6", "version": "0.7.6"},
+                ]
+                if entry.get("llm_generated"):
+                    _atlas_rules.append({"rule_id": "nis.llm.claude_generation"})
+                if has_keywords:
+                    _atlas_rules.append({"rule_id": "nis.brand.keywords_active"})
+                for _fname, _fval in _atlas_field_outputs:
+                    if not _fval:
+                        continue
+                    _atlas_log(
+                        workspace_id=_atlas_workspace,
+                        session_id=_atlas_session.session_id,
+                        module=_AtlasModule.NIS,
+                        field_name=_fname,
+                        atlas_output=_fval,
+                        overall_confidence=_atlas_conf,
+                        rules_injected=_atlas_rules,
+                        brand_profile_version=_atlas_brand_profile_version,
+                        style_id=str(style_num),
+                    )
+            except Exception as _atlas_log_exc:
+                # Substrate writes are best-effort; never crash generation.
+                print(f"[atlas] decision log skipped for {style_num}: {_atlas_log_exc}", flush=True)
+
         content_map[style_num] = entry
         content_progress["completed"] = i + 1
         content_progress["current_step"] = f"✓ {style_num} complete"
@@ -3574,6 +3650,7 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
         "total": len(content_map),
         "qa_errors": total_qa_errors,
         "qa_warnings": total_qa_warnings,
+        "atlas_session_id": _atlas_session.session_id if _atlas_session else None,
     }
 
 

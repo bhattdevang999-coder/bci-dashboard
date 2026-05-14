@@ -23,3 +23,7 @@ lab_sessions/
 brand_configs/Ben_Sherman.json
 brand_configs/_*.json
 brand_configs/__*.json
+
+# Atlas substrate runtime data — never commit operator decisions
+decision_log/
+sessions/
