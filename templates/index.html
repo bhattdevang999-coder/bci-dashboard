@@ -2617,6 +2617,150 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* Atlas inline scope prompt (shown after an inline edit) */
+.atlas-scope-prompt {
+  margin: 6px 14px 12px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  animation: atlasScopeIn 160ms ease-out;
+}
+@keyframes atlasScopeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.atlas-scope-prompt-q {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.atlas-scope-prompt-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.atlas-scope-btn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.atlas-scope-btn:hover {
+  background: var(--accent-soft, rgba(94,234,212,0.08));
+  border-color: var(--accent);
+}
+.atlas-scope-btn-secondary {
+  color: var(--text-sec);
+}
+.atlas-scope-note {
+  width: 100%;
+  font-size: 11px;
+  font-family: var(--font);
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+.atlas-scope-note:focus {
+  border-color: var(--accent);
+}
+
+/* Atlas end-of-session summary modal */
+.atlas-session-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 24px;
+}
+.atlas-session-modal.open { display: flex; }
+.atlas-session-card {
+  width: min(640px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 26px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+}
+.atlas-session-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.atlas-session-sub {
+  font-size: 12px;
+  color: var(--text-sec);
+  margin: 0 0 18px;
+}
+.atlas-session-q {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+.atlas-session-card textarea {
+  width: 100%;
+  min-height: 56px;
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+}
+.atlas-session-card textarea:focus { border-color: var(--accent); }
+.atlas-session-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.atlas-session-row label {
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+.atlas-session-row small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-sec);
+  margin-top: 2px;
+}
+.atlas-session-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+.atlas-session-actions .btn-secondary,
+.atlas-session-actions .btn-primary {
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
 /* Style feedback at bottom of content tab */
 .ws-style-feedback {
   margin-top: 20px;
@@ -13033,6 +13177,21 @@ function pollGenerationProgress() {
         }
 
         state.generatedContent = data.content || {};
+        // Atlas substrate session handle: used by 3-action footer + end-of-session
+        // summary to attach operator responses back to decision_events.
+        state.atlasSessionId = data.atlas_session_id || null;
+        state.atlasWorkspaceId = (function(){
+          // Workspace_id is derived server-side from brand; the per-style _atlas
+          // payload carries it back, so pull it from the first style that has one.
+          const styles = Object.values(state.generatedContent);
+          for (const s of styles) {
+            if (s && s._atlas && s._atlas.workspace_id) return s._atlas.workspace_id;
+          }
+          return (state.brand || 'tlg').toLowerCase().replace(/\s+/g, '_');
+        })();
+        // Track which atlas event_ids have already had a response sent
+        // so reflex double-clicks don't spam the substrate.
+        state.atlasResponded = {};
 
         // Surface per-style pipeline errors honestly.
         const failed = Object.values(state.generatedContent).filter(s => s && s._pipeline_error);
@@ -13317,6 +13476,13 @@ function wsRenderContentTab(styleNum) {
     html += wsFieldBlock(styleNum, def.key, def.label, val, def.charLimit, def.why);
   });
 
+  // Atlas: mark fields as rendered once they're in the DOM so the substrate
+  // can compute accurate time-to-decision for whichever action the operator
+  // takes (could be seconds, could be minutes — either is signal).
+  requestAnimationFrame(() => {
+    CONTENT_FIELDS.forEach(def => atlasMarkRendered(styleNum, def.key));
+  });
+
   // Attributes grid
   html += `
     <div class="ws-content-section-label" style="margin-top:24px;">Detected Attributes</div>
@@ -13422,10 +13588,74 @@ function wsFieldBlock(styleNum, fieldKey, label, content, charLimit, why) {
   `;
 }
 
+// ── Atlas substrate bridge ────────────────────────────────────
+// Helpers that connect the review UI to the Atlas decision_event log.
+// Best-effort: a substrate failure never blocks the review flow.
+
+function atlasEventIdFor(styleNum, fieldKey) {
+  const c = (state.generatedContent || {})[styleNum];
+  if (!c || !c._atlas || !c._atlas.event_ids) return null;
+  // bullet_1..bullet_5 map directly; title is logged as item_name in the
+  // substrate so the review UI translates here.
+  const key = (fieldKey === 'title') ? 'item_name' : fieldKey;
+  return c._atlas.event_ids[key] || null;
+}
+
+function atlasMarkRendered(styleNum, fieldKey) {
+  // Set data-rendered-at on the field's DOM node so time-to-decision can be
+  // computed accurately even if the user takes minutes to act. Idempotent.
+  const el = document.getElementById(`wsfb-${styleNum}-${fieldKey}`);
+  if (el && !el.dataset.renderedAt) el.dataset.renderedAt = String(Date.now());
+}
+
+function atlasTimeMs(styleNum, fieldKey) {
+  const el = document.getElementById(`wsfb-${styleNum}-${fieldKey}`);
+  if (!el || !el.dataset.renderedAt) return null;
+  return Date.now() - parseInt(el.dataset.renderedAt, 10);
+}
+
+function atlasViewedCase(styleNum, fieldKey) {
+  const el = document.getElementById(`wsfb-${styleNum}-${fieldKey}`);
+  return !!(el && el.dataset.atlasViewed === '1');
+}
+
+function atlasSendResponse(eventId, action, opts) {
+  if (!eventId || !state.atlasWorkspaceId) return Promise.resolve({ok: false, skipped: true});
+  // Suppress duplicate same-action posts (e.g. double-click on Accept).
+  // Edit/scope replies always go through because they may carry a new value.
+  const dedupeKey = `${eventId}::${action}`;
+  if (action === 'accept' && state.atlasResponded[dedupeKey]) {
+    return Promise.resolve({ok: false, skipped: true});
+  }
+  state.atlasResponded[dedupeKey] = true;
+  const body = Object.assign({
+    workspace_id: state.atlasWorkspaceId,
+    event_id: eventId,
+    action,
+    value: null,
+    scope: 'none',
+    time_to_decision_ms: null,
+    comment: null,
+    viewed_case: false,
+  }, opts || {});
+  return fetch('/api/atlas/decision-response', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(r => r.json()).catch(() => ({ok: false}));
+}
+
 // ── Content field actions ─────────────────────────────────────
 function wsAcceptField(styleNum, fieldKey) {
   const btn = document.getElementById(`wsaccept-${styleNum}-${fieldKey}`);
   if (btn) btn.classList.add('accepted');
+  // Atlas: send accept with viewed_case + time-to-decision so the substrate
+  // can later distinguish verified accepts from reflex accepts.
+  const eid = atlasEventIdFor(styleNum, fieldKey);
+  atlasSendResponse(eid, 'accept', {
+    time_to_decision_ms: atlasTimeMs(styleNum, fieldKey),
+    viewed_case: atlasViewedCase(styleNum, fieldKey),
+  });
   showToast('Field accepted', 'success');
 }
 
@@ -13436,6 +13666,18 @@ function wsToggleWhy(styleNum, fieldKey) {
   const open = content.classList.contains('open');
   content.classList.toggle('open', !open);
   toggle.classList.toggle('open', !open);
+  // Atlas: opening the Why panel flips viewed_case to true on the field
+  // block. Subsequent Accept will be logged as a verified accept.
+  if (!open) {
+    const block = document.getElementById(`wsfb-${styleNum}-${fieldKey}`);
+    if (block) block.dataset.atlasViewed = '1';
+    // Log the explicit 'view' event — separate from any later accept/edit.
+    const eid = atlasEventIdFor(styleNum, fieldKey);
+    atlasSendResponse(eid, 'view', {
+      time_to_decision_ms: atlasTimeMs(styleNum, fieldKey),
+      viewed_case: true,
+    });
+  }
 }
 
 async function wsRegenField(styleNum, fieldKey) {
@@ -13544,6 +13786,22 @@ function wsConfirmContentEdit(styleNum, fieldKey) {
   if (editArea) editArea.classList.remove('visible');
   if (editBtn) editBtn.classList.remove('editing');
 
+  // Atlas: persist the edit immediately, then surface the inline scope prompt
+  // ("apply to just this style / batch / brand always"). The prompt issues a
+  // second response carrying the chosen scope so the substrate sees the full
+  // picture without a schema change.
+  const eid = atlasEventIdFor(styleNum, fieldKey);
+  const timeMs = atlasTimeMs(styleNum, fieldKey);
+  const viewed = atlasViewedCase(styleNum, fieldKey);
+  atlasSendResponse(eid, 'edit', {
+    value: newVal,
+    scope: 'just_this',
+    time_to_decision_ms: timeMs,
+    viewed_case: viewed,
+    comment: reason || null,
+  });
+  atlasShowScopePrompt(styleNum, fieldKey, eid, { value: newVal, time_to_decision_ms: timeMs, viewed_case: viewed });
+
   // Update char count display
   const cc = document.getElementById(`wscc-${styleNum}-${fieldKey}`);
   if (cc) {
@@ -13565,6 +13823,46 @@ function wsCancelContentEdit(styleNum, fieldKey) {
   if (textEl) textEl.style.display = '';
   if (editArea) editArea.classList.remove('visible');
   if (editBtn) editBtn.classList.remove('editing');
+}
+
+// ── Atlas inline scope prompt ───────────────────────────────
+function atlasShowScopePrompt(styleNum, fieldKey, eventId, ctx) {
+  if (!eventId) return;  // No substrate event → nothing to scope.
+  const block = document.getElementById(`wsfb-${styleNum}-${fieldKey}`);
+  if (!block) return;
+  // Remove any existing prompt for this field
+  const existing = block.querySelector('.atlas-scope-prompt');
+  if (existing) existing.remove();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'atlas-scope-prompt';
+  wrap.innerHTML = `
+    <div class="atlas-scope-prompt-q">Apply this edit how?</div>
+    <div class="atlas-scope-prompt-btns">
+      <button class="atlas-scope-btn" data-scope="just_this">Just this style</button>
+      <button class="atlas-scope-btn" data-scope="batch">This batch</button>
+      <button class="atlas-scope-btn" data-scope="brand_always">Brand always</button>
+      <button class="atlas-scope-btn atlas-scope-btn-secondary" data-scope="skip">Skip</button>
+    </div>
+    <input type="text" class="atlas-scope-note" placeholder="Optional note (why this rule?)" />
+  `;
+  block.appendChild(wrap);
+
+  const noteEl = wrap.querySelector('.atlas-scope-note');
+  wrap.querySelectorAll('.atlas-scope-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      const scope = b.getAttribute('data-scope');
+      const note = (noteEl.value || '').trim() || null;
+      atlasSendResponse(eventId, 'edit', Object.assign({}, ctx, {
+        scope,
+        comment: note,
+      }));
+      wrap.classList.add('atlas-scope-prompt-done');
+      const msg = scope === 'skip' ? 'Scope skipped' : `Scope: ${scope.replace('_',' ')}`;
+      wrap.innerHTML = `<div class="atlas-scope-prompt-q">${msg}</div>`;
+      setTimeout(() => wrap.remove(), 1400);
+    });
+  });
 }
 
 function wsFieldCharCount(styleNum, fieldKey, limit) {
@@ -14315,6 +14613,10 @@ async function wsRunValidation(stylesList) {
   // ── Bulk download options ──
   dlHtml += '<div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">';
   dlHtml += '<button class="btn btn-secondary btn-sm" onclick="wsDownloadPerStyle()" style="font-size:12px;">\u2193 Download ALL as ZIP</button>';
+  // Atlas: only show Submit Session when the substrate is wired for this batch.
+  if (state.atlasSessionId) {
+    dlHtml += '<button class="btn btn-primary btn-sm" onclick="atlasOpenSessionSummary()" style="font-size:12px;">Submit Session</button>';
+  }
   dlHtml += '</div>';
 
   // ── Per-style NIS file list ──
@@ -17237,6 +17539,131 @@ async function taxonomyBulkSaveAll() {
 // ═════════════════════════════════════════════════════════════════
 // END PHASE 2 TAXONOMY
 // ═════════════════════════════════════════════════════════════════
+
+// ═══ Atlas substrate: end-of-session summary modal ═══════════════════════
+// Scales questions with batch size:
+//   <50 styles  → 3 questions
+//    50–200     → 5 questions
+//    >200       → 7 questions
+// All optional. Exemplar is a single checkbox ("this batch represents how
+// we want Atlas to behave"). operator_notes is one textarea; the structured
+// answers ride along as JSON folded into the notes tail.
+
+function atlasSessionQuestions(batchSize) {
+  const base = [
+    { key: 'biggest_friction', label: 'What slowed you down the most in this batch?' },
+    { key: 'most_useful_atlas_call', label: 'Where did Atlas help you the most?' },
+    { key: 'one_rule_worth_codifying', label: 'One pattern Atlas should learn from this batch?' },
+  ];
+  const mid = [
+    { key: 'recurring_brand_decision', label: 'A brand decision you made more than once?' },
+    { key: 'wrong_call', label: 'Where did Atlas get it wrong?' },
+  ];
+  const heavy = [
+    { key: 'category_pattern', label: 'A category-specific pattern you noticed?' },
+    { key: 'what_to_skip_next_time', label: 'What part of the flow would you skip if you could?' },
+  ];
+  if (batchSize >= 200) return base.concat(mid, heavy);
+  if (batchSize >= 50) return base.concat(mid);
+  return base;
+}
+
+function atlasOpenSessionSummary() {
+  if (!state.atlasSessionId) {
+    showToast('No active Atlas session for this batch.', 'warning');
+    return;
+  }
+  const batchSize = Object.keys(state.generatedContent || {}).length;
+  const questions = atlasSessionQuestions(batchSize);
+
+  let modal = document.getElementById('atlas-session-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'atlas-session-modal';
+    modal.className = 'atlas-session-modal';
+    document.body.appendChild(modal);
+  }
+
+  let qHtml = '';
+  questions.forEach((q, i) => {
+    qHtml += `
+      <div class="atlas-session-q">${i + 1}. ${escHtml(q.label)}</div>
+      <textarea id="atlas-q-${escHtml(q.key)}" rows="2"></textarea>
+    `;
+  });
+
+  modal.innerHTML = `
+    <div class="atlas-session-card">
+      <div class="atlas-session-title">Submit Session</div>
+      <div class="atlas-session-sub">
+        ${batchSize} styles · ${escHtml(state.brand || '')} · session ${escHtml(state.atlasSessionId)}
+      </div>
+      ${qHtml}
+      <div class="atlas-session-q">Anything else worth recording?</div>
+      <textarea id="atlas-session-notes" rows="3" placeholder="Optional. Visible in the Memory tab."></textarea>
+      <div class="atlas-session-row">
+        <input type="checkbox" id="atlas-session-exemplar" />
+        <label for="atlas-session-exemplar">
+          Mark as exemplar batch
+          <small>Weighted heavier in pattern detection and brand-voice learning.</small>
+        </label>
+      </div>
+      <div class="atlas-session-actions">
+        <button class="btn btn-secondary" onclick="atlasCloseSessionSummary()">Cancel</button>
+        <button class="btn btn-primary" onclick="atlasSubmitSessionSummary()">Submit Session</button>
+      </div>
+    </div>
+  `;
+  modal.classList.add('open');
+  modal.dataset.questionKeys = JSON.stringify(questions.map(q => q.key));
+}
+
+function atlasCloseSessionSummary() {
+  const modal = document.getElementById('atlas-session-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function atlasSubmitSessionSummary() {
+  const modal = document.getElementById('atlas-session-modal');
+  if (!modal) return;
+  const keys = JSON.parse(modal.dataset.questionKeys || '[]');
+  const answers = {};
+  keys.forEach(k => {
+    const ta = document.getElementById(`atlas-q-${k}`);
+    const v = (ta && ta.value || '').trim();
+    if (v) answers[k] = v;
+  });
+  const notesEl = document.getElementById('atlas-session-notes');
+  const notes = (notesEl && notesEl.value || '').trim() || null;
+  const exemplarEl = document.getElementById('atlas-session-exemplar');
+  const exemplar = !!(exemplarEl && exemplarEl.checked);
+
+  try {
+    const r = await fetch('/api/atlas/session-submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workspace_id: state.atlasWorkspaceId,
+        session_id: state.atlasSessionId,
+        operator_notes: notes,
+        exemplar,
+        answers,
+      }),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      showToast('Session submitted', 'success');
+      atlasCloseSessionSummary();
+      // Clear so Submit Session doesn't reappear on this batch.
+      state.atlasSessionId = null;
+    } else {
+      showToast('Submit failed: ' + (data.error || 'unknown'), 'error');
+    }
+  } catch (e) {
+    showToast('Submit failed: ' + e.message, 'error');
+  }
+}
+
 
 </script>
 </body>

@@ -3599,10 +3599,17 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
                     _atlas_rules.append({"rule_id": "nis.llm.claude_generation"})
                 if has_keywords:
                     _atlas_rules.append({"rule_id": "nis.brand.keywords_active"})
+                # Capture event_ids so the frontend can attach operator
+                # responses back to the same decision_event when the user
+                # clicks Accept/Edit/Why in the review UI. Without this the
+                # 3-action footer has no handle to call /decision-response.
+                _atlas_event_ids: dict[str, str] = {}
+                _atlas_rules_by_field: dict[str, list[dict]] = {}
+                _atlas_confidence_by_field: dict[str, float] = {}
                 for _fname, _fval in _atlas_field_outputs:
                     if not _fval:
                         continue
-                    _atlas_log(
+                    _eid = _atlas_log(
                         workspace_id=_atlas_workspace,
                         session_id=_atlas_session.session_id,
                         module=_AtlasModule.NIS,
@@ -3613,6 +3620,20 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
                         brand_profile_version=_atlas_brand_profile_version,
                         style_id=str(style_num),
                     )
+                    if _eid:
+                        _atlas_event_ids[_fname] = _eid
+                        _atlas_rules_by_field[_fname] = _atlas_rules
+                        _atlas_confidence_by_field[_fname] = _atlas_conf
+                # Stash on the entry so the frontend can render the
+                # 3-action footer + Why panel without a second round-trip.
+                if _atlas_event_ids:
+                    entry["_atlas"] = {
+                        "session_id": _atlas_session.session_id,
+                        "workspace_id": _atlas_workspace,
+                        "event_ids": _atlas_event_ids,
+                        "rules_by_field": _atlas_rules_by_field,
+                        "confidence_by_field": _atlas_confidence_by_field,
+                    }
             except Exception as _atlas_log_exc:
                 # Substrate writes are best-effort; never crash generation.
                 print(f"[atlas] decision log skipped for {style_num}: {_atlas_log_exc}", flush=True)
@@ -12012,6 +12033,140 @@ def atlas_home_state():
         },
         "continue":  continue_meta,
     })
+
+
+# ─── Atlas substrate: operator response + session submit ─────────────
+# Step 3 / Step 4 of the substrate build. These endpoints are the UI's
+# way to write back into the decision log without ever blocking generation.
+# Both are best-effort: a substrate failure must not break the review flow.
+
+_ATLAS_VALID_ACTIONS = {"accept", "edit", "reject", "add_comment", "view"}
+_ATLAS_VALID_SCOPES = {"none", "just_this", "batch", "brand_always", "skip"}
+
+
+@app.route("/api/atlas/decision-response", methods=["POST"])
+def atlas_decision_response():
+    """Record an operator response (accept/edit/reject/comment/view) on a
+    decision_event. Idempotent at the substrate level — the log is append
+    only, so duplicate POSTs just produce duplicate rows that the reader
+    can dedupe by (event_id, action) if needed.
+
+    Body: {
+        workspace_id: str,
+        event_id: str,                      # from entry._atlas.event_ids[field]
+        action: 'accept'|'edit'|'reject'|'add_comment'|'view',
+        value: any,                         # new value if edit, else null
+        scope: 'none'|'just_this'|'batch'|'brand_always'|'skip',
+        time_to_decision_ms: int|null,
+        comment: str|null,
+        viewed_case: bool                   # v1.1.0
+    }
+    """
+    data = request.get_json(force=True, silent=True) or {}
+    workspace_id = (data.get("workspace_id") or "").strip()
+    event_id = (data.get("event_id") or "").strip()
+    action = (data.get("action") or "").strip().lower()
+    if not workspace_id or not event_id:
+        return jsonify({"ok": False, "error": "workspace_id and event_id required"}), 400
+    if action not in _ATLAS_VALID_ACTIONS:
+        return jsonify({"ok": False, "error": f"action must be one of {sorted(_ATLAS_VALID_ACTIONS)}"}), 400
+    scope = (data.get("scope") or "none").strip().lower()
+    if scope not in _ATLAS_VALID_SCOPES:
+        return jsonify({"ok": False, "error": f"scope must be one of {sorted(_ATLAS_VALID_SCOPES)}"}), 400
+    time_ms = data.get("time_to_decision_ms")
+    try:
+        time_ms = int(time_ms) if time_ms is not None else None
+        if time_ms is not None and time_ms < 0:
+            time_ms = None
+    except (TypeError, ValueError):
+        time_ms = None
+    comment = data.get("comment")
+    if isinstance(comment, str):
+        comment = comment.strip() or None
+    else:
+        comment = None
+    viewed_case = bool(data.get("viewed_case", False))
+
+    try:
+        from substrate.logger import update_field_decision_with_operator_response as _atlas_resp
+        from substrate.schema import OperatorAction as _AtlasAction, OperatorScope as _AtlasScope
+        _atlas_resp(
+            workspace_id=workspace_id,
+            event_id=event_id,
+            operator_action=_AtlasAction(action),
+            operator_value=data.get("value"),
+            operator_scope=_AtlasScope(scope),
+            operator_time_to_decision_ms=time_ms,
+            operator_comment=comment,
+            operator_viewed_case=viewed_case,
+        )
+    except Exception as exc:
+        # Best-effort: log and return ok=false but 200, so the UI can
+        # surface a soft toast without blocking the review flow.
+        print(f"[atlas] decision-response skipped: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 200
+    return jsonify({"ok": True})
+
+
+@app.route("/api/atlas/session-submit", methods=["POST"])
+def atlas_session_submit():
+    """Close an Atlas session with end-of-session notes + exemplar flag.
+
+    Body: {
+        workspace_id: str,
+        session_id: str,
+        operator_notes: str|null,
+        exemplar: bool,
+        answers: dict|null              # the 3/5/7 scaled questions; stored
+                                        # inside operator_notes as a JSON tail
+                                        # for v1.1.0 (no schema bump needed).
+    }
+    """
+    data = request.get_json(force=True, silent=True) or {}
+    workspace_id = (data.get("workspace_id") or "").strip()
+    session_id = (data.get("session_id") or "").strip()
+    if not workspace_id or not session_id:
+        return jsonify({"ok": False, "error": "workspace_id and session_id required"}), 400
+    notes = data.get("operator_notes")
+    if isinstance(notes, str):
+        notes = notes.strip() or None
+    else:
+        notes = None
+    exemplar = bool(data.get("exemplar", False))
+    answers = data.get("answers")
+
+    # Fold structured answers into operator_notes as a JSON tail. This keeps
+    # schema v1.1.0 untouched while giving us a structured record to query
+    # once we read past the human-readable preamble.
+    if isinstance(answers, dict) and answers:
+        try:
+            tail = json.dumps({"_session_answers": answers}, ensure_ascii=False)
+            notes = (notes + "\n\n" + tail) if notes else tail
+        except Exception:
+            pass
+
+    try:
+        from substrate.logger import read_session as _atlas_read_session, submit_session as _atlas_submit
+        from substrate.schema import SessionObject as _AtlasSession, Module as _AtlasModule
+        existing = _atlas_read_session(workspace_id, session_id)
+        if not existing:
+            return jsonify({"ok": False, "error": "session not found"}), 404
+        s = _AtlasSession(
+            session_id=existing.get("session_id", session_id),
+            workspace_id=existing.get("workspace_id", workspace_id),
+            operator_id=existing.get("operator_id", ""),
+            module=_AtlasModule(existing.get("module", "nis")),
+            started_at=existing.get("started_at", ""),
+            ended_at=existing.get("ended_at"),
+            state=existing.get("state", "live"),
+            operator_notes=existing.get("operator_notes"),
+            exemplar=bool(existing.get("exemplar", False)),
+        )
+        _atlas_submit(s, operator_notes=notes, exemplar=exemplar)
+    except Exception as exc:
+        print(f"[atlas] session-submit skipped: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 200
+    return jsonify({"ok": True, "session_id": session_id})
 
 
 @app.route("/api/lab/load-session", methods=["POST"])
