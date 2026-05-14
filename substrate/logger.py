@@ -253,6 +253,7 @@ def update_field_decision_with_operator_response(
     operator_scope: OperatorScope = OperatorScope.NONE,
     operator_time_to_decision_ms: Optional[int] = None,
     operator_comment: Optional[str] = None,
+    operator_viewed_case: bool = False,
 ) -> None:
     """Append an operator-response delta event linked to a prior decision_event.
 
@@ -271,6 +272,7 @@ def update_field_decision_with_operator_response(
         "operator_scope": operator_scope.value,
         "operator_time_to_decision_ms": operator_time_to_decision_ms,
         "operator_comment": operator_comment,
+        "operator_viewed_case": operator_viewed_case,
     }
     _append_jsonl(_decision_log_path(workspace_id), payload)
 

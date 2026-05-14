@@ -32,7 +32,7 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 
 
 # ----------------------------------------------------------------------
@@ -251,6 +251,18 @@ class DecisionEvent:
     Never required, prominently easy to provide.
     """
 
+    operator_viewed_case: bool = False
+    """True if the operator opened the 'Why this' panel before acting.
+
+    Added in v1.1.0. Distinguishes verified accepts (opened the case, read the
+    reasoning, then approved) from reflex accepts (glanced and clicked).
+    Same operator_action='accept' value, structurally different training signal.
+
+    Cheap to capture (single boolean from the UI). Without it, every accept
+    looks identical in the training data even though the underlying behavior
+    is dramatically different.
+    """
+
     # ----- Privacy and contribution ------------------------------------
     private_scope: bool = True
     """True if this event's content (especially atlas_output and operator_value)
@@ -454,6 +466,7 @@ DECISION_EVENT_JSON_SCHEMA: dict[str, Any] = {
             "minimum": 0,
         },
         "operator_comment": {"type": ["string", "null"]},
+        "operator_viewed_case": {"type": "boolean"},
         "private_scope": {"type": "boolean"},
         "contributable_scope": {"type": "boolean"},
     },

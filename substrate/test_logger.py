@@ -157,6 +157,56 @@ def test_operator_response_appends_delta_event() -> None:
 
 
 @_with_temp_root
+def test_operator_response_records_viewed_case() -> None:
+    """v1.1.0: distinguish verified accept (viewed Why panel) from reflex accept."""
+    eid_reflex = log_field_decision(
+        workspace_id="tlg",
+        session_id="ses_viewed_case",
+        module=Module.NIS,
+        field_name="item_name",
+        atlas_output="Reflex case",
+        overall_confidence=0.88,
+        rules_injected=[{"rule_id": "x"}],
+        brand_profile_version="tlg_v1",
+    )
+    update_field_decision_with_operator_response(
+        workspace_id="tlg",
+        event_id=eid_reflex,
+        operator_action=OperatorAction.ACCEPT,
+        operator_time_to_decision_ms=400,
+        operator_viewed_case=False,
+    )
+
+    eid_verified = log_field_decision(
+        workspace_id="tlg",
+        session_id="ses_viewed_case",
+        module=Module.NIS,
+        field_name="item_name",
+        atlas_output="Verified case",
+        overall_confidence=0.88,
+        rules_injected=[{"rule_id": "x"}],
+        brand_profile_version="tlg_v1",
+    )
+    update_field_decision_with_operator_response(
+        workspace_id="tlg",
+        event_id=eid_verified,
+        operator_action=OperatorAction.ACCEPT,
+        operator_time_to_decision_ms=11200,
+        operator_viewed_case=True,
+    )
+
+    events = list(stream_decisions("tlg"))
+    responses = [e for e in events if e.get("event_kind") == "operator_response"]
+    assert len(responses) == 2
+    reflex = next(r for r in responses if r["links_to_event_id"] == eid_reflex)
+    verified = next(r for r in responses if r["links_to_event_id"] == eid_verified)
+    assert reflex["operator_viewed_case"] is False
+    assert verified["operator_viewed_case"] is True
+    # Same operator_action, structurally different training signal
+    assert reflex["operator_action"] == verified["operator_action"] == "accept"
+
+
+@_with_temp_root
 def test_session_lifecycle_round_trip() -> None:
     s = open_session(workspace_id="tlg", operator_id="devang")
     assert s.session_id
@@ -209,6 +259,7 @@ if __name__ == "__main__":
         test_log_strategic_field_writes_event,
         test_log_nonstrategic_high_confidence_is_filtered,
         test_operator_response_appends_delta_event,
+        test_operator_response_records_viewed_case,
         test_session_lifecycle_round_trip,
         test_judgment_moment_logs,
     ]
