@@ -13637,12 +13637,40 @@ function atlasSendResponse(eventId, action, opts) {
     time_to_decision_ms: null,
     comment: null,
     viewed_case: false,
+    // Step 5: session_id lets the backend run judgment detection on edits.
+    session_id: state.atlasSessionId || null,
   }, opts || {});
   return fetch('/api/atlas/decision-response', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  }).then(r => r.json()).catch(() => ({ok: false}));
+  }).then(r => r.json()).then(resp => {
+    // Surface any judgment moments the backend fired off this response.
+    if (resp && Array.isArray(resp.judgment_moments) && resp.judgment_moments.length) {
+      atlasRenderJudgmentMoments(resp.judgment_moments);
+    }
+    return resp;
+  }).catch(() => ({ok: false}));
+}
+
+// Step 5: surface judgment moments inline. Soft, non-blocking — each moment
+// gets a single toast so the operator knows the substrate noticed something
+// without being interrupted. Detailed UI lives in the Memory tab (Step 6).
+function atlasRenderJudgmentMoments(moments) {
+  if (!state.atlasMomentsSeen) state.atlasMomentsSeen = {};
+  const LABELS = {
+    low_confidence: 'Low-confidence call — your edit was noted',
+    rule_override: 'Brand rule overridden — flagged for review',
+    in_session_pattern: 'Pattern detected — candidate rule from this batch',
+  };
+  moments.forEach(m => {
+    const key = `${m.decision_event_id}::${m.trigger_type}`;
+    if (state.atlasMomentsSeen[key]) return;
+    state.atlasMomentsSeen[key] = true;
+    const label = LABELS[m.trigger_type] || `Signal: ${m.trigger_type}`;
+    const field = m.field_name ? ` (${m.field_name})` : '';
+    showToast(label + field, m.trigger_type === 'in_session_pattern' ? 'success' : 'info');
+  });
 }
 
 // ── Content field actions ─────────────────────────────────────

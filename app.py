@@ -12105,7 +12105,21 @@ def atlas_decision_response():
         # surface a soft toast without blocking the review flow.
         print(f"[atlas] decision-response skipped: {exc}", flush=True)
         return jsonify({"ok": False, "error": str(exc)[:200]}), 200
-    return jsonify({"ok": True})
+
+    # Step 5: run judgment detection on edit actions only. Accept/view
+    # responses don't change what the detectors see, so we skip them to
+    # keep the hot path quick. Detection is best-effort — failures must
+    # never break the response flow.
+    moments: list[dict] = []
+    if action == "edit":
+        session_id = (data.get("session_id") or "").strip()
+        if session_id:
+            try:
+                from substrate.judgment import detect_for_session as _atlas_detect
+                moments = _atlas_detect(workspace_id, session_id) or []
+            except Exception as exc:
+                print(f"[atlas] judgment detection skipped: {exc}", flush=True)
+    return jsonify({"ok": True, "judgment_moments": moments})
 
 
 @app.route("/api/atlas/session-submit", methods=["POST"])
