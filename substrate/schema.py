@@ -32,7 +32,7 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
 
-SCHEMA_VERSION = "1.1.0"
+SCHEMA_VERSION = "1.1.1"
 
 
 # ----------------------------------------------------------------------
@@ -284,8 +284,14 @@ class DecisionEvent:
 
     # ----- Serialization ----------------------------------------------
     def to_dict(self) -> dict[str, Any]:
-        """Serialize to a JSON-safe dict for JSONL persistence."""
+        """Serialize to a JSON-safe dict for JSONL persistence.
+
+        Includes the event_kind discriminator (v1.1.1) so readers can
+        distinguish decision_event rows from operator_response and
+        judgment_moment_event rows in a single .jsonl stream.
+        """
         d = asdict(self)
+        d["event_kind"] = "decision_event"
         # Enums serialize as their string values
         d["module"] = self.module.value if self.module else None
         d["operator_action"] = (
@@ -401,6 +407,7 @@ class JudgmentMomentEvent:
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
+        d["event_kind"] = "judgment_moment_event"
         d["trigger_type"] = self.trigger_type.value
         return d
 
@@ -415,6 +422,7 @@ DECISION_EVENT_JSON_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
     "required": [
+        "event_kind",
         "event_id",
         "workspace_id",
         "module",
@@ -427,6 +435,7 @@ DECISION_EVENT_JSON_SCHEMA: dict[str, Any] = {
         "contributable_scope",
     ],
     "properties": {
+        "event_kind": {"type": "string", "const": "decision_event"},
         "event_id": {"type": "string", "format": "uuid"},
         "workspace_id": {"type": "string", "minLength": 1},
         "session_id": {"type": ["string", "null"]},
@@ -507,6 +516,7 @@ JUDGMENT_MOMENT_JSON_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
     "required": [
+        "event_kind",
         "moment_id",
         "workspace_id",
         "decision_event_id",
@@ -514,6 +524,7 @@ JUDGMENT_MOMENT_JSON_SCHEMA: dict[str, Any] = {
         "trigger_type",
     ],
     "properties": {
+        "event_kind": {"type": "string", "const": "judgment_moment_event"},
         "moment_id": {"type": "string", "format": "uuid"},
         "workspace_id": {"type": "string", "minLength": 1},
         "decision_event_id": {"type": "string", "format": "uuid"},
@@ -568,6 +579,10 @@ def _validate_against(schema: dict[str, Any], payload: dict[str, Any]) -> None:
         if "enum" in prop and v not in prop["enum"]:
             raise SchemaValidationError(
                 f"field {k}={v!r} not in allowed enum {prop['enum']}"
+            )
+        if "const" in prop and v != prop["const"]:
+            raise SchemaValidationError(
+                f"field {k}={v!r} must equal const {prop['const']!r}"
             )
 
 
