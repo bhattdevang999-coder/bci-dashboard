@@ -376,6 +376,12 @@ app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
 CORS(app)
 
+# Boot timestamp — used by /api/version so deploy-verify scripts can confirm
+# the process actually restarted on a new deploy (not just the same warm
+# instance still serving cached responses).
+from datetime import datetime as _dt_boot, timezone as _tz_boot
+_APP_BOOT_TS = _dt_boot.now(_tz_boot.utc).isoformat()
+
 
 # ─── Atlas substrate bootstrap ────────────────────────────────────
 # When DATABASE_URL is set (production on Render), apply the substrate
@@ -11314,6 +11320,37 @@ def atlas_memory_session_detail(session_id: str):
     if detail is None:
         return jsonify({"ok": False, "error": "session not found"}), 404
     return jsonify({"ok": True, "workspace_id": workspace_id, "session": detail})
+
+
+@app.route("/api/version", methods=["GET"])
+def api_version():
+    """Return the git SHA + build metadata of the currently-running code.
+
+    Used by the deploy-verify loop: poll this endpoint after a push until
+    it reports the new SHA, then run live smoke tests. Render injects
+    RENDER_GIT_COMMIT at build time; we fall back to a local .git_sha
+    file or 'unknown'.
+    """
+    sha = (
+        os.environ.get("RENDER_GIT_COMMIT")
+        or os.environ.get("GIT_SHA")
+        or ""
+    )
+    if not sha:
+        try:
+            here = os.path.dirname(os.path.abspath(__file__))
+            with open(os.path.join(here, ".git_sha"), "r", encoding="utf-8") as fh:
+                sha = fh.read().strip()
+        except OSError:
+            sha = "unknown"
+    return jsonify({
+        "ok": True,
+        "sha": sha,
+        "short_sha": sha[:7] if sha and sha != "unknown" else sha,
+        "branch": os.environ.get("RENDER_GIT_BRANCH") or "",
+        "service": os.environ.get("RENDER_SERVICE_NAME") or "",
+        "started_at": _APP_BOOT_TS,
+    })
 
 
 @app.route("/api/atlas/visible-brands", methods=["GET"])
