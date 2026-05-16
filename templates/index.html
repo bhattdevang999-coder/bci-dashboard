@@ -3242,6 +3242,207 @@
   color: var(--text-sec); font-size: 13px;
 }
 
+/* ═══ Day-1 Keyword Wizard ═══ */
+.wiz-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: none; z-index: 9500;
+  align-items: center; justify-content: center;
+  padding: 24px;
+}
+.wiz-modal.open { display: flex; }
+.wiz-panel {
+  width: min(960px, 100%); max-height: 90vh;
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px;
+  display: flex; flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.wiz-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+.wiz-header-right { display: flex; align-items: center; gap: 16px; }
+.wiz-eyebrow {
+  font-size: 11px; color: var(--text-sec);
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.wiz-title { font-size: 18px; font-weight: 600; color: var(--text); margin-top: 2px; }
+.wiz-progress { font-size: 12px; color: var(--text-sec); }
+
+.wiz-phase { display: none; padding: 22px 22px 18px 22px; overflow-y: auto; flex: 1; }
+.wiz-phase.active { display: block; }
+
+.wiz-section { margin-bottom: 18px; }
+.wiz-label {
+  display: block; font-size: 12px; color: var(--text);
+  font-weight: 600; margin-bottom: 6px;
+}
+.wiz-input {
+  width: 100%; background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 9px 12px; font-size: 14px;
+  font-family: inherit;
+}
+.wiz-input:focus { border-color: var(--accent); outline: none; }
+textarea.wiz-input { resize: vertical; min-height: 70px; }
+
+.wiz-disclosure {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 12px; color: var(--text);
+  line-height: 1.55;
+  margin: 20px 0;
+}
+.wiz-disclosure strong { color: var(--warn, #f59e0b); }
+
+.wiz-actions {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 18px; padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* Review phase */
+.wiz-review-summary {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px; margin-bottom: 14px;
+  font-size: 12px; color: var(--text-sec);
+  display: flex; gap: 18px; flex-wrap: wrap;
+}
+.wiz-review-summary strong { color: var(--text); font-weight: 600; margin-right: 4px; }
+.wiz-review-filters {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.wiz-theme-chips { display: flex; gap: 4px; }
+.wiz-chip {
+  background: var(--bg); color: var(--text-sec);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 4px 12px; font-size: 12px; cursor: pointer;
+  transition: all 120ms ease;
+}
+.wiz-chip:hover { color: var(--text); }
+.wiz-chip.active {
+  background: var(--accent); color: #0b0d10;
+  border-color: var(--accent); font-weight: 600;
+}
+.wiz-candidates {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.wiz-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  transition: border-color 120ms ease;
+}
+.wiz-card[data-decision="accept"]  { border-color: rgba(34, 197, 94, 0.45); }
+.wiz-card[data-decision="edit"]    { border-color: rgba(96, 165, 250, 0.45); }
+.wiz-card[data-decision="reject"]  { border-color: rgba(239, 68, 68, 0.45); }
+.wiz-card[data-decision="comment"] { border-color: rgba(245, 158, 11, 0.45); }
+.wiz-card-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; margin-bottom: 8px;
+}
+.wiz-card-kw {
+  font-family: ui-monospace, monospace;
+  font-size: 14px; color: var(--text); font-weight: 600;
+  word-break: break-word;
+}
+.wiz-card-meta {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  font-size: 11px; color: var(--text-sec);
+}
+.wiz-tag {
+  display: inline-block;
+  padding: 2px 7px; border-radius: 3px;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.3px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-sec);
+}
+.wiz-tag[data-theme="branded"]    { color: #a78bfa; border-color: rgba(167, 139, 250, 0.4); }
+.wiz-tag[data-theme="feature"]    { color: #60a5fa; border-color: rgba(96, 165, 250, 0.4); }
+.wiz-tag[data-theme="competitor"] { color: #f59e0b; border-color: rgba(245, 158, 11, 0.4); }
+.wiz-tag[data-history="true"]     { color: #22c55e; border-color: rgba(34, 197, 94, 0.4); }
+.wiz-card-rationale {
+  color: var(--text-sec); font-size: 12px;
+  line-height: 1.5; margin: 6px 0 10px 0;
+}
+.wiz-card-bid {
+  font-size: 12px; color: var(--text);
+}
+.wiz-card-bid strong { color: var(--accent); font-family: ui-monospace, monospace; }
+.wiz-card-bid-disclaimer {
+  color: var(--text-sec); font-size: 11px; margin-left: 6px;
+}
+.wiz-card-actions {
+  display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;
+}
+.wiz-action-btn {
+  background: var(--surface); color: var(--text-sec);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 12px; font-size: 12px; cursor: pointer;
+  transition: all 120ms ease; font-weight: 500;
+}
+.wiz-action-btn:hover { color: var(--text); }
+.wiz-action-btn[data-active="accept"]  { background: rgba(34, 197, 94, 0.16); color: #22c55e; border-color: rgba(34, 197, 94, 0.4); }
+.wiz-action-btn[data-active="edit"]    { background: rgba(96, 165, 250, 0.16); color: #60a5fa; border-color: rgba(96, 165, 250, 0.4); }
+.wiz-action-btn[data-active="reject"]  { background: rgba(239, 68, 68, 0.16); color: #ef4444; border-color: rgba(239, 68, 68, 0.4); }
+.wiz-action-btn[data-active="comment"] { background: rgba(245, 158, 11, 0.16); color: #f59e0b; border-color: rgba(245, 158, 11, 0.4); }
+.wiz-card-edit {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  display: none;
+}
+.wiz-card.editing .wiz-card-edit { display: block; }
+.wiz-card-edit-row {
+  display: flex; gap: 10px; align-items: center; margin-bottom: 8px;
+}
+.wiz-card-edit-label { font-size: 11px; color: var(--text-sec); min-width: 70px; }
+.wiz-card-edit input, .wiz-card-edit select, .wiz-card-edit textarea {
+  flex: 1; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 8px; font-size: 12px; font-family: inherit;
+}
+.wiz-submit-summary {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  margin-bottom: 18px;
+}
+.wiz-stat {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 14px;
+  text-align: center;
+}
+.wiz-stat-num {
+  font-size: 24px; font-weight: 700; color: var(--text);
+  font-family: ui-monospace, monospace;
+}
+.wiz-stat-label {
+  font-size: 10px; color: var(--text-sec);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  margin-top: 4px;
+}
+.wiz-stat[data-kind="accept"] .wiz-stat-num { color: #22c55e; }
+.wiz-stat[data-kind="edit"] .wiz-stat-num   { color: #60a5fa; }
+.wiz-stat[data-kind="reject"] .wiz-stat-num { color: #ef4444; }
+
+.wiz-done {
+  text-align: center; padding: 36px 16px;
+}
+.wiz-done-icon {
+  width: 64px; height: 64px;
+  border-radius: 50%; background: rgba(34, 197, 94, 0.16);
+  color: #22c55e; font-size: 32px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px auto;
+}
+.wiz-done-title { font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.wiz-done-sub { font-size: 13px; color: var(--text-sec); }
+
 /* Atlas end-of-session summary modal */
 .atlas-session-modal {
   position: fixed;
@@ -6584,6 +6785,10 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="page-hero">
       <h1 class="page-hero-title">Marketing</h1>
       <div class="page-hero-sub">Upload PPC bulk files and Search Term Reports. Atlas builds a keyword library that compounds daily — every upload appends a new observation, so the longer you run, the sharper the direction signal becomes.</div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="wizOpen()">+ Day-1 keyword setup</button>
+        <span style="color:var(--text-sec); font-size:12px; margin-left:12px;">Generate a starting keyword list for a new ASIN. Atlas drafts, you decide.</span>
+      </div>
     </div>
 
     <!-- Upload zone -->
@@ -6628,6 +6833,104 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="memory-list-wrap">
       <div id="mkt-list" class="memory-sessions"></div>
       <div id="mkt-paginate" class="memory-paginate" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ DAY-1 KEYWORD WIZARD (full-screen modal) ══════════ -->
+  <div id="wiz-modal" class="wiz-modal" onclick="wizMaybeClose(event)">
+    <div class="wiz-panel" onclick="event.stopPropagation()">
+      <div class="wiz-header">
+        <div>
+          <div class="wiz-eyebrow">Marketing · Day-1 Keyword Setup</div>
+          <div id="wiz-title" class="wiz-title">Set up a new ASIN</div>
+        </div>
+        <div class="wiz-header-right">
+          <div id="wiz-progress" class="wiz-progress"></div>
+          <button class="btn btn-secondary btn-sm" onclick="wizClose()">Close</button>
+        </div>
+      </div>
+
+      <!-- Phase 1: Setup -->
+      <div id="wiz-phase-setup" class="wiz-phase active">
+        <div class="wiz-section">
+          <label class="wiz-label">ASIN <span style="color:var(--text-sec); font-weight:400;">(required)</span></label>
+          <input id="wiz-asin" type="text" class="wiz-input" placeholder="B0XXXXXXXX" />
+        </div>
+        <div class="wiz-section">
+          <label class="wiz-label">Product type <span style="color:var(--text-sec); font-weight:400;">(optional, helps generation)</span></label>
+          <input id="wiz-product-type" type="text" class="wiz-input" placeholder="e.g. high-rise leggings, fleece pullover" />
+        </div>
+        <div class="wiz-section">
+          <label class="wiz-label">Style / model name <span style="color:var(--text-sec); font-weight:400;">(optional)</span></label>
+          <input id="wiz-style-name" type="text" class="wiz-input" placeholder="e.g. Novelle Essential" />
+        </div>
+        <div class="wiz-section">
+          <label class="wiz-label">Candidate count <span style="color:var(--text-sec); font-weight:400;">5–80</span></label>
+          <input id="wiz-count" type="number" class="wiz-input" value="40" min="5" max="80" />
+        </div>
+        <div class="wiz-disclosure">
+          <strong>Bias disclosure.</strong> Atlas's day-1 suggestions are priors — best-guess based on brand voice + product type + any sibling-ASIN history. With zero historical data on a keyword, treat the bid range as a starting point, not a recommendation. Confidence sharpens with each daily PPC upload.
+        </div>
+        <div class="wiz-actions">
+          <button class="btn btn-primary" onclick="wizGenerate()">Generate candidates →</button>
+        </div>
+      </div>
+
+      <!-- Phase 2: Review -->
+      <div id="wiz-phase-review" class="wiz-phase">
+        <div id="wiz-review-summary" class="wiz-review-summary"></div>
+        <div class="wiz-review-filters">
+          <input id="wiz-search" type="text" class="wiz-input" placeholder="Filter candidates…" oninput="wizFilterRender()" style="max-width:280px;" />
+          <div class="wiz-theme-chips">
+            <button class="wiz-chip active" data-theme="" onclick="wizSetTheme('')">All</button>
+            <button class="wiz-chip" data-theme="branded" onclick="wizSetTheme('branded')">Branded</button>
+            <button class="wiz-chip" data-theme="feature" onclick="wizSetTheme('feature')">Feature</button>
+            <button class="wiz-chip" data-theme="competitor" onclick="wizSetTheme('competitor')">Competitor</button>
+          </div>
+          <div style="flex:1;"></div>
+          <span id="wiz-counts" style="color:var(--text-sec); font-size:12px;"></span>
+        </div>
+        <div id="wiz-candidates" class="wiz-candidates"></div>
+        <div class="wiz-actions">
+          <button class="btn btn-secondary btn-sm" onclick="wizBackToSetup()">← Back</button>
+          <div style="flex:1;"></div>
+          <button class="btn btn-primary" onclick="wizGoSubmit()">Continue to submit →</button>
+        </div>
+      </div>
+
+      <!-- Phase 3: Submit -->
+      <div id="wiz-phase-submit" class="wiz-phase">
+        <div id="wiz-submit-summary" class="wiz-submit-summary"></div>
+        <div class="wiz-section">
+          <label class="wiz-label">Session notes <span style="color:var(--text-sec); font-weight:400;">(what was the biggest friction? one sentence is fine)</span></label>
+          <textarea id="wiz-notes" class="wiz-input" rows="3" placeholder="e.g. competitor keywords felt thin; bid ranges trustworthy"></textarea>
+        </div>
+        <div class="wiz-section">
+          <label style="display:flex; align-items:center; gap:8px; color:var(--text); font-size:13px; cursor:pointer;">
+            <input id="wiz-exemplar" type="checkbox" />
+            Mark this session as an exemplar (high-quality reference batch)
+          </label>
+        </div>
+        <div class="wiz-actions">
+          <button class="btn btn-secondary btn-sm" onclick="wizBackToReview()">← Back</button>
+          <div style="flex:1;"></div>
+          <button class="btn btn-secondary" onclick="wizDownloadCsv()">Download bulk CSV</button>
+          <button class="btn btn-primary" onclick="wizSubmit()">Submit session</button>
+        </div>
+      </div>
+
+      <!-- Phase 4: Done -->
+      <div id="wiz-phase-done" class="wiz-phase">
+        <div class="wiz-done">
+          <div class="wiz-done-icon">✓</div>
+          <div class="wiz-done-title">Session submitted</div>
+          <div id="wiz-done-sub" class="wiz-done-sub"></div>
+        </div>
+        <div class="wiz-actions" style="justify-content:center;">
+          <button class="btn btn-secondary" onclick="wizDownloadCsv()">Download bulk CSV</button>
+          <button class="btn btn-primary" onclick="wizClose()">Close</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -12487,6 +12790,398 @@ function mktRenderDetail(keyword, asin, d) {
       </div>
       ${cards}
     </div>`;
+}
+
+// ════════════ Day-1 Keyword Wizard ═════════════════════════════
+const wizState = {
+  sessionId: null,
+  asin: '',
+  candidates: [],          // [{...candidate, _decision: null|accept|edit|reject|comment, _editedKeyword, _editedMatch, _comment, _scope, _logged }]
+  themeFilter: '',
+  searchFilter: '',
+  phase: 'setup',          // setup | review | submit | done
+};
+
+function wizOpen() {
+  wizState.sessionId = null;
+  wizState.asin = '';
+  wizState.candidates = [];
+  wizState.themeFilter = '';
+  wizState.searchFilter = '';
+  ['wiz-asin', 'wiz-product-type', 'wiz-style-name', 'wiz-notes'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const cnt = document.getElementById('wiz-count'); if (cnt) cnt.value = '40';
+  const exem = document.getElementById('wiz-exemplar'); if (exem) exem.checked = false;
+  wizGoPhase('setup');
+  document.getElementById('wiz-modal')?.classList.add('open');
+  setTimeout(() => document.getElementById('wiz-asin')?.focus(), 100);
+}
+
+function wizClose() {
+  document.getElementById('wiz-modal')?.classList.remove('open');
+  // If we landed in 'done' or user cancels mid-flow, refresh marketing list so any
+  // newly-accepted keywords show up.
+  if (wizState.sessionId) {
+    try { mktRefresh(); } catch (e) {}
+  }
+}
+
+function wizMaybeClose(e) {
+  // Click outside the panel = close. Disable when on review/submit to avoid losing decisions accidentally.
+  if (e && e.target && e.target.id !== 'wiz-modal') return;
+  if (wizState.phase === 'review' || wizState.phase === 'submit') {
+    if (!confirm('Close the wizard? Decisions you have already logged will remain in the substrate, but un-logged candidates will be discarded.')) return;
+  }
+  wizClose();
+}
+
+function wizGoPhase(phase) {
+  wizState.phase = phase;
+  ['setup', 'review', 'submit', 'done'].forEach(p => {
+    document.getElementById('wiz-phase-' + p)?.classList.toggle('active', p === phase);
+  });
+  const titles = {
+    setup:  'Set up a new ASIN',
+    review: `Review candidates · ${escHtml(wizState.asin)}`,
+    submit: 'Reflect and submit',
+    done:   'Session complete',
+  };
+  document.getElementById('wiz-title').innerHTML = titles[phase] || '';
+  const steps = { setup: '1 of 4', review: '2 of 4', submit: '3 of 4', done: '4 of 4' };
+  document.getElementById('wiz-progress').textContent = 'Step ' + (steps[phase] || '');
+}
+
+function wizBackToSetup() { wizGoPhase('setup'); }
+function wizBackToReview() { wizGoPhase('review'); wizRenderCandidates(); }
+function wizGoSubmit() {
+  const counts = wizCounts();
+  if (counts.accept + counts.edit + counts.reject + counts.comment === 0) {
+    if (!confirm('No decisions logged yet. Continue to submit anyway?')) return;
+  }
+  wizRenderSubmitSummary();
+  wizGoPhase('submit');
+}
+
+async function wizGenerate() {
+  const asin = document.getElementById('wiz-asin').value.trim().toUpperCase();
+  if (!asin) { alert('ASIN is required.'); document.getElementById('wiz-asin').focus(); return; }
+  if (!/^B0[A-Z0-9]{8}$/.test(asin)) {
+    if (!confirm(`'${asin}' doesn't look like a standard ASIN (B0 + 8 chars). Continue anyway?`)) return;
+  }
+  const productType = document.getElementById('wiz-product-type').value.trim();
+  const styleName = document.getElementById('wiz-style-name').value.trim();
+  const count = parseInt(document.getElementById('wiz-count').value || '40', 10);
+  // 1) Open the session
+  const startBtn = document.querySelector('#wiz-phase-setup .btn-primary');
+  const originalLabel = startBtn ? startBtn.textContent : '';
+  if (startBtn) { startBtn.disabled = true; startBtn.textContent = 'Opening session…'; }
+  try {
+    const sr = await fetch('/api/atlas/marketing/wizard/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asin }),
+    });
+    const sd = await sr.json();
+    if (!sd.ok) { alert('Could not open session: ' + (sd.error || 'unknown')); return; }
+    wizState.sessionId = sd.session_id;
+    wizState.asin = asin;
+    if (startBtn) startBtn.textContent = 'Generating candidates…';
+    const gr = await fetch('/api/atlas/marketing/wizard/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asin, product_type: productType, style_name: styleName, target_count: count }),
+    });
+    const gd = await gr.json();
+    if (!gd.ok) { alert('Generation failed: ' + (gd.error || 'unknown')); return; }
+    wizState.candidates = (gd.candidates || []).map(c => ({
+      ...c,
+      _decision: null, _editedKeyword: c.keyword, _editedMatch: c.match_type,
+      _comment: '', _scope: 'just_this', _logged: false,
+    }));
+    wizRenderReviewSummary(gd);
+    wizRenderCandidates();
+    wizGoPhase('review');
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  } finally {
+    if (startBtn) { startBtn.disabled = false; startBtn.textContent = originalLabel; }
+  }
+}
+
+function wizRenderReviewSummary(gd) {
+  const el = document.getElementById('wiz-review-summary');
+  if (!el) return;
+  const sourceLabel = gd.source === 'llm'
+    ? '<span style="color:#22c55e;">LLM-generated</span>'
+    : '<span style="color:#f59e0b;">rule-based fallback (no LLM)</span>';
+  el.innerHTML = `
+    <span><strong>ASIN:</strong>${escHtml(wizState.asin)}</span>
+    <span><strong>Candidates:</strong>${wizState.candidates.length}</span>
+    <span><strong>Sibling keywords used:</strong>${gd.siblings_used || 0}</span>
+    <span><strong>Source:</strong>${sourceLabel}</span>
+    ${gd.brand_profile_version ? `<span><strong>Brand profile:</strong>${escHtml(gd.brand_profile_version)}</span>` : ''}
+  `;
+}
+
+function wizSetTheme(theme) {
+  wizState.themeFilter = theme;
+  document.querySelectorAll('.wiz-chip').forEach(c => {
+    c.classList.toggle('active', c.getAttribute('data-theme') === theme);
+  });
+  wizFilterRender();
+}
+
+function wizFilterRender() {
+  wizState.searchFilter = (document.getElementById('wiz-search')?.value || '').toLowerCase();
+  wizRenderCandidates();
+}
+
+function wizFilteredIndices() {
+  return wizState.candidates
+    .map((c, i) => ({c, i}))
+    .filter(({c}) => {
+      if (wizState.themeFilter && c.theme !== wizState.themeFilter) return false;
+      if (wizState.searchFilter && !(c.keyword || '').toLowerCase().includes(wizState.searchFilter)) return false;
+      return true;
+    })
+    .map(({i}) => i);
+}
+
+function wizCounts() {
+  const out = { accept: 0, edit: 0, reject: 0, comment: 0, pending: 0 };
+  wizState.candidates.forEach(c => {
+    if (c._decision) out[c._decision] = (out[c._decision] || 0) + 1;
+    else out.pending++;
+  });
+  return out;
+}
+
+function wizRenderCandidates() {
+  const listEl = document.getElementById('wiz-candidates');
+  const countsEl = document.getElementById('wiz-counts');
+  if (!listEl) return;
+  const indices = wizFilteredIndices();
+  if (!indices.length) {
+    listEl.innerHTML = '<div class="memory-empty">No candidates match the current filters.</div>';
+  } else {
+    listEl.innerHTML = indices.map(i => wizRenderCard(i, wizState.candidates[i])).join('');
+  }
+  const c = wizCounts();
+  if (countsEl) {
+    countsEl.innerHTML = `Showing ${indices.length} / ${wizState.candidates.length} · ✓ ${c.accept} · ✎ ${c.edit} · ✕ ${c.reject} · ✍ ${c.comment} · pending ${c.pending}`;
+  }
+}
+
+function wizRenderCard(i, c) {
+  const decision = c._decision || '';
+  const editing = decision === 'edit';
+  const confidence = (c.confidence != null) ? Math.round(c.confidence * 100) + '%' : '';
+  const bidStr = `<strong>$${(c.suggested_bid_low || 0).toFixed(2)} – $${(c.suggested_bid_high || 0).toFixed(2)}</strong>`;
+  const bidDisclaimer = c.has_history
+    ? `<span class="wiz-card-bid-disclaimer">anchored on existing CPC · ACOS ${c.existing_acos != null ? (c.existing_acos * 100).toFixed(0) + '%' : '?'}</span>`
+    : `<span class="wiz-card-bid-disclaimer">starting range · no historical data</span>`;
+  const themeTag = c.theme ? `<span class="wiz-tag" data-theme="${escHtml(c.theme)}">${escHtml(c.theme)}</span>` : '';
+  const historyTag = c.has_history ? '<span class="wiz-tag" data-history="true">has history</span>' : '';
+  const matchTag = c.match_type ? `<span class="wiz-tag">${escHtml(c.match_type)}</span>` : '';
+  return `
+    <div class="wiz-card${editing ? ' editing' : ''}" data-decision="${escHtml(decision)}" data-i="${i}">
+      <div class="wiz-card-head">
+        <div class="wiz-card-kw">${escHtml(c.keyword)}</div>
+        <div class="wiz-card-meta">
+          ${matchTag}${themeTag}${historyTag}
+          ${confidence ? `<span class="wiz-tag">conf ${escHtml(confidence)}</span>` : ''}
+        </div>
+      </div>
+      ${c.rationale ? `<div class="wiz-card-rationale">${escHtml(c.rationale)}</div>` : ''}
+      <div class="wiz-card-bid">Suggested bid: ${bidStr}${bidDisclaimer}</div>
+      <div class="wiz-card-actions">
+        <button class="wiz-action-btn" ${decision === 'accept'  ? 'data-active="accept"'  : ''} onclick="wizAct(${i}, 'accept')">Accept</button>
+        <button class="wiz-action-btn" ${decision === 'edit'    ? 'data-active="edit"'    : ''} onclick="wizAct(${i}, 'edit')">Edit</button>
+        <button class="wiz-action-btn" ${decision === 'reject'  ? 'data-active="reject"'  : ''} onclick="wizAct(${i}, 'reject')">Reject</button>
+        <button class="wiz-action-btn" ${decision === 'comment' ? 'data-active="comment"' : ''} onclick="wizAct(${i}, 'comment')">Comment</button>
+      </div>
+      <div class="wiz-card-edit">
+        <div class="wiz-card-edit-row">
+          <span class="wiz-card-edit-label">Keyword</span>
+          <input type="text" value="${escHtml(c._editedKeyword || c.keyword)}" oninput="wizUpdateField(${i}, '_editedKeyword', this.value)" />
+        </div>
+        <div class="wiz-card-edit-row">
+          <span class="wiz-card-edit-label">Match</span>
+          <select onchange="wizUpdateField(${i}, '_editedMatch', this.value)">
+            ${['exact','phrase','broad'].map(m => `<option value="${m}" ${(c._editedMatch||c.match_type)===m?'selected':''}>${m}</option>`).join('')}
+          </select>
+        </div>
+        <div class="wiz-card-edit-row">
+          <span class="wiz-card-edit-label">Scope</span>
+          <select onchange="wizUpdateField(${i}, '_scope', this.value)">
+            <option value="just_this" ${(c._scope || 'just_this') === 'just_this' ? 'selected' : ''}>just this listing</option>
+            <option value="brand_always" ${c._scope === 'brand_always' ? 'selected' : ''}>brand-wide rule</option>
+            <option value="propose_rule" ${c._scope === 'propose_rule' ? 'selected' : ''}>propose rule for review</option>
+          </select>
+        </div>
+        <div class="wiz-card-edit-row">
+          <span class="wiz-card-edit-label">Why</span>
+          <input type="text" placeholder="why this edit?" value="${escHtml(c._comment || '')}" oninput="wizUpdateField(${i}, '_comment', this.value)" />
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button class="wiz-action-btn" data-active="edit" onclick="wizCommitEdit(${i})">Save edit</button>
+          <button class="wiz-action-btn" onclick="wizCancelEdit(${i})">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function wizUpdateField(i, field, value) {
+  if (!wizState.candidates[i]) return;
+  wizState.candidates[i][field] = value;
+}
+
+async function wizAct(i, action) {
+  const c = wizState.candidates[i];
+  if (!c) return;
+  if (action === 'edit') {
+    c._decision = 'edit';
+    wizRenderCandidates();
+    return;
+  }
+  if (action === 'comment') {
+    const text = prompt('Add a comment for: ' + c.keyword, c._comment || '');
+    if (text == null) return;
+    c._comment = text;
+    c._decision = 'comment';
+    await wizLogDecision(i, 'comment');
+    wizRenderCandidates();
+    return;
+  }
+  // accept / reject
+  c._decision = action;
+  await wizLogDecision(i, action);
+  wizRenderCandidates();
+}
+
+async function wizCommitEdit(i) {
+  const c = wizState.candidates[i];
+  if (!c) return;
+  const newKw = (c._editedKeyword || '').trim() || c.keyword;
+  if (newKw !== c.keyword) {
+    c.operator_value = { keyword: newKw, match_type: c._editedMatch || c.match_type };
+  } else if ((c._editedMatch || c.match_type) !== c.match_type) {
+    c.operator_value = { keyword: c.keyword, match_type: c._editedMatch };
+  }
+  c._decision = 'edit';
+  await wizLogDecision(i, 'edit');
+  // Close the edit panel by removing 'editing' state
+  const card = document.querySelector(`.wiz-card[data-i="${i}"]`);
+  if (card) card.classList.remove('editing');
+  wizRenderCandidates();
+}
+
+function wizCancelEdit(i) {
+  const c = wizState.candidates[i];
+  if (!c) return;
+  c._decision = null;
+  c._editedKeyword = c.keyword;
+  c._editedMatch = c.match_type;
+  wizRenderCandidates();
+}
+
+async function wizLogDecision(i, action) {
+  const c = wizState.candidates[i];
+  if (!c || !wizState.sessionId) return;
+  const payload = {
+    session_id: wizState.sessionId,
+    asin: wizState.asin,
+    candidate: {
+      keyword: c.keyword, match_type: c.match_type, theme: c.theme,
+      suggested_bid_low: c.suggested_bid_low, suggested_bid_high: c.suggested_bid_high,
+      rationale: c.rationale, has_history: c.has_history,
+      confidence: c.confidence,
+    },
+    action,
+    operator_value: c.operator_value || null,
+    scope: c._scope || 'just_this',
+    comment: c._comment || null,
+  };
+  try {
+    const r = await fetch('/api/atlas/marketing/wizard/decision', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (d.ok) c._logged = true;
+    else console.warn('decision write failed:', d.error);
+  } catch (e) {
+    console.warn('decision network error:', e);
+  }
+}
+
+function wizRenderSubmitSummary() {
+  const el = document.getElementById('wiz-submit-summary');
+  if (!el) return;
+  const c = wizCounts();
+  el.innerHTML = `
+    <div class="wiz-stat" data-kind="accept"><div class="wiz-stat-num">${c.accept}</div><div class="wiz-stat-label">Accepted</div></div>
+    <div class="wiz-stat" data-kind="edit"><div class="wiz-stat-num">${c.edit}</div><div class="wiz-stat-label">Edited</div></div>
+    <div class="wiz-stat" data-kind="reject"><div class="wiz-stat-num">${c.reject}</div><div class="wiz-stat-label">Rejected</div></div>
+    <div class="wiz-stat"><div class="wiz-stat-num">${c.pending}</div><div class="wiz-stat-label">No decision</div></div>
+  `;
+}
+
+async function wizSubmit() {
+  if (!wizState.sessionId) { alert('No session to submit.'); return; }
+  const notes = document.getElementById('wiz-notes')?.value.trim() || null;
+  const exemplar = !!document.getElementById('wiz-exemplar')?.checked;
+  try {
+    const r = await fetch('/api/atlas/marketing/wizard/submit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: wizState.sessionId, operator_notes: notes, exemplar }),
+    });
+    const d = await r.json();
+    if (!d.ok) { alert('Submit failed: ' + (d.error || 'unknown')); return; }
+    const c = wizCounts();
+    const sub = document.getElementById('wiz-done-sub');
+    if (sub) sub.innerHTML = `Session <code>${escHtml(wizState.sessionId.slice(0, 8))}</code> recorded for ASIN <strong>${escHtml(wizState.asin)}</strong>.<br/>Accepted ${c.accept} · edited ${c.edit} · rejected ${c.reject}. View it in <a href="javascript:wizClose(); setTimeout(showMemoryPage, 100);">Memory</a>.`;
+    wizGoPhase('done');
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  }
+}
+
+async function wizDownloadCsv() {
+  // Build the accepted list from candidates with _decision === 'accept' or 'edit'
+  const accepted = wizState.candidates
+    .filter(c => c._decision === 'accept' || c._decision === 'edit')
+    .map(c => {
+      if (c._decision === 'edit' && c.operator_value) {
+        return {
+          keyword: c.operator_value.keyword || c.keyword,
+          match_type: c.operator_value.match_type || c.match_type,
+          suggested_bid_low: c.suggested_bid_low,
+          suggested_bid_high: c.suggested_bid_high,
+        };
+      }
+      return {
+        keyword: c.keyword, match_type: c.match_type,
+        suggested_bid_low: c.suggested_bid_low,
+        suggested_bid_high: c.suggested_bid_high,
+      };
+    });
+  if (!accepted.length) { alert('No accepted or edited candidates to export.'); return; }
+  try {
+    const r = await fetch('/api/atlas/marketing/wizard/export', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asin: wizState.asin, accepted }),
+    });
+    if (!r.ok) { alert('Export failed: ' + r.status); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `atlas_day1_${wizState.asin}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  }
 }
 
 function showMergePage() {
