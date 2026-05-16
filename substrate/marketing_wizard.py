@@ -232,18 +232,38 @@ Keep each keyword between 2 and 60 characters.
 
 
 def _parse_llm_candidates(raw: str) -> list[dict[str, Any]]:
-    """Parse the LLM's JSON output, tolerating code fences and partial output."""
+    """Parse the LLM's JSON output, tolerating code fences and partial output.
+
+    Three-stage parse:
+      1. Strip markdown fences.
+      2. Try the whole thing as a single JSON array.
+      3. On failure, scan for individual `{...}` blocks and parse each
+         independently — this salvages partial output when the LLM
+         truncates mid-list (which Haiku does occasionally under tight
+         token budgets).
+    """
     raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
     raw = re.sub(r"```\s*$", "", raw, flags=re.MULTILINE).strip()
-    # Find the first JSON array.
-    m = re.search(r"\[\s*\{.*\}\s*\]", raw, flags=re.DOTALL)
+    data: list[Any] = []
+    # Stage 1: whole-array parse
+    m = re.search(r"\[\s*\{.*?\}\s*\]", raw, flags=re.DOTALL)
     if m:
-        raw = m.group(0)
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        return []
-    if not isinstance(data, list):
+        try:
+            d = json.loads(m.group(0))
+            if isinstance(d, list):
+                data = d
+        except json.JSONDecodeError:
+            data = []
+    # Stage 2: object-by-object salvage (truncated output)
+    if not data:
+        for obj_match in re.finditer(r"\{[^{}]*\}", raw, flags=re.DOTALL):
+            try:
+                item = json.loads(obj_match.group(0))
+                if isinstance(item, dict) and item.get("keyword"):
+                    data.append(item)
+            except json.JSONDecodeError:
+                continue
+    if not data:
         return []
     out: list[dict[str, Any]] = []
     for item in data:
@@ -372,7 +392,11 @@ def generate_candidates(
             # request layer cuts at ~30s, so we keep generation snappy:
             # for target_count > 25 we still budget enough headroom (50
             # tokens/candidate + JSON overhead).
-            tokens_budget = max(800, min(3000, 60 * target_count))
+            # ~80 tokens per candidate (keyword + match_type + theme +
+            # confidence + rationale + JSON formatting). Bumped from 60
+            # because Haiku rationales sometimes ran long enough that
+            # 15-candidate generations got truncated.
+            tokens_budget = max(1200, min(4000, 90 * target_count))
             # Model fallback chain. Prefer the faster Haiku tier for
             # keyword brainstorming (structured JSON from a clear prompt
             # is squarely in Haiku's wheelhouse), but fall back to
