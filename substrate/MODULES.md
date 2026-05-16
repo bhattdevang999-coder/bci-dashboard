@@ -1,0 +1,169 @@
+# Atlas Modules — Strategy Map
+
+> Reference for what exists, what's stub, what's deferred. Source of truth for "is X built yet?" questions. Permanent — versioned at the bottom, never rewritten in place.
+> Last full audit: 2026-05-16, SHA `2b75615`
+
+This file is for the team. When someone asks "does Atlas do X?", point them here before they go read 20,000 lines of `app.py`.
+
+---
+
+## Classification system
+
+Every module is labeled with three orthogonal attributes, not one stage.
+
+| Attribute | Values | What it means |
+|---|---|---|
+| **State** | `live` / `beta` / `stub` / `placeholder` | Does it work end-to-end? |
+| **Substrate** | `full` / `partial` / `none` / `n/a` | Does it write to `decision_event` + operator_response + sessions? |
+| **Closed-loop ready** | `yes` / `partial` / `no` | Will Phase 2 attribution be able to read its data? |
+
+A module can be `live` but have `none` substrate (looks done, isn't substrate-native). A module can be `stub` but have `full` substrate (rare — the substrate was built first). Both situations exist in the codebase right now.
+
+---
+
+## Module inventory (today)
+
+### Core platform (no `Create/Monitor/Manage/Promote` section)
+
+| Module | State | Substrate | Closed-loop | Notes |
+|---|---|---|---|---|
+| **Home** (`showAtlasPage`) | live | n/a | n/a | Module switcher landing page. Not a workflow. |
+| **Inputs** (`showInputsPage`) | live | full | yes | Unified dropzone + `ingestion_records` audit + freshness bar. Phase 1 Week 1. |
+| **Memory** (`showMemoryPage`) | live | full | yes | Sessions sub-tab + Decisions sub-tab. Reads `substrate_events`, `substrate_sessions`. Phase 1 Week 2. |
+| **Marketing** (`showMarketingPage`) | live | full | yes | Keyword library + Day-1 wizard + Budget sub-tab. Writes module=marketing and module=budget decision events. |
+| **User directions** (`/docs/onboarding`) | live | n/a | n/a | Static doc with English/Urdu/Bangla toggle. |
+
+### `01 Create` — listing creation
+
+| Module | State | Substrate | Closed-loop | Notes |
+|---|---|---|---|---|
+| **Bulk Upload** (`showNISPage`) | live | **full** (as of `2b75615`) | yes | 4-step flow. Logs 8 fields × N styles per batch. Now anchors with ASIN for pre_change_snapshot capture. Visual shell predates current design system (cosmetic re-skin still pending). |
+| **Image → NIS** (`showBetaImageNISPage`) | beta | none | no | Endpoints under `/api/beta-image-nis/*`. Photo-driven NIS generation. **No decision_events written today** — this is a real gap. Listed as a one-off retrofit alongside the modules strategy map. |
+| **Photo Brief** | placeholder | n/a | n/a | Sidebar item routes to `showPreviewPage('photo-brief')` — coming-soon teaser, no logic. |
+| **Voice Tuner** | placeholder | n/a | n/a | Same — teaser only. |
+
+### `02 Monitor` — catalog hygiene
+
+| Module | State | Substrate | Closed-loop | Notes |
+|---|---|---|---|---|
+| **Catalog Health** (`showCatalogPage`) | live | partial | partial | Substrate writes happen, but as rolled-up findings (one event per issue category, not per ASIN). Closed-loop can read aggregate severity but not per-ASIN attribution. Acceptable for v1 — would need refactor to go full per-ASIN. |
+| **Suppression Watch** | placeholder | n/a | n/a | Teaser. |
+| **Image Audit** | placeholder | n/a | n/a | Teaser. |
+| **Compliance** | placeholder | n/a | n/a | Teaser. |
+
+### `03 Manage` — listing operations
+
+| Module | State | Substrate | Closed-loop | Notes |
+|---|---|---|---|---|
+| **Bulk Price Sync** | placeholder | n/a | n/a | Teaser. |
+| **Content Refresh** | placeholder | n/a | n/a | Teaser. |
+| **Variations** (`showMergePage`) | live | **none** | no | Endpoints under `/api/merge/*`. Parent/child reconciliation flow. **No substrate writes** — every accept/reject is invisible to Memory. Real gap. |
+| **A/B Test** | placeholder | n/a | n/a | Teaser. |
+
+### `04 Promote` — ads + traffic
+
+| Module | State | Substrate | Closed-loop | Notes |
+|---|---|---|---|---|
+| **Ad Bulksheet** | placeholder | n/a | n/a | Teaser. The "real" PPC build now lives under Marketing → Wizard → batch export. This sidebar item is a leftover. **Recommend: delete or rename.** |
+| **Keywords** | placeholder | n/a | n/a | Teaser. Same caveat — the real one lives under Marketing. |
+| **PDP Optimizer** | placeholder | n/a | n/a | Teaser. |
+| **Reviews** | placeholder | n/a | n/a | Teaser. Earlier proof-of-concept (`novelle-reviews`) sat in a tiiny artifact, not in app. |
+| **Recommendations** (`showIntelPage`) | live (hidden) | **none** | no | Endpoint `/api/intel/accept` exists. Sidebar entry is `style="display:none;"` so it's not visible. Not used in current flow. |
+
+### `∇ Lab` — experimental
+
+| Module | State | Substrate | Closed-loop | Notes |
+|---|---|---|---|---|
+| **Listing Lab** (`showLabGridPage`) | beta | **none** | no | Endpoints under `/api/lab/*`. Grid-based NIS variant generation. No substrate writes. Lower priority — this is an internal R&D surface, not an operator workflow. |
+
+### `Admin`
+
+| Module | State | Substrate | Closed-loop | Notes |
+|---|---|---|---|---|
+| **Inspect Rules** (`showEnginePage`) | live | n/a | n/a | Read-only inspection of the NIS rule engine. No writes. |
+
+---
+
+## Substrate write call-sites (the whole list)
+
+Counted from `app.py` plus the `substrate/budget.py` self-write. Three call sites in app.py + one in budget = four total places where `log_field_decision` runs:
+
+| File · line | Module written | When it fires |
+|---|---|---|
+| `app.py:3676` | `Module.NIS` | Each style during `/api/generate-content` |
+| `app.py:9596` | `Module.CATALOG_HEALTH` | Per issue category after catalog analysis |
+| `app.py:11742` | `Module.MARKETING` | Per keyword candidate proposed by Day-1 wizard |
+| `substrate/budget.py:152` | `Module.BUDGET` | Per `set_budget` call (audit trail for monthly allocations) |
+
+Module enum values reserved but **not yet used**: `EXPERIMENTS`, `LEAK`, `OTHER`. They exist in `schema.py` so adding them later requires no migration.
+
+---
+
+## Real gaps (not opinions — actual missing wiring)
+
+These are the modules that present an operator UI but write **no** substrate. Anything done in them today is invisible to Memory and unrecoverable for Phase 2 attribution.
+
+| Module | What's lost | Estimated retrofit cost |
+|---|---|---|
+| **Image → NIS (beta)** | Every photo-driven NIS generation + every accept/reject of the LLM's output | Small — same shape as the Bulk Upload retrofit just shipped. Pass ASIN, log `module=NIS` decisions, wire frontend Accept/Edit/Reject to `/api/atlas/decision-response`. |
+| **Variations** | Every parent/child merge or split decision the operator approves | Small — single endpoint, single decision shape. Module enum value needed (`Module.VARIATIONS` doesn't exist yet — propose adding it). |
+| **Listing Lab** | Every variant generation attempt + which variant the operator picked | Small but lower priority — it's an R&D tool, not a daily workflow. Defer to after Image → NIS retrofit. |
+| **Recommendations** | Endpoint `/api/intel/accept` exists but the UI is hidden. If we re-enable it, substrate writes need to be added at the same time. | Small. Don't re-enable the nav item until this is done. |
+
+---
+
+## Sequencing — what to build, in what order
+
+Strict priority. Numbered so we can reference these as "Item 1", "Item 2".
+
+1. **Phase 2 closed-loop attribution** — the actual reason `pre_change_snapshot` exists. Read the snapshots we've started capturing, compare to current outcome_events, surface "your title change moved CVR by +X%" in the Memory tab. This is the next material build, not another module.
+2. **Image → NIS substrate retrofit** — the largest current data-loss surface. Beta users are clicking accept/reject on photo-driven generations every day with zero substrate capture.
+3. **Variations substrate retrofit** — second largest gap. Parent/child decisions are some of the highest-stakes operator calls in Atlas; they should be in Memory.
+4. **NIS page visual re-skin** — cosmetic. The Bulk Upload page works fine, it just doesn't share the Memory/Marketing/Budget design system. Standalone polish pass.
+5. **Catalog Health → per-ASIN substrate** — refactor from category roll-ups to per-ASIN decision_events. Only do this once Phase 2 needs per-ASIN granularity. Otherwise current aggregation is fine.
+6. **Sidebar cleanup** — delete the duplicate `Promote → Ad Bulksheet` and `Promote → Keywords` entries since the real flows live under Marketing now. Either delete or rename to "Coming soon (now under Marketing)".
+
+---
+
+## What's deliberately NOT being built (and why)
+
+These came up as ideas, were considered, and declined. Listed here so they don't get rebuilt by accident.
+
+| Idea | Why it was declined |
+|---|---|
+| **Operational cost tracking in Budget** | Strictly PPC for v1. Operational costs (photography, A+ design, content rewrites) muddy the attribution signal and the operator's planning cadence is different for them. Will reconsider after 3 months of Budget usage. |
+| **Sub-monthly budget granularity** | PPC has multi-day attribution tails; daily/weekly variance is statistical noise on small budgets. Month is the right grain for now. |
+| **Per-ASIN Budget UI** | Substrate already supports `scope_type='asin'` — UI just doesn't expose it. Add only when an operator demand is real, not preemptively. |
+| **Image library / photo memory** | Deferred from Phase 1 by an explicit decision. The substrate has `image_library` and `image_asin_links` tables ready, but no UI and no Phase 1 commitment to build one. Defer to Phase 2 prep. |
+| **Forecasting in Budget variance** | Variance compares actual to planned. We don't predict future actual from past data here — that's an analytics layer concern, not a substrate concern. |
+| **Forecasting in Memory tab** | Same principle. Memory is the audit trail. Predictions belong in a separate analytics surface. |
+| **Operator-feedback summarization via LLM** | The session-submit modal already captures structured 3/5/7 questions. Don't add an LLM summary layer until we actually have months of session data to summarize. |
+
+---
+
+## Glossary — terms used in the codebase
+
+This list isn't redundant — `schema.py` defines the data shapes, but the team uses these words in conversation and the meanings drift if they're not pinned down.
+
+| Term | Definition |
+|---|---|
+| **Atlas module** | A workflow surface in the sidebar (NIS Bulk Upload, Catalog Health, Marketing, etc.). One module typically owns one or more endpoints + one or more UI tabs. |
+| **Substrate** | The locked Postgres tables (`substrate_events`, `substrate_sessions`, `outcome_events`, `ingestion_records`, plus module-specific projections like `keyword_library` and `budget`). |
+| **decision_event** | The atom. One per operator-touching call Atlas makes. Carries `module`, `field_name`, `atlas_output`, `rules_injected`, `overall_confidence`, optional `pre_change_snapshot`. |
+| **operator_response** | The reply to a decision_event. `accept` / `edit` / `reject` / `view` / `add_comment`, with `scope` `none / just_this / batch / brand_always`. |
+| **session** | A grouped batch of decision_events from one operator sitting. NIS uploads, marketing wizard runs, catalog analyses all open sessions. |
+| **judgment_moment_event** | Detector output. Fires for `low_confidence`, `rule_override`, `in_session_pattern`. Surfaced as toasts during the flow; collected for Memory. |
+| **pre_change_snapshot** | The frozen before-state of an ASIN at decision time. The architecturally-irreversible piece. Empty when no outcome data exists for the ASIN. |
+| **STRATEGIC_FIELDS** | Set of field names that bypass the confidence/rule-density log filter. All 8 NIS user-visible fields are in this set. |
+| **scope** (operator action) | How the operator wants the action applied: `just_this` / `batch` / `brand_always` / `propose_rule`. Affects rule library promotion. |
+| **scope** (budget) | Which dimension a budget row covers: `overall` / `theme` / `asin`. |
+| **theme** (marketing/budget) | A keyword's strategic intent: `branded` / `feature` / `competitor`. Resolved at variance time via LATERAL join from `outcome_events.keyword` to the most-recent marketing decision_event proposing it. |
+| **workspace** | A brand. Single-tenant single-brand mode in v1 means it's always `novelle` (or whatever `ATLAS_VISIBLE_BRANDS` is set to). |
+
+---
+
+## Version history
+
+Append below this line. Do not edit entries above.
+
+- **v1.0 — 2026-05-16, SHA `2b75615`** — Initial strategy map. Audit conducted after the NIS substrate retrofit (pass ASIN to `log_field_decision`). 4 substrate-writing modules confirmed (NIS, Catalog Health, Marketing, Budget). 3 real gaps identified (Image → NIS, Variations, Listing Lab). 6-item sequencing list. Glossary pinned down.
