@@ -1,0 +1,16 @@
+{
+  "vendor_code_full": "",
+  "default_upf": "",
+  "default_coo": "",
+  "default_care": "Machine Wash Cold",
+  "gender": "Female",
+  "bullet_1_focus": "fabric_performance",
+  "never_words": [
+    "cheap",
+    "fast fashion",
+    "knockoff",
+    "basic"
+  ],
+  "_atlas_seed_v0": true,
+  "_atlas_note": "Initial Novelle config seeded May 16, 2026. Pre-launch. Voice fields require operator input before they're meaningful in NIS prompts. The brand_profile table in Postgres carries the canonical voice; this JSON exists only to register Novelle in the dashboard's brand list."
+}

@@ -392,6 +392,15 @@ try:
         with _atlas_pool.connection() as _atlas_conn:
             _atlas_apply_schema(_atlas_conn)
         print("[atlas] substrate Postgres schema applied", flush=True)
+        # Seed brand_profile rows for workspaces we operate on.
+        # Idempotent — existing profile_versions are not overwritten.
+        try:
+            from substrate.brand_profile_seed import seed_brand_profiles
+            _seeded = seed_brand_profiles()
+            if _seeded:
+                print(f"[atlas] seeded {_seeded} brand_profile row(s)", flush=True)
+        except Exception as _atlas_seed_exc:
+            print(f"[atlas] brand_profile seed skipped: {_atlas_seed_exc}", flush=True)
     else:
         print("[atlas] no DATABASE_URL set; substrate using JSONL backend", flush=True)
 except Exception as _atlas_boot_exc:
@@ -10953,13 +10962,54 @@ def _beta_build_draft_style(vision_intel, brand, brand_cfg, hints):
     return style, prov
 
 
+def _atlas_visible_brands_filter(brands: list[str]) -> list[str]:
+    """Apply the ATLAS_VISIBLE_BRANDS env-var allowlist.
+
+    When ATLAS_VISIBLE_BRANDS is set to a comma-separated list, only those
+    brands surface in UI dropdowns. The substrate data for other brands
+    is untouched — this is a UI hide, not an access control. Case-
+    insensitive match. Empty/unset means "show all" (legacy behavior).
+    """
+    allow = os.environ.get("ATLAS_VISIBLE_BRANDS", "").strip()
+    if not allow:
+        return brands
+    allowed = {b.strip().lower() for b in allow.split(",") if b.strip()}
+    return [b for b in brands if b.lower() in allowed]
+
+
 @app.route("/api/beta-image-nis/brands", methods=["GET"])
 def api_beta_image_nis_brands():
-    """Return the deduped, sorted list of brands the operator can pick."""
+    """Return the deduped, sorted list of brands the operator can pick.
+
+    Honours ATLAS_VISIBLE_BRANDS to hide brands the dashboard isn't
+    actively servicing. Substrate data for hidden brands is preserved.
+    """
     file_brands = [p.stem.replace('_', ' ') for p in BRAND_CONFIGS_DIR.glob('*.json')]
     in_mem = list(BRAND_CONFIGS.keys())
     deduped = sorted({b.strip() for b in (file_brands + in_mem) if b and b.strip()})
+    deduped = _atlas_visible_brands_filter(deduped)
     return jsonify({"ok": True, "brands": deduped})
+
+
+@app.route("/api/atlas/visible-brands", methods=["GET"])
+def api_atlas_visible_brands():
+    """Return the operator-facing brand list + the default brand.
+
+    The frontend uses this on page load to populate dropdowns and to
+    decide whether to pre-select a brand (only when there is exactly
+    one visible brand).
+    """
+    file_brands = [p.stem.replace('_', ' ') for p in BRAND_CONFIGS_DIR.glob('*.json')]
+    in_mem = list(BRAND_CONFIGS.keys())
+    deduped = sorted({b.strip() for b in (file_brands + in_mem) if b and b.strip()})
+    visible = _atlas_visible_brands_filter(deduped)
+    default = visible[0] if len(visible) == 1 else None
+    return jsonify({
+        "ok": True,
+        "brands": visible,
+        "default": default,
+        "single_brand_mode": default is not None,
+    })
 
 
 @app.route("/api/beta-image-nis/analyze", methods=["POST"])

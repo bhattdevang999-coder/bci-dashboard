@@ -11872,6 +11872,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     await fetch('/api/session-reset', { method: 'POST' });
   } catch(e) { /* ignore */ }
+
+  // Atlas single-brand mode: when ATLAS_VISIBLE_BRANDS exposes exactly one
+  // brand, pre-fill the brand input + auto-load its config so the operator
+  // doesn't have to type or pick anything before they can start working.
+  // Substrate data for hidden brands stays intact — this is UI polish.
+  try {
+    const r = await fetch('/api/atlas/visible-brands');
+    const d = await r.json();
+    if (d && d.ok && d.single_brand_mode && d.default) {
+      const brand = d.default;
+      const brandInput = document.getElementById('cfg-brand');
+      if (brandInput && !brandInput.value.trim()) {
+        brandInput.value = brand;
+        // Trigger the same flow the user would by typing it.
+        if (typeof onBrandConfigChange === 'function') {
+          onBrandConfigChange();
+        } else {
+          state.brand = brand;
+        }
+      }
+      // Track for any module that needs the default later.
+      window.__atlasDefaultBrand = brand;
+      window.__atlasSingleBrandMode = true;
+    }
+  } catch(e) { /* non-blocking; default-brand is convenience, not correctness */ }
 });
 
 
