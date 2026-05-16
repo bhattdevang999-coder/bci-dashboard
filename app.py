@@ -3658,6 +3658,15 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
                 _atlas_event_ids: dict[str, str] = {}
                 _atlas_rules_by_field: dict[str, list[dict]] = {}
                 _atlas_confidence_by_field: dict[str, float] = {}
+                # Pre-change snapshot anchor: the style's first variant
+                # ASIN is what closed-loop attribution joins against later.
+                # In Amazon's parent/child model the title + bullets are
+                # shared across variants, so any variant ASIN under the
+                # style anchors the comparison. We pick the first one
+                # deterministically; if no variants have an ASIN (Day-1
+                # listing for a new style), snapshot stays empty and the
+                # logger silently skips snapshot capture.
+                _atlas_asin = (first_variant.get("child_asin") or "").strip() or None
                 for _fname, _fval in _atlas_field_outputs:
                     if not _fval:
                         continue
@@ -3671,6 +3680,7 @@ def _run_content_generation_impl(brand, styles, brand_cfg, has_keywords, feedbac
                         rules_injected=_atlas_rules,
                         brand_profile_version=_atlas_brand_profile_version,
                         style_id=str(style_num),
+                        asin=_atlas_asin,
                     )
                     if _eid:
                         _atlas_event_ids[_fname] = _eid
