@@ -11571,6 +11571,122 @@ def atlas_brand_voice_save():
     return jsonify({"workspace_id": workspace_id, **result}), status
 
 
+# ────────────────────────────────────────────────────────────────
+# Unit Economics endpoints (Phase C: cost inputs / Phase D: margin rollup)
+# ────────────────────────────────────────────────────────────────
+
+@app.route("/api/atlas/unit-economics/costs", methods=["GET"])
+def atlas_unit_economics_list_costs():
+    """List all per-ASIN cost rows for the current workspace."""
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.cost_inputs import list_cost_inputs, read_overhead
+        rows = list_cost_inputs(workspace_id)
+        overhead = read_overhead(workspace_id)
+    except Exception as exc:
+        print(f"[atlas] cost list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "costs unavailable"}), 500
+    return jsonify({
+        "ok": True,
+        "workspace_id": workspace_id,
+        "rows": rows,
+        "overhead": overhead,
+    })
+
+
+@app.route("/api/atlas/unit-economics/costs/<asin>", methods=["GET"])
+def atlas_unit_economics_get_cost(asin: str):
+    """Return the cost row for one ASIN (well-formed empty payload if none)."""
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.cost_inputs import read_cost_input
+        row = read_cost_input(workspace_id, asin)
+    except Exception as exc:
+        print(f"[atlas] cost read failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "cost read unavailable"}), 500
+    return jsonify(row)
+
+
+@app.route("/api/atlas/unit-economics/costs/<asin>", methods=["POST"])
+def atlas_unit_economics_save_cost(asin: str):
+    """Upsert a per-ASIN cost row.
+
+    JSON body accepts (all optional, missing keys preserve previous):
+      landed_cost, fba_fee, third_pl_fee, referral_pct, map_price, notes
+
+    Numeric fields tolerant-parse $, %, commas. Empty string → None
+    ("not on file"). Operator-typed zero is a real zero.
+    """
+    workspace_id = _atlas_current_workspace()
+    payload = request.get_json(silent=True) or {}
+    try:
+        from substrate.cost_inputs import save_cost_input
+        operator_id = (request.cookies.get(_ATLAS_OPERATOR_COOKIE) or "").strip() or None
+        result = save_cost_input(workspace_id, asin, payload, operator_id=operator_id)
+    except Exception as exc:
+        print(f"[atlas] cost save failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    status = 200 if result.get("ok") else 400
+    return jsonify(result), status
+
+
+@app.route("/api/atlas/unit-economics/overhead", methods=["GET"])
+def atlas_unit_economics_get_overhead():
+    """Brand-level fixed overhead (Model 1: above-the-line)."""
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.cost_inputs import read_overhead
+        row = read_overhead(workspace_id)
+    except Exception as exc:
+        print(f"[atlas] overhead read failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "overhead unavailable"}), 500
+    return jsonify(row)
+
+
+@app.route("/api/atlas/unit-economics/overhead", methods=["POST"])
+def atlas_unit_economics_save_overhead():
+    """Save brand-level fixed overhead.
+
+    JSON body: { fixed_overhead_monthly, notes }
+    """
+    workspace_id = _atlas_current_workspace()
+    payload = request.get_json(silent=True) or {}
+    try:
+        from substrate.cost_inputs import save_overhead
+        operator_id = (request.cookies.get(_ATLAS_OPERATOR_COOKIE) or "").strip() or None
+        result = save_overhead(workspace_id, payload, operator_id=operator_id)
+    except Exception as exc:
+        print(f"[atlas] overhead save failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    status = 200 if result.get("ok") else 400
+    return jsonify(result), status
+
+
+@app.route("/api/atlas/unit-economics/margin", methods=["GET"])
+def atlas_unit_economics_margin():
+    """Per-ASIN-per-month margin rollup.
+
+    Query params:
+      period   YYYY-MM filter (optional)
+      asin     single-ASIN filter (optional)
+
+    Returns three margin columns per row:
+      contribution_margin_per_unit, tacos, net_after_ads_per_unit.
+    Honest about gaps: contribution is None when costs incomplete.
+    """
+    workspace_id = _atlas_current_workspace()
+    period = (request.args.get("period") or "").strip() or None
+    asin = (request.args.get("asin") or "").strip() or None
+    try:
+        from substrate.margin import margin_rollup, list_periods
+        roll = margin_rollup(workspace_id, period=period, asin=asin)
+        periods = list_periods(workspace_id)
+    except Exception as exc:
+        print(f"[atlas] margin rollup failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "margin unavailable"}), 500
+    return jsonify({**roll, "available_periods": periods})
+
+
 @app.route("/api/atlas/memory/decisions/<event_id>/confound", methods=["GET"])
 def atlas_memory_decision_confound(event_id: str):
     """Confound view for one decision_event.

@@ -470,3 +470,60 @@ CREATE INDEX IF NOT EXISTS idx_budget_workspace_scope
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v4', 'Add budget table for PPC budget tracking (Phase 1).')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- Unit Economics (Phase C): operator-supplied cost inputs.
+--
+-- One row per (workspace_id, asin). Costs are entered manually by the
+-- operator; Atlas does not infer them. Empty fields are nullable, not
+-- zero — a missing landed_cost means "not on file", not "$0".
+--
+-- Why a dedicated table (not brand_profile.custom): per-ASIN granularity
+-- + need to version cost changes the same way Brand Voice versions, so
+-- Memory can answer "when did landed cost change?".
+--
+-- Every save also writes a decision_event with module='unit_economics',
+-- field_name='cost_input' so the audit trail in Memory carries the
+-- intent the same way it carries listing intent and voice intent.
+-- ===========================================================================
+
+CREATE TABLE IF NOT EXISTS cost_inputs (
+    workspace_id     TEXT        NOT NULL,
+    asin             TEXT        NOT NULL,
+    landed_cost      NUMERIC(12, 4),                          -- per-unit COGS landed
+    fba_fee          NUMERIC(12, 4),                          -- per-unit FBA fulfilment fee
+    third_pl_fee     NUMERIC(12, 4),                          -- per-unit 3PL prep/storage
+    referral_pct     NUMERIC(6, 4),                           -- Amazon referral % (default 0.15)
+    map_price        NUMERIC(12, 2),                          -- minimum advertised price
+    notes            TEXT,
+    revision         INTEGER     NOT NULL DEFAULT 1,
+    set_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    set_by           TEXT,                                    -- operator_id
+    meta             JSONB DEFAULT '{}'::jsonb,
+    PRIMARY KEY (workspace_id, asin)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cost_inputs_workspace
+    ON cost_inputs (workspace_id, set_at DESC);
+
+
+-- Brand-level overhead. One row per workspace. Used for the rollup
+-- "fixed_overhead_monthly" line above the contribution-margin table.
+-- Per Model 1 (UNIT_ECONOMICS.md): fixed costs are NEVER pushed into
+-- per-unit contribution margin — they sit above the line at the brand
+-- level.
+
+CREATE TABLE IF NOT EXISTS brand_overhead (
+    workspace_id          TEXT           NOT NULL PRIMARY KEY,
+    fixed_overhead_monthly NUMERIC(12, 2),
+    notes                 TEXT,
+    revision              INTEGER        NOT NULL DEFAULT 1,
+    set_at                TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    set_by                TEXT,
+    meta                  JSONB DEFAULT '{}'::jsonb
+);
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v5', 'Unit Economics Phase C: cost_inputs + brand_overhead.')
+    ON CONFLICT (version) DO NOTHING;

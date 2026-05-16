@@ -160,7 +160,9 @@ def wipe_substrate_for_tests() -> None:
                     brand_profile,
                     ingestion_records,
                     keyword_library,
-                    budget
+                    budget,
+                    cost_inputs,
+                    brand_overhead
                 RESTART IDENTITY CASCADE
                 """
             )

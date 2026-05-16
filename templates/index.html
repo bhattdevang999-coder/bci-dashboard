@@ -3072,6 +3072,80 @@
   margin: 0; max-height: 320px; overflow-y: auto;
 }
 
+/* ═══ Unit Economics editor + rollup (Phase 1.5) ═══ */
+.ue-tabs { display: flex; gap: 4px; margin: 16px 0 8px; border-bottom: 1px solid var(--border); }
+.ue-tab {
+  padding: 8px 16px; font-size: 13px; font-weight: 600;
+  color: var(--text-sec); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.ue-tab:hover { color: var(--text); }
+.ue-tab.ue-tab-active { color: var(--text); border-bottom-color: var(--accent); }
+.ue-toolbar {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; margin: 14px 0;
+  flex-wrap: wrap;
+}
+.ue-toolbar label { font-size: 12px; color: var(--text-sec); font-weight: 600; margin-right: 4px; }
+.ue-toolbar select, .ue-toolbar input {
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px; font-size: 13px; font-family: inherit;
+}
+.ue-table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 0; margin-top: 8px;
+  overflow-x: auto;
+}
+.ue-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ue-table th, .ue-table td {
+  padding: 8px 10px; text-align: right; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.ue-table th {
+  font-size: 11px; color: var(--text-sec); text-transform: uppercase;
+  letter-spacing: 0.04em; font-weight: 700; background: var(--bg);
+  position: sticky; top: 0;
+}
+.ue-table th:first-child, .ue-table td:first-child,
+.ue-table th:nth-child(2), .ue-table td:nth-child(2) { text-align: left; }
+.ue-table td.ue-num-bad { color: #b8420f; }
+.ue-table td.ue-num-good { color: #2f7a4a; }
+.ue-table td.ue-num-na { color: var(--text-sec); font-style: italic; }
+.ue-table tr.ue-row-warn td:first-child { box-shadow: inset 2px 0 0 #b8420f; }
+.ue-cost-form { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: end; }
+@media (max-width: 900px) { .ue-cost-form { grid-template-columns: 1fr; } }
+.ue-totals {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 14px;
+}
+@media (max-width: 900px) { .ue-totals { grid-template-columns: 1fr 1fr; } }
+.ue-total-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px;
+}
+.ue-total-card .lbl { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.ue-total-card .val { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.ue-total-card .sub { font-size: 11px; color: var(--text-sec); margin-top: 2px; }
+.ue-callout {
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px; padding: 12px 14px; font-size: 12px;
+  color: var(--text-sec); margin: 12px 0;
+}
+.ue-empty {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 36px 24px;
+  text-align: center; color: var(--text-sec); font-size: 13px;
+}
+.ue-badge {
+  display: inline-block; padding: 1px 6px; border-radius: 99px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; margin-left: 6px;
+}
+.ue-badge-warn { background: rgba(184, 66, 15, 0.12); color: #b8420f; }
+.ue-badge-ok   { background: rgba(47, 122, 74, 0.12); color: #2f7a4a; }
+
 /* ═══ Confound view (Phase 1.5) ═══ */
 .cv-toggle {
   display: inline-flex; align-items: center; gap: 6px;
@@ -6151,6 +6225,9 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="nav-item-atlas" id="nav-brand-voice" onclick="showBrandVoicePage()">
       <span class="atlas-dot"></span> Brand Voice
     </div>
+    <div class="nav-item-atlas" id="nav-unit-economics" onclick="showUnitEconomicsPage()">
+      <span class="atlas-dot"></span> Unit Economics
+    </div>
     <div class="nav-section-divider"></div>
     <div class="nav-label">
       <span class="nav-module-num">01</span> Create
@@ -7403,6 +7480,128 @@ best seller"></textarea>
         <pre id="bv-prompt-preview" class="bv-prompt-preview">(loading)</pre>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ════════════ UNIT ECONOMICS PAGE (Phase 1.5 · Step C+D) ════════════ -->
+  <div id="unit-economics-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Unit Economics</h1>
+      <div class="page-hero-sub">
+        Per-ASIN cost inputs and margin rollup. Costs are operator-supplied — Atlas does not infer landed cost, FBA fee, 3PL fee, or MAP. Empty fields display as “not on file,” never as $0. Margin shows three columns side by side: contribution / TACOS / net-after-ads.
+      </div>
+    </div>
+
+    <div class="ue-tabs">
+      <div class="ue-tab ue-tab-active" id="ue-tab-margin" onclick="ueSwitchTab('margin')">Margin rollup</div>
+      <div class="ue-tab" id="ue-tab-costs" onclick="ueSwitchTab('costs')">Cost inputs</div>
+      <div class="ue-tab" id="ue-tab-overhead" onclick="ueSwitchTab('overhead')">Brand overhead</div>
+    </div>
+
+    <!-- ====== MARGIN ROLLUP TAB ====== -->
+    <div id="ue-pane-margin" class="ue-pane">
+      <div class="ue-toolbar">
+        <label>Period</label>
+        <select id="ue-period-select" onchange="ueLoadMargin()">
+          <option value="">All periods</option>
+        </select>
+        <label style="margin-left:12px;">ASIN</label>
+        <input id="ue-asin-filter" type="text" placeholder="filter by ASIN" onchange="ueLoadMargin()" style="width:140px;" />
+        <button class="btn btn-secondary btn-sm" onclick="ueLoadMargin()" style="margin-left:auto;">Refresh</button>
+      </div>
+      <div class="ue-callout">
+        <strong>Contribution margin</strong> = avg selling price − landed − FBA − 3PL − referral. Excludes ad spend (shown separately). Excludes fixed overhead (sits above the line). <strong>Net-after-ads</strong> subtracts ad spend per unit. <strong>TACOS</strong> is ad spend ÷ total revenue. Where costs are not on file, contribution is blank — never zero.
+      </div>
+      <div id="ue-margin-content">
+        <div class="ue-empty">Loading...</div>
+      </div>
+      <div id="ue-totals" class="ue-totals" style="display:none;"></div>
+    </div>
+
+    <!-- ====== COST INPUTS TAB ====== -->
+    <div id="ue-pane-costs" class="ue-pane" style="display:none;">
+      <div class="bv-section">
+        <div class="bv-section-h">Edit ASIN costs</div>
+        <div class="bv-hint" style="margin-bottom:10px;">Pick an ASIN to edit, or type a new one. Numbers can include $, %, or commas. Leave a field blank for “not on file” (Atlas will treat that as missing, not zero).</div>
+        <div class="ue-cost-form">
+          <div class="bv-field">
+            <label class="bv-label">ASIN</label>
+            <input id="ue-cost-asin" class="bv-input" type="text" placeholder="B0XXXXXXXX" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Landed cost / unit</label>
+            <input id="ue-cost-landed" class="bv-input" type="text" placeholder="$" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">FBA fee / unit</label>
+            <input id="ue-cost-fba" class="bv-input" type="text" placeholder="$" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">3PL fee / unit</label>
+            <input id="ue-cost-tpl" class="bv-input" type="text" placeholder="$" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Referral % <span class="bv-hint">defaults to 15%</span></label>
+            <input id="ue-cost-referral" class="bv-input" type="text" placeholder="15%" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">MAP price <span class="bv-hint">minimum advertised</span></label>
+            <input id="ue-cost-map" class="bv-input" type="text" placeholder="$" />
+          </div>
+          <div class="bv-field" style="grid-column: 1 / -1;">
+            <label class="bv-label">Notes <span class="bv-hint">optional — e.g. supplier, contract date, fee source</span></label>
+            <input id="ue-cost-notes" class="bv-input" type="text" />
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; margin-top:14px;">
+          <button class="btn btn-primary btn-sm" onclick="ueSaveCost()">Save cost row</button>
+          <span id="ue-cost-save-status" class="bv-save-status"></span>
+        </div>
+      </div>
+      <div class="bv-section" style="margin-top:18px;">
+        <div class="bv-section-h">All cost rows</div>
+        <div class="ue-table-wrap">
+          <table class="ue-table" id="ue-cost-table">
+            <thead>
+              <tr>
+                <th>ASIN</th>
+                <th>Landed</th>
+                <th>FBA</th>
+                <th>3PL</th>
+                <th>Referral %</th>
+                <th>MAP</th>
+                <th>Revision</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody id="ue-cost-tbody">
+              <tr><td colspan="8" style="text-align:center;color:var(--text-sec);padding:24px;">(loading)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== OVERHEAD TAB ====== -->
+    <div id="ue-pane-overhead" class="ue-pane" style="display:none;">
+      <div class="bv-section">
+        <div class="bv-section-h">Brand fixed overhead</div>
+        <div class="bv-hint" style="margin-bottom:10px;">Monthly overhead that doesn’t vary per unit — salaries, software, photography retainers, agency fees, etc. Per Model 1 (locked in UNIT_ECONOMICS.md), this never enters per-unit contribution margin. It sits above the line in the totals row.</div>
+        <div class="bv-grid-2">
+          <div class="bv-field">
+            <label class="bv-label">Fixed overhead / month</label>
+            <input id="ue-overhead-amount" class="bv-input" type="text" placeholder="$" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Notes</label>
+            <input id="ue-overhead-notes" class="bv-input" type="text" />
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; margin-top:14px;">
+          <button class="btn btn-primary btn-sm" onclick="ueSaveOverhead()">Save overhead</button>
+          <span id="ue-overhead-save-status" class="bv-save-status"></span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -9397,7 +9596,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'memory-page', 'marketing-page', 'brand-voice-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
+const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'memory-page', 'marketing-page', 'brand-voice-page', 'unit-economics-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -13772,6 +13971,275 @@ function bvRefreshPromptPreview() {
   }
   if (lines.length === 1) lines.push('(No brand voice defined yet — write generic, neutral copy.)');
   document.getElementById('bv-prompt-preview').textContent = lines.join('\n');
+}
+
+// ════════════ Unit Economics (Phase 1.5 · Step C+D) ═════════════════
+const ueState = { tab: 'margin' };
+
+function showUnitEconomicsPage() {
+  _showPage('unit-economics-page', 'Atlas · Unit Economics',
+            'Per-ASIN cost inputs and margin rollup');
+  const nav = document.getElementById('nav-unit-economics');
+  if (nav) {
+    document.querySelectorAll('.nav-item-atlas, .nav-item').forEach(el => el.classList.remove('active'));
+    nav.classList.add('active');
+  }
+  ueSwitchTab(ueState.tab || 'margin');
+}
+
+function ueSwitchTab(name) {
+  ueState.tab = name;
+  ['margin', 'costs', 'overhead'].forEach(n => {
+    const t = document.getElementById('ue-tab-' + n);
+    const p = document.getElementById('ue-pane-' + n);
+    if (!t || !p) return;
+    if (n === name) { t.classList.add('ue-tab-active'); p.style.display = ''; }
+    else { t.classList.remove('ue-tab-active'); p.style.display = 'none'; }
+  });
+  if (name === 'margin')   ueLoadMargin();
+  if (name === 'costs')    ueLoadCostList();
+  if (name === 'overhead') ueLoadOverhead();
+}
+
+function ueFmtMoney(v, opts) {
+  opts = opts || {};
+  if (v === null || v === undefined || isNaN(Number(v))) return '<span class="ue-num-na">—</span>';
+  const n = Number(v);
+  const sign = n < 0 ? '−' : '';
+  const abs = Math.abs(n);
+  let s;
+  if (opts.cents && abs < 100) s = abs.toFixed(2);
+  else s = abs.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${sign}$${s}`;
+}
+
+function ueFmtPct(v) {
+  if (v === null || v === undefined || isNaN(Number(v))) return '<span class="ue-num-na">—</span>';
+  return (Number(v) * 100).toFixed(1) + '%';
+}
+
+function ueFmtNum(v) {
+  if (v === null || v === undefined || isNaN(Number(v))) return '<span class="ue-num-na">—</span>';
+  return Number(v).toLocaleString();
+}
+
+// ── Margin rollup ─────────────────────────────────────────────────
+async function ueLoadMargin() {
+  const period = document.getElementById('ue-period-select').value || '';
+  const asin = document.getElementById('ue-asin-filter').value.trim();
+  const params = new URLSearchParams();
+  if (period) params.set('period', period);
+  if (asin) params.set('asin', asin);
+  const container = document.getElementById('ue-margin-content');
+  container.innerHTML = '<div class="ue-empty">Loading…</div>';
+  try {
+    const r = await fetch('/api/atlas/unit-economics/margin?' + params.toString());
+    const d = await r.json();
+    if (!d.ok) {
+      container.innerHTML = `<div class="ue-empty">Error: ${d.error || 'unavailable'}</div>`;
+      return;
+    }
+    // populate periods dropdown
+    const sel = document.getElementById('ue-period-select');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All periods</option>' +
+      (d.available_periods || []).map(p => `<option value="${p}">${p}</option>`).join('');
+    if (current && (d.available_periods || []).includes(current)) sel.value = current;
+
+    if (!d.rows || !d.rows.length) {
+      container.innerHTML = '<div class="ue-empty">No sales data yet for this filter. Upload a Business Report on Catalog Health to populate the rollup.</div>';
+      document.getElementById('ue-totals').style.display = 'none';
+      return;
+    }
+    ueRenderMarginTable(container, d.rows);
+    ueRenderTotals(d.totals || {}, d.brand_fixed_overhead_monthly);
+  } catch (err) {
+    container.innerHTML = `<div class="ue-empty">Error: ${err}</div>`;
+  }
+}
+
+function ueRenderMarginTable(container, rows) {
+  const head = `
+    <thead>
+      <tr>
+        <th>ASIN</th><th>Period</th>
+        <th>Revenue</th><th>Units</th><th>Avg price</th>
+        <th>Landed</th><th>FBA</th><th>3PL</th><th>Referral</th>
+        <th>Contribution / unit</th><th>Contribution %</th>
+        <th>Ad spend</th><th>TACOS</th>
+        <th>Net after ads / unit</th><th>Net %</th>
+      </tr>
+    </thead>`;
+  const body = rows.map(r => {
+    const warn = (r.warnings && r.warnings.length) ? 'ue-row-warn' : '';
+    const contribClass = r.contribution_margin_per_unit === null ? 'ue-num-na'
+      : (r.contribution_margin_per_unit < 0 ? 'ue-num-bad' : 'ue-num-good');
+    const netClass = r.net_after_ads_per_unit === null ? 'ue-num-na'
+      : (r.net_after_ads_per_unit < 0 ? 'ue-num-bad' : 'ue-num-good');
+    const tacosClass = (r.tacos !== null && r.tacos !== undefined && r.tacos > 0.4) ? 'ue-num-bad' : '';
+    const warnTitle = (r.warnings || []).join(' · ');
+    return `<tr class="${warn}" title="${warnTitle}">
+      <td>${r.asin}${(r.warnings||[]).length ? '<span class="ue-badge ue-badge-warn" title="'+warnTitle+'">!</span>' : ''}</td>
+      <td>${r.period}</td>
+      <td>${ueFmtMoney(r.revenue)}</td>
+      <td>${ueFmtNum(r.units_sold)}</td>
+      <td>${ueFmtMoney(r.avg_selling_price, {cents:true})}</td>
+      <td>${ueFmtMoney(r.landed_cost, {cents:true})}</td>
+      <td>${ueFmtMoney(r.fba_fee, {cents:true})}</td>
+      <td>${ueFmtMoney(r.third_pl_fee, {cents:true})}</td>
+      <td>${ueFmtPct(r.referral_pct)}${r.referral_pct_is_default ? '<span class="ue-badge" title="default 15%">def</span>' : ''}</td>
+      <td class="${contribClass}">${ueFmtMoney(r.contribution_margin_per_unit, {cents:true})}</td>
+      <td class="${contribClass}">${ueFmtPct(r.contribution_margin_pct)}</td>
+      <td>${ueFmtMoney(r.ad_spend)}</td>
+      <td class="${tacosClass}">${ueFmtPct(r.tacos)}</td>
+      <td class="${netClass}">${ueFmtMoney(r.net_after_ads_per_unit, {cents:true})}</td>
+      <td class="${netClass}">${ueFmtPct(r.net_after_ads_pct)}</td>
+    </tr>`;
+  }).join('');
+  container.innerHTML = `<div class="ue-table-wrap"><table class="ue-table">${head}<tbody>${body}</tbody></table></div>`;
+}
+
+function ueRenderTotals(t, overhead) {
+  const el = document.getElementById('ue-totals');
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="ue-total-card">
+      <div class="lbl">Total revenue</div>
+      <div class="val">${ueFmtMoney(t.revenue)}</div>
+      <div class="sub">${ueFmtNum(t.units_sold)} units</div>
+    </div>
+    <div class="ue-total-card">
+      <div class="lbl">Ad spend / TACOS</div>
+      <div class="val">${ueFmtMoney(t.ad_spend)}</div>
+      <div class="sub">${ueFmtPct(t.tacos)} of revenue</div>
+    </div>
+    <div class="ue-total-card">
+      <div class="lbl">Contribution × units</div>
+      <div class="val">${ueFmtMoney(t.contribution_margin_total)}</div>
+      <div class="sub">where costs on file</div>
+    </div>
+    <div class="ue-total-card">
+      <div class="lbl">Net after ads + overhead</div>
+      <div class="val">${ueFmtMoney(t.net_after_overhead)}</div>
+      <div class="sub">Overhead: ${ueFmtMoney(overhead)}</div>
+    </div>
+  `;
+}
+
+// ── Cost inputs ───────────────────────────────────────────────────
+async function ueLoadCostList() {
+  try {
+    const r = await fetch('/api/atlas/unit-economics/costs');
+    const d = await r.json();
+    const tb = document.getElementById('ue-cost-tbody');
+    if (!d.ok || !d.rows || !d.rows.length) {
+      tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-sec);padding:24px;">No cost rows yet. Add one above.</td></tr>';
+      return;
+    }
+    tb.innerHTML = d.rows.map(r => `<tr style="cursor:pointer;" onclick="ueLoadCostInto('${r.asin}')">
+      <td><strong>${r.asin}</strong></td>
+      <td>${ueFmtMoney(r.landed_cost, {cents:true})}</td>
+      <td>${ueFmtMoney(r.fba_fee, {cents:true})}</td>
+      <td>${ueFmtMoney(r.third_pl_fee, {cents:true})}</td>
+      <td>${r.referral_pct === null ? '<span class="ue-num-na">—</span>' : (r.referral_pct * 100).toFixed(1) + '%'}</td>
+      <td>${ueFmtMoney(r.map_price)}</td>
+      <td>${r.revision}</td>
+      <td>${r.set_at ? r.set_at.slice(0,16).replace('T',' ') : '—'}</td>
+    </tr>`).join('');
+  } catch (err) {
+    document.getElementById('ue-cost-tbody').innerHTML = `<tr><td colspan="8" style="color:#b8420f;padding:16px;">Error: ${err}</td></tr>`;
+  }
+}
+
+async function ueLoadCostInto(asin) {
+  try {
+    const r = await fetch('/api/atlas/unit-economics/costs/' + encodeURIComponent(asin));
+    const d = await r.json();
+    document.getElementById('ue-cost-asin').value = asin;
+    document.getElementById('ue-cost-landed').value   = d.landed_cost === null || d.landed_cost === undefined ? '' : d.landed_cost;
+    document.getElementById('ue-cost-fba').value      = d.fba_fee === null || d.fba_fee === undefined ? '' : d.fba_fee;
+    document.getElementById('ue-cost-tpl').value      = d.third_pl_fee === null || d.third_pl_fee === undefined ? '' : d.third_pl_fee;
+    document.getElementById('ue-cost-referral').value = d.referral_pct === null || d.referral_pct === undefined ? '' : (Number(d.referral_pct) * 100).toFixed(2) + '%';
+    document.getElementById('ue-cost-map').value      = d.map_price === null || d.map_price === undefined ? '' : d.map_price;
+    document.getElementById('ue-cost-notes').value    = d.notes || '';
+  } catch (err) {
+    ueSetStatus('ue-cost-save-status', 'Load failed: ' + err, 'err');
+  }
+}
+
+async function ueSaveCost() {
+  const asin = document.getElementById('ue-cost-asin').value.trim();
+  if (!asin) { ueSetStatus('ue-cost-save-status', 'ASIN required', 'err'); return; }
+  // referral_pct: accept either 0.15 or 15%; the server tolerates % stripping.
+  // But the server expects a fraction (0.15), so if the user typed % we divide.
+  let referral = document.getElementById('ue-cost-referral').value.trim();
+  if (referral && referral.includes('%')) {
+    const n = parseFloat(referral.replace('%',''));
+    if (!isNaN(n)) referral = (n / 100).toString();
+  }
+  const payload = {
+    landed_cost:  document.getElementById('ue-cost-landed').value,
+    fba_fee:      document.getElementById('ue-cost-fba').value,
+    third_pl_fee: document.getElementById('ue-cost-tpl').value,
+    referral_pct: referral,
+    map_price:    document.getElementById('ue-cost-map').value,
+    notes:        document.getElementById('ue-cost-notes').value,
+  };
+  ueSetStatus('ue-cost-save-status', 'Saving…', '');
+  try {
+    const r = await fetch('/api/atlas/unit-economics/costs/' + encodeURIComponent(asin), {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (!d.ok) { ueSetStatus('ue-cost-save-status', 'Save failed: ' + (d.error || 'unknown'), 'err'); return; }
+    ueSetStatus('ue-cost-save-status', `Saved (rev ${d.revision}).`, 'ok');
+    ueLoadCostList();
+  } catch (err) {
+    ueSetStatus('ue-cost-save-status', 'Save failed: ' + err, 'err');
+  }
+}
+
+// ── Brand overhead ────────────────────────────────────────────────
+async function ueLoadOverhead() {
+  try {
+    const r = await fetch('/api/atlas/unit-economics/overhead');
+    const d = await r.json();
+    document.getElementById('ue-overhead-amount').value = d.fixed_overhead_monthly === null || d.fixed_overhead_monthly === undefined ? '' : d.fixed_overhead_monthly;
+    document.getElementById('ue-overhead-notes').value  = d.notes || '';
+  } catch (err) {
+    ueSetStatus('ue-overhead-save-status', 'Load failed: ' + err, 'err');
+  }
+}
+
+async function ueSaveOverhead() {
+  const payload = {
+    fixed_overhead_monthly: document.getElementById('ue-overhead-amount').value,
+    notes:                  document.getElementById('ue-overhead-notes').value,
+  };
+  ueSetStatus('ue-overhead-save-status', 'Saving…', '');
+  try {
+    const r = await fetch('/api/atlas/unit-economics/overhead', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (!d.ok) { ueSetStatus('ue-overhead-save-status', 'Save failed: ' + (d.error || 'unknown'), 'err'); return; }
+    ueSetStatus('ue-overhead-save-status', `Saved (rev ${d.revision}).`, 'ok');
+  } catch (err) {
+    ueSetStatus('ue-overhead-save-status', 'Save failed: ' + err, 'err');
+  }
+}
+
+function ueSetStatus(elId, text, kind) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = text || '';
+  el.classList.remove('bv-ok', 'bv-err');
+  if (kind === 'ok') el.classList.add('bv-ok');
+  if (kind === 'err') el.classList.add('bv-err');
 }
 
 // ════════════ Marketing · Budget tab (Phase 1 Path B Step 3) ═══════════
