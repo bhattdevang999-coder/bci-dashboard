@@ -9754,6 +9754,36 @@ def catalog_upload_sales():
             catalog_health_state["sales_data"] = rows
             catalog_health_state["sales_fields"] = sales_fields
         
+        # ─── Atlas substrate (Unit Economics Phase B): push sales metrics into
+        # outcome_events so they're durable + reachable by Memory / snapshots.
+        # Best-effort. Never blocks the upload response.
+        atlas_workspace = catalog_health_state.get("atlas_workspace") or "tlg"
+        ue_counts = {"rows_written": 0, "outcome_rows": 0, "skipped": 0}
+        try:
+            from substrate.unit_economics import record_sales_observations
+            ue_counts = record_sales_observations(
+                workspace_id=atlas_workspace,
+                rows=rows,
+                sales_fields=sales_fields,
+                source_kind="business_report",
+            )
+        except Exception as ex:
+            print(f"[atlas] sales→outcome_events skipped: {ex}", flush=True)
+        try:
+            from substrate.inputs import record_ingestion
+            record_ingestion(
+                workspace_id=atlas_workspace,
+                file_kind="sales",
+                file_name=f.filename,
+                rows_parsed=len(rows),
+                asins_touched=len(sales_lookup),
+                detected_fields=list(sales_fields.keys()),
+                summary=f"Sales report: {ue_counts['outcome_rows']} outcome_events written",
+                meta={"module": "unit_economics", **ue_counts},
+            )
+        except Exception as ex:
+            print(f"[atlas] sales ingestion record skipped: {ex}", flush=True)
+        
         # Re-run analysis if catalog is already loaded
         if catalog_health_state.get("catalog_data"):
             catalog_rows = catalog_health_state["catalog_data"]
@@ -9773,6 +9803,7 @@ def catalog_upload_sales():
             "rows": len(rows),
             "asins_matched": len(sales_lookup),
             "fields": list(sales_fields.keys()),
+            "substrate": ue_counts,
         })
     
     except Exception as e:

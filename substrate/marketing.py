@@ -152,8 +152,18 @@ def upsert_keyword(
 # ---------------------------------------------------------------------------
 
 
-_OUTCOME_METRICS = ("search_volume", "organic_rank", "acos", "spend",
-                    "impressions", "clicks", "orders", "ctr", "cvr")
+_OUTCOME_METRICS = (
+    # Marketing observations (keyword-attached or campaign-attached)
+    "search_volume", "organic_rank", "acos", "spend",
+    "impressions", "clicks", "orders", "ctr", "cvr",
+    # Sales / unit-economics observations (ASIN-attached, no keyword required).
+    # Written by substrate/unit_economics.py via record_sales_observations().
+    # Included in this whitelist because keyword-observation paths may also
+    # surface these metrics; the sales path uses its own writer but shares
+    # the same outcome_events table and metric vocabulary.
+    "revenue", "units_sold", "sessions", "returns", "return_rate",
+    "buy_box_pct", "ad_spend", "ad_revenue",
+)
 
 
 def record_keyword_observations(
