@@ -352,6 +352,11 @@ STRATEGIC_FIELDS: set[str] = {
     # parent can suppress it from search for hours and changes its
     # variation-theme display permanently. Always logged.
     "parentage_correction",
+    # Brand Voice module. Every voice edit is a high-stakes event that
+    # influences every downstream NIS / Image-NIS / Marketing run. The
+    # drift detector (Phase 3) reads these so the audit trail must be
+    # complete.
+    "profile_revision",
 }
 
 CONFIDENCE_LOG_THRESHOLD = 0.7

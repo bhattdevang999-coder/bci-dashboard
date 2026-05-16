@@ -52,6 +52,7 @@ class Module(str, Enum):
     MARKETING = "marketing"
     BUDGET = "budget"
     VARIATIONS = "variations"
+    BRAND_VOICE = "brand_voice"
     EXPERIMENTS = "experiments"
     LEAK = "leak"
     OTHER = "other"

@@ -93,6 +93,7 @@ smoke "memory/decisions"      "/api/atlas/memory/decisions?limit=1"   '"ok":true
 # but it won't match any decision — expect a well-formed response with notes.
 smoke "memory/confound"       "/api/atlas/memory/decisions/00000000-0000-0000-0000-000000000000/confound" '"notes":'
 smoke "marketing/keywords"    "/api/atlas/marketing/keywords?limit=1" '"ok":true'
+smoke "brand-voice"           "/api/atlas/brand-voice"                '"ok":true'
 smoke "marketing/budget"      "/api/atlas/marketing/budget"           '"ok":true'
 smoke "marketing/variance"    "/api/atlas/marketing/budget/variance?period=2026-05" '"ok":true'
 smoke "docs/onboarding"       "/docs/onboarding"                       'Atlas .{0,5} Onboarding'

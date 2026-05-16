@@ -96,6 +96,7 @@ Counted from `app.py` plus the `substrate/budget.py` self-write. Three call site
 | `substrate/budget.py:152` | `Module.BUDGET` | Per `set_budget` call (audit trail for monthly allocations) |
 | `app.py:10095` | `Module.VARIATIONS` | Per merge-plan action proposed by `/api/merge/analyze` |
 | `app.py:10208` | `Module.VARIATIONS` (response) | Per `/api/merge/approve` accept/reject |
+| `substrate/brand_voice.py:save_voice` | `Module.BRAND_VOICE` | Per `POST /api/atlas/brand-voice` save (auto-bumps `profile_version`) |
 | `app.py:12138` | `Module.NIS` (image) | Per generated field in `/api/beta-image-nis/generate` |
 | `app.py:12248` | `Module.NIS` (response) | Per `field_wrong` feedback in `/api/beta-image-nis/feedback` |
 
@@ -175,3 +176,4 @@ Append below this line. Do not edit entries above.
 - **v1.1 — 2026-05-16, SHA `eb32657`** — Image → NIS retrofit shipped. Now substrate-native: opens session per `/generate`, logs 8 decision_events with `nis.image.vision_driven` rule marker, attaches operator_responses on `field_wrong` feedback. Gap closed.
 - **v1.2 — 2026-05-16, SHA `8efc3f6`** — Variations retrofit shipped. `Module.VARIATIONS` enum added. `/api/merge/analyze` opens a session and logs one decision_event per proposed action (`field_name='parentage_correction'`). `/api/merge/approve` writes accept/reject operator_responses. Now 6 substrate-writing modules + Confound view. Variations + Image → NIS no longer in the gap list. Three real gaps remain: Listing Lab (lowest priority), hidden Recommendations endpoint, and Catalog Health per-ASIN granularity (blocked-on-need).
 - **v1.3 — 2026-05-16, present commit** — Sidebar cleanup reconsidered. Preview pages for Ad Bulksheet + Keywords are NOT duplicates of Marketing; they describe a richer future state Marketing only partially covers today. Resolved by adding `today_in_marketing` callout to both preview pages instead of deleting them. Item #6 in sequencing crossed off and rewritten.
+- **v1.4 — 2026-05-16, present commit** — Brand Voice module shipped (Step 2 of BRAND_VOICE.md). New sidebar item, new substrate module, new `Module.BRAND_VOICE` enum value. NIS prompt now consumes structured voice (tone descriptors, hero adjectives, signature phrases, banned phrasings, like/unlike examples). Profile versions auto-bump on every save; audit trail finally functional. Two-store split closed for voice (operational defaults stay in JSON; all voice in `brand_profile`).

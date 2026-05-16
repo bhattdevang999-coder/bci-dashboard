@@ -1955,6 +1955,19 @@ def generate_content_llm(brand_cfg, brand, style, feedback_history, regen_keys=N
     # Brand voice description
     bullet_1_focus = brand_cfg.get("bullet_1_focus", "Style and quality")
     never_words = brand_cfg.get("never_words", [])
+    # Pull the structured BRAND VOICE block from substrate.brand_voice.
+    # This is the new source of truth (tone, hero adjectives, signature
+    # phrases, like/unlike examples, etc.). Falls back to a 'no voice
+    # defined yet' line for brands that haven't edited voice yet, so the
+    # prompt is always valid. Best-effort: substrate failures don't break
+    # generation.
+    try:
+        from substrate.brand_voice import voice_prompt_block as _voice_block
+        _ws = (brand or "tlg").lower().replace(" ", "_") or "tlg"
+        brand_voice_block = _voice_block(_ws)
+    except Exception as _bv_exc:
+        print(f"[atlas] brand_voice block skipped: {_bv_exc}", flush=True)
+        brand_voice_block = "=== BRAND VOICE ===\n(brand voice unavailable)"
     # Derive gender per-style from division_name, not brand config
     style_gender, style_dept = _derive_gender_department(style)
     gender = style_gender or brand_cfg.get("gender", "")
@@ -2055,6 +2068,8 @@ BRAND: {clean_brand}
 BRAND VOICE: {clean_brand} is a {bullet_1_focus}-focused brand for {audience}. {brief or ''}
 HERO FEATURE for bullet 1 if no override: {bullet_1_focus}
 NEVER USE these words: {never_words_str}
+
+{brand_voice_block}
 
 === THIS PRODUCT ===
 Item Type: {itn} (Amazon product type: {product_type})
@@ -11475,6 +11490,54 @@ def atlas_memory_decisions():
         "decisions": result.get("decisions", []),
         "total": result.get("total", 0),
     })
+
+
+# ---------------------------------------------------------------------------
+# Brand Voice endpoints (Phase 1.5 — Step 2)
+# Single source of truth for tone, hero adjectives, signature phrases,
+# banned words/phrasings, like/unlike examples. Auto-bumps profile_version
+# on every save; writes a decision_event with module='brand_voice' so the
+# audit trail appears in Memory.
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/atlas/brand-voice", methods=["GET"])
+def atlas_brand_voice_get():
+    """Return the latest brand voice payload for the current workspace."""
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.brand_voice import read_voice
+        v = read_voice(workspace_id)
+    except Exception as exc:
+        print(f"[atlas] brand-voice read failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "brand-voice unavailable"}), 500
+    return jsonify({"workspace_id": workspace_id, **v})
+
+
+@app.route("/api/atlas/brand-voice", methods=["POST"])
+def atlas_brand_voice_save():
+    """Save a new brand voice revision. Auto-bumps profile_version.
+
+    JSON body accepts (all optional):
+      brand_name, category_scope, tier_scope, stage_scope,
+      tone_descriptors, hero_adjectives,
+      banned_words, banned_phrasings, required_words, signature_phrases,
+      like_examples, unlike_examples,
+      target_customer, competitor_set
+
+    Missing keys preserve previous values from the latest row.
+    """
+    workspace_id = _atlas_current_workspace()
+    payload = request.get_json(silent=True) or {}
+    try:
+        from substrate.brand_voice import save_voice
+        operator_id = (request.cookies.get(_ATLAS_OPERATOR_COOKIE) or "").strip() or None
+        result = save_voice(workspace_id, payload, operator_id=operator_id)
+    except Exception as exc:
+        print(f"[atlas] brand-voice save failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    status = 200 if result.get("ok") else 400
+    return jsonify({"workspace_id": workspace_id, **result}), status
 
 
 @app.route("/api/atlas/memory/decisions/<event_id>/confound", methods=["GET"])

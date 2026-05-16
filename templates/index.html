@@ -3012,6 +3012,66 @@
 }
 .memory-decisions { max-height: 640px; overflow-y: auto; }
 
+/* ═══ Brand Voice editor (Phase 1.5 · Step 2) ═══ */
+.bv-version-chip {
+  display: inline-block; margin-top: 10px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 4px 10px;
+  border-radius: 99px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border);
+  font-family: ui-monospace, monospace;
+}
+.bv-form { display: flex; flex-direction: column; gap: 24px; margin-top: 18px; }
+.bv-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 22px;
+}
+.bv-section-h {
+  font-size: 12px; color: var(--text-sec); text-transform: uppercase;
+  letter-spacing: 0.06em; font-weight: 700;
+  margin: 0 0 14px 0;
+}
+.bv-grid-2 {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+@media (max-width: 900px) { .bv-grid-2 { grid-template-columns: 1fr; } }
+.bv-field { display: flex; flex-direction: column; gap: 6px; }
+.bv-label {
+  font-size: 12px; color: var(--text); font-weight: 600;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.bv-hint {
+  font-size: 11px; color: var(--text-sec); font-weight: 400;
+}
+.bv-input, .bv-textarea {
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 10px; font-size: 13px;
+  font-family: inherit; width: 100%;
+}
+.bv-textarea {
+  resize: vertical; line-height: 1.5;
+  font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+}
+.bv-input:focus, .bv-textarea:focus {
+  outline: none; border-color: var(--accent);
+}
+.bv-actions {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 22px;
+}
+.bv-save-status { font-size: 12px; color: var(--text-sec); }
+.bv-save-status.bv-ok { color: #2f7a4a; }
+.bv-save-status.bv-err { color: #b8420f; }
+.bv-prompt-preview {
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 14px 16px; font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px; line-height: 1.55; white-space: pre-wrap;
+  margin: 0; max-height: 320px; overflow-y: auto;
+}
+
 /* ═══ Confound view (Phase 1.5) ═══ */
 .cv-toggle {
   display: inline-flex; align-items: center; gap: 6px;
@@ -6088,6 +6148,9 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="nav-item-atlas" id="nav-marketing" onclick="showMarketingPage()">
       <span class="atlas-dot"></span> Marketing
     </div>
+    <div class="nav-item-atlas" id="nav-brand-voice" onclick="showBrandVoicePage()">
+      <span class="atlas-dot"></span> Brand Voice
+    </div>
     <a class="nav-item-atlas" id="nav-docs" href="/docs/onboarding" target="_blank" rel="noopener">
       <span class="atlas-dot"></span> User directions
     </a>
@@ -7221,6 +7284,130 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
       </div>
 
     </div><!-- /mkt-view-budget -->
+  </div>
+
+  <!-- ════════════ BRAND VOICE PAGE (Phase 1.5 · Step 2) ════════════ -->
+  <div id="brand-voice-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Brand Voice</h1>
+      <div class="page-hero-sub">
+        The single source of truth for how this brand sounds. Edited here, consumed everywhere — NIS Bulk Upload, Image → NIS, and Marketing all pull from this voice before drafting.
+        Every save auto-bumps the profile version and lands in Memory.
+      </div>
+      <div id="bv-version-chip" class="bv-version-chip" style="display:none;"></div>
+    </div>
+
+    <div id="bv-form" class="bv-form">
+
+      <!-- POSITIONING -->
+      <div class="bv-section">
+        <div class="bv-section-h">Positioning</div>
+        <div class="bv-grid-2">
+          <div class="bv-field">
+            <label class="bv-label">Brand name</label>
+            <input id="bv-brand-name" class="bv-input" type="text" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Target customer</label>
+            <input id="bv-target-customer" class="bv-input" type="text" placeholder="e.g. young adults, 18–40, aspirational" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Category</label>
+            <input id="bv-category-scope" class="bv-input" type="text" placeholder="activewear" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Tier</label>
+            <input id="bv-tier-scope" class="bv-input" type="text" placeholder="premium / mid / value" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Stage</label>
+            <input id="bv-stage-scope" class="bv-input" type="text" placeholder="launch / growth / mature" />
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Competitor set <span class="bv-hint">comma or newline separated</span></label>
+            <input id="bv-competitor-set" class="bv-input" type="text" placeholder="Vuori, Outdoor Voices, CRZ Yoga" />
+          </div>
+        </div>
+      </div>
+
+      <!-- TONE + HEROES -->
+      <div class="bv-section">
+        <div class="bv-section-h">Tone &amp; hero adjectives</div>
+        <div class="bv-grid-2">
+          <div class="bv-field">
+            <label class="bv-label">Tone descriptors <span class="bv-hint">3–5 adjectives. Comma or newline separated.</span></label>
+            <textarea id="bv-tone" class="bv-textarea" rows="2" placeholder="warm, plainspoken, confident"></textarea>
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Hero adjectives <span class="bv-hint">5–10 words you want appearing often, sparingly each.</span></label>
+            <textarea id="bv-hero" class="bv-textarea" rows="2" placeholder="buttery, all-day, signature, weightless"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGNATURE + REQUIRED -->
+      <div class="bv-section">
+        <div class="bv-section-h">Signature phrases &amp; required words</div>
+        <div class="bv-grid-2">
+          <div class="bv-field">
+            <label class="bv-label">Signature phrases <span class="bv-hint">Recurring phrasings the LLM should work in when natural.</span></label>
+            <textarea id="bv-signature" class="bv-textarea" rows="3" placeholder="second-skin softness
+made to move with you"></textarea>
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Required words <span class="bv-hint">Words that must appear somewhere.</span></label>
+            <textarea id="bv-required" class="bv-textarea" rows="3" placeholder="wool, breathable"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- BANNED -->
+      <div class="bv-section">
+        <div class="bv-section-h">Things to never write</div>
+        <div class="bv-grid-2">
+          <div class="bv-field">
+            <label class="bv-label">Banned words <span class="bv-hint">Single words.</span></label>
+            <textarea id="bv-banned-words" class="bv-textarea" rows="3" placeholder="cheap, fast fashion, knockoff"></textarea>
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Banned phrasings <span class="bv-hint">Multi-word phrasings (newline separated).</span></label>
+            <textarea id="bv-banned-phrasings" class="bv-textarea" rows="3" placeholder="limited time only
+act now
+best seller"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIKE / UNLIKE EXAMPLES -->
+      <div class="bv-section">
+        <div class="bv-section-h">Examples</div>
+        <div class="bv-grid-2">
+          <div class="bv-field">
+            <label class="bv-label">Like examples <span class="bv-hint">Sentences that exemplify the voice. Newline separated.</span></label>
+            <textarea id="bv-like" class="bv-textarea" rows="4" placeholder="Buttery wool that feels like a second skin."></textarea>
+          </div>
+          <div class="bv-field">
+            <label class="bv-label">Unlike examples <span class="bv-hint">Sentences that violate the voice.</span></label>
+            <textarea id="bv-unlike" class="bv-textarea" rows="4" placeholder="Limited time deal! Premium wool blazer for less!"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="bv-actions">
+        <button class="btn btn-primary" onclick="bvSave()">Save new version</button>
+        <button class="btn btn-secondary" onclick="bvReload()">Discard changes</button>
+        <span id="bv-save-status" class="bv-save-status"></span>
+      </div>
+
+      <!-- PROMPT PREVIEW -->
+      <div class="bv-section">
+        <div class="bv-section-h">What the LLM sees</div>
+        <div class="bv-hint" style="margin-bottom:8px;">This is the exact BRAND VOICE block injected into every NIS prompt right now. Update the fields above and save to refresh.</div>
+        <pre id="bv-prompt-preview" class="bv-prompt-preview">(loading)</pre>
+      </div>
+
+    </div>
   </div>
 
   <!-- ════ BUDGET · Content-change drawer ════ -->
@@ -9214,7 +9401,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'memory-page', 'marketing-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
+const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'memory-page', 'marketing-page', 'brand-voice-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -13439,6 +13626,157 @@ document.addEventListener('click', (e) => {
     document.querySelectorAll('.info-tip.open').forEach(t => t.classList.remove('open'));
   }
 });
+
+// ════════════ Brand Voice editor (Phase 1.5 · Step 2) ═════════════════
+const bvState = { loaded: null, dirty: false };
+
+function showBrandVoicePage() {
+  _showPage('brand-voice-page', 'Atlas · Brand Voice',
+    'Tone, hero adjectives, signature phrases, banned words — the single source of truth.');
+  const nav = document.getElementById('nav-brand-voice');
+  if (nav) nav.classList.add('active');
+  bvLoad();
+}
+
+async function bvLoad() {
+  try {
+    const r = await fetch('/api/atlas/brand-voice');
+    const d = await r.json();
+    if (!d || d.ok === false) {
+      bvSetStatus('Failed to load: ' + (d?.error || 'unknown'), 'err');
+      return;
+    }
+    bvState.loaded = d;
+    bvFillForm(d);
+    bvRenderVersion(d);
+    bvRefreshPromptPreview();
+  } catch (err) {
+    bvSetStatus('Failed to load: ' + err, 'err');
+  }
+}
+
+function bvFillForm(d) {
+  document.getElementById('bv-brand-name').value      = d.brand_name || '';
+  document.getElementById('bv-target-customer').value = d.target_customer || '';
+  document.getElementById('bv-category-scope').value  = d.category_scope || '';
+  document.getElementById('bv-tier-scope').value      = d.tier_scope || '';
+  document.getElementById('bv-stage-scope').value     = d.stage_scope || '';
+  document.getElementById('bv-competitor-set').value  = (d.competitor_set || []).join(', ');
+  document.getElementById('bv-tone').value            = (d.tone_descriptors || []).join('\n');
+  document.getElementById('bv-hero').value            = (d.hero_adjectives || []).join('\n');
+  document.getElementById('bv-signature').value       = (d.signature_phrases || []).join('\n');
+  document.getElementById('bv-required').value        = (d.required_words || []).join('\n');
+  document.getElementById('bv-banned-words').value    = (d.banned_words || []).join('\n');
+  document.getElementById('bv-banned-phrasings').value= (d.banned_phrasings || []).join('\n');
+  document.getElementById('bv-like').value            = (d.like_examples || []).join('\n');
+  document.getElementById('bv-unlike').value          = (d.unlike_examples || []).join('\n');
+  bvState.dirty = false;
+  bvSetStatus('', '');
+}
+
+function bvRenderVersion(d) {
+  const chip = document.getElementById('bv-version-chip');
+  if (!chip) return;
+  if (d.profile_version) {
+    const when = d.created_at ? new Date(d.created_at).toLocaleString() : '—';
+    chip.textContent = `Version ${d.profile_version} · ${when}`;
+    chip.style.display = 'inline-block';
+  } else {
+    chip.textContent = 'No voice saved yet';
+    chip.style.display = 'inline-block';
+  }
+}
+
+function bvCollect() {
+  // Textareas — the backend accepts strings and splits on newline/comma.
+  return {
+    brand_name:        document.getElementById('bv-brand-name').value.trim() || null,
+    target_customer:   document.getElementById('bv-target-customer').value.trim(),
+    category_scope:    document.getElementById('bv-category-scope').value.trim() || null,
+    tier_scope:        document.getElementById('bv-tier-scope').value.trim() || null,
+    stage_scope:       document.getElementById('bv-stage-scope').value.trim() || null,
+    competitor_set:    document.getElementById('bv-competitor-set').value,
+    tone_descriptors:  document.getElementById('bv-tone').value,
+    hero_adjectives:   document.getElementById('bv-hero').value,
+    signature_phrases: document.getElementById('bv-signature').value,
+    required_words:    document.getElementById('bv-required').value,
+    banned_words:      document.getElementById('bv-banned-words').value,
+    banned_phrasings:  document.getElementById('bv-banned-phrasings').value,
+    like_examples:     document.getElementById('bv-like').value,
+    unlike_examples:   document.getElementById('bv-unlike').value,
+  };
+}
+
+async function bvSave() {
+  bvSetStatus('Saving…', '');
+  try {
+    const r = await fetch('/api/atlas/brand-voice', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(bvCollect()),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      bvSetStatus('Save failed: ' + (d.error || 'unknown'), 'err');
+      return;
+    }
+    bvSetStatus(`Saved as ${d.profile_version}.`, 'ok');
+    await bvLoad();
+  } catch (err) {
+    bvSetStatus('Save failed: ' + err, 'err');
+  }
+}
+
+function bvReload() {
+  if (bvState.loaded) bvFillForm(bvState.loaded);
+  bvSetStatus('Reverted.', '');
+}
+
+function bvSetStatus(text, kind) {
+  const el = document.getElementById('bv-save-status');
+  if (!el) return;
+  el.textContent = text || '';
+  el.classList.remove('bv-ok', 'bv-err');
+  if (kind === 'ok') el.classList.add('bv-ok');
+  if (kind === 'err') el.classList.add('bv-err');
+}
+
+// Render the prompt preview from the currently-loaded voice (after save).
+// We don't re-fetch a separate prompt-block endpoint — we synthesise the
+// same shape voice_prompt_block() builds server-side, so the preview tracks
+// the server's behavior. Cheaper and avoids round-tripping for a string.
+function bvRefreshPromptPreview() {
+  const d = bvState.loaded || {};
+  const lines = ['=== BRAND VOICE ==='];
+  if (d.brand_name) lines.push(`Brand: ${d.brand_name}`);
+  const scopeBits = [];
+  if (d.category_scope) scopeBits.push(`category=${d.category_scope}`);
+  if (d.tier_scope)     scopeBits.push(`tier=${d.tier_scope}`);
+  if (d.stage_scope)    scopeBits.push(`stage=${d.stage_scope}`);
+  if (scopeBits.length) lines.push('Positioning: ' + scopeBits.join(' · '));
+  if (d.target_customer) lines.push(`Target customer: ${d.target_customer}`);
+  if ((d.tone_descriptors || []).length) lines.push('Tone: ' + d.tone_descriptors.join(', '));
+  if ((d.hero_adjectives || []).length)
+    lines.push('Hero adjectives (use these often, sparingly each): ' + d.hero_adjectives.join(', '));
+  if ((d.signature_phrases || []).length)
+    lines.push('Signature phrases (work in at least one when natural): ' + d.signature_phrases.join(' | '));
+  if ((d.required_words || []).length)
+    lines.push('Required words (must appear somewhere): ' + d.required_words.join(', '));
+  if ((d.banned_words || []).length)
+    lines.push('Never use these words: ' + d.banned_words.join(', '));
+  if ((d.banned_phrasings || []).length)
+    lines.push('Never use these phrasings: ' + d.banned_phrasings.join(' | '));
+  if ((d.like_examples || []).length) {
+    lines.push('Examples that EXEMPLIFY this voice:');
+    d.like_examples.forEach(ex => lines.push(`  ✓ ${ex}`));
+  }
+  if ((d.unlike_examples || []).length) {
+    lines.push('Examples that VIOLATE this voice:');
+    d.unlike_examples.forEach(ex => lines.push(`  ✗ ${ex}`));
+  }
+  if (lines.length === 1) lines.push('(No brand voice defined yet — write generic, neutral copy.)');
+  document.getElementById('bv-prompt-preview').textContent = lines.join('\n');
+}
 
 // ════════════ Marketing · Budget tab (Phase 1 Path B Step 3) ═══════════
 const BUD_THEMES = ['branded', 'feature', 'competitor'];
