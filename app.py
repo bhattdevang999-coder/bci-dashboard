@@ -11375,6 +11375,17 @@ def atlas_memory_session_detail(session_id: str):
     return jsonify({"ok": True, "workspace_id": workspace_id, "session": detail})
 
 
+@app.route("/docs/onboarding", methods=["GET"])
+def docs_onboarding():
+    """Operator-facing onboarding + user directions page.
+
+    Renders a static HTML doc with English / Urdu / Bangla language toggle.
+    The Urdu and Bangla versions are AI-translated and clearly flagged as
+    not yet reviewed by a native speaker — the English version is canon.
+    """
+    return render_template("docs/onboarding.html")
+
+
 @app.route("/api/version", methods=["GET"])
 def api_version():
     """Return the git SHA + build metadata of the currently-running code.

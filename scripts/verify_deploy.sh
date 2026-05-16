@@ -88,6 +88,8 @@ smoke "operators"             "/api/atlas/operators"                  '"ok":true
 smoke "inputs/freshness"      "/api/atlas/inputs/freshness"           '"ok":true'
 smoke "inputs/history"        "/api/atlas/inputs/history?limit=1"     '"ok":true'
 smoke "memory/sessions"       "/api/atlas/memory/sessions?limit=1"    '"ok":true'
+smoke "memory/decisions"      "/api/atlas/memory/decisions?limit=1"   '"ok":true'
+smoke "docs/onboarding"       "/docs/onboarding"                       'Atlas .{0,5} Onboarding'
 
 if (( fail > 0 )); then
   echo "verify_deploy: ✗ ${fail} smoke check(s) failed"

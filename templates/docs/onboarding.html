@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Atlas · Onboarding & User Directions</title>
+  <style>
+    :root {
+      --bg: #0b0d10;
+      --surface: #14171c;
+      --border: #232830;
+      --text: #e9ecef;
+      --text-sec: #9aa3ad;
+      --accent: #5eead4;
+      --warn: #f59e0b;
+      --max-w: 760px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    main { max-width: var(--max-w); margin: 0 auto; padding: 48px 24px 96px 24px; }
+    h1 { font-size: 28px; margin: 0 0 8px 0; }
+    h2 { font-size: 20px; margin: 36px 0 12px 0; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    h3 { font-size: 16px; margin: 24px 0 10px 0; }
+    p, li { font-size: 15px; }
+    ul, ol { padding-left: 22px; }
+    li { margin: 4px 0; }
+    code, pre { background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+      padding: 1px 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px; }
+    pre { padding: 12px 14px; overflow-x: auto; white-space: pre-wrap; }
+    a { color: var(--accent); }
+    .header {
+      position: sticky; top: 0; background: rgba(11,13,16,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      z-index: 10;
+    }
+    .header-title { font-size: 13px; color: var(--text-sec); letter-spacing: 0.4px; text-transform: uppercase; }
+    .lang-switch { display: flex; gap: 6px; }
+    .lang-btn {
+      background: transparent; color: var(--text-sec);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 12px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 120ms ease;
+    }
+    .lang-btn:hover { color: var(--text); border-color: var(--accent); }
+    .lang-btn.active { color: #0b0d10; background: var(--accent); border-color: var(--accent); }
+    .lang-label { font-size: 11px; color: var(--text-sec); display: block; margin-top: 2px; font-weight: 400; }
+    .disclaimer {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 16px 0 24px 0;
+      font-size: 13px; color: var(--warn);
+    }
+    .meta { color: var(--text-sec); font-size: 13px; margin: 4px 0 16px 0; }
+    .lang-pane { display: none; }
+    .lang-pane.active { display: block; }
+    /* Urdu / Bangla: right-to-left for Urdu only; bigger line-height for both. */
+    [data-lang="ur"] { direction: rtl; font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Urdu Typesetting", serif;
+      font-size: 17px; line-height: 1.9; }
+    [data-lang="bn"] { font-family: "Noto Sans Bengali", "SolaimanLipi", "Siyam Rupali", sans-serif;
+      font-size: 16px; line-height: 1.8; }
+    [data-lang="ur"] code, [data-lang="bn"] code { font-family: ui-monospace, monospace; direction: ltr; display: inline-block; }
+    [data-lang="ur"] ul, [data-lang="ur"] ol { padding-right: 22px; padding-left: 0; }
+    .step-list li { margin: 8px 0; }
+    hr { border: 0; border-top: 1px solid var(--border); margin: 36px 0; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="header-title">Atlas · Onboarding & Directions</div>
+    </div>
+    <div class="lang-switch" role="tablist">
+      <button class="lang-btn active" data-target="en" onclick="setLang('en')">English</button>
+      <button class="lang-btn" data-target="ur" onclick="setLang('ur')">اردو</button>
+      <button class="lang-btn" data-target="bn" onclick="setLang('bn')">বাংলা</button>
+    </div>
+  </div>
+
+  <main>
+
+  <!-- ════════════════════════════ ENGLISH ════════════════════════════ -->
+  <div class="lang-pane active" data-lang="en">
+
+    <h1>Atlas — Novelle Operations Onboarding</h1>
+    <p class="meta"><strong>For:</strong> the agency team running Novelle's Amazon operations · <strong>From:</strong> Devang (Novelle) · <strong>Date:</strong> May 2026</p>
+
+    <h2>Why you're reading this</h2>
+    <p>You're going to run Novelle's Amazon operations — listings, catalog hygiene, PPC analysis, weekly reporting. You can do that work in Helium 10, in Excel, in Seller Central directly, and on your laptop's notes app. That's how every brand you've worked with does it.</p>
+    <p>Novelle is asking you to do most of that same work <em>inside</em> a platform we've built called Atlas. This doc explains what Atlas is, what changes for you, and — honestly — what's in it for you.</p>
+    <p>The short version:</p>
+    <ul>
+      <li><strong>For you:</strong> Atlas takes the grunt work off your plate (weekly reports auto-generate, catalog audits surface issues ranked by dollar impact, listings get drafted faster). You spend more time on judgment calls, less on assembling data.</li>
+      <li><strong>For Novelle:</strong> every decision you make gets captured so the brand carries institutional memory you can build on. Future you, future agency hires, future Novelle hires — they can see what was tried, what worked, what didn't.</li>
+    </ul>
+    <p>This is a partnership, not a replacement. Atlas is your second brain, not your boss.</p>
+
+    <h2>What Atlas does</h2>
+    <ol>
+      <li><strong>Catalog Health.</strong> Drop in any catalog export. Atlas scores every ASIN, surfaces broken variants, missing images, weak content, and ranks fixes by dollar impact. Generates a fix file you can hand to whoever's editing listings.</li>
+      <li><strong>NIS Wizard.</strong> Drafts Amazon listings — title, bullets, description, backend keywords, A+ — to Novelle's voice. You review, edit, accept. Atlas learns from every edit so by month 3, the drafts need less editing.</li>
+      <li><strong>Marketing intelligence (coming soon).</strong> Drop in a PPC bulk file + search term report. Atlas joins them with catalog quality and tells you exactly where ad money is being wasted because of broken listings vs bad bids. Different problems need different fixes.</li>
+    </ol>
+
+    <h2>What Atlas does NOT do</h2>
+    <ul>
+      <li><strong>Atlas does not push to Amazon.</strong> It generates files; you upload them. Your hand is always the last hand on the data.</li>
+      <li><strong>Atlas does not change PPC bids automatically.</strong> It tells you what's wasted and what's underfunded; you make the call.</li>
+      <li><strong>Atlas does not run unsupervised.</strong> Every output is reviewed before it ships.</li>
+      <li><strong>Atlas does not replace you.</strong> It removes the mechanical parts of your job and gives you better tools for the parts that need judgment.</li>
+      <li><strong>Atlas is not surveillance.</strong> It captures what gets decided and by whom — same as a Google Doc would. The point is institutional memory, not performance review.</li>
+    </ul>
+
+    <h2>How to use Atlas — step by step</h2>
+    <p class="meta">First-time setup, then your daily/weekly flow.</p>
+
+    <h3>1. First time you open Atlas</h3>
+    <ol class="step-list">
+      <li>Go to <a href="https://tlg-amazon-intelligence-dashboard.onrender.com" target="_blank">tlg-amazon-intelligence-dashboard.onrender.com</a> in Chrome or Safari.</li>
+      <li>You'll see a small chip in the top-right that says <strong>"Sign in"</strong>. Click it.</li>
+      <li>Enter your <strong>display name</strong> (your real name or the one you use professionally) and pick the role <strong>agency</strong>.</li>
+      <li>The chip will now show your name. You're signed in for 90 days; no password needed.</li>
+      <li>The brand dropdown will be locked to <strong>Novelle</strong> — that's correct. We're brand-scoped on purpose.</li>
+    </ol>
+
+    <h3>2. Drop your first file (Inputs tab)</h3>
+    <ol class="step-list">
+      <li>Click <strong>Inputs</strong> in the left sidebar.</li>
+      <li>Drag any catalog/sales/PPC bulk/search term file onto the drop zone, or click <strong>Choose file</strong>.</li>
+      <li>Atlas auto-detects the file type (catalog vs sales vs PPC bulk, etc.) and shows you what it found before the upload commits.</li>
+      <li>Once uploaded, the file appears in the <strong>Ingestion history</strong> table below. The <strong>Staleness bar</strong> at the top of the page shows how old each file type is.</li>
+      <li>For catalog files specifically, Atlas also runs the Catalog Health analyser automatically — see the toast notification.</li>
+    </ol>
+
+    <h3>3. Generate listings (NIS / Bulk Upload)</h3>
+    <ol class="step-list">
+      <li>Click <strong>Bulk Upload</strong> in the left sidebar (under Create).</li>
+      <li>Upload a product template (Amazon NIS .xlsm) or use the existing one if you've already loaded it.</li>
+      <li>Pick the styles you want drafted, click <strong>Generate</strong>.</li>
+      <li>Review each field — title, bullets, description, backend keywords. You can <strong>Accept</strong>, <strong>Edit</strong>, or <strong>Reject</strong>.</li>
+      <li>When you edit, Atlas asks the scope: just this listing, brand-wide, or category-wide. <strong>This is important</strong> — your choice trains the brand voice. Pick "brand-wide" only when you're sure the rule generalises.</li>
+      <li>When done, click <strong>Submit session</strong>. Atlas prompts you for a short reflection (what was the biggest friction? what rule is worth codifying?). One sentence each is fine.</li>
+      <li>Download the finished .xlsm and upload it to Seller Central as you would normally.</li>
+    </ol>
+
+    <h3>4. Check the audit trail (Memory tab)</h3>
+    <ol class="step-list">
+      <li>Click <strong>Memory</strong> in the left sidebar.</li>
+      <li><strong>Sessions tab:</strong> every session you've run, newest first. Click any row to see the full timeline of decisions for that sitting — what Atlas drafted, what you did with it, and the data snapshot at the moment.</li>
+      <li><strong>Decisions tab:</strong> a flat audit across all sessions. Filter by field name, ASIN, action (accept/edit/reject/comment), operator, or date range.</li>
+      <li>Use this when a client asks "why did the title on B0XXXX change three weeks ago?" — Memory gives you the answer with the operator, the timestamp, and the data context.</li>
+    </ol>
+
+    <h3>5. Weekly cadence — suggested rhythm</h3>
+    <ul>
+      <li><strong>Monday:</strong> PPC analysis. Pull the bulk file from Campaign Manager → Inputs → review the diagnosis → execute changes.</li>
+      <li><strong>Tuesday:</strong> Listing updates in NIS. Generate drafts → edit to Novelle's voice → download for upload.</li>
+      <li><strong>Wednesday:</strong> Catalog hygiene. Inventory export → Inputs → review the Catalog Health report → fix file out.</li>
+      <li><strong>Friday:</strong> Weekly client report. Atlas drafts it; you review and edit.</li>
+    </ul>
+
+    <h3>6. Common questions</h3>
+    <p><strong>"I made a mistake on a session, can I undo?"</strong> The decision log can't be erased — that's the point of an audit trail. But you can log a corrective decision (a follow-up edit with a comment explaining the fix). The Memory tab shows both.</p>
+    <p><strong>"How do I switch to a different operator on my team?"</strong> Click your name chip top-right → "Sign out" → next person signs in with their own display name. Same workstation is fine.</p>
+    <p><strong>"What if Atlas drafts something wrong?"</strong> Reject it, leave a comment explaining why. That comment becomes a candidate brand rule. The more rejections, the faster Atlas learns.</p>
+    <p><strong>"Can I see what gets sent to Amazon?"</strong> Atlas never sends anything to Amazon. You always download the file and upload it manually.</p>
+
+    <h2>What gets captured</h2>
+    <ul>
+      <li>Every listing draft Atlas generates</li>
+      <li>Every edit you make to those drafts (and optionally why)</li>
+      <li>Every catalog issue surfaced and which ones got fixed vs deferred</li>
+      <li>Every fix file downloaded</li>
+      <li>The state of any ASIN at the moment a change was made (so we can compare before/after)</li>
+      <li>Which operator took which action and when</li>
+    </ul>
+
+    <h2>What does NOT get captured</h2>
+    <ul>
+      <li>Your screen</li>
+      <li>Your keystrokes</li>
+      <li>Anything outside Atlas</li>
+      <li>Anything personal</li>
+    </ul>
+
+    <h2>Support</h2>
+    <ul>
+      <li><strong>Atlas itself / bugs / feature requests:</strong> Devang directly.</li>
+      <li><strong>Amazon questions / strategy:</strong> still your area, not Atlas's.</li>
+    </ul>
+
+    <h2>What's coming next (4-6 weeks)</h2>
+    <ul>
+      <li><strong>Photo memory</strong> — images persist across sessions, dedup automatically, link to ASINs.</li>
+      <li><strong>Marketing diagnosis</strong> — full PPC × catalog cross-reference report with day-1 keyword setup logic, captured in the substrate.</li>
+      <li><strong>Closed loop</strong> — see which decisions actually moved revenue / CVR / rank.</li>
+    </ul>
+
+    <h2>One ask before you start</h2>
+    <p>When something is unclear or feels clunky, tell us in the moment, not in week 4. The product is in active development; the cost of fixing friction this month is roughly zero. The cost of fixing it three months from now is much higher.</p>
+    <p>Glad you're on this. Let's go.</p>
+  </div>
+
+  <!-- ════════════════════════════ اردو ════════════════════════════ -->
+  <div class="lang-pane" data-lang="ur">
+    <div class="disclaimer">⚠ یہ ترجمہ AI سے ہوا ہے۔ کسی مقامی اردو بولنے والے سے جانچ ابھی باقی ہے۔ اگر کہیں الفاظ عجیب لگیں تو انگریزی ورژن کو معیار سمجھیں۔</div>
+
+    <h1>Atlas — Novelle آپریشنز کا تعارف</h1>
+    <p class="meta"><strong>کس کے لیے:</strong> ایجنسی کی وہ ٹیم جو Novelle کی Amazon آپریشنز چلائے گی · <strong>کس کی طرف سے:</strong> دیوانگ (Novelle) · <strong>تاریخ:</strong> مئی 2026</p>
+
+    <h2>یہ کیوں پڑھ رہے ہیں</h2>
+    <p>آپ Novelle کی Amazon آپریشنز چلائیں گے — لسٹنگز، کیٹلاگ کی صفائی، PPC تجزیہ، ہفتہ وار رپورٹنگ۔ یہ کام آپ Helium 10، Excel، Seller Central یا اپنے لیپ ٹاپ کے notes ایپ میں کر سکتے ہیں۔ ہر دوسرا برانڈ ایسے ہی کرتا ہے۔</p>
+    <p>Novelle آپ سے یہی کام Atlas نامی پلیٹ فارم کے <em>اندر</em> کرنے کو کہہ رہا ہے جو ہم نے بنایا ہے۔ یہ دستاویز بتاتی ہے کہ Atlas کیا ہے، آپ کے لیے کیا بدلتا ہے، اور — کھل کر — آپ کو اس میں کیا ملتا ہے۔</p>
+    <p>مختصر یہ ہے:</p>
+    <ul>
+      <li><strong>آپ کے لیے:</strong> Atlas مشینی کام آپ کے کندھوں سے اتارتا ہے (ہفتہ وار رپورٹیں خودکار بنتی ہیں، کیٹلاگ مسائل ڈالر کے اثر کے حساب سے ترتیب میں آتے ہیں، لسٹنگز جلدی ڈرافٹ ہوتی ہیں)۔ آپ کا وقت فیصلوں پر زیادہ لگتا ہے، ڈیٹا جمع کرنے پر کم۔</li>
+      <li><strong>Novelle کے لیے:</strong> آپ کا ہر فیصلہ محفوظ ہوتا ہے، تاکہ برانڈ کے پاس ایسی ادارتی یادداشت بنے جس پر آگے بنایا جا سکے۔</li>
+    </ul>
+    <p>یہ شراکت ہے، نوکری کی جگہ پر کوئی متبادل نہیں۔ Atlas آپ کا دوسرا دماغ ہے، آپ کا باس نہیں۔</p>
+
+    <h2>Atlas کیا کرتا ہے</h2>
+    <ol>
+      <li><strong>کیٹلاگ ہیلتھ۔</strong> کوئی بھی کیٹلاگ ایکسپورٹ ڈالیں۔ Atlas ہر ASIN کو اسکور کرتا ہے، ٹوٹے ویریئنٹس، غائب تصاویر، کمزور مواد سامنے لاتا ہے، اور حلوں کو ڈالر کے اثر کے حساب سے ترتیب دیتا ہے۔ ایک fix file بناتا ہے جو آپ لسٹنگ ایڈیٹر کو دے دیں۔</li>
+      <li><strong>NIS Wizard۔</strong> Amazon لسٹنگز ڈرافٹ کرتا ہے — ٹائٹل، بلٹس، تفصیل، بیک اینڈ کی ورڈز، A+ — Novelle کی آواز میں۔ آپ دیکھیں، ایڈٹ کریں، قبول کریں۔ Atlas ہر ایڈٹ سے سیکھتا ہے، اس لیے مہینہ 3 تک ڈرافٹس کو کم ایڈیٹنگ چاہیے ہوتی ہے۔</li>
+      <li><strong>مارکیٹنگ انٹیلیجنس (جلد آرہا ہے)۔</strong> PPC bulk فائل + search term report ڈالیں۔ Atlas انہیں کیٹلاگ کوالٹی سے جوڑتا ہے اور بتاتا ہے کہ اشتہاری پیسہ کہاں ٹوٹی لسٹنگز کی وجہ سے ضائع ہو رہا ہے بمقابلہ غلط bids۔</li>
+    </ol>
+
+    <h2>Atlas کیا نہیں کرتا</h2>
+    <ul>
+      <li><strong>Atlas Amazon پر کچھ نہیں بھیجتا۔</strong> یہ فائلیں بناتا ہے؛ آپ اپ لوڈ کرتے ہیں۔ ڈیٹا پر آخری ہاتھ ہمیشہ آپ کا ہوتا ہے۔</li>
+      <li><strong>Atlas PPC bids خود بخود نہیں بدلتا۔</strong> یہ بتاتا ہے کہاں ضائع ہو رہا ہے اور کہاں کم ہے؛ فیصلہ آپ کا ہے۔</li>
+      <li><strong>Atlas بغیر نگرانی نہیں چلتا۔</strong> ہر آؤٹ پٹ بھیجنے سے پہلے ریویو ہوتا ہے۔</li>
+      <li><strong>Atlas آپ کی جگہ نہیں لیتا۔</strong> یہ آپ کے کام کے مشینی حصے کم کرتا ہے اور فیصلوں والے حصوں کے لیے بہتر اوزار دیتا ہے۔</li>
+      <li><strong>Atlas نگرانی کا آلہ نہیں ہے۔</strong> یہ صرف یہ ریکارڈ کرتا ہے کہ کیا فیصلہ ہوا اور کس نے کیا — جیسے کوئی Google Doc کرتا ہے۔ مقصد ادارتی یادداشت ہے، performance review نہیں۔</li>
+    </ul>
+
+    <h2>Atlas کیسے استعمال کریں — قدم بہ قدم</h2>
+    <p class="meta">پہلی بار سیٹ اپ، پھر روزانہ/ہفتہ وار فلو۔</p>
+
+    <h3>1. پہلی بار Atlas کھولنے پر</h3>
+    <ol class="step-list">
+      <li>Chrome یا Safari میں <a href="https://tlg-amazon-intelligence-dashboard.onrender.com" target="_blank">tlg-amazon-intelligence-dashboard.onrender.com</a> پر جائیں۔</li>
+      <li>اوپر دائیں کونے میں چھوٹا سا چپ نظر آئے گا جس پر <strong>"Sign in"</strong> لکھا ہوگا۔ اس پر کلک کریں۔</li>
+      <li>اپنا <strong>ڈسپلے نام</strong> (اصل نام یا پیشہ ورانہ نام) درج کریں اور رول <strong>agency</strong> چنیں۔</li>
+      <li>چپ پر اب آپ کا نام دکھے گا۔ 90 دن تک سائن ان رہیں گے؛ پاسورڈ نہیں چاہیے۔</li>
+      <li>برانڈ ڈراپ ڈاؤن <strong>Novelle</strong> پر لاک ہوگا — یہی درست ہے۔ ہم جان بوجھ کر ایک برانڈ پر محدود ہیں۔</li>
+    </ol>
+
+    <h3>2. پہلی فائل ڈالیں (Inputs ٹیب)</h3>
+    <ol class="step-list">
+      <li>بائیں سائڈبار میں <strong>Inputs</strong> پر کلک کریں۔</li>
+      <li>کوئی بھی catalog/sales/PPC bulk/search term فائل ڈراپ زون پر گھسیٹیں، یا <strong>Choose file</strong> پر کلک کریں۔</li>
+      <li>Atlas فائل کی قسم خود پہچانتا ہے اور اپ لوڈ سے پہلے دکھاتا ہے کہ کیا ملا۔</li>
+      <li>اپ لوڈ کے بعد فائل نیچے <strong>Ingestion history</strong> ٹیبل میں آجاتی ہے۔ صفحے کے اوپر <strong>Staleness bar</strong> بتاتا ہے ہر قسم کی فائل کتنی پرانی ہے۔</li>
+      <li>کیٹلاگ فائلوں کے لیے Atlas خودکار طور پر Catalog Health analyser بھی چلاتا ہے۔</li>
+    </ol>
+
+    <h3>3. لسٹنگز بنائیں (NIS / Bulk Upload)</h3>
+    <ol class="step-list">
+      <li>بائیں سائڈبار میں <strong>Bulk Upload</strong> پر کلک کریں (Create کے نیچے)۔</li>
+      <li>ایک پروڈکٹ ٹیمپلیٹ (Amazon NIS .xlsm) اپ لوڈ کریں یا موجودہ استعمال کریں۔</li>
+      <li>جو styles ڈرافٹ کرنا چاہیں منتخب کریں، پھر <strong>Generate</strong> دبائیں۔</li>
+      <li>ہر فیلڈ کو دیکھیں — ٹائٹل، بلٹس، تفصیل، بیک اینڈ کی ورڈز۔ آپ <strong>Accept</strong>، <strong>Edit</strong>، یا <strong>Reject</strong> کر سکتے ہیں۔</li>
+      <li>جب آپ ایڈٹ کرتے ہیں، Atlas پوچھتا ہے کہ scope کیا ہے: صرف یہ لسٹنگ، پورے برانڈ پر، یا پوری کیٹگری پر۔ <strong>یہ اہم ہے</strong> — آپ کا انتخاب برانڈ کی آواز کو سکھاتا ہے۔ "برانڈ-وسیع" تب چنیں جب آپ کو یقین ہو کہ یہ اصول عام ہوگا۔</li>
+      <li>کام مکمل ہونے پر <strong>Submit session</strong> پر کلک کریں۔ Atlas مختصر سوالات پوچھتا ہے (سب سے زیادہ رکاوٹ کیا تھی؟ کونسا اصول قابل ضبط ہے؟)۔ ہر کا ایک جملہ کافی ہے۔</li>
+      <li>تیار .xlsm ڈاؤن لوڈ کر کے Seller Central پر معمول کے مطابق اپ لوڈ کریں۔</li>
+    </ol>
+
+    <h3>4. آڈٹ ٹریل دیکھیں (Memory ٹیب)</h3>
+    <ol class="step-list">
+      <li>بائیں سائڈبار میں <strong>Memory</strong> پر کلک کریں۔</li>
+      <li><strong>Sessions ٹیب:</strong> ہر سیشن جو آپ نے چلایا، نیا پہلے۔ کسی بھی قطار پر کلک کریں اور اس بیٹھک کی ساری ٹائم لائن دیکھیں — Atlas نے کیا ڈرافٹ کیا، آپ نے کیا کیا، اور اس لمحے کا ڈیٹا snapshot۔</li>
+      <li><strong>Decisions ٹیب:</strong> تمام سیشنز کا flat audit۔ فیلڈ نام، ASIN، action (accept/edit/reject/comment)، آپریٹر، یا تاریخ کے دائرے سے فلٹر کریں۔</li>
+      <li>یہ تب استعمال کریں جب کلائنٹ پوچھے "تین ہفتے پہلے B0XXXX کا ٹائٹل کیوں بدلا؟" — Memory آپ کو آپریٹر، ٹائم اسٹیمپ، اور ڈیٹا سیاق کے ساتھ جواب دیتا ہے۔</li>
+    </ol>
+
+    <h3>5. ہفتہ وار شیڈول — تجویز کردہ تال</h3>
+    <ul>
+      <li><strong>پیر:</strong> PPC تجزیہ۔ Campaign Manager سے bulk فائل → Inputs → diagnosis دیکھیں → تبدیلیاں کریں۔</li>
+      <li><strong>منگل:</strong> NIS میں لسٹنگ اپ ڈیٹس۔ ڈرافٹس بنائیں → Novelle کی آواز میں ایڈٹ → ڈاؤن لوڈ → اپ لوڈ۔</li>
+      <li><strong>بدھ:</strong> کیٹلاگ صفائی۔ Inventory ایکسپورٹ → Inputs → Catalog Health رپورٹ → fix file۔</li>
+      <li><strong>جمعہ:</strong> ہفتہ وار کلائنٹ رپورٹ۔ Atlas ڈرافٹ بناتا ہے؛ آپ ریویو اور ایڈٹ کرتے ہیں۔</li>
+    </ul>
+
+    <h3>6. عام سوالات</h3>
+    <p><strong>"میں نے ایک سیشن میں غلطی کی، واپس لے سکتا ہوں؟"</strong> decision log کو مٹایا نہیں جا سکتا — یہی audit trail کا مقصد ہے۔ لیکن آپ ایک corrective decision لاگ کر سکتے ہیں (تبصرے کے ساتھ ایک follow-up edit)۔ Memory ٹیب دونوں دکھائے گا۔</p>
+    <p><strong>"اپنی ٹیم میں دوسرے آپریٹر پر سوئچ کیسے کروں؟"</strong> اوپر دائیں اپنے نام کے چپ پر کلک کریں → "Sign out" → اگلا فرد اپنے ڈسپلے نام سے سائن ان کرے۔ ایک ہی workstation ٹھیک ہے۔</p>
+    <p><strong>"اگر Atlas غلط ڈرافٹ کرے؟"</strong> Reject کریں، تبصرے میں وجہ لکھیں۔ یہ تبصرہ ممکنہ brand rule بن جاتا ہے۔ جتنے زیادہ rejects، Atlas اتنا تیز سیکھتا ہے۔</p>
+    <p><strong>"کیا میں دیکھ سکتا ہوں جو Amazon کو بھیجا جاتا ہے؟"</strong> Atlas Amazon کو کبھی کچھ نہیں بھیجتا۔ آپ ہمیشہ فائل ڈاؤن لوڈ کر کے خود manually اپ لوڈ کرتے ہیں۔</p>
+
+    <h2>کیا محفوظ ہوتا ہے</h2>
+    <ul>
+      <li>Atlas کا تیار کردہ ہر listing draft</li>
+      <li>ان drafts پر آپ کا ہر ایڈٹ (اور اختیاری طور پر وجہ)</li>
+      <li>ہر کیٹلاگ مسئلہ جو سامنے آیا اور کونسے فکس ہوئے، کونسے ملتوی</li>
+      <li>ہر ڈاؤن لوڈ شدہ fix file</li>
+      <li>کسی بھی ASIN کی حالت جس لمحے تبدیلی ہوئی (تاکہ پہلے/بعد کا موازنہ ہو سکے)</li>
+      <li>کس آپریٹر نے کب کیا کیا</li>
+    </ul>
+
+    <h2>کیا محفوظ نہیں ہوتا</h2>
+    <ul>
+      <li>آپ کی اسکرین</li>
+      <li>آپ کے keystrokes</li>
+      <li>Atlas سے باہر کوئی چیز</li>
+      <li>کوئی ذاتی چیز</li>
+    </ul>
+
+    <h2>سپورٹ</h2>
+    <ul>
+      <li><strong>Atlas / bugs / feature درخواست:</strong> سیدھے دیوانگ سے۔</li>
+      <li><strong>Amazon سوالات / حکمت عملی:</strong> یہ آپ کا میدان ہے، Atlas کا نہیں۔</li>
+    </ul>
+
+    <h2>آگے کیا آرہا ہے (4-6 ہفتے)</h2>
+    <ul>
+      <li><strong>Photo memory</strong> — تصاویر سیشنز کے درمیان محفوظ رہتی ہیں، خود dedupe ہوتی ہیں، ASINs سے جڑتی ہیں۔</li>
+      <li><strong>Marketing diagnosis</strong> — مکمل PPC × کیٹلاگ کراس-ریفرنس رپورٹ، day-1 keyword setup logic کے ساتھ، substrate میں محفوظ۔</li>
+      <li><strong>Closed loop</strong> — دیکھیں کس فیصلے نے revenue / CVR / rank کو حقیقتاً ہلایا۔</li>
+    </ul>
+
+    <h2>شروع کرنے سے پہلے ایک گزارش</h2>
+    <p>جب کوئی چیز غیر واضح یا الجھن والی لگے، اسی وقت بتائیں، ہفتہ 4 پر نہیں۔ پروڈکٹ زیر تعمیر ہے؛ اس مہینے رکاوٹ ٹھیک کرنے کی لاگت تقریباً صفر ہے۔ تین مہینے بعد بہت زیادہ۔</p>
+    <p>خوشی ہے کہ آپ ساتھ ہیں۔ چلیں۔</p>
+  </div>
+
+  <!-- ════════════════════════════ বাংলা ════════════════════════════ -->
+  <div class="lang-pane" data-lang="bn">
+    <div class="disclaimer">⚠ এই অনুবাদ AI দিয়ে তৈরি। কোনো নেটিভ বাংলা ভাষাভাষী এখনো এটি যাচাই করেননি। কিছু শব্দ অদ্ভুত মনে হলে ইংরেজি সংস্করণকেই প্রামাণ্য ধরবেন।</div>
+
+    <h1>Atlas — Novelle অপারেশনস অনবোর্ডিং</h1>
+    <p class="meta"><strong>উদ্দিষ্ট:</strong> Novelle-এর Amazon অপারেশন চালাবে যে এজেন্সি টিম · <strong>প্রেরক:</strong> দেবাঙ্গ (Novelle) · <strong>তারিখ:</strong> মে ২০২৬</p>
+
+    <h2>এটা কেন পড়ছেন</h2>
+    <p>আপনি Novelle-এর Amazon অপারেশনস চালাবেন — লিস্টিং, ক্যাটালগ স্বাস্থ্য, PPC বিশ্লেষণ, সাপ্তাহিক রিপোর্টিং। এই কাজগুলো আপনি Helium 10-এ, Excel-এ, সরাসরি Seller Central-এ বা ল্যাপটপের notes অ্যাপে করতে পারেন। প্রায় প্রতিটি ব্র্যান্ড এভাবেই কাজ করে।</p>
+    <p>Novelle আপনাকে সেই একই কাজ Atlas নামের একটি প্ল্যাটফর্মের <em>ভেতরে</em> করতে বলছে, যেটি আমরা তৈরি করেছি। এই ডকুমেন্ট বুঝাবে Atlas কী, আপনার জন্য কী বদলায়, এবং — সরাসরি বলে — আপনার লাভ কী।</p>
+    <p>সংক্ষেপে:</p>
+    <ul>
+      <li><strong>আপনার জন্য:</strong> Atlas যান্ত্রিক কাজগুলো আপনার থেকে নিয়ে নেয় (সাপ্তাহিক রিপোর্ট স্বয়ংক্রিয়ভাবে তৈরি হয়, ক্যাটালগ সমস্যা ডলার-প্রভাব অনুযায়ী র‍্যাঙ্ক হয়, লিস্টিং দ্রুত খসড়া হয়)। আপনার সময় বেশি যাবে সিদ্ধান্তে, ডেটা একত্র করায় কম।</li>
+      <li><strong>Novelle-এর জন্য:</strong> আপনার প্রতিটি সিদ্ধান্ত সংরক্ষিত হয় যাতে ব্র্যান্ডের একটি প্রাতিষ্ঠানিক স্মৃতি গড়ে ওঠে।</li>
+    </ul>
+    <p>এটি অংশীদারিত্ব, প্রতিস্থাপন নয়। Atlas আপনার দ্বিতীয় মস্তিষ্ক, আপনার বস নয়।</p>
+
+    <h2>Atlas কী করে</h2>
+    <ol>
+      <li><strong>Catalog Health.</strong> যেকোনো ক্যাটালগ এক্সপোর্ট ছেড়ে দিন। Atlas প্রতিটি ASIN-কে স্কোর করে, ভাঙা ভ্যারিয়েন্ট, অনুপস্থিত ছবি, দুর্বল কনটেন্ট সামনে আনে, এবং সমাধানগুলোকে ডলার-প্রভাব অনুযায়ী সাজায়। একটি fix file তৈরি করে যা লিস্টিং এডিটরের হাতে দেওয়া যায়।</li>
+      <li><strong>NIS Wizard.</strong> Amazon লিস্টিং খসড়া করে — টাইটেল, বুলেট, বিবরণ, ব্যাকএন্ড কীওয়ার্ড, A+ — Novelle-এর কণ্ঠে। আপনি দেখুন, এডিট করুন, accept করুন। প্রতিটি এডিট থেকে Atlas শেখে, তাই ৩ মাসের মধ্যে খসড়াগুলোতে কম এডিট লাগে।</li>
+      <li><strong>Marketing intelligence (শীঘ্রই আসছে).</strong> PPC bulk ফাইল + search term report দিন। Atlas এগুলোকে ক্যাটালগ মানের সাথে মিলিয়ে বলে কোথায় বিজ্ঞাপনের টাকা ভাঙা লিস্টিংয়ের জন্য নষ্ট হচ্ছে আর কোথায় ভুল bid-এর জন্য।</li>
+    </ol>
+
+    <h2>Atlas কী করে না</h2>
+    <ul>
+      <li><strong>Atlas Amazon-এ কিছু পাঠায় না।</strong> এটি ফাইল তৈরি করে; আপনি আপলোড করেন। ডেটায় শেষ হাত সবসময় আপনার।</li>
+      <li><strong>Atlas PPC bid স্বয়ংক্রিয়ভাবে বদলায় না।</strong> এটি বলে কোথায় অপচয় আর কোথায় কম খরচ; সিদ্ধান্ত আপনার।</li>
+      <li><strong>Atlas নিরীক্ষণ ছাড়া চলে না।</strong> প্রতিটি আউটপুট পাঠানোর আগে পর্যালোচিত হয়।</li>
+      <li><strong>Atlas আপনাকে প্রতিস্থাপন করে না।</strong> এটি আপনার কাজের যান্ত্রিক অংশ সরিয়ে দেয় এবং যেখানে বিচার দরকার সেখানে ভালো হাতিয়ার দেয়।</li>
+      <li><strong>Atlas নজরদারি নয়।</strong> এটি শুধু রেকর্ড করে কী সিদ্ধান্ত হলো এবং কে নিলো — Google Doc যেমন করে। লক্ষ্য প্রাতিষ্ঠানিক স্মৃতি, performance review নয়।</li>
+    </ul>
+
+    <h2>Atlas কীভাবে ব্যবহার করবেন — ধাপে ধাপে</h2>
+    <p class="meta">প্রথমবারের সেটআপ, তারপর প্রতিদিনের/সাপ্তাহিক ছন্দ।</p>
+
+    <h3>১. প্রথমবার Atlas খোলার সময়</h3>
+    <ol class="step-list">
+      <li>Chrome বা Safari-তে <a href="https://tlg-amazon-intelligence-dashboard.onrender.com" target="_blank">tlg-amazon-intelligence-dashboard.onrender.com</a> খুলুন।</li>
+      <li>উপরের ডান কোণে একটি ছোট chip দেখবেন যেখানে লেখা <strong>"Sign in"</strong>। তাতে ক্লিক করুন।</li>
+      <li>আপনার <strong>display name</strong> (আসল নাম বা পেশাগত নাম) দিন এবং role হিসেবে <strong>agency</strong> বেছে নিন।</li>
+      <li>Chip-এ এখন আপনার নাম দেখাবে। ৯০ দিন sign-in থাকবেন; পাসওয়ার্ড লাগবে না।</li>
+      <li>Brand dropdown <strong>Novelle</strong>-এ লক থাকবে — এটাই ঠিক। আমরা ইচ্ছাকৃতভাবে এক ব্র্যান্ডে সীমাবদ্ধ।</li>
+    </ol>
+
+    <h3>২. প্রথম ফাইল দিন (Inputs tab)</h3>
+    <ol class="step-list">
+      <li>বাম sidebar-এ <strong>Inputs</strong> ক্লিক করুন।</li>
+      <li>যেকোনো catalog/sales/PPC bulk/search term ফাইল drop zone-এ টেনে আনুন, অথবা <strong>Choose file</strong> ক্লিক করুন।</li>
+      <li>Atlas নিজেই ফাইলের ধরন শনাক্ত করে এবং আপলোডের আগে দেখায় কী পেয়েছে।</li>
+      <li>আপলোডের পর ফাইলটি নিচে <strong>Ingestion history</strong> টেবিলে আসে। উপরে <strong>Staleness bar</strong> দেখায় প্রতিটি ধরনের ফাইল কত পুরোনো।</li>
+      <li>ক্যাটালগ ফাইলের জন্য Atlas স্বয়ংক্রিয়ভাবে Catalog Health analyser-ও চালায়।</li>
+    </ol>
+
+    <h3>৩. লিস্টিং তৈরি করুন (NIS / Bulk Upload)</h3>
+    <ol class="step-list">
+      <li>বাম sidebar-এ <strong>Bulk Upload</strong> ক্লিক করুন (Create-এর নিচে)।</li>
+      <li>একটি product template (Amazon NIS .xlsm) আপলোড করুন বা বিদ্যমানটি ব্যবহার করুন।</li>
+      <li>যে styles খসড়া করতে চান বেছে নিন, তারপর <strong>Generate</strong> চাপুন।</li>
+      <li>প্রতিটি field পর্যালোচনা করুন — title, bullets, description, backend keywords। আপনি <strong>Accept</strong>, <strong>Edit</strong>, বা <strong>Reject</strong> করতে পারেন।</li>
+      <li>এডিট করলে Atlas scope জিজ্ঞেস করে: শুধু এই লিস্টিং, ব্র্যান্ড-জুড়ে, নাকি ক্যাটেগরি-জুড়ে। <strong>এটি গুরুত্বপূর্ণ</strong> — আপনার পছন্দ ব্র্যান্ড voice-কে শেখায়। "ব্র্যান্ড-জুড়ে" তখনই বেছে নিন যখন নিশ্চিত যে নিয়মটি সাধারণীকৃত।</li>
+      <li>শেষ হলে <strong>Submit session</strong> চাপুন। Atlas সংক্ষিপ্ত প্রশ্ন করে (সবচেয়ে বড় বাধা কী ছিল? কোন নিয়ম codify-যোগ্য?)। প্রতিটিতে এক বাক্য যথেষ্ট।</li>
+      <li>তৈরি .xlsm ডাউনলোড করে Seller Central-এ স্বাভাবিকভাবে আপলোড করুন।</li>
+    </ol>
+
+    <h3>৪. Audit trail দেখুন (Memory tab)</h3>
+    <ol class="step-list">
+      <li>বাম sidebar-এ <strong>Memory</strong> ক্লিক করুন।</li>
+      <li><strong>Sessions tab:</strong> আপনার চালানো প্রতিটি session, নতুন আগে। যেকোনো সারিতে ক্লিক করলে সেই বসার সিদ্ধান্তগুলোর পুরো timeline দেখা যাবে — Atlas কী খসড়া করেছে, আপনি কী করেছেন, এবং সেই মুহূর্তের data snapshot।</li>
+      <li><strong>Decisions tab:</strong> সব session-এর flat audit। Field name, ASIN, action (accept/edit/reject/comment), operator, বা তারিখের পরিসরে filter করুন।</li>
+      <li>ক্লায়েন্ট যখন জিজ্ঞেস করে "তিন সপ্তাহ আগে B0XXXX-এর title কেন বদলেছিল?" — Memory আপনাকে operator, timestamp, এবং data context সহ উত্তর দেয়।</li>
+    </ol>
+
+    <h3>৫. সাপ্তাহিক ছন্দ — পরামর্শ</h3>
+    <ul>
+      <li><strong>সোমবার:</strong> PPC বিশ্লেষণ। Campaign Manager থেকে bulk file → Inputs → diagnosis দেখুন → পরিবর্তন প্রয়োগ করুন।</li>
+      <li><strong>মঙ্গলবার:</strong> NIS-এ listing update। Drafts তৈরি → Novelle-এর কণ্ঠে edit → ডাউনলোড → আপলোড।</li>
+      <li><strong>বুধবার:</strong> Catalog hygiene। Inventory export → Inputs → Catalog Health report → fix file।</li>
+      <li><strong>শুক্রবার:</strong> সাপ্তাহিক client report। Atlas খসড়া করে; আপনি পর্যালোচনা ও edit করেন।</li>
+    </ul>
+
+    <h3>৬. সাধারণ প্রশ্ন</h3>
+    <p><strong>"আমি একটি session-এ ভুল করেছি, undo করতে পারি?"</strong> Decision log মুছে ফেলা যায় না — audit trail-এর উদ্দেশ্যই এটি। কিন্তু আপনি একটি corrective decision log করতে পারেন (একটি follow-up edit মন্তব্য সহ)। Memory tab দুটোই দেখাবে।</p>
+    <p><strong>"টিমে অন্য operator-এ switch করব কীভাবে?"</strong> উপরের ডানে আপনার name chip-এ ক্লিক → "Sign out" → পরের ব্যক্তি তার নিজের display name দিয়ে sign in করবে। একই workstation চলবে।</p>
+    <p><strong>"Atlas ভুল খসড়া করলে?"</strong> Reject করুন, মন্তব্যে কারণ লিখুন। সেই মন্তব্য সম্ভাব্য brand rule হয়ে ওঠে। যত বেশি reject, Atlas তত দ্রুত শেখে।</p>
+    <p><strong>"Amazon-এ কী পাঠানো হয় দেখতে পারি?"</strong> Atlas Amazon-এ কখনো কিছু পাঠায় না। আপনি সবসময় ফাইল ডাউনলোড করে নিজে manually আপলোড করেন।</p>
+
+    <h2>কী সংরক্ষিত হয়</h2>
+    <ul>
+      <li>Atlas-এর তৈরি প্রতিটি listing draft</li>
+      <li>সেই draft-গুলোতে আপনার প্রতিটি edit (এবং ঐচ্ছিকভাবে কেন)</li>
+      <li>সামনে আসা প্রতিটি catalog issue এবং কোনগুলো ঠিক হলো বনাম স্থগিত</li>
+      <li>প্রতিটি ডাউনলোড হওয়া fix file</li>
+      <li>যেকোনো ASIN-এর অবস্থা যে মুহূর্তে পরিবর্তন হলো (আগে/পরে তুলনার জন্য)</li>
+      <li>কোন operator কখন কী action নিলো</li>
+    </ul>
+
+    <h2>কী সংরক্ষিত হয় না</h2>
+    <ul>
+      <li>আপনার screen</li>
+      <li>আপনার keystrokes</li>
+      <li>Atlas-এর বাইরের কিছু</li>
+      <li>ব্যক্তিগত কিছু</li>
+    </ul>
+
+    <h2>সহায়তা</h2>
+    <ul>
+      <li><strong>Atlas / bugs / feature request:</strong> সরাসরি দেবাঙ্গকে।</li>
+      <li><strong>Amazon প্রশ্ন / কৌশল:</strong> এটি এখনো আপনার ক্ষেত্র, Atlas-এর নয়।</li>
+    </ul>
+
+    <h2>সামনে কী আসছে (৪-৬ সপ্তাহ)</h2>
+    <ul>
+      <li><strong>Photo memory</strong> — ছবি session-এর মধ্যে টিকে থাকে, স্বয়ংক্রিয় dedup, ASIN-এর সাথে link।</li>
+      <li><strong>Marketing diagnosis</strong> — সম্পূর্ণ PPC × catalog cross-reference report, day-1 keyword setup logic সহ, substrate-এ সংরক্ষিত।</li>
+      <li><strong>Closed loop</strong> — দেখুন কোন সিদ্ধান্ত প্রকৃতপক্ষে revenue / CVR / rank নাড়িয়েছে।</li>
+    </ul>
+
+    <h2>শুরুর আগে একটি অনুরোধ</h2>
+    <p>যখন কিছু অস্পষ্ট বা অসুবিধাজনক মনে হয়, তখনই বলুন, সপ্তাহ ৪-এ নয়। Product সক্রিয় উন্নয়নে আছে; এই মাসে friction ঠিক করার খরচ প্রায় শূন্য। তিন মাস পরে অনেক বেশি।</p>
+    <p>আপনি এই কাজে আছেন — খুশি লাগছে। চলুন শুরু করি।</p>
+  </div>
+
+  </main>
+
+  <script>
+    function setLang(lang) {
+      document.querySelectorAll('.lang-pane').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-lang') === lang);
+      });
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-target') === lang);
+      });
+      document.documentElement.setAttribute('lang', lang);
+      document.documentElement.setAttribute('dir', lang === 'ur' ? 'rtl' : 'ltr');
+      try { localStorage.setItem('atlas_doc_lang', lang); } catch (e) {}
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    // Restore last-used language
+    try {
+      const saved = localStorage.getItem('atlas_doc_lang');
+      if (saved && ['en','ur','bn'].includes(saved)) setLang(saved);
+    } catch (e) {}
+  </script>
+</body>
+</html>
