@@ -11572,7 +11572,17 @@ def atlas_mkt_wizard_generate():
         )
     except Exception as exc:
         print(f"[atlas] wizard generate failed: {exc}", flush=True)
-        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+        return jsonify({
+            "ok": False,
+            "error": "Generation failed. The substrate is reachable but candidate generation hit a snag \u2014 try again, or refresh the page.",
+            "detail": str(exc)[:200],
+        }), 500
+    if not result.get("candidates"):
+        return jsonify({
+            "ok": False,
+            "error": "No candidates produced. Check ANTHROPIC_API_KEY on the server, or upload a PPC bulk first so the rule-based fallback has siblings to draw from.",
+            **result,
+        }), 200   # 200 because the wizard succeeded structurally
     return jsonify({"ok": True, "workspace_id": workspace_id, **result})
 
 

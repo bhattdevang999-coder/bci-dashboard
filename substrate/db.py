@@ -80,14 +80,20 @@ def get_pool():
                 return None
 
         try:
-            # Pool tuning: Render's free Postgres allows ~97 connections.
-            # We keep the per-process pool small (5) because Gunicorn runs
-            # multiple workers and each gets its own pool.
+            # Pool tuning. Render's Postgres closes idle connections after
+            # ~5 minutes; without `check=` the pool will hand out stale
+            # connections that time out at the application layer, which is
+            # what produced the 'couldn't get a connection after 10s' error
+            # on the wizard.
+            from psycopg_pool import ConnectionPool as _CP  # type: ignore
             _POOL = ConnectionPool(
                 conninfo=url,
                 min_size=1,
-                max_size=5,
+                max_size=10,
                 timeout=10.0,
+                max_lifetime=10 * 60,           # rotate connections every 10 min
+                max_idle=5 * 60,                # close idle conns after 5 min
+                check=_CP.check_connection,     # health-check before handing out
                 kwargs={"connect_timeout": 5},
             )
             # Force the pool to validate the connection synchronously \u2014

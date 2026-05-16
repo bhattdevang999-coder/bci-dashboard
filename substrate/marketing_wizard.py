@@ -345,8 +345,19 @@ def generate_candidates(
 
     Never raises. On LLM failure, falls back to rule-based generation.
     """
-    brand_profile = _read_brand_profile(workspace_id) or {}
-    siblings = _read_sibling_keywords(workspace_id, asin)
+    # Read DB context with bounded blast radius — LLM call must NOT happen
+    # while we hold a connection. Both helpers open their own short-lived
+    # connection and release it before returning.
+    try:
+        brand_profile = _read_brand_profile(workspace_id) or {}
+    except Exception as exc:
+        logger.warning("brand_profile read failed: %s", exc)
+        brand_profile = {}
+    try:
+        siblings = _read_sibling_keywords(workspace_id, asin)
+    except Exception as exc:
+        logger.warning("sibling read failed: %s", exc)
+        siblings = []
     candidates: list[dict[str, Any]] = []
     source = "fallback"
     if anthropic_client is not None:

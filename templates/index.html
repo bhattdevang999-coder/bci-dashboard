@@ -3242,6 +3242,50 @@
   color: var(--text-sec); font-size: 13px;
 }
 
+/* ═══ Reusable info-tip ═══ */
+.info-tip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-sec);
+  font-size: 10px; font-weight: 700; font-style: italic;
+  cursor: pointer; user-select: none;
+  transition: all 120ms ease;
+  position: relative;
+  font-family: Georgia, "Times New Roman", serif;
+}
+.info-tip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.info-tip-pop {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  z-index: 9999;
+  width: 320px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--text);
+  text-align: left;
+  line-height: 1.55;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  display: none;
+  cursor: default;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-transform: none; letter-spacing: 0;
+}
+.info-tip.open .info-tip-pop { display: block; }
+.info-tip-pop strong { color: var(--accent); }
+
 /* ═══ Day-1 Keyword Wizard ═══ */
 .wiz-modal {
   position: fixed; inset: 0; background: rgba(0,0,0,0.7);
@@ -6841,7 +6885,12 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="wiz-panel" onclick="event.stopPropagation()">
       <div class="wiz-header">
         <div>
-          <div class="wiz-eyebrow">Marketing · Day-1 Keyword Setup</div>
+          <div class="wiz-eyebrow">
+            Marketing · Day-1 Keyword Setup
+            <span class="info-tip" onclick="toggleInfoTip(this, event)">i
+              <span class="info-tip-pop"><strong>What this wizard does.</strong> Generates a candidate keyword list for advertising one ASIN on Amazon. Reads your brand profile + any prior PPC data Atlas has seen, calls Claude to draft 5–80 keywords with match types and bid ranges, and walks you through Accept / Edit / Reject for each one.<br/><br/><strong>Why each click matters.</strong> Every Accept / Edit / Reject is logged as a decision_event in Memory. Atlas learns your preferences over time — by month 3, the candidate list needs less editing.<br/><br/><strong>What it does NOT do.</strong> Does not push to Amazon. You download a CSV at the end and upload it through Campaign Manager yourself.</span>
+            </span>
+          </div>
           <div id="wiz-title" class="wiz-title">Set up a new ASIN</div>
         </div>
         <div class="wiz-header-right">
@@ -6853,19 +6902,39 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
       <!-- Phase 1: Setup -->
       <div id="wiz-phase-setup" class="wiz-phase active">
         <div class="wiz-section">
-          <label class="wiz-label">ASIN <span style="color:var(--text-sec); font-weight:400;">(required)</span></label>
+          <label class="wiz-label">
+            ASIN <span style="color:var(--text-sec); font-weight:400;">(required)</span>
+            <span class="info-tip" onclick="toggleInfoTip(this, event)">i
+              <span class="info-tip-pop"><strong>What this is.</strong> Amazon Standard Identification Number — the 10-character ID for the listing you want to advertise. Format: <code>B0</code> + 8 alphanumeric chars. Atlas uses this to anchor every keyword decision so the audit trail in Memory ties back to a specific product. Multiple ASINs in one wizard run isn't supported yet — run the wizard once per ASIN for now.</span>
+            </span>
+          </label>
           <input id="wiz-asin" type="text" class="wiz-input" placeholder="B0XXXXXXXX" />
         </div>
         <div class="wiz-section">
-          <label class="wiz-label">Product type <span style="color:var(--text-sec); font-weight:400;">(optional, helps generation)</span></label>
+          <label class="wiz-label">
+            Product type <span style="color:var(--text-sec); font-weight:400;">(optional, helps generation)</span>
+            <span class="info-tip" onclick="toggleInfoTip(this, event)">i
+              <span class="info-tip-pop"><strong>What this is.</strong> A short description of what the product is, in plain language. Examples: "high-rise leggings", "fleece pullover", "5-piece travel pouch set". Atlas feeds this to the LLM along with your brand profile so the candidate keywords are anchored to the actual product, not a generic apparel list. Skip if uncertain — generation still works, just less precisely.</span>
+            </span>
+          </label>
           <input id="wiz-product-type" type="text" class="wiz-input" placeholder="e.g. high-rise leggings, fleece pullover" />
         </div>
         <div class="wiz-section">
-          <label class="wiz-label">Style / model name <span style="color:var(--text-sec); font-weight:400;">(optional)</span></label>
+          <label class="wiz-label">
+            Style / model name <span style="color:var(--text-sec); font-weight:400;">(optional)</span>
+            <span class="info-tip" onclick="toggleInfoTip(this, event)">i
+              <span class="info-tip-pop"><strong>What this is.</strong> The internal name you give this product (e.g. "Novelle Essential", "Classic Slim"). Used as additional generation context. If your brand has a signature naming pattern ("Slim", "Pro", "Ultra"), the LLM picks up on it.</span>
+            </span>
+          </label>
           <input id="wiz-style-name" type="text" class="wiz-input" placeholder="e.g. Novelle Essential" />
         </div>
         <div class="wiz-section">
-          <label class="wiz-label">Candidate count <span style="color:var(--text-sec); font-weight:400;">5–80</span></label>
+          <label class="wiz-label">
+            Candidate count <span style="color:var(--text-sec); font-weight:400;">5–80</span>
+            <span class="info-tip" onclick="toggleInfoTip(this, event)">i
+              <span class="info-tip-pop"><strong>How many keywords to draft.</strong> 40 is the sweet spot for one ASIN — enough variety across themes (branded / feature / competitor), few enough to review in 10–15 minutes. Going higher (60–80) is useful when you have lots of feature angles. Lower (5–20) is fine for tight categories or when you've already accepted a strong base set on a sibling ASIN.</span>
+            </span>
+          </label>
           <input id="wiz-count" type="number" class="wiz-input" value="40" min="5" max="80" />
         </div>
         <div class="wiz-disclosure">
@@ -6887,8 +6956,21 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
             <button class="wiz-chip" data-theme="feature" onclick="wizSetTheme('feature')">Feature</button>
             <button class="wiz-chip" data-theme="competitor" onclick="wizSetTheme('competitor')">Competitor</button>
           </div>
+          <span class="info-tip" onclick="toggleInfoTip(this, event)" style="margin-left:0;">i
+            <span class="info-tip-pop"><strong>Themes.</strong> Each candidate is tagged by intent.<br/><strong>Branded</strong> — category-anchored terms ("yoga pants", "premium leggings"). High-volume but competitive.<br/><strong>Feature</strong> — use-case / problem-solving ("squat-proof leggings", "high-waisted compression"). Lower volume but higher conversion.<br/><strong>Competitor</strong> — targets people searching for similar products from other brands. Highest acquisition cost but pulls customers away from rivals. Filter to focus your review on one theme at a time.</span>
+          </span>
           <div style="flex:1;"></div>
           <span id="wiz-counts" style="color:var(--text-sec); font-size:12px;"></span>
+        </div>
+        <div class="wiz-actions-help" style="display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:11px; color:var(--text-sec);">
+          <span>For each candidate:</span>
+          <span style="color:#22c55e; font-weight:600;">Accept</span> = use as-is
+          <span style="color:#60a5fa; font-weight:600;">Edit</span> = change wording / match type
+          <span style="color:#ef4444; font-weight:600;">Reject</span> = don't bid on this term
+          <span style="color:#f59e0b; font-weight:600;">Comment</span> = leave a note without deciding
+          <span class="info-tip" onclick="toggleInfoTip(this, event)">i
+            <span class="info-tip-pop"><strong>Each decision is logged.</strong> Every Accept/Edit/Reject writes a decision_event to the Memory tab. Edits also capture why (the comment) and scope (just this listing / brand-wide rule / propose rule for review).<br/><br/><strong>Brand-wide rule</strong> means: never use this kind of edit again on any Novelle listing without asking. Use it sparingly — "just this listing" is the right default unless you're sure.</span>
+          </span>
         </div>
         <div id="wiz-candidates" class="wiz-candidates"></div>
         <div class="wiz-actions">
@@ -12791,6 +12873,24 @@ function mktRenderDetail(keyword, asin, d) {
       ${cards}
     </div>`;
 }
+
+// ════════════ Reusable info-tip ═══════════════════════════════
+// Markup pattern (no Alpine, no Stimulus, no framework):
+//   <span class="info-tip" onclick="toggleInfoTip(this, event)">i
+//     <span class="info-tip-pop">explanatory copy here</span>
+//   </span>
+// Click anywhere else closes the open tip.
+function toggleInfoTip(el, e) {
+  if (e) e.stopPropagation();
+  const open = el.classList.contains('open');
+  document.querySelectorAll('.info-tip.open').forEach(t => t.classList.remove('open'));
+  if (!open) el.classList.add('open');
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.info-tip')) {
+    document.querySelectorAll('.info-tip.open').forEach(t => t.classList.remove('open'));
+  }
+});
 
 // ════════════ Day-1 Keyword Wizard ═════════════════════════════
 const wizState = {
