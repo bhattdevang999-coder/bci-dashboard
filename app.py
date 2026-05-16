@@ -12097,6 +12097,64 @@ def api_beta_image_nis_generate():
     sess["provenance"] = provenance
     sess["content"] = content
 
+    # ─── Atlas substrate write ─────────────────────────────────────
+    # Image → NIS was completely invisible to Memory until this commit.
+    # Open a session, log one decision_event per generated field, capture
+    # event_ids so /feedback can later attach operator_responses. Pattern
+    # mirrors /api/generate-content. Best-effort: substrate failures must
+    # never break the beta flow.
+    atlas_event_ids: dict[str, str] = {}
+    atlas_session_id = None  # str | None
+    try:
+        from substrate.logger import (
+            open_session as _atlas_open,
+            log_field_decision as _atlas_log,
+        )
+        from substrate.schema import Module as _AtlasModule
+        ws = (sess["brand"] or "tlg").lower().replace(" ", "_") or "tlg"
+        op_id = session_data.get("operator_id") or "devang"
+        bpv = sess["brand_cfg"].get("_version") or f"{ws}_legacy"
+        atlas_sess = _atlas_open(workspace_id=ws, operator_id=op_id,
+                                 module=_AtlasModule.NIS)
+        atlas_session_id = atlas_sess.session_id
+        # ASIN anchor: hints may carry one; otherwise None (Day-1 listing).
+        asin = (hints.get("asin") or hints.get("child_asin") or "").strip() or None
+        # Confidence proxy for image-driven gen. Vision-driven runs are
+        # inherently lower confidence than catalog-driven runs because
+        # vision can be wrong. We bracket conservatively.
+        conf = 0.70
+        rules = [
+            {"rule_id": "nis.engine.compose_v0_7_6", "version": "0.7.6"},
+            {"rule_id": "nis.llm.claude_generation"},
+            {"rule_id": "nis.image.vision_driven"},
+        ]
+        for fname in ("item_name", "bullet_1", "bullet_2", "bullet_3",
+                      "bullet_4", "bullet_5", "description", "backend_keywords"):
+            # Map title -> item_name in the substrate vocabulary.
+            content_key = "title" if fname == "item_name" else fname
+            fval = content.get(content_key)
+            if not fval:
+                continue
+            _eid = _atlas_log(
+                workspace_id=ws,
+                session_id=atlas_session_id,
+                module=_AtlasModule.NIS,
+                field_name=fname,
+                atlas_output=fval,
+                overall_confidence=conf,
+                rules_injected=rules,
+                brand_profile_version=bpv,
+                style_id=str(style.get("style_num") or ""),
+                asin=asin,
+            )
+            if _eid:
+                atlas_event_ids[fname] = _eid
+        sess["atlas_session_id"] = atlas_session_id
+        sess["atlas_event_ids"] = atlas_event_ids
+        sess["atlas_workspace_id"] = ws
+    except Exception as exc:
+        print(f"[atlas] beta-image-nis decision log skipped: {exc}", flush=True)
+
     return jsonify({
         "ok": True,
         "session_id": session_id,
@@ -12106,6 +12164,8 @@ def api_beta_image_nis_generate():
         "provenance": provenance,
         "content": content,
         "brand": sess["brand"],
+        "atlas_session_id": atlas_session_id,
+        "atlas_event_ids": atlas_event_ids,
     })
 
 
@@ -12158,7 +12218,49 @@ def api_beta_image_nis_feedback():
     # Mirror onto the session for in-memory traceability
     sess.setdefault("feedback", []).append(entry)
 
-    return jsonify({"ok": True, "entry": entry})
+    # ─── Atlas substrate: operator_response write ──────────────────────
+    # Only field_wrong feedback maps cleanly to a decision_event. The
+    # other kinds (pt_wrong, observation_wrong, image_quality_missed,
+    # pt_correct, general) are about the *vision* layer, which we don't
+    # log as decision_events today. They stay in the JSONL feedback log
+    # for the vision-team's analysis but don't bind to substrate.
+    atlas_op_event_id = None  # str | None
+    try:
+        if kind == "field_wrong":
+            from substrate.logger import (
+                update_field_decision_with_operator_response as _atlas_resp,
+            )
+            from substrate.schema import (
+                OperatorAction as _Act, OperatorScope as _Scope,
+            )
+            ws = sess.get("atlas_workspace_id")
+            event_ids = sess.get("atlas_event_ids") or {}
+            field = entry["field"] or ""
+            # The frontend passes content keys (title / bullet_1 / etc.);
+            # we map title -> item_name to match the substrate vocab.
+            substrate_field = "item_name" if field == "title" else field
+            target_eid = event_ids.get(substrate_field)
+            if ws and target_eid:
+                # If operator supplied a correction, it's an 'edit'.
+                # Otherwise treat as a 'reject' (they flagged it but didn't
+                # write the replacement).
+                action_str = "edit" if entry.get("correct_value") else "reject"
+                _atlas_resp(
+                    workspace_id=ws,
+                    event_id=target_eid,
+                    operator_action=_Act(action_str),
+                    operator_value=entry.get("correct_value"),
+                    operator_scope=_Scope("just_this"),
+                    operator_time_to_decision_ms=None,
+                    operator_comment=entry.get("note"),
+                    operator_viewed_case=False,
+                )
+                atlas_op_event_id = target_eid
+    except Exception as exc:
+        print(f"[atlas] beta-image-nis operator_response skipped: {exc}", flush=True)
+
+    return jsonify({"ok": True, "entry": entry,
+                    "atlas_event_id": atlas_op_event_id})
 
 
 @app.route("/api/beta-image-nis/feedback", methods=["GET"])
