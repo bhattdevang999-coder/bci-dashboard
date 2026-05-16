@@ -11370,6 +11370,24 @@ def atlas_memory_decisions():
     })
 
 
+@app.route("/api/atlas/memory/decisions/<event_id>/confound", methods=["GET"])
+def atlas_memory_decision_confound(event_id: str):
+    """Confound view for one decision_event.
+
+    Returns before/after/confounds + honest caveats. Strictly NO causal
+    claims, lift numbers, or attribution — the operator does the
+    interpretation themselves. See substrate/confound.py for the contract.
+    """
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.confound import confound_view_for_decision
+        v = confound_view_for_decision(workspace_id, event_id)
+    except Exception as exc:
+        print(f"[atlas] confound view failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "confound view unavailable"}), 500
+    return jsonify({"workspace_id": workspace_id, **v})
+
+
 @app.route("/api/atlas/memory/sessions/<session_id>", methods=["GET"])
 def atlas_memory_session_detail(session_id: str):
     """Return the full timeline for a single session."""

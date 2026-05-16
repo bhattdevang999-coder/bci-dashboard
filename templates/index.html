@@ -3012,6 +3012,66 @@
 }
 .memory-decisions { max-height: 640px; overflow-y: auto; }
 
+/* ═══ Confound view (Phase 1.5) ═══ */
+.cv-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-sec); border-radius: 6px;
+  padding: 5px 10px; font-size: 12px; cursor: pointer;
+  margin-top: 10px;
+}
+.cv-toggle:hover { color: var(--text); border-color: var(--text-sec); }
+.cv-block {
+  margin-top: 12px; padding: 12px 14px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.cv-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.cv-side-label {
+  font-size: 11px; color: var(--text-sec); text-transform: uppercase;
+  letter-spacing: 0.05em; font-weight: 600; margin-bottom: 4px;
+}
+.cv-side-ts { font-size: 11px; color: var(--text-sec); margin-bottom: 6px; }
+.cv-metric-row {
+  display: grid; grid-template-columns: 1fr 90px;
+  gap: 8px; padding: 4px 0;
+  font-size: 12px; color: var(--text);
+  border-bottom: 1px dashed var(--border);
+}
+.cv-metric-row:last-child { border-bottom: none; }
+.cv-metric-key { color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
+.cv-metric-val { text-align: right; font-variant-numeric: tabular-nums; }
+.cv-empty { font-size: 12px; color: var(--text-sec); font-style: italic; }
+.cv-section-title {
+  font-size: 11px; color: var(--text-sec); text-transform: uppercase;
+  letter-spacing: 0.05em; font-weight: 600;
+}
+.cv-confound-row {
+  display: grid; grid-template-columns: 120px 1fr 100px;
+  gap: 8px; padding: 5px 0;
+  font-size: 12px; border-bottom: 1px dashed var(--border);
+}
+.cv-confound-row:last-child { border-bottom: none; }
+.cv-confound-mod {
+  font-size: 10px; color: var(--text-sec);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.cv-notes {
+  display: flex; flex-direction: column; gap: 4px;
+  background: rgba(180,140,40,0.08);
+  border: 1px solid rgba(180,140,40,0.20);
+  border-radius: 6px; padding: 10px 12px;
+  font-size: 12px; color: #6b5400; line-height: 1.5;
+}
+.cv-notes strong { color: #4a3a00; }
+.cv-disclaimer {
+  font-size: 11px; color: var(--text-sec); font-style: italic;
+  border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px;
+}
+
 /* ═══ Marketing · Budget sub-tab (Phase 1 Path B Step 3) ═══ */
 .bud-controls {
   display: flex; align-items: center; gap: 14px;
@@ -12908,6 +12968,17 @@ function memoryRenderDecisionCard(d) {
         <div class="memory-snapshot-details">${escHtml(detail)}</div>
       </div>`;
   }
+  // Confound view toggle: only meaningful for decisions that captured an
+  // ASIN. For Day-1 / asin-less decisions we still allow toggling so the
+  // operator gets the honest 'no data yet' caveat, not silence.
+  const eid = escHtml(d.event_id || '');
+  const cvBtnId = `cv-btn-${eid}`;
+  const cvBoxId = `cv-box-${eid}`;
+  const cvHtml = eid ? `
+    <button id="${cvBtnId}" class="cv-toggle" onclick="cvToggle('${eid}')">
+      Show before / after
+    </button>
+    <div id="${cvBoxId}" style="display:none;"></div>` : '';
   return `
     <div class="memory-decision-card">
       <div class="memory-decision-head">
@@ -12918,6 +12989,125 @@ function memoryRenderDecisionCard(d) {
       <div class="memory-decision-meta">${conf}${rulesChip}${asin}</div>
       ${responses}
       ${snapHtml}
+      ${cvHtml}
+    </div>`;
+}
+
+// ── Confound view (Phase 1.5) ────────────────────────────────────
+// Strictly read-only juxtaposition: before metrics from the snapshot,
+// after metrics from latest outcome_events, other decisions on the same
+// ASIN in the same period. No causal claims, no lift numbers, no
+// attribution math. The operator interprets.
+const cvCache = {};
+function cvFmtVal(v) {
+  if (v === null || v === undefined) return '—';
+  const n = Number(v);
+  if (!isFinite(n)) return String(v);
+  if (Math.abs(n) >= 1000) return n.toLocaleString(undefined, {maximumFractionDigits: 0});
+  if (Math.abs(n) < 1)     return n.toFixed(3);
+  return n.toLocaleString(undefined, {maximumFractionDigits: 2});
+}
+async function cvToggle(eventId) {
+  const btn = document.getElementById('cv-btn-' + eventId);
+  const box = document.getElementById('cv-box-' + eventId);
+  if (!btn || !box) return;
+  if (box.style.display !== 'none' && box.innerHTML) {
+    box.style.display = 'none';
+    btn.textContent = 'Show before / after';
+    return;
+  }
+  if (!cvCache[eventId]) {
+    btn.textContent = 'Loading…';
+    try {
+      const r = await fetch(`/api/atlas/memory/decisions/${encodeURIComponent(eventId)}/confound`);
+      cvCache[eventId] = await r.json();
+    } catch (err) {
+      box.innerHTML = `<div class="cv-empty">Failed to load: ${escHtml(String(err))}</div>`;
+      box.style.display = '';
+      btn.textContent = 'Hide before / after';
+      return;
+    }
+  }
+  box.innerHTML = cvRender(cvCache[eventId]);
+  box.style.display = '';
+  btn.textContent = 'Hide before / after';
+}
+function cvRender(d) {
+  if (!d || d.ok === false) {
+    return `<div class="cv-block"><div class="cv-empty">${escHtml((d && d.error) || 'No data')}</div></div>`;
+  }
+  const beforeMetrics = (d.before && d.before.metrics) || {};
+  const afterMetrics  = (d.after  && d.after.metrics)  || {};
+  const allKeys = Array.from(new Set([...Object.keys(beforeMetrics), ...Object.keys(afterMetrics)])).sort();
+
+  const beforeBody = allKeys.length
+    ? allKeys.map(k => {
+        const v = beforeMetrics[k];
+        return `<div class="cv-metric-row">
+                  <div class="cv-metric-key">${escHtml(k)}</div>
+                  <div class="cv-metric-val">${escHtml(cvFmtVal(v?.value))}</div>
+                </div>`;
+      }).join('')
+    : '<div class="cv-empty">No snapshot captured at decision time.</div>';
+  const afterBody = allKeys.length && d.after
+    ? allKeys.map(k => {
+        const v = afterMetrics[k];
+        return `<div class="cv-metric-row">
+                  <div class="cv-metric-key">${escHtml(k)}</div>
+                  <div class="cv-metric-val">${escHtml(cvFmtVal(v?.value))}</div>
+                </div>`;
+      }).join('')
+    : '<div class="cv-empty">No outcome data ingested for this ASIN since the decision.</div>';
+
+  const beforeTs = (d.before && d.before.captured_at)
+    ? new Date(d.before.captured_at).toLocaleString() : '—';
+  const afterTs  = (d.after && d.after.latest_observed_at)
+    ? new Date(d.after.latest_observed_at).toLocaleString() : '—';
+
+  // Confounds
+  const cnf = d.confounds || [];
+  const cnfBody = cnf.length
+    ? cnf.map(c => {
+        const when = c.timestamp ? new Date(c.timestamp).toLocaleDateString() : '—';
+        return `<div class="cv-confound-row">
+                  <div><span class="cv-confound-mod">${escHtml(c.module || '')}</span></div>
+                  <div>${escHtml(c.summary || c.field_name || '—')}</div>
+                  <div class="cv-side-ts" style="text-align:right;">${escHtml(when)}</div>
+                </div>`;
+      }).join('')
+    : '<div class="cv-empty">No other Atlas decisions on this ASIN in the period.</div>';
+
+  // Notes (the honest caveats)
+  const notesHtml = (d.notes || []).map(n => `<div>• ${escHtml(n)}</div>`).join('');
+
+  const daysLine = (d.days_since_decision != null)
+    ? `<div class="cv-side-ts">${d.days_since_decision} day${d.days_since_decision === 1 ? '' : 's'} since decision</div>`
+    : '';
+
+  return `
+    <div class="cv-block">
+      <div class="cv-section-title">Before / after · ${escHtml(d.asin || 'no ASIN')}</div>
+      ${daysLine}
+      <div class="cv-grid">
+        <div>
+          <div class="cv-side-label">Before (at decision time)</div>
+          <div class="cv-side-ts">${escHtml(beforeTs)}</div>
+          ${beforeBody}
+        </div>
+        <div>
+          <div class="cv-side-label">After (latest observed)</div>
+          <div class="cv-side-ts">${escHtml(afterTs)}</div>
+          ${afterBody}
+        </div>
+      </div>
+      <div>
+        <div class="cv-section-title">Other decisions on this ASIN since</div>
+        ${cnfBody}
+      </div>
+      ${notesHtml ? `<div class="cv-notes">${notesHtml}</div>` : ''}
+      <div class="cv-disclaimer">
+        Atlas does not claim causation. These numbers sit side by side so you can interpret them yourself — PPC attribution tails, seasonality, competitor activity, and Amazon algorithm changes all confound any direct comparison.
+      </div>
     </div>`;
 }
 

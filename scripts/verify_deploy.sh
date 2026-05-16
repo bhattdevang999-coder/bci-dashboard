@@ -89,6 +89,9 @@ smoke "inputs/freshness"      "/api/atlas/inputs/freshness"           '"ok":true
 smoke "inputs/history"        "/api/atlas/inputs/history?limit=1"     '"ok":true'
 smoke "memory/sessions"       "/api/atlas/memory/sessions?limit=1"    '"ok":true'
 smoke "memory/decisions"      "/api/atlas/memory/decisions?limit=1"   '"ok":true'
+# Confound view: passes a UUID-shaped string so the SQL parser doesn't reject,
+# but it won't match any decision — expect a well-formed response with notes.
+smoke "memory/confound"       "/api/atlas/memory/decisions/00000000-0000-0000-0000-000000000000/confound" '"notes":'
 smoke "marketing/keywords"    "/api/atlas/marketing/keywords?limit=1" '"ok":true'
 smoke "marketing/budget"      "/api/atlas/marketing/budget"           '"ok":true'
 smoke "marketing/variance"    "/api/atlas/marketing/budget/variance?period=2026-05" '"ok":true'
