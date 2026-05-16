@@ -12307,6 +12307,10 @@ const ATLAS_PREVIEWS = {
   },
   'ad-bulksheet': {
     name: 'Ad Bulksheet', when: 'NEXT', module: 'PROMOTE',
+    today_in_marketing: {
+      label: 'Day-1 keyword wizard',
+      detail: 'Marketing today: generate a starting keyword + bulksheet for one ASIN (or a batch of up to 40). The full catalog-aware auto-sync described below is what ships next.',
+    },
     tagline: 'Campaigns that auto-update with your catalog.',
     description: 'Atlas reads your live catalog and writes the Amazon Ads bulk-upload sheet — campaigns, ad groups, and product targeting that stay in sync as new ASINs ship.',
     features: [
@@ -12323,6 +12327,10 @@ const ATLAS_PREVIEWS = {
   },
   'keywords': {
     name: 'Keywords', when: 'NEXT', module: 'PROMOTE',
+    today_in_marketing: {
+      label: 'Keyword library',
+      detail: 'Marketing today: a per-brand keyword library that compounds with every PPC bulk + Search Term Report upload. The Brand-Analytics-refreshed unified keyword brain described below is what ships next.',
+    },
     tagline: 'One keyword brain across PDP and ads.',
     description: 'Backend search terms, PDP copy, and ad targeting all draw from the same keyword library — ranked, scored, and refreshed weekly against live search data.',
     features: [
@@ -12411,12 +12419,25 @@ function renderAtlasPreview(moduleId, cfg) {
   const relatedHtml = (cfg.related || []).map(r =>
     '<a onclick="showPreviewPage(\'' + r[0] + '\')">' + r[1] + ' →</a>'
   ).join('');
+  // Optional 'Today, under Marketing' callout: shown when this preview
+  // page has a partial implementation already shipping under another
+  // module. Surfaces the relationship without erasing the future-state
+  // teaser content.
+  const tim = cfg.today_in_marketing || null;
+  const timHtml = tim ? (
+    '<div class="preview-today-callout">' +
+    '  <div class="preview-today-eyebrow">Today, under Marketing</div>' +
+    '  <div class="preview-today-body"><b>' + tim.label + '.</b> ' + tim.detail + '</div>' +
+    '  <button class="atlas-mod-cta preview-today-cta" onclick="showMarketingPage()">Open Marketing →</button>' +
+    '</div>'
+  ) : '';
   return [
     '<div class="preview-banner">',
     '  <div class="icon" style="background:rgba(245,158,11,0.2); color:#FBBF24;">◐</div>',
     '  <div><b>Preview only.</b> <span class="detail">This module is in the build queue. The interface below is a mockup of the shipping experience — not a working tool.</span></div>',
     '  <div class="when">' + (cfg.when || 'PREVIEW') + '</div>',
     '</div>',
+    timHtml,
     '<div class="preview-eyebrow" style="color:' + color + ';">' + cfg.module + '  ·  Module Preview</div>',
     '<h1 class="preview-h1">' + cfg.name + '</h1>',
     '<p class="preview-sub">' + cfg.tagline + '<br><span style="color:#CBD5E1;">' + cfg.description + '</span></p>',
