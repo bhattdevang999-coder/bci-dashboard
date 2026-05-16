@@ -367,11 +367,31 @@ def generate_candidates(
                 brand_profile=brand_profile, siblings=siblings,
                 target_count=target_count,
             )
-            message = anthropic_client.messages.create(
-                model="claude-sonnet-4-5",
-                max_tokens=3000,
-                messages=[{"role": "user", "content": prompt}],
-            )
+            # Anthropic call. Cap max_tokens at a sensible budget for our
+            # JSON-only output (each candidate is ~30-50 tokens). Render's
+            # request layer cuts at ~30s, so we keep generation snappy:
+            # for target_count > 25 we still budget enough headroom (50
+            # tokens/candidate + JSON overhead).
+            tokens_budget = max(800, min(3000, 60 * target_count))
+            # Model fallback chain. Prefer the faster Haiku tier for
+            # keyword brainstorming (structured JSON from a clear prompt
+            # is squarely in Haiku's wheelhouse), but fall back to
+            # Sonnet if Haiku isn't available on the account. Render's
+            # request layer cuts at ~30s, so we want the fastest model.
+            message = None
+            for model_name in ("claude-haiku-4-5", "claude-3-5-haiku-latest", "claude-sonnet-4-5"):
+                try:
+                    message = anthropic_client.messages.create(
+                        model=model_name,
+                        max_tokens=tokens_budget,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    break
+                except Exception as model_exc:
+                    logger.info("model %s rejected: %s", model_name, str(model_exc)[:120])
+                    continue
+            if message is None:
+                raise RuntimeError("all model fallbacks exhausted")
             raw = message.content[0].text
             candidates = _parse_llm_candidates(raw)
             if candidates:
