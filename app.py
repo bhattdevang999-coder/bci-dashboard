@@ -9367,12 +9367,40 @@ def catalog_upload_catalog():
         total_fields = len(CATALOG_FIELD_MAP)
         missing_fields = [k for k in CATALOG_FIELD_MAP if k not in detected_fields]
         
+        # ─── Atlas substrate: open a catalog session at upload time ─────────────
+        # The agency works inside Catalog Health to triage issues. Every
+        # upload becomes a session; every issue category surfaced becomes
+        # one decision_event; the fix-file download becomes the operator
+        # response that closes the loop.
+        #
+        # Best-effort throughout: substrate writes never block analysis.
+        atlas_session_id = None
+        atlas_workspace = None
+        try:
+            brand = session_data.get("brand") or "tlg"
+            atlas_workspace = brand.lower().replace(" ", "_") or "tlg"
+            atlas_operator = session_data.get("operator_id") or "devang"
+            from substrate.logger import open_session as _atlas_open_session
+            from substrate.schema import Module as _AtlasModule
+            _sess = _atlas_open_session(
+                workspace_id=atlas_workspace,
+                operator_id=atlas_operator,
+                module=_AtlasModule.CATALOG_HEALTH,
+            )
+            atlas_session_id = _sess.session_id
+        except Exception as exc:
+            print(f"[atlas] catalog session open skipped: {exc}", flush=True)
+        
         with catalog_health_lock:
             catalog_health_state["catalog_data"] = rows
             catalog_health_state["detected_fields"] = detected_fields
             catalog_health_state["detected_format"] = fmt
             catalog_health_state["analysis"] = None
             catalog_health_state["progress"] = {"status": "idle", "processed": 0, "total": 0, "message": ""}
+            # Stash session handles so downstream endpoints can attribute
+            # to the same session without re-deriving from brand state.
+            catalog_health_state["atlas_session_id"] = atlas_session_id
+            catalog_health_state["atlas_workspace"] = atlas_workspace
         
         # Run analysis in background thread
         sales_lookup = None
@@ -9389,6 +9417,10 @@ def catalog_upload_catalog():
             result = run_catalog_analysis(rows, detected_fields, sales_lookup, ad_truth_lookup)
             with catalog_health_lock:
                 catalog_health_state["analysis"] = result
+            # Once analysis is done, write one decision_event per issue
+            # category surfaced. Rollup keeps the log dense with signal
+            # without flooding with one-row-per-ASIN noise.
+            _atlas_log_catalog_findings(result, atlas_workspace, atlas_session_id, len(rows))
         
         t = threading.Thread(target=run_analysis, daemon=True)
         t.start()
@@ -9402,10 +9434,122 @@ def catalog_upload_catalog():
             "missing_fields": missing_fields,
             "detected_fields": {k: v for k, v in detected_fields.items()},
             "detection_summary": f"Detected {mapped_count} of {total_fields} fields. Missing: {', '.join(missing_fields) if missing_fields else 'none'}",
+            "atlas_session_id": atlas_session_id,
         })
     
     except Exception as e:
         return jsonify({"error": f"Failed to parse file: {str(e)}"}), 500
+
+
+def _atlas_log_catalog_findings(
+    result: dict,
+    workspace_id: str | None,
+    session_id: str | None,
+    catalog_size: int,
+) -> None:
+    """Write one decision_event per issue category surfaced by analysis.
+
+    Called from the background analysis thread after the result dict is
+    populated. Rolls up per-ASIN findings to the category level so the
+    substrate sees signal-dense rows: 5-12 events per batch instead of
+    one per ASIN.
+
+    Best-effort — substrate failures must never disturb the analysis.
+    """
+    if not workspace_id or not result:
+        return
+    try:
+        from substrate.logger import log_field_decision as _atlas_log
+        from substrate.schema import Module as _AtlasModule
+    except Exception:
+        return
+
+    brand_profile_version = f"{workspace_id}_legacy"
+
+    # The actual analysis result returned by run_catalog_analysis() is
+    # shaped { summary: { score_distribution: {...}, ... }, issues: [...] }.
+    # We roll up by issue text so we get one event per issue category
+    # rather than one per ASIN.
+    summary = result.get("summary") or {}
+    score_dist = summary.get("score_distribution") or {}
+    issues = result.get("issues") or []
+
+    # Bucket issues by issue-text. The text is human readable and stable
+    # (it's what surfaces in the UI fix file too) so this stays meaningful
+    # over time without requiring an enum.
+    by_issue: dict[str, list[str]] = {}
+    for it in issues:
+        text = it.get("issue")
+        asin = it.get("asin")
+        if not text or not asin:
+            continue
+        by_issue.setdefault(text, []).append(asin)
+
+    # Confidence proxy: severity weight scaled to [0.55, 0.95].
+    def _confidence_for_issue(issue_text: str) -> float:
+        # SEVERITY_WEIGHTS lives in app module scope; safe to reference.
+        try:
+            sev = SEVERITY_WEIGHTS.get(issue_text, 2)  # type: ignore[name-defined]
+        except Exception:
+            sev = 5
+        return min(0.95, max(0.55, 0.45 + (sev / 20.0)))
+
+    findings = []
+    # Issue-text rollups
+    for text, asins in sorted(by_issue.items(), key=lambda kv: -len(kv[1])):
+        # Sanitize text into a field-name-friendly slug.
+        slug = (
+            text.lower()
+            .replace(" ", "_")
+            .replace("/", "_")
+            .replace("-", "_")
+            .replace("(", "")
+            .replace(")", "")
+        )
+        slug = "".join(c for c in slug if c.isalnum() or c == "_")[:64]
+        findings.append((
+            f"issue_{slug}",
+            len(asins),
+            asins[:5],
+            _confidence_for_issue(text),
+        ))
+    # Score-distribution rollup (always logged when present)
+    for color, count in (score_dist or {}).items():
+        try:
+            cnum = int(count)
+        except (ValueError, TypeError):
+            continue
+        if cnum <= 0:
+            continue
+        findings.append((
+            f"content_score_{color}",
+            cnum,
+            None,
+            0.80 if color in ("red", "orange") else 0.65,
+        ))
+
+    for field_name, count, sample, confidence in findings:
+        if count == 0:
+            continue
+        try:
+            _atlas_log(
+                workspace_id=workspace_id,
+                session_id=session_id,
+                module=_AtlasModule.CATALOG_HEALTH,
+                field_name=field_name,
+                atlas_output={
+                    "count": int(count),
+                    "catalog_size": int(catalog_size),
+                    "sample": sample,
+                    "share": (float(count) / max(catalog_size, 1)),
+                },
+                overall_confidence=confidence,
+                rules_injected=[{"rule_id": f"catalog.{field_name}"}],
+                brand_profile_version=brand_profile_version,
+                enforce_filter=False,  # always log catalog rollups
+            )
+        except Exception as exc:
+            print(f"[atlas] catalog finding write skipped ({field_name}): {exc}", flush=True)
 
 
 @app.route("/api/catalog/upload-ad-bulksheet", methods=["POST"])
@@ -9616,6 +9760,45 @@ def catalog_fix_file():
         })
     
     output.seek(0)
+
+    # ─── Atlas substrate: fix-file download = operator decided to act ──────────
+    # We log one session_completed event marking the operator's commit to
+    # action. Per-issue accept/dismiss attribution comes later when the
+    # Memory tab surfaces individual issues; for now the download itself
+    # is the strongest signal of intent.
+    try:
+        workspace_id = catalog_health_state.get("atlas_workspace")
+        session_id = catalog_health_state.get("atlas_session_id")
+        if workspace_id and session_id:
+            from substrate.logger import (
+                read_session as _atlas_read_session,
+                submit_session as _atlas_submit,
+            )
+            from substrate.schema import (
+                SessionObject as _AtlasSession,
+                Module as _AtlasModule,
+            )
+            existing = _atlas_read_session(workspace_id, session_id)
+            if existing and existing.get("state") == "live":
+                s = _AtlasSession(
+                    session_id=existing.get("session_id", session_id),
+                    workspace_id=existing.get("workspace_id", workspace_id),
+                    operator_id=existing.get("operator_id", "devang"),
+                    module=_AtlasModule(existing.get("module", "catalog_health")),
+                    started_at=existing.get("started_at", ""),
+                    ended_at=existing.get("ended_at"),
+                    state=existing.get("state", "live"),
+                    operator_notes=existing.get("operator_notes"),
+                    exemplar=bool(existing.get("exemplar", False)),
+                )
+                _atlas_submit(
+                    s,
+                    operator_notes=f"Fix file downloaded: {len(issues)} issues exported",
+                    exemplar=False,
+                )
+    except Exception as exc:
+        print(f"[atlas] catalog fix-file substrate close skipped: {exc}", flush=True)
+
     return send_file(
         io.BytesIO(output.getvalue().encode("utf-8")),
         as_attachment=True,
