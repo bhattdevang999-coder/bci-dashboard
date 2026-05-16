@@ -3011,6 +3011,156 @@
   color: var(--text); border-bottom-color: var(--accent); font-weight: 600;
 }
 .memory-decisions { max-height: 640px; overflow-y: auto; }
+
+/* ═══ Marketing · Budget sub-tab (Phase 1 Path B Step 3) ═══ */
+.bud-controls {
+  display: flex; align-items: center; gap: 14px;
+  margin: 0 0 18px 0; flex-wrap: wrap;
+}
+.bud-month-label { font-size: 12px; color: var(--text-sec); font-weight: 500; }
+.bud-month-input {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px; font-size: 13px; min-width: 140px;
+}
+.bud-coverage {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 18px;
+  margin: 0 0 18px 0;
+}
+.bud-coverage-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px;
+}
+.bud-coverage-label {
+  font-size: 12px; color: var(--text-sec);
+  text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
+}
+.bud-coverage-pct {
+  font-size: 22px; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.bud-coverage-bar {
+  position: relative; height: 6px;
+  background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.bud-coverage-fill {
+  position: absolute; top:0; left:0; bottom:0;
+  background: var(--accent); transition: width 250ms ease;
+}
+.bud-coverage-explain {
+  font-size: 12px; color: var(--text-sec); line-height: 1.5;
+}
+.bud-coverage-explain strong { color: var(--text); font-weight: 600; }
+
+/* Scope table */
+.bud-table {
+  width: 100%;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  margin: 0 0 18px 0;
+}
+.bud-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 140px 120px 140px 100px 120px;
+  gap: 12px; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.bud-row:last-child { border-bottom: none; }
+.bud-row.bud-header {
+  font-size: 11px; color: var(--text-sec); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  background: var(--bg);
+}
+.bud-row.bud-row-overall { background: rgba(0,0,0,0.02); font-weight: 600; }
+.bud-scope-label {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.bud-scope-name { color: var(--text); font-weight: 500; }
+.bud-scope-type {
+  font-size: 10px; color: var(--text-sec);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.bud-amount-input {
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 8px; font-size: 13px; width: 100%;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.bud-amount-input:focus { outline: none; border-color: var(--accent); }
+.bud-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--text); }
+.bud-num-muted { color: var(--text-sec); }
+.bud-status-pill {
+  display: inline-block; padding: 3px 9px; border-radius: 99px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; line-height: 1.4;
+}
+.bud-status-no_data    { background: rgba(120,120,120,0.12); color: #6b7280; }
+.bud-status-no_budget  { background: rgba(220,80,40,0.10);  color: #b8420f; }
+.bud-status-no_spend   { background: rgba(120,120,120,0.12); color: #6b7280; }
+.bud-status-under      { background: rgba(60,150,90,0.12);  color: #2f7a4a; }
+.bud-status-at         { background: rgba(60,150,90,0.18);  color: #1e6336; }
+.bud-status-over       { background: rgba(220,80,40,0.16);  color: #a83a0e; }
+.bud-cc-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(180,140,40,0.10); color: #8a6500;
+  border-radius: 99px; padding: 3px 8px;
+  font-size: 11px; font-weight: 500; cursor: pointer;
+  border: 1px solid rgba(180,140,40,0.25);
+}
+.bud-cc-badge:hover { background: rgba(180,140,40,0.18); }
+.bud-cc-none { font-size: 11px; color: var(--text-sec); }
+.bud-row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.bud-btn-icon {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-sec); border-radius: 6px;
+  padding: 4px 8px; cursor: pointer; font-size: 12px;
+}
+.bud-btn-icon:hover { color: var(--text); border-color: var(--text-sec); }
+.bud-empty {
+  padding: 32px 16px; text-align: center;
+  font-size: 13px; color: var(--text-sec);
+}
+.bud-totals-card {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 22px;
+  margin: 0 0 18px 0;
+}
+.bud-total-label {
+  font-size: 11px; color: var(--text-sec); text-transform: uppercase;
+  letter-spacing: 0.05em; font-weight: 600; margin-bottom: 4px;
+}
+.bud-total-value {
+  font-size: 22px; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.bud-total-sub { font-size: 11px; color: var(--text-sec); margin-top: 2px; }
+
+/* CC drawer */
+.bud-drawer-mask {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+  display: none; align-items: flex-start; justify-content: flex-end;
+  z-index: 5500;
+}
+.bud-drawer-mask.open { display: flex; }
+.bud-drawer {
+  width: 440px; height: 100vh; background: var(--surface);
+  border-left: 1px solid var(--border); padding: 22px 24px;
+  overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+}
+.bud-drawer-title { font-size: 16px; font-weight: 600; color: var(--text); }
+.bud-drawer-sub { font-size: 12px; color: var(--text-sec); line-height: 1.5; }
+.bud-cc-row {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.bud-cc-row:last-child { border-bottom: none; }
+.bud-cc-asin { font-family: ui-monospace, monospace; color: var(--text); }
+.bud-cc-meta { color: var(--text-sec); font-size: 11px; }
 .memory-decision-row {
   display: grid;
   grid-template-columns: 120px 130px 130px 1fr 90px 110px;
@@ -6889,6 +7039,15 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
       </div>
     </div>
 
+    <!-- Sub-tab switcher (Keywords | Budget) -->
+    <div class="memory-subtabs">
+      <button id="mkt-tab-keywords" class="memory-subtab active" onclick="mktSetTab('keywords')">Keywords</button>
+      <button id="mkt-tab-budget"   class="memory-subtab" onclick="mktSetTab('budget')">Budget</button>
+    </div>
+
+    <!-- Keywords sub-view -->
+    <div id="mkt-view-keywords">
+
     <!-- Upload zone -->
     <div id="mkt-dropzone" class="inputs-dropzone"
          ondragover="mktDragOver(event)"
@@ -6931,6 +7090,87 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="memory-list-wrap">
       <div id="mkt-list" class="memory-sessions"></div>
       <div id="mkt-paginate" class="memory-paginate" style="display:none;"></div>
+    </div>
+
+    </div><!-- /mkt-view-keywords -->
+
+    <!-- Budget sub-view -->
+    <div id="mkt-view-budget" style="display:none;">
+
+      <!-- Month picker + refresh -->
+      <div class="bud-controls">
+        <label class="bud-month-label" for="bud-month">Period</label>
+        <input id="bud-month" type="month" class="bud-month-input" onchange="budRefresh()" />
+        <span class="info-tip" onclick="toggleInfoTip(this, event)">i
+          <span class="info-tip-pop"><strong>What this is.</strong> Plan PPC spend per month per theme (or overall). Atlas compares against actual spend from your uploaded PPC bulk files and tells you where you came in under, at, or over.<br/><br/><strong>Strictly PPC.</strong> Operational costs (photography, A+ design, content rewrites) aren't tracked here — only Sponsored Products, Sponsored Brands, and Sponsored Display spend that lands in your bulk reports.<br/><br/><strong>Themes.</strong> branded (own brand keywords), feature (product attributes), competitor (competing brands). Set one row per theme to course-correct mid-month.</span>
+        </span>
+        <span class="memory-filter-spacer" style="flex:1;"></span>
+        <button class="btn btn-secondary btn-sm" onclick="budRefresh()">Refresh</button>
+      </div>
+
+      <!-- Theme attribution coverage meter -->
+      <div id="bud-coverage" class="bud-coverage" style="display:none;">
+        <div class="bud-coverage-row">
+          <span class="bud-coverage-label">Theme attribution coverage</span>
+          <span id="bud-coverage-pct" class="bud-coverage-pct">—</span>
+        </div>
+        <div class="bud-coverage-bar">
+          <div id="bud-coverage-fill" class="bud-coverage-fill" style="width:0%;"></div>
+        </div>
+        <div id="bud-coverage-explain" class="bud-coverage-explain"></div>
+      </div>
+
+      <!-- Totals card -->
+      <div id="bud-totals" class="bud-totals-card" style="display:none;">
+        <div>
+          <div class="bud-total-label">Planned</div>
+          <div id="bud-total-planned" class="bud-total-value">—</div>
+        </div>
+        <div>
+          <div class="bud-total-label">Actual</div>
+          <div id="bud-total-actual" class="bud-total-value">—</div>
+        </div>
+        <div>
+          <div class="bud-total-label">Delta</div>
+          <div id="bud-total-delta" class="bud-total-value">—</div>
+          <div id="bud-total-delta-sub" class="bud-total-sub"></div>
+        </div>
+        <div>
+          <div class="bud-total-label">Status</div>
+          <div id="bud-total-status" style="margin-top:6px;"></div>
+          <div id="bud-total-status-sub" class="bud-total-sub"></div>
+        </div>
+      </div>
+
+      <!-- Scope rows -->
+      <div class="bud-table">
+        <div class="bud-row bud-header">
+          <div>Scope</div>
+          <div></div>
+          <div style="text-align:right;">Planned ($)</div>
+          <div style="text-align:right;">Actual</div>
+          <div style="text-align:right;">Delta · %</div>
+          <div>Status</div>
+          <div style="text-align:right;">Content changes</div>
+        </div>
+        <div id="bud-rows"></div>
+      </div>
+
+      <div id="bud-empty" class="bud-empty" style="display:none;">
+        No data for this period yet. Set a planned amount on any row above to start tracking variance.
+      </div>
+
+    </div><!-- /mkt-view-budget -->
+  </div>
+
+  <!-- ════ BUDGET · Content-change drawer ════ -->
+  <div id="bud-cc-drawer-mask" class="bud-drawer-mask" onclick="budCloseDrawer(event)">
+    <div class="bud-drawer" onclick="event.stopPropagation()">
+      <div class="bud-drawer-title" id="bud-cc-drawer-title">Content changes</div>
+      <div class="bud-drawer-sub">NIS decisions on spending ASINs during this period. Treat these as confounds: a price or title change in the same month makes the spend variance harder to read cleanly.</div>
+      <div id="bud-cc-drawer-list"></div>
+      <div style="flex:1;"></div>
+      <button class="btn btn-secondary btn-sm" onclick="budCloseDrawer()" style="align-self:flex-start;">Close</button>
     </div>
   </div>
 
@@ -12715,7 +12955,7 @@ function memoryRenderResponse(r) {
 }
 
 // ══════════════ Atlas Marketing (Phase 1 Path B Step 1) ═════════════════
-const mktState = { page: 0, pageSize: 50, total: 0, debounceTimer: null };
+const mktState = { page: 0, pageSize: 50, total: 0, debounceTimer: null, tab: 'keywords' };
 
 function showMarketingPage() {
   _showPage('marketing-page', 'Atlas · Marketing',
@@ -12724,6 +12964,24 @@ function showMarketingPage() {
   if (nav) nav.classList.add('active');
   mktState.page = 0;
   mktRefresh();
+}
+
+function mktSetTab(tab) {
+  const isKw = (tab === 'keywords');
+  mktState.tab = tab;
+  document.getElementById('mkt-view-keywords').style.display = isKw ? '' : 'none';
+  document.getElementById('mkt-view-budget').style.display   = isKw ? 'none' : '';
+  document.getElementById('mkt-tab-keywords').classList.toggle('active', isKw);
+  document.getElementById('mkt-tab-budget').classList.toggle('active', !isKw);
+  if (!isKw) {
+    // Default month picker to the current month on first open
+    const mi = document.getElementById('bud-month');
+    if (mi && !mi.value) {
+      const d = new Date();
+      mi.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    }
+    budRefresh();
+  }
 }
 
 function mktDebounced() {
@@ -12970,6 +13228,220 @@ document.addEventListener('click', (e) => {
     document.querySelectorAll('.info-tip.open').forEach(t => t.classList.remove('open'));
   }
 });
+
+// ════════════ Marketing · Budget tab (Phase 1 Path B Step 3) ═══════════
+const BUD_THEMES = ['branded', 'feature', 'competitor'];
+const budState = { period: '', variance: null, byKey: {}, saving: {}, allCC: [] };
+
+function budFmtMoney(v) {
+  if (v === null || v === undefined) return '—';
+  const n = Number(v);
+  if (!isFinite(n)) return '—';
+  const sign = n < 0 ? '−' : '';
+  const abs = Math.abs(n);
+  if (abs >= 1000) return sign + '$' + abs.toLocaleString(undefined, {maximumFractionDigits: 0});
+  return sign + '$' + abs.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function budFmtPct(p) {
+  if (p === null || p === undefined) return '—';
+  return (p * 100).toFixed(0) + '%';
+}
+function budStatusLabel(s) {
+  return ({
+    no_data: 'No data', no_budget: 'No budget', no_spend: 'No spend',
+    under: 'Under', at: 'At plan', over: 'Over',
+  })[s] || s;
+}
+function budStatusPill(s) {
+  return `<span class="bud-status-pill bud-status-${s||'no_data'}">${budStatusLabel(s||'no_data')}</span>`;
+}
+
+async function budRefresh() {
+  const period = (document.getElementById('bud-month')?.value || '').trim();
+  if (!period) return;
+  budState.period = period;
+  const rowsEl = document.getElementById('bud-rows');
+  rowsEl.innerHTML = '<div class="bud-empty">Loading…</div>';
+  let data;
+  try {
+    const r = await fetch('/api/atlas/marketing/budget/variance?period=' + encodeURIComponent(period));
+    data = await r.json();
+  } catch (err) {
+    rowsEl.innerHTML = `<div class="bud-empty">Failed to load variance: ${err}</div>`;
+    return;
+  }
+  if (!data || !data.ok) {
+    rowsEl.innerHTML = `<div class="bud-empty">${(data && data.error) || 'Unable to load variance.'}</div>`;
+    return;
+  }
+  budState.variance = data;
+  budState.byKey = {};
+  (data.scopes || []).forEach(s => { budState.byKey[`${s.scope_type}:${s.scope_value}`] = s; });
+  budRenderRows();
+  budRenderTotals();
+  budRenderCoverage();
+}
+
+function budRenderRows() {
+  const rowsEl = document.getElementById('bud-rows');
+  // Always show overall + 3 themes. Then any extra theme buckets that have
+  // data (e.g. 'theme:unknown' from the LATERAL join). ASIN-scoped rows
+  // are hidden in v1 UI per the design doc.
+  const baseKeys = ['overall:_overall',
+    ...BUD_THEMES.map(t => `theme:${t}`)];
+  const extras = Object.keys(budState.byKey).filter(k =>
+    !baseKeys.includes(k) && !k.startsWith('asin:') && k.startsWith('theme:'));
+  const allKeys = baseKeys.concat(extras);
+
+  const html = allKeys.map(key => {
+    const [scope_type, scope_value] = key.split(':');
+    const s = budState.byKey[key] || {
+      scope_type, scope_value, planned: null, actual: 0,
+      delta: null, pct_used: null, status: 'no_data',
+      content_changes: [],
+    };
+    const label = scope_type === 'overall' ? 'Overall'
+      : (scope_value === 'unknown'
+          ? 'Unknown theme'
+          : scope_value.charAt(0).toUpperCase() + scope_value.slice(1));
+    const sub = scope_type === 'overall'
+      ? 'Total PPC spend'
+      : (scope_value === 'unknown'
+          ? 'Spend on keywords with no theme attribution yet'
+          : `Keywords tagged ${scope_value}`);
+    const isExtra = !baseKeys.includes(key);
+    const plannedDisplay = s.planned !== null && s.planned !== undefined
+      ? Number(s.planned).toFixed(2) : '';
+    const editable = !isExtra;
+    const inputCell = editable
+      ? `<input class="bud-amount-input" type="number" min="0" step="1"
+                placeholder="—" value="${plannedDisplay}"
+                onchange="budSave('${scope_type}', '${scope_value}', this.value)" />`
+      : `<div class="bud-num bud-num-muted" title="This bucket can't be budgeted directly — run the wizard on these keywords to attribute them to a theme.">—</div>`;
+    const deltaCell = (s.delta === null || s.delta === undefined)
+      ? '<div class="bud-num bud-num-muted">—</div>'
+      : `<div class="bud-num">${budFmtMoney(s.delta)} · <span class="bud-num-muted">${budFmtPct(s.pct_used)}</span></div>`;
+    const cc = s.content_changes || [];
+    const ccCell = cc.length
+      ? `<div class="bud-row-actions"><span class="bud-cc-badge" onclick="budOpenDrawer('${key}')">⚠ ${cc.length} change${cc.length>1?'s':''}</span></div>`
+      : '<div class="bud-row-actions"><span class="bud-cc-none">—</span></div>';
+    const rowCls = scope_type === 'overall' ? 'bud-row bud-row-overall' : 'bud-row';
+    return `
+      <div class="${rowCls}">
+        <div class="bud-scope-label">
+          <div class="bud-scope-name">${label}</div>
+          <div class="bud-scope-type">${scope_type}</div>
+        </div>
+        <div style="font-size:11px; color:var(--text-sec);">${sub}</div>
+        <div>${inputCell}</div>
+        <div class="bud-num">${budFmtMoney(s.actual)}</div>
+        ${deltaCell}
+        <div>${budStatusPill(s.status)}</div>
+        ${ccCell}
+      </div>`;
+  }).join('');
+  rowsEl.innerHTML = html;
+  document.getElementById('bud-empty').style.display = 'none';
+}
+
+function budRenderTotals() {
+  const t = budState.variance?.totals;
+  const el = document.getElementById('bud-totals');
+  if (!t) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  document.getElementById('bud-total-planned').textContent = budFmtMoney(t.planned);
+  document.getElementById('bud-total-actual').textContent  = budFmtMoney(t.actual);
+  document.getElementById('bud-total-delta').textContent   = budFmtMoney(t.delta);
+  document.getElementById('bud-total-delta-sub').textContent = budFmtPct(t.pct_used);
+  document.getElementById('bud-total-status').innerHTML    = budStatusPill(t.status);
+}
+
+function budRenderCoverage() {
+  const el = document.getElementById('bud-coverage');
+  const overall = budState.byKey['overall:_overall'];
+  const unknown = budState.byKey['theme:unknown'];
+  const overallActual = (overall?.actual ?? 0);
+  const unknownActual = (unknown?.actual ?? 0);
+  if (overallActual === 0) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = '';
+  const coveredFrac = Math.max(0, (overallActual - unknownActual)) / overallActual;
+  const pct = Math.round(coveredFrac * 100);
+  document.getElementById('bud-coverage-pct').textContent = pct + '%';
+  document.getElementById('bud-coverage-fill').style.width = pct + '%';
+  let msg;
+  if (pct >= 80) {
+    msg = `<strong>Strong coverage.</strong> ${pct}% of spend is attributed to a wizard-tagged theme. Per-theme variance numbers are trustworthy at this level.`;
+  } else if (pct >= 40) {
+    msg = `<strong>Partial coverage.</strong> ${pct}% of spend attributes to a theme; the rest (${budFmtMoney(unknownActual)}) is spend on keywords Atlas hasn't seen through the wizard. Run the wizard on your top spenders to grow coverage.`;
+  } else {
+    msg = `<strong>Low coverage.</strong> Only ${pct}% of spend is theme-attributed. The 'Unknown theme' row shows the gap. Run the Day-1 keyword wizard on top-spending ASINs to convert unknown spend into branded / feature / competitor buckets.`;
+  }
+  document.getElementById('bud-coverage-explain').innerHTML = msg;
+}
+
+async function budSave(scope_type, scope_value, raw) {
+  const period = budState.period;
+  if (!period) return;
+  const saveKey = `${scope_type}:${scope_value}`;
+  budState.saving[saveKey] = true;
+  const value = (raw === '' || raw === null) ? null : Number(raw);
+  try {
+    if (value === null || isNaN(value) || value === 0) {
+      // Empty / zero = remove the budget row. Audit-trail decision_event stays.
+      const params = new URLSearchParams({period, scope_type, scope_value});
+      await fetch('/api/atlas/marketing/budget?' + params.toString(), { method: 'DELETE' });
+    } else {
+      const r = await fetch('/api/atlas/marketing/budget', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({period, scope_type, scope_value, amount: value}),
+      });
+      const d = await r.json();
+      if (!d.ok) {
+        alert('Budget save failed: ' + (d.error || 'unknown'));
+      }
+    }
+  } catch (err) {
+    alert('Budget save error: ' + err);
+  } finally {
+    budState.saving[saveKey] = false;
+    budRefresh();
+  }
+}
+
+function budOpenDrawer(scopeKey) {
+  const s = budState.byKey[scopeKey];
+  if (!s) return;
+  const cc = s.content_changes || [];
+  const ttl = (s.scope_type === 'overall'
+    ? 'Content changes · all spending ASINs'
+    : `Content changes · ${s.scope_type}:${s.scope_value}`);
+  document.getElementById('bud-cc-drawer-title').textContent = ttl;
+  const listEl = document.getElementById('bud-cc-drawer-list');
+  if (!cc.length) {
+    listEl.innerHTML = '<div class="bud-empty">No content changes recorded in this period.</div>';
+  } else {
+    listEl.innerHTML = cc.map(c => {
+      const when = c.last_change_at ? new Date(c.last_change_at).toLocaleDateString() : '—';
+      return `
+        <div class="bud-cc-row">
+          <div>
+            <div class="bud-cc-asin">${c.asin}</div>
+            <div class="bud-cc-meta">${c.n_decisions} NIS decision${c.n_decisions>1?'s':''} in period</div>
+          </div>
+          <div class="bud-cc-meta">Last: ${when}</div>
+        </div>`;
+    }).join('');
+  }
+  document.getElementById('bud-cc-drawer-mask').classList.add('open');
+}
+function budCloseDrawer(e) {
+  if (e && e.target && e.target.closest('.bud-drawer')) return;
+  document.getElementById('bud-cc-drawer-mask').classList.remove('open');
+}
 
 // ════════════ Day-1 Keyword Wizard ═════════════════════════════
 const wizState = {
