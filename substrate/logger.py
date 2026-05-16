@@ -142,7 +142,7 @@ def _pg_insert_event(payload: dict[str, Any]) -> None:
             operator_time_to_decision_ms, operator_comment, operator_viewed_case,
             decision_event_id, trigger_type, surfaced_at,
             operator_id, started_at, ended_at, exemplar,
-            meta
+            meta, pre_change_snapshot
         ) VALUES (
             %(event_kind)s, %(event_id)s, %(workspace_id)s, %(session_id)s, %(timestamp)s,
             %(module)s, %(field_name)s, %(rules_injected)s::jsonb, %(brand_profile_version)s,
@@ -151,7 +151,7 @@ def _pg_insert_event(payload: dict[str, Any]) -> None:
             %(operator_time_to_decision_ms)s, %(operator_comment)s, %(operator_viewed_case)s,
             %(decision_event_id)s, %(trigger_type)s, %(surfaced_at)s,
             %(operator_id)s, %(started_at)s, %(ended_at)s, %(exemplar)s,
-            %(meta)s::jsonb
+            %(meta)s::jsonb, %(pre_change_snapshot)s::jsonb
         )
         ON CONFLICT (event_id, event_kind) DO NOTHING
     """
@@ -190,6 +190,9 @@ def _pg_insert_event(payload: dict[str, Any]) -> None:
         "ended_at": payload.get("ended_at"),
         "exemplar": payload.get("exemplar"),
         "meta": json.dumps(payload.get("_meta") or {}, default=str),
+        "pre_change_snapshot": json.dumps(
+            payload.get("pre_change_snapshot") or {}, default=str
+        ),
     }
     with pool.connection() as conn:
         with conn.cursor() as cur:
@@ -281,7 +284,7 @@ def _pg_stream_decisions(workspace_id: str, month: Optional[str] = None) -> Iter
                operator_time_to_decision_ms, operator_comment, operator_viewed_case,
                decision_event_id, trigger_type, surfaced_at,
                operator_id, started_at, ended_at, exemplar,
-               meta
+               meta, pre_change_snapshot
         FROM substrate_events
         WHERE workspace_id = %s
     """
@@ -316,6 +319,12 @@ def _pg_stream_decisions(workspace_id: str, month: Optional[str] = None) -> Iter
                 meta = d.pop("meta", None)
                 if meta:
                     d["_meta"] = meta
+                # pre_change_snapshot is empty-dict for most events;
+                # surface it as None when empty so callers can use
+                # truthiness checks naturally.
+                snap = d.get("pre_change_snapshot")
+                if snap == {} or snap is None:
+                    d["pre_change_snapshot"] = None
                 yield d
 
 
@@ -393,8 +402,25 @@ def log_field_decision(
     contributable_scope: bool = False,
     decision_number: Optional[int] = None,
     style_id: Optional[str] = None,
+    asin: Optional[str] = None,
+    pre_change_snapshot: Optional[dict[str, Any]] = None,
     enforce_filter: bool = True,
 ) -> Optional[str]:
+    """Log a generation-time decision_event.
+
+    Phase 1 additions:
+      asin                  — the ASIN this decision targets, used to
+                              auto-build the snapshot if not supplied.
+      pre_change_snapshot   — explicit before-state dict. If omitted and
+                              an asin is supplied, the logger calls
+                              build_snapshot_for_asin() to capture
+                              whatever fresh outcome data we have.
+
+    The snapshot is the architecturally-irreversible piece. Once a
+    decision is in the log without one, we can't reconstruct it later.
+    Capture is best-effort: a snapshot failure logs a warning but never
+    blocks the decision write.
+    """
     if enforce_filter and not should_log_field(
         field_name=field_name,
         overall_confidence=overall_confidence,
@@ -423,12 +449,27 @@ def log_field_decision(
         print(f"[substrate] validation failed for {field_name}: {exc}", flush=True)
         return None
 
-    if style_id or decision_number is not None:
+    if style_id or decision_number is not None or asin is not None:
         payload["_meta"] = {}
         if style_id:
             payload["_meta"]["style_id"] = style_id
         if decision_number is not None:
             payload["_meta"]["decision_number"] = decision_number
+        if asin:
+            payload["_meta"]["asin"] = asin
+
+    # Pre-change snapshot. Caller-supplied wins; otherwise derive from ASIN.
+    if pre_change_snapshot is not None:
+        payload["pre_change_snapshot"] = pre_change_snapshot
+    elif asin:
+        try:
+            from substrate.snapshot import build_snapshot_for_asin
+            payload["pre_change_snapshot"] = build_snapshot_for_asin(
+                workspace_id=workspace_id,
+                asin=asin,
+            )
+        except Exception as exc:
+            print(f"[substrate] snapshot build skipped for {asin}: {exc}", flush=True)
 
     _write_event(workspace_id, payload)
     return ev.event_id

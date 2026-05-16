@@ -9392,11 +9392,11 @@ def catalog_upload_catalog():
         total_fields = len(CATALOG_FIELD_MAP)
         missing_fields = [k for k in CATALOG_FIELD_MAP if k not in detected_fields]
         
-        # ─── Atlas substrate: open a catalog session at upload time ─────────────
+        # ─── Atlas substrate: open a catalog session + record ingestion ──────
         # The agency works inside Catalog Health to triage issues. Every
-        # upload becomes a session; every issue category surfaced becomes
-        # one decision_event; the fix-file download becomes the operator
-        # response that closes the loop.
+        # upload becomes a session AND an ingestion_records row; every
+        # issue category surfaced becomes one decision_event; the
+        # fix-file download becomes the operator response.
         #
         # Best-effort throughout: substrate writes never block analysis.
         atlas_session_id = None
@@ -9413,6 +9413,23 @@ def catalog_upload_catalog():
                 module=_AtlasModule.CATALOG_HEALTH,
             )
             atlas_session_id = _sess.session_id
+            # Inputs audit trail: record this upload
+            try:
+                from substrate.inputs import record_ingestion
+                record_ingestion(
+                    workspace_id=atlas_workspace,
+                    file_kind="catalog",
+                    file_name=f.filename,
+                    rows_parsed=len(rows),
+                    asins_touched=len(rows),
+                    detected_fields=list(detected_fields.keys()),
+                    missing_fields=missing_fields,
+                    summary=f"Detected {mapped_count} of {total_fields} fields",
+                    uploaded_by=atlas_operator,
+                    meta={"format": fmt, "session_id": atlas_session_id},
+                )
+            except Exception as ex2:
+                print(f"[atlas] catalog ingestion record skipped: {ex2}", flush=True)
         except Exception as exc:
             print(f"[atlas] catalog session open skipped: {exc}", flush=True)
         
@@ -11140,6 +11157,104 @@ def atlas_operators_list():
         print(f"[atlas] operators list failed: {exc}", flush=True)
         ops = []
     return jsonify({"ok": True, "workspace_id": workspace_id, "operators": ops})
+
+
+# ─── Atlas inputs (Phase 1) ────────────────────────────────────────────────────────
+# Single dropzone for every file type. Auto-detects file_kind by header
+# signature, hands off to the right parser, then writes one
+# ingestion_records row for the audit trail.
+
+@app.route("/api/atlas/inputs/history", methods=["GET"])
+def atlas_inputs_history():
+    """Return the ingestion history for the current workspace.
+
+    Query params:
+        kind  - optional file_kind filter
+        limit - default 100
+    """
+    workspace_id = _atlas_current_workspace()
+    file_kind = (request.args.get("kind") or "").strip() or None
+    try:
+        limit = int(request.args.get("limit") or 100)
+    except ValueError:
+        limit = 100
+    limit = max(1, min(limit, 1000))
+    try:
+        from substrate.inputs import list_ingestions
+        rows = list_ingestions(workspace_id, file_kind=file_kind, limit=limit)
+    except Exception as exc:
+        print(f"[atlas] inputs history failed: {exc}", flush=True)
+        rows = []
+    return jsonify({"ok": True, "workspace_id": workspace_id, "ingestions": rows})
+
+
+@app.route("/api/atlas/inputs/freshness", methods=["GET"])
+def atlas_inputs_freshness():
+    """Return per-file-kind freshness for the staleness bar."""
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.inputs import freshness_summary
+        summary = freshness_summary(workspace_id)
+    except Exception as exc:
+        print(f"[atlas] inputs freshness failed: {exc}", flush=True)
+        summary = {}
+    return jsonify({"ok": True, "workspace_id": workspace_id, "freshness": summary})
+
+
+@app.route("/api/atlas/inputs/detect", methods=["POST"])
+def atlas_inputs_detect():
+    """Detect a file's kind from its first row of headers.
+
+    Used by the frontend before upload so the operator sees "Looks like
+    a Search Term Report" before committing the upload. The actual
+    upload still goes through the existing per-kind endpoints (catalog
+    upload, etc.) which run their own parsers.
+    """
+    if "file" not in request.files:
+        return jsonify({"ok": False, "error": "file required"}), 400
+    f = request.files["file"]
+    try:
+        content = f.read()
+        if not content:
+            return jsonify({"ok": False, "error": "empty file"}), 400
+        # Read just the first line as bytes; let downstream parsers worry
+        # about full parsing. We just need headers for detection.
+        first_line = content.split(b"\n", 1)[0]
+        # Try comma + tab as separators since CSV/TSV both arrive here.
+        headers: list[str] = []
+        for sep in (b",", b"\t"):
+            if sep in first_line:
+                headers = [
+                    h.decode("utf-8", errors="replace").strip().strip('"')
+                    for h in first_line.split(sep)
+                ]
+                if headers:
+                    break
+        if not headers:
+            # Likely .xlsx — fall back to openpyxl read of first sheet's row 1.
+            try:
+                import io as _io
+                import openpyxl as _ox
+                wb = _ox.load_workbook(_io.BytesIO(content), read_only=True, data_only=True)
+                ws = wb[wb.sheetnames[0]]
+                first = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
+                if first:
+                    headers = [str(h).strip() if h is not None else "" for h in first]
+            except Exception:
+                headers = []
+        from substrate.inputs import detect_file_kind, file_hash
+        kind = detect_file_kind(headers)
+        return jsonify({
+            "ok": True,
+            "file_name": f.filename,
+            "file_kind": kind,
+            "bytes": len(content),
+            "file_hash": file_hash(content)[:16],
+            "headers_detected": [h for h in headers if h][:40],
+            "recognised": kind is not None,
+        })
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 200
 
 
 @app.route("/api/atlas/visible-brands", methods=["GET"])

@@ -65,6 +65,14 @@ CREATE TABLE IF NOT EXISTS substrate_events (
     -- Forward-compat metadata; never validated against the locked schema.
     meta                JSONB DEFAULT '{}'::jsonb,
 
+    -- Phase 1: pre_change_snapshot captures the state of the affected
+    -- ASIN(s) at the moment a decision was logged. This is the
+    -- architecturally-irreversible piece — if we don't capture it at
+    -- decision time, outcome attribution becomes impossible. Always
+    -- writeable, often empty (we only capture for decisions that
+    -- target an ASIN with available outcome data).
+    pre_change_snapshot JSONB DEFAULT '{}'::jsonb,
+
     PRIMARY KEY (event_id, event_kind)
 );
 
@@ -230,6 +238,52 @@ CREATE INDEX IF NOT EXISTS idx_image_links_asin
 
 
 -- ===========================================================================
+-- Phase 1: ingestion_records — the audit trail for every file dropped into
+-- the Inputs tab. One row per upload. Carries detected file type, ASINs
+-- touched, row counts, who uploaded, when. Used by:
+--   - Inputs tab history table
+--   - Staleness bar ("PPC bulk: 6 days old")
+--   - Pre-change snapshot pipeline (knows what fresh data exists)
+-- ===========================================================================
+
+CREATE TABLE IF NOT EXISTS ingestion_records (
+    ingestion_id        UUID        PRIMARY KEY,
+    workspace_id        TEXT        NOT NULL,
+    uploaded_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    uploaded_by         TEXT,                       -- operator_id
+    -- File-type discriminator. Auto-detected from header signatures.
+    -- Free-form to admit new file types as we add ingestors. Common values:
+    --   'catalog', 'sales', 'ppc_bulk', 'search_term', 'ad_bulksheet',
+    --   'h10_cerebro', 'h10_keyword_tracker', 'brand_analytics_terms',
+    --   'returns', 'reviews', 'image'
+    file_kind           TEXT        NOT NULL,
+    file_name           TEXT,
+    file_hash           TEXT,                       -- SHA-256 of file bytes
+    bytes               BIGINT,
+    -- Date range the file covers (when the ingestor can extract it)
+    period_start        TIMESTAMPTZ,
+    period_end          TIMESTAMPTZ,
+    -- Parser results
+    rows_parsed         INTEGER,
+    rows_rejected       INTEGER,
+    asins_touched       INTEGER,
+    -- Detected vs missing fields (for catalog-shaped files)
+    detected_fields     JSONB DEFAULT '[]'::jsonb,
+    missing_fields      JSONB DEFAULT '[]'::jsonb,
+    -- Optional human-readable summary the parser produced
+    summary             TEXT,
+    -- Free-form metadata (parser version, file format, etc.)
+    meta                JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_ingestion_workspace_uploaded
+    ON ingestion_records (workspace_id, uploaded_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_ingestion_workspace_kind
+    ON ingestion_records (workspace_id, file_kind, uploaded_at DESC);
+
+
+-- ===========================================================================
 -- Phase 2 additions: outcome_events table. Designed now, populated by
 -- closed loop later. Defining it in this migration prevents schema
 -- contention when Phase 2 starts.
@@ -297,4 +351,19 @@ CREATE TABLE IF NOT EXISTS substrate_schema_version (
 
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v1', 'Initial Postgres schema. Substrate event model v1.1.1.')
+    ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v2 additive migrations.
+-- Use ADD COLUMN IF NOT EXISTS so re-applying on a v1 database picks up
+-- new columns without recreating tables. Postgres 9.6+ supports this; we
+-- target Postgres 17+ on Render so it's safe.
+-- ===========================================================================
+
+ALTER TABLE substrate_events
+    ADD COLUMN IF NOT EXISTS pre_change_snapshot JSONB DEFAULT '{}'::jsonb;
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v2', 'Add pre_change_snapshot + ingestion_records (Phase 1).')
     ON CONFLICT (version) DO NOTHING;

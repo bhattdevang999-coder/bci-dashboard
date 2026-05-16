@@ -151,7 +151,8 @@ def wipe_substrate_for_tests() -> None:
                     image_asin_links,
                     outcome_events,
                     rule_library,
-                    brand_profile
+                    brand_profile,
+                    ingestion_records
                 RESTART IDENTITY CASCADE
                 """
             )

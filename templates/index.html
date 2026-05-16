@@ -2776,6 +2776,134 @@
   padding: 8px 16px;
 }
 
+/* Atlas Inputs tab — Phase 1 */
+.page-hero { margin: 16px 0 24px; }
+.page-hero-title { font-size: 24px; font-weight: 700; margin: 0 0 4px; color: var(--text); }
+.page-hero-sub { font-size: 13px; color: var(--text-sec); max-width: 720px; }
+
+.inputs-staleness {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.inputs-staleness-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.inputs-staleness-pill .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.inputs-staleness-pill[data-status="fresh"] .dot { background: #22c55e; }
+.inputs-staleness-pill[data-status="ok"] .dot { background: #84cc16; }
+.inputs-staleness-pill[data-status="stale"] .dot { background: #f59e0b; }
+.inputs-staleness-pill[data-status="old"] .dot { background: #ef4444; }
+.inputs-staleness-pill[data-status="missing"] .dot { background: var(--border); }
+.inputs-staleness-pill[data-status="missing"] { color: var(--text-sec); opacity: 0.7; }
+
+.inputs-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--surface);
+  transition: border-color 150ms, background 150ms, transform 150ms;
+  margin-bottom: 14px;
+}
+.inputs-dropzone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-soft, rgba(94, 234, 212, 0.08));
+  transform: scale(1.005);
+}
+.inputs-dropzone-icon {
+  font-size: 36px;
+  color: var(--text-sec);
+  margin-bottom: 12px;
+}
+.inputs-dropzone-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.inputs-dropzone-sub {
+  font-size: 12px;
+  color: var(--text-sec);
+  max-width: 720px;
+  margin: 0 auto 16px;
+  line-height: 1.6;
+}
+
+.inputs-detection {
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 13px;
+}
+.inputs-detection-row { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+.inputs-detection-label { color: var(--text-sec); width: 110px; font-size: 12px; }
+.inputs-detection-value { color: var(--text); font-weight: 500; }
+.inputs-detection-kind { font-weight: 600; color: var(--accent); }
+.inputs-detection-unknown { color: var(--warning, #f59e0b); }
+
+.inputs-history-wrap {
+  margin-top: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.inputs-history-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.inputs-history-title { font-size: 14px; font-weight: 600; margin: 0; }
+.inputs-history { max-height: 540px; overflow-y: auto; }
+.inputs-history-row {
+  display: grid;
+  grid-template-columns: 130px 100px 1fr 110px 80px;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  align-items: center;
+}
+.inputs-history-row:last-child { border-bottom: none; }
+.inputs-history-row:hover { background: var(--bg); }
+.inputs-history-kind {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-soft, rgba(94, 234, 212, 0.12));
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.inputs-history-name { color: var(--text); font-weight: 500; }
+.inputs-history-meta { color: var(--text-sec); }
+.inputs-history-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-sec);
+  font-size: 13px;
+}
+
 /* Atlas end-of-session summary modal */
 .atlas-session-modal {
   position: fixed;
@@ -5104,6 +5232,9 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="nav-item-atlas" id="nav-atlas" onclick="showAtlasPage()">
       <span class="atlas-dot"></span> Home
     </div>
+    <div class="nav-item-atlas" id="nav-inputs" onclick="showInputsPage()">
+      <span class="atlas-dot"></span> Inputs
+    </div>
 
     <div class="nav-section-divider"></div>
     <div class="nav-label">
@@ -5986,6 +6117,43 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
   </div><!-- /nis-page -->
 
   <!-- ═══════════════════════ CATALOG HEALTH PAGE ═══════════════════════ -->
+  <!-- ═════════════════ INPUTS PAGE (Phase 1) ═══════════════════════ -->
+  <div id="inputs-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Inputs</h1>
+      <div class="page-hero-sub">One drop zone for every file the substrate sees. Atlas auto-detects the file type, runs the right parser, and writes one audit row per upload.</div>
+    </div>
+
+    <!-- Staleness bar -->
+    <div id="inputs-staleness" class="inputs-staleness" style="display:none;"></div>
+
+    <!-- Drop zone -->
+    <div id="inputs-dropzone" class="inputs-dropzone"
+         ondragover="inputsDragOver(event)"
+         ondragleave="inputsDragLeave(event)"
+         ondrop="inputsDrop(event)">
+      <div class="inputs-dropzone-icon">↓</div>
+      <div class="inputs-dropzone-title">Drop a file here</div>
+      <div class="inputs-dropzone-sub">Catalog · Sales · PPC bulk · Search term report · Brand Analytics · H10 exports · Returns · Reviews</div>
+      <div class="inputs-dropzone-cta">
+        <input type="file" id="inputs-file" style="display:none;" onchange="inputsFileSelected(this.files)" accept=".csv,.tsv,.txt,.xlsx,.xls" />
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('inputs-file').click()">Choose file</button>
+      </div>
+    </div>
+
+    <!-- Detection result preview -->
+    <div id="inputs-detection" class="inputs-detection" style="display:none;"></div>
+
+    <!-- History table -->
+    <div class="inputs-history-wrap">
+      <div class="inputs-history-header">
+        <h3 class="inputs-history-title">Ingestion history</h3>
+        <button class="btn btn-secondary btn-sm" onclick="inputsRefreshHistory()">Refresh</button>
+      </div>
+      <div id="inputs-history" class="inputs-history"></div>
+    </div>
+  </div>
+
   <div id="catalog-page" class="content content-wide">
 
     <!-- Tutorial: How does Catalog Health work? -->
@@ -7777,7 +7945,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
+const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -11017,6 +11185,149 @@ function showCatalogPage() {
   _showPage('catalog-page', 'Atlas · Catalog Health',
     'See every broken ASIN before it costs you a sale.');
   document.getElementById('nav-catalog').classList.add('active');
+}
+
+// ══════════════ Atlas Inputs (Phase 1) ══════════════════════════════
+function showInputsPage() {
+  _showPage('inputs-page', 'Atlas · Inputs',
+    'Every file the substrate sees. One drop zone, full audit trail.');
+  const navEl = document.getElementById('nav-inputs');
+  if (navEl) navEl.classList.add('active');
+  inputsRefreshFreshness();
+  inputsRefreshHistory();
+}
+
+async function inputsRefreshFreshness() {
+  try {
+    const r = await fetch('/api/atlas/inputs/freshness');
+    const d = await r.json();
+    const el = document.getElementById('inputs-staleness');
+    if (!el) return;
+    const fresh = d && d.freshness || {};
+    const ORDER = ['catalog', 'sales', 'ppc_bulk', 'search_term', 'brand_analytics_terms', 'returns', 'reviews'];
+    const LABELS = {
+      catalog: 'Catalog', sales: 'Sales', ppc_bulk: 'PPC bulk',
+      search_term: 'Search term', brand_analytics_terms: 'Brand Analytics',
+      returns: 'Returns', reviews: 'Reviews',
+    };
+    const pills = ORDER.map(k => {
+      const f = fresh[k];
+      const label = LABELS[k] || k;
+      if (!f || f.status === 'missing') {
+        return `<span class="inputs-staleness-pill" data-status="missing"><span class="dot"></span>${label}: not uploaded</span>`;
+      }
+      const ageStr = f.age_days < 1 ? 'today' : `${Math.round(f.age_days)}d`;
+      return `<span class="inputs-staleness-pill" data-status="${f.status}"><span class="dot"></span>${label}: ${ageStr}</span>`;
+    }).join('');
+    el.innerHTML = pills;
+    el.style.display = '';
+  } catch (e) {
+    console.warn('freshness load failed:', e);
+  }
+}
+
+async function inputsRefreshHistory() {
+  const el = document.getElementById('inputs-history');
+  if (!el) return;
+  el.innerHTML = '<div class="inputs-history-empty">Loading…</div>';
+  try {
+    const r = await fetch('/api/atlas/inputs/history?limit=200');
+    const d = await r.json();
+    const rows = (d && d.ingestions) || [];
+    if (!rows.length) {
+      el.innerHTML = '<div class="inputs-history-empty">No files uploaded yet. Drop your first one above.</div>';
+      return;
+    }
+    const html = rows.map(row => {
+      const when = row.uploaded_at ? new Date(row.uploaded_at).toLocaleString() : '—';
+      const kind = (row.file_kind || '—').replace(/_/g, ' ');
+      const name = escHtml(row.file_name || '—');
+      const summary = escHtml(row.summary || (row.rows_parsed ? `${row.rows_parsed} rows` : ''));
+      const by = escHtml(row.uploaded_by || 'unknown');
+      return `
+        <div class="inputs-history-row">
+          <div class="inputs-history-meta" title="${escHtml(when)}">${escHtml(when)}</div>
+          <div><span class="inputs-history-kind">${escHtml(kind)}</span></div>
+          <div class="inputs-history-name">${name}<div class="inputs-history-meta" style="font-size:11px; margin-top:2px;">${summary}</div></div>
+          <div class="inputs-history-meta">${by}</div>
+          <div class="inputs-history-meta" style="text-align:right;">${row.rows_parsed != null ? row.rows_parsed.toLocaleString() : '—'}</div>
+        </div>`;
+    }).join('');
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = `<div class="inputs-history-empty">Failed to load: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function inputsDragOver(e) {
+  e.preventDefault();
+  document.getElementById('inputs-dropzone')?.classList.add('drag-over');
+}
+function inputsDragLeave(e) {
+  e.preventDefault();
+  document.getElementById('inputs-dropzone')?.classList.remove('drag-over');
+}
+function inputsDrop(e) {
+  e.preventDefault();
+  document.getElementById('inputs-dropzone')?.classList.remove('drag-over');
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+    inputsFileSelected(e.dataTransfer.files);
+  }
+}
+
+async function inputsFileSelected(files) {
+  if (!files || !files.length) return;
+  const file = files[0];
+  const det = document.getElementById('inputs-detection');
+  if (det) {
+    det.style.display = '';
+    det.innerHTML = `<div class="inputs-detection-row"><span class="inputs-detection-label">File</span><span class="inputs-detection-value">${escHtml(file.name)}</span></div><div class="inputs-detection-row"><span class="inputs-detection-label">Status</span><span class="inputs-detection-value">Detecting…</span></div>`;
+  }
+  // Step 1: detect file kind
+  const fd = new FormData();
+  fd.append('file', file);
+  let kindInfo = null;
+  try {
+    const r = await fetch('/api/atlas/inputs/detect', { method: 'POST', body: fd });
+    kindInfo = await r.json();
+  } catch (e) {
+    if (det) det.innerHTML += `<div class="inputs-detection-row inputs-detection-unknown">Detection failed: ${escHtml(e.message)}</div>`;
+    return;
+  }
+  // Render detection result
+  if (det && kindInfo) {
+    const kindLine = kindInfo.recognised
+      ? `<span class="inputs-detection-kind">${escHtml(kindInfo.file_kind)}</span>`
+      : `<span class="inputs-detection-unknown">unrecognised — only catalog uploads route automatically right now</span>`;
+    const headers = (kindInfo.headers_detected || []).slice(0, 12).map(h => escHtml(h)).join(', ');
+    det.innerHTML = `
+      <div class="inputs-detection-row"><span class="inputs-detection-label">File</span><span class="inputs-detection-value">${escHtml(file.name)} (${(kindInfo.bytes/1024).toFixed(1)} KB)</span></div>
+      <div class="inputs-detection-row"><span class="inputs-detection-label">Detected as</span><span class="inputs-detection-value">${kindLine}</span></div>
+      <div class="inputs-detection-row"><span class="inputs-detection-label">Headers</span><span class="inputs-detection-value inputs-history-meta">${headers || '(none)'}</span></div>`;
+  }
+  // Step 2: route to the right uploader
+  if (kindInfo && kindInfo.recognised && kindInfo.file_kind === 'catalog') {
+    if (det) det.innerHTML += `<div class="inputs-detection-row"><span class="inputs-detection-label">Routing</span><span class="inputs-detection-value">Sending to Catalog Health analyser…</span></div>`;
+    const fd2 = new FormData();
+    fd2.append('file', file);
+    try {
+      const r = await fetch('/api/catalog/upload-catalog', { method: 'POST', body: fd2 });
+      const d = await r.json();
+      if (d && d.ok) {
+        if (det) det.innerHTML += `<div class="inputs-detection-row"><span class="inputs-detection-label">Result</span><span class="inputs-detection-value">${escHtml(d.detection_summary || 'Uploaded')}</span></div>`;
+        showToast && showToast('Catalog uploaded · ' + d.rows + ' rows', 'success');
+        // Refresh history + freshness so the new upload appears
+        setTimeout(() => { inputsRefreshFreshness(); inputsRefreshHistory(); }, 800);
+      } else {
+        if (det) det.innerHTML += `<div class="inputs-detection-row inputs-detection-unknown">Upload error: ${escHtml(d.error || 'unknown')}</div>`;
+      }
+    } catch (e) {
+      if (det) det.innerHTML += `<div class="inputs-detection-row inputs-detection-unknown">Upload failed: ${escHtml(e.message)}</div>`;
+    }
+  } else {
+    // Other kinds aren't fully wired yet; still record the audit.
+    if (det) det.innerHTML += `<div class="inputs-detection-row"><span class="inputs-detection-label">Note</span><span class="inputs-detection-value">This file kind isn't routed to a parser yet. The audit row records the upload but no analysis runs.</span></div>`;
+  }
 }
 
 function showMergePage() {
