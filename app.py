@@ -401,6 +401,22 @@ try:
                 print(f"[atlas] seeded {_seeded} brand_profile row(s)", flush=True)
         except Exception as _atlas_seed_exc:
             print(f"[atlas] brand_profile seed skipped: {_atlas_seed_exc}", flush=True)
+        # Migrate any surviving JSONL substrate files into Postgres.
+        # Idempotent: ON CONFLICT DO NOTHING + deterministic UUIDs for
+        # legacy rows that lack event_id. Most deploys this is a no-op
+        # because Render's filesystem wipes between deploys, but we
+        # leave it on so any short-lived JSONL artifacts get captured.
+        try:
+            from substrate.migrate_jsonl import migrate_all
+            _mig = migrate_all()
+            if _mig.get("inserted") or _mig.get("sessions_migrated"):
+                print(
+                    f"[atlas] migrated +{_mig.get('inserted')} events, "
+                    f"+{_mig.get('sessions_migrated')} sessions from JSONL",
+                    flush=True,
+                )
+        except Exception as _atlas_mig_exc:
+            print(f"[atlas] JSONL migration skipped: {_atlas_mig_exc}", flush=True)
     else:
         print("[atlas] no DATABASE_URL set; substrate using JSONL backend", flush=True)
 except Exception as _atlas_boot_exc:
