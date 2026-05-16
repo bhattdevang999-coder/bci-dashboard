@@ -11375,6 +11375,149 @@ def atlas_memory_session_detail(session_id: str):
     return jsonify({"ok": True, "workspace_id": workspace_id, "session": detail})
 
 
+# ───────────────────────────────────────────────────────────────────
+# Marketing endpoints (Phase 1)
+# ───────────────────────────────────────────────────────────────────
+
+@app.route("/api/atlas/marketing/keywords", methods=["GET"])
+def atlas_marketing_keywords():
+    """Paginated keyword_library reader.
+
+    Query params:
+        limit / offset      pagination
+        q                   substring match on keyword_norm
+        asin                filter to rows linked to this ASIN
+        order_by            'last_seen_at' | 'last_acos' | 'last_spend' | 'keyword'
+    """
+    workspace_id = _atlas_current_workspace()
+    try:
+        limit = int(request.args.get("limit") or 50)
+    except ValueError:
+        limit = 50
+    try:
+        offset = int(request.args.get("offset") or 0)
+    except ValueError:
+        offset = 0
+    q = (request.args.get("q") or "").strip() or None
+    asin = (request.args.get("asin") or "").strip() or None
+    order_by = (request.args.get("order_by") or "last_seen_at").strip()
+    try:
+        from substrate.marketing import list_keywords
+        result = list_keywords(workspace_id, limit=limit, offset=offset,
+                               q=q, asin=asin, order_by=order_by)
+    except Exception as exc:
+        print(f"[atlas] marketing keywords list failed: {exc}", flush=True)
+        result = {"keywords": [], "total": 0}
+    return jsonify({
+        "ok": True,
+        "workspace_id": workspace_id,
+        "keywords": result.get("keywords", []),
+        "total": result.get("total", 0),
+    })
+
+
+@app.route("/api/atlas/marketing/direction", methods=["GET"])
+def atlas_marketing_direction():
+    """Trend / direction summary for one keyword (+ optional ASIN).
+
+    Returns a per-metric { n, direction, confidence_label, delta, ... }
+    block built from outcome_events. Honest about data density:
+    n=0 → no_data, n=1 → prior_only, n>=14 → statistical.
+    """
+    workspace_id = _atlas_current_workspace()
+    keyword = (request.args.get("keyword") or "").strip() or None
+    asin = (request.args.get("asin") or "").strip() or None
+    if not keyword:
+        return jsonify({"ok": False, "error": "keyword required"}), 400
+    try:
+        from substrate.marketing import get_keyword_direction
+        d = get_keyword_direction(workspace_id, keyword=keyword, asin=asin)
+    except Exception as exc:
+        print(f"[atlas] marketing direction failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "direction unavailable"}), 500
+    return jsonify({"ok": True, "workspace_id": workspace_id, **d})
+
+
+@app.route("/api/atlas/marketing/upload", methods=["POST"])
+def atlas_marketing_upload():
+    """Upload + parse a PPC bulk file or Search Term Report.
+
+    Auto-detects file_kind via Inputs detection, then routes to the right
+    marketing parser, writes keyword_library rows, and appends outcome_events.
+    Also records an ingestion_records audit row (same path as catalog uploads).
+    """
+    workspace_id = _atlas_current_workspace()
+    if "file" not in request.files:
+        return jsonify({"ok": False, "error": "file required"}), 400
+    f = request.files["file"]
+    try:
+        content = f.read()
+        if not content:
+            return jsonify({"ok": False, "error": "empty file"}), 400
+        # File-kind detection (same logic as Inputs detect endpoint)
+        first_line = content.split(b"\n", 1)[0]
+        headers: list[str] = []
+        for sep in (b",", b"\t"):
+            if sep in first_line:
+                headers = [h.decode("utf-8", errors="replace").strip().strip('"')
+                           for h in first_line.split(sep)]
+                if headers:
+                    break
+        if not headers:
+            try:
+                import io as _io, openpyxl as _ox
+                wb = _ox.load_workbook(_io.BytesIO(content), read_only=True, data_only=True)
+                ws = wb[wb.sheetnames[0]]
+                first = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
+                if first:
+                    headers = [str(h).strip() if h is not None else "" for h in first]
+            except Exception:
+                headers = []
+        from substrate.inputs import detect_file_kind, record_ingestion, file_hash as _hash
+        kind = detect_file_kind(headers)
+        # Force kind hint from form if the file is ambiguous.
+        if not kind:
+            kind = (request.form.get("kind") or "").strip() or None
+        if kind not in ("ppc_bulk", "search_term", "ad_bulksheet"):
+            return jsonify({
+                "ok": False,
+                "error": f"file kind {kind!r} not supported by marketing upload",
+                "headers_detected": headers[:20],
+            }), 400
+        from substrate.marketing_parsers import parse_ppc_bulk, parse_search_term
+        parser = parse_ppc_bulk if kind in ("ppc_bulk", "ad_bulksheet") else parse_search_term
+        observations = parser(content, file_name=f.filename)
+        from substrate.marketing import record_keyword_observations
+        ingestion_meta = record_keyword_observations(
+            workspace_id, observations, source_kind=kind,
+            source_file_hash=_hash(content),
+        )
+        # Audit row
+        operator_id = (_atlas_operator_from_request() if "_atlas_operator_from_request" in globals() else None) or session_data.get("operator_id")
+        record_ingestion(
+            workspace_id=workspace_id,
+            file_kind=kind, file_name=f.filename,
+            file_hash_value=_hash(content), bytes_size=len(content),
+            rows_parsed=len(observations),
+            asins_touched=len({(o.get("asin") or "").strip() for o in observations if o.get("asin")}),
+            detected_fields=[h for h in headers if h][:40],
+            summary=f"{len(observations)} keyword rows, {ingestion_meta.get('keywords_written', 0)} into library, {ingestion_meta.get('outcome_rows', 0)} outcome rows",
+            uploaded_by=operator_id,
+        )
+        return jsonify({
+            "ok": True,
+            "workspace_id": workspace_id,
+            "file_kind": kind,
+            "rows_parsed": len(observations),
+            "keywords_written": ingestion_meta.get("keywords_written", 0),
+            "outcome_rows": ingestion_meta.get("outcome_rows", 0),
+            "skipped": ingestion_meta.get("skipped", 0),
+        })
+    except Exception as exc:
+        print(f"[atlas] marketing upload failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/docs/onboarding", methods=["GET"])
 def docs_onboarding():
     """Operator-facing onboarding + user directions page.

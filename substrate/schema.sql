@@ -367,3 +367,55 @@ ALTER TABLE substrate_events
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v2', 'Add pre_change_snapshot + ingestion_records (Phase 1).')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v3 — Marketing substrate.
+--
+-- keyword_library mirrors image_library: workspace-scoped entity table for
+-- keywords the operator (or Atlas) has touched. Captures the most-recent
+-- known state of each keyword (search volume, current bid, last observed
+-- rank/ACOS/spend). Daily observations live in outcome_events; this table
+-- is the rolled-up view used by the day-1 wizard and the Memory tab.
+--
+-- Designed so Phase 2 attribution can join keyword_library → outcome_events
+-- without a schema change.
+-- ===========================================================================
+
+CREATE TABLE IF NOT EXISTS keyword_library (
+    workspace_id        TEXT        NOT NULL,
+    keyword_norm        TEXT        NOT NULL,   -- lowercase, whitespace-collapsed
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    -- Display form preserves the operator's original capitalisation.
+    keyword             TEXT        NOT NULL,
+    match_type          TEXT,           -- 'exact', 'phrase', 'broad', 'auto', NULL
+    -- ASINs this keyword has been associated with (denormalised JSONB for
+    -- speed; the canonical join lives in outcome_events).
+    asins               JSONB DEFAULT '[]'::jsonb,
+    -- Latest known metrics. Updated on each ingestion. Historical values
+    -- live in outcome_events; this is the 'current state' projection.
+    last_search_volume  INTEGER,
+    last_organic_rank   INTEGER,
+    last_acos           REAL,
+    last_spend          REAL,
+    last_impressions    INTEGER,
+    last_clicks         INTEGER,
+    last_orders         INTEGER,
+    -- Provenance + free-form metadata.
+    first_source_kind   TEXT,   -- 'ppc_bulk', 'search_term', 'manual', 'atlas_suggested'
+    last_source_kind    TEXT,
+    meta                JSONB DEFAULT '{}'::jsonb,
+    PRIMARY KEY (workspace_id, keyword_norm)
+);
+
+CREATE INDEX IF NOT EXISTS idx_keyword_library_workspace_seen
+    ON keyword_library (workspace_id, last_seen_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_keyword_library_workspace_acos
+    ON keyword_library (workspace_id, last_acos)
+    WHERE last_acos IS NOT NULL;
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v3', 'Add keyword_library for Marketing module (Phase 1).')
+    ON CONFLICT (version) DO NOTHING;

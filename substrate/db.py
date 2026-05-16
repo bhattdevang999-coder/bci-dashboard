@@ -152,7 +152,8 @@ def wipe_substrate_for_tests() -> None:
                     outcome_events,
                     rule_library,
                     brand_profile,
-                    ingestion_records
+                    ingestion_records,
+                    keyword_library
                 RESTART IDENTITY CASCADE
                 """
             )

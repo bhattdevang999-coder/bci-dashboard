@@ -89,6 +89,7 @@ smoke "inputs/freshness"      "/api/atlas/inputs/freshness"           '"ok":true
 smoke "inputs/history"        "/api/atlas/inputs/history?limit=1"     '"ok":true'
 smoke "memory/sessions"       "/api/atlas/memory/sessions?limit=1"    '"ok":true'
 smoke "memory/decisions"      "/api/atlas/memory/decisions?limit=1"   '"ok":true'
+smoke "marketing/keywords"    "/api/atlas/marketing/keywords?limit=1" '"ok":true'
 smoke "docs/onboarding"       "/docs/onboarding"                       'Atlas .{0,5} Onboarding'
 
 if (( fail > 0 )); then
