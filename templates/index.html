@@ -2676,6 +2676,106 @@
   border-color: var(--accent);
 }
 
+/* Atlas operator chip + identification modal */
+.atlas-operator-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+.atlas-operator-chip:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft, rgba(94, 234, 212, 0.08));
+}
+.atlas-operator-chip-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.atlas-operator-chip-label {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.atlas-operator-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9100;
+  padding: 24px;
+}
+.atlas-operator-modal.open { display: flex; }
+.atlas-operator-card {
+  width: min(440px, 100%);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 26px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.atlas-operator-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.atlas-operator-sub {
+  font-size: 12px;
+  color: var(--text-sec);
+  margin: 0 0 18px;
+}
+.atlas-operator-q {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 14px 0 6px;
+  color: var(--text);
+}
+.atlas-operator-card input,
+.atlas-operator-card select {
+  width: 100%;
+  font-family: var(--font);
+  font-size: 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+.atlas-operator-card input:focus,
+.atlas-operator-card select:focus {
+  border-color: var(--accent);
+}
+.atlas-operator-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.atlas-operator-actions .btn-secondary,
+.atlas-operator-actions .btn-primary {
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
 /* Atlas end-of-session summary modal */
 .atlas-session-modal {
   position: fixed;
@@ -5122,8 +5222,33 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
         <span class="atlas-cmdk-text">Search Atlas</span>
         <span class="atlas-cmdk-kbd"><kbd>⌘</kbd><kbd>K</kbd></span>
       </button>
+      <button class="atlas-operator-chip" id="atlas-operator-chip" onclick="atlasOpenOperatorPicker()" title="Sign in or switch operator">
+        <span class="atlas-operator-chip-avatar" id="atlas-operator-chip-avatar">?</span>
+        <span class="atlas-operator-chip-label" id="atlas-operator-chip-label">Sign in</span>
+      </button>
     </div>
   </header>
+
+  <!-- Atlas operator identification modal — prompts on first visit -->
+  <div class="atlas-operator-modal" id="atlas-operator-modal">
+    <div class="atlas-operator-card">
+      <div class="atlas-operator-title">Who are you?</div>
+      <div class="atlas-operator-sub">Atlas attributes every decision to the person who made it. This is for the substrate's audit trail — it's not authentication.</div>
+      <label class="atlas-operator-q">Display name</label>
+      <input type="text" id="atlas-operator-name" placeholder="e.g. Devang Bhatt" autocomplete="name" />
+      <label class="atlas-operator-q">Role</label>
+      <select id="atlas-operator-role">
+        <option value="owner">Owner</option>
+        <option value="operator" selected>Operator</option>
+        <option value="agency">Agency</option>
+        <option value="viewer">Viewer (read-only)</option>
+      </select>
+      <div class="atlas-operator-actions">
+        <button class="btn btn-secondary" onclick="atlasCloseOperatorPicker()">Cancel</button>
+        <button class="btn btn-primary" onclick="atlasSubmitOperator()">Continue</button>
+      </div>
+    </div>
+  </div>
 
   {% include '_atlas_navigation.html' %}
 
@@ -11897,7 +12022,99 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.__atlasSingleBrandMode = true;
     }
   } catch(e) { /* non-blocking; default-brand is convenience, not correctness */ }
+
+  // Atlas operator identification: read cookie, populate chip, prompt if absent.
+  // The substrate already attributes every decision_event to operator_id;
+  // this UI step makes that ID a real human name instead of "devang".
+  await atlasInitOperator();
 });
+
+// ═══ Atlas operator identification ═══════════════════════════════════════
+async function atlasInitOperator() {
+  try {
+    const r = await fetch('/api/atlas/operator', { credentials: 'same-origin' });
+    const d = await r.json();
+    if (d && d.identified && d.operator) {
+      atlasRenderOperatorChip(d.operator);
+      window.__atlasOperator = d.operator;
+    } else {
+      // Not identified: surface the prompt automatically once on first visit.
+      atlasOpenOperatorPicker();
+    }
+  } catch (e) {
+    // Non-blocking; the chip stays in "Sign in" state.
+    console.warn('Atlas operator init failed:', e);
+  }
+}
+
+function atlasRenderOperatorChip(operator) {
+  const chip = document.getElementById('atlas-operator-chip');
+  const avatar = document.getElementById('atlas-operator-chip-avatar');
+  const label = document.getElementById('atlas-operator-chip-label');
+  if (!chip || !avatar || !label) return;
+  const name = operator.display_name || operator.operator_id || 'Operator';
+  const initial = (name.trim()[0] || '?').toUpperCase();
+  avatar.textContent = initial;
+  label.textContent = name + (operator.role && operator.role !== 'operator' ? ' (' + operator.role + ')' : '');
+  chip.title = 'Signed in as ' + name + ' — click to switch';
+}
+
+function atlasOpenOperatorPicker() {
+  const modal = document.getElementById('atlas-operator-modal');
+  if (!modal) return;
+  modal.classList.add('open');
+  // Pre-fill from any existing operator so "switch" is one-click rename.
+  const cur = window.__atlasOperator;
+  const nameEl = document.getElementById('atlas-operator-name');
+  const roleEl = document.getElementById('atlas-operator-role');
+  if (cur && nameEl && !nameEl.value) nameEl.value = cur.display_name || '';
+  if (cur && roleEl) roleEl.value = cur.role || 'operator';
+  setTimeout(() => { if (nameEl) nameEl.focus(); }, 50);
+}
+
+function atlasCloseOperatorPicker() {
+  const modal = document.getElementById('atlas-operator-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function atlasSubmitOperator() {
+  const nameEl = document.getElementById('atlas-operator-name');
+  const roleEl = document.getElementById('atlas-operator-role');
+  const display_name = (nameEl && nameEl.value || '').trim();
+  const role = (roleEl && roleEl.value || 'operator').trim();
+  if (!display_name) {
+    if (nameEl) {
+      nameEl.focus();
+      nameEl.style.borderColor = 'var(--error, #d32f2f)';
+    }
+    return;
+  }
+  // If we already have an operator_id (rename case), pass it explicitly
+  // so the server updates in place instead of creating a new operator
+  // under a re-slugified ID.
+  const body = { display_name, role };
+  const cur = window.__atlasOperator;
+  if (cur && cur.operator_id) body.operator_id = cur.operator_id;
+  try {
+    const r = await fetch('/api/atlas/operator', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (d && d.ok && d.operator) {
+      window.__atlasOperator = d.operator;
+      atlasRenderOperatorChip(d.operator);
+      atlasCloseOperatorPicker();
+      if (typeof showToast === 'function') showToast('Signed in as ' + display_name, 'success');
+    } else {
+      if (typeof showToast === 'function') showToast('Sign-in failed: ' + (d && d.error || 'unknown'), 'error');
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Sign-in failed: ' + e.message, 'error');
+  }
+}
 
 
 

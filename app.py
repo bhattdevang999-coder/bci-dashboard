@@ -10991,6 +10991,141 @@ def api_beta_image_nis_brands():
     return jsonify({"ok": True, "brands": deduped})
 
 
+# ─── Atlas operators ────────────────────────────────────────────────────────────────
+# Lightweight named-account flow. Cookie-based attribution, no real auth.
+# Used so the agency's team is distinguishable in the substrate — each
+# decision_event carries the operator_id who made it.
+
+_ATLAS_OPERATOR_COOKIE = "atlas_operator_id"
+_ATLAS_OPERATOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 90  # 90 days
+
+
+def _atlas_current_workspace() -> str:
+    """Resolve the operator's current workspace from session_data.
+
+    Falls back to 'novelle' if nothing is set, since single-brand mode
+    means that's the working assumption.
+    """
+    brand = (session_data.get("brand") or "").strip()
+    if brand:
+        return brand.lower().replace(" ", "_")
+    default_brand = os.environ.get("ATLAS_VISIBLE_BRANDS", "").split(",")[0].strip()
+    if default_brand:
+        return default_brand.lower().replace(" ", "_")
+    return "novelle"
+
+
+@app.route("/api/atlas/operator", methods=["GET"])
+def atlas_operator_get():
+    """Return the currently-identified operator for this browser.
+
+    Reads the atlas_operator_id cookie and looks up the operator in the
+    operators table. If the cookie is absent or the operator is unknown,
+    returns ok=true but identified=false so the frontend knows to prompt.
+    """
+    workspace_id = _atlas_current_workspace()
+    op_id = (request.cookies.get(_ATLAS_OPERATOR_COOKIE) or "").strip()
+    if not op_id:
+        return jsonify({
+            "ok": True,
+            "identified": False,
+            "workspace_id": workspace_id,
+        })
+
+    try:
+        from substrate.operators import get_operator, touch_operator
+        op = get_operator(workspace_id, op_id)
+        if op:
+            touch_operator(workspace_id, op_id)
+            session_data["operator_id"] = op_id
+            session_data["operator"] = op["display_name"]
+            return jsonify({
+                "ok": True,
+                "identified": True,
+                "workspace_id": workspace_id,
+                "operator": op,
+            })
+    except Exception as exc:
+        print(f"[atlas] operator lookup failed: {exc}", flush=True)
+
+    return jsonify({
+        "ok": True,
+        "identified": False,
+        "workspace_id": workspace_id,
+        "reason": "cookie present but operator not found",
+    })
+
+
+@app.route("/api/atlas/operator", methods=["POST"])
+def atlas_operator_set():
+    """Set or update the current operator and return a cookie.
+
+    Body: {
+        display_name: str,            # required
+        role: 'owner'|'operator'|'agency'|'viewer'  # optional, default 'operator'
+        operator_id: str              # optional, derived from display_name if absent
+    }
+    """
+    from flask import make_response
+    data = request.get_json(force=True, silent=True) or {}
+    display_name = (data.get("display_name") or "").strip()
+    if not display_name:
+        return jsonify({"ok": False, "error": "display_name required"}), 400
+
+    role = (data.get("role") or "operator").strip().lower()
+    op_id = (data.get("operator_id") or "").strip().lower()
+
+    try:
+        from substrate.operators import upsert_operator, slugify_operator_id
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"operators module unavailable: {exc}"}), 500
+
+    if not op_id:
+        op_id = slugify_operator_id(display_name)
+
+    workspace_id = _atlas_current_workspace()
+    op = upsert_operator(
+        workspace_id=workspace_id,
+        operator_id=op_id,
+        display_name=display_name,
+        role=role,
+    )
+
+    session_data["operator_id"] = op_id
+    session_data["operator"] = display_name
+
+    resp = make_response(jsonify({
+        "ok": True,
+        "workspace_id": workspace_id,
+        "operator": op,
+    }))
+    resp.set_cookie(
+        _ATLAS_OPERATOR_COOKIE,
+        op_id,
+        max_age=_ATLAS_OPERATOR_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="Lax",
+    )
+    return resp
+
+
+@app.route("/api/atlas/operators", methods=["GET"])
+def atlas_operators_list():
+    """Return the list of operators in the current workspace.
+
+    Used by the frontend to populate the operator switcher dropdown
+    (when more than one operator has logged in).
+    """
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.operators import list_operators
+        ops = list_operators(workspace_id)
+    except Exception as exc:
+        print(f"[atlas] operators list failed: {exc}", flush=True)
+        ops = []
+    return jsonify({"ok": True, "workspace_id": workspace_id, "operators": ops})
+
+
 @app.route("/api/atlas/visible-brands", methods=["GET"])
 def api_atlas_visible_brands():
     """Return the operator-facing brand list + the default brand.
