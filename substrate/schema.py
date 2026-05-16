@@ -51,6 +51,7 @@ class Module(str, Enum):
     CATALOG_HEALTH = "catalog_health"
     MARKETING = "marketing"
     BUDGET = "budget"
+    VARIATIONS = "variations"
     EXPERIMENTS = "experiments"
     LEAK = "leak"
     OTHER = "other"

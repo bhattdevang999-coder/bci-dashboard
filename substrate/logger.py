@@ -347,6 +347,11 @@ STRATEGIC_FIELDS: set[str] = {
     "default_child", "swatch_images", "price_strategy",
     "fulfillment_channel", "shipping_template", "max_order_quantity",
     "restock_policy",
+    # Variations module (parent/child reconciliation). Every parentage
+    # correction is structurally high-stakes — reassigning an ASIN's
+    # parent can suppress it from search for hours and changes its
+    # variation-theme display permanently. Always logged.
+    "parentage_correction",
 }
 
 CONFIDENCE_LOG_THRESHOLD = 0.7

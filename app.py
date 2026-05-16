@@ -9907,6 +9907,12 @@ merge_state = {
     "plan": None,          # list of merge actions
     "approved": {},        # action_id -> True/False
     "generated_at": None,
+    # Atlas substrate: opened on /analyze, used to attach operator_responses
+    # on /approve. Map action_id -> decision_event_id so /approve can route
+    # the response to the right substrate row.
+    "atlas_workspace_id": None,
+    "atlas_session_id": None,
+    "atlas_event_ids": {},  # action_id -> event_id
 }
 merge_lock = threading.Lock()
 
@@ -10050,10 +10056,81 @@ def merge_analyze():
         return jsonify({"error": "No catalog data loaded. Run Catalog Health upload first."}), 400
     try:
         actions = _build_merge_plan(catalog_data, detected_fields)
+
+        # ─── Atlas substrate: open a Variations session + log proposals ───
+        # One session per /analyze run (operator sitting). One decision_event
+        # per proposed action so /approve can attach an operator_response.
+        # Best-effort: substrate failures never break the merge plan response.
+        atlas_session_id = None
+        atlas_event_ids: dict[str, str] = {}
+        try:
+            from substrate.logger import (
+                open_session as _atlas_open,
+                log_field_decision as _atlas_log,
+            )
+            from substrate.schema import Module as _AtlasModule
+            ws = _atlas_current_workspace()
+            op_id = session_data.get("operator_id") or "devang"
+            bpv = f"{ws}_legacy"
+            atlas_sess = _atlas_open(workspace_id=ws, operator_id=op_id,
+                                     module=_AtlasModule.VARIATIONS)
+            atlas_session_id = atlas_sess.session_id
+            rules = [
+                {"rule_id": "variations.merge_plan.v1"},
+            ]
+            # Confidence proxy: derived inside Atlas. We bracket by
+            # action_type — reassigns of small families are higher confidence
+            # than orphan-fix guesses (which may need a 'TBD' parent).
+            conf_by_type = {
+                "reassign": 0.80,
+                "category_fix": 0.75,
+                "orphan_fix": 0.60,
+            }
+            for action in actions:
+                affected = action.get("affected_asins") or []
+                # Anchor ASIN only when the action targets exactly one ASIN.
+                # Multi-ASIN actions don't fit the per-ASIN snapshot model,
+                # so we log them without an asin (snapshot stays empty).
+                anchor_asin = affected[0] if len(affected) == 1 else None
+                eid = _atlas_log(
+                    workspace_id=ws,
+                    session_id=atlas_session_id,
+                    module=_AtlasModule.VARIATIONS,
+                    field_name="parentage_correction",
+                    atlas_output={
+                        "action_id": action["id"],
+                        "action_type": action["action_type"],
+                        "from_parent": action.get("from_parent"),
+                        "to_parent": action.get("to_parent"),
+                        "affected_asins": affected,
+                        "reasoning": action.get("reasoning", ""),
+                    },
+                    overall_confidence=conf_by_type.get(
+                        action["action_type"], 0.65),
+                    rules_injected=rules,
+                    brand_profile_version=bpv,
+                    asin=anchor_asin,
+                )
+                if eid:
+                    atlas_event_ids[action["id"]] = eid
+        except Exception as _atlas_exc:
+            print(f"[atlas] variations decision log skipped: {_atlas_exc}", flush=True)
+
         with merge_lock:
             merge_state["plan"] = actions
+            # Default 'approved=True' means the operator implicitly accepts
+            # every proposal unless they toggle it off. The audit-trail
+            # equivalent is a stronger commitment that we ONLY record once
+            # they hit /approve explicitly — we don't auto-write 'accept'
+            # for everything, because that would inflate the accept count
+            # for proposals the operator never actually looked at.
             merge_state["approved"] = {a["id"]: True for a in actions}
             merge_state["generated_at"] = datetime.now().isoformat()
+            merge_state["atlas_session_id"] = atlas_session_id
+            merge_state["atlas_event_ids"] = atlas_event_ids
+            merge_state["atlas_workspace_id"] = (
+                _atlas_current_workspace() if atlas_session_id else None
+            )
 
         # Summary
         split_families = sum(1 for a in actions if a["action_type"] == "reassign")
@@ -10069,6 +10146,7 @@ def merge_analyze():
                 "category_mismatches": category_fixes,
                 "total_actions": len(actions),
             },
+            "atlas_session_id": atlas_session_id,
         })
     except Exception as e:
         traceback.print_exc()
@@ -10111,6 +10189,35 @@ def merge_approve():
         if action_id not in ids:
             return jsonify({"error": "Unknown action_id"}), 404
         merge_state["approved"][action_id] = bool(approved)
+        ws = merge_state.get("atlas_workspace_id")
+        event_id = (merge_state.get("atlas_event_ids") or {}).get(action_id)
+
+    # ─── Atlas substrate: operator_response ──────────────────────────
+    # Toggling approved=True → 'accept', approved=False → 'reject'.
+    # Scope is 'just_this' — a parentage correction approval shouldn't
+    # promote a brand-wide rule (every catalog has different shapes).
+    # Best-effort: substrate failures never break the merge approve flow.
+    if ws and event_id:
+        try:
+            from substrate.logger import (
+                update_field_decision_with_operator_response as _atlas_resp,
+            )
+            from substrate.schema import (
+                OperatorAction as _Act, OperatorScope as _Scope,
+            )
+            _atlas_resp(
+                workspace_id=ws,
+                event_id=event_id,
+                operator_action=_Act("accept" if approved else "reject"),
+                operator_value=None,
+                operator_scope=_Scope("just_this"),
+                operator_time_to_decision_ms=None,
+                operator_comment=None,
+                operator_viewed_case=False,
+            )
+        except Exception as exc:
+            print(f"[atlas] variations operator_response skipped: {exc}", flush=True)
+
     return jsonify({"ok": True, "action_id": action_id, "approved": bool(approved)})
 
 

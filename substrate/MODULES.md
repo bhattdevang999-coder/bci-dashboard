@@ -57,7 +57,7 @@ A module can be `live` but have `none` substrate (looks done, isn't substrate-na
 |---|---|---|---|---|
 | **Bulk Price Sync** | placeholder | n/a | n/a | Teaser. |
 | **Content Refresh** | placeholder | n/a | n/a | Teaser. |
-| **Variations** (`showMergePage`) | live | **none** | no | Endpoints under `/api/merge/*`. Parent/child reconciliation flow. **No substrate writes** — every accept/reject is invisible to Memory. Real gap. |
+| **Variations** (`showMergePage`) | live | **full** | yes | Endpoints under `/api/merge/*`. Parent/child reconciliation. `/analyze` opens a Variations session and logs one decision_event per proposed action (`field_name='parentage_correction'`). `/approve` writes an accept/reject operator_response linked to the matching event. Module enum: `Module.VARIATIONS`. |
 | **A/B Test** | placeholder | n/a | n/a | Teaser. |
 
 ### `04 Promote` — ads + traffic
@@ -94,6 +94,10 @@ Counted from `app.py` plus the `substrate/budget.py` self-write. Three call site
 | `app.py:9596` | `Module.CATALOG_HEALTH` | Per issue category after catalog analysis |
 | `app.py:11742` | `Module.MARKETING` | Per keyword candidate proposed by Day-1 wizard |
 | `substrate/budget.py:152` | `Module.BUDGET` | Per `set_budget` call (audit trail for monthly allocations) |
+| `app.py:10095` | `Module.VARIATIONS` | Per merge-plan action proposed by `/api/merge/analyze` |
+| `app.py:10208` | `Module.VARIATIONS` (response) | Per `/api/merge/approve` accept/reject |
+| `app.py:12138` | `Module.NIS` (image) | Per generated field in `/api/beta-image-nis/generate` |
+| `app.py:12248` | `Module.NIS` (response) | Per `field_wrong` feedback in `/api/beta-image-nis/feedback` |
 
 Module enum values reserved but **not yet used**: `EXPERIMENTS`, `LEAK`, `OTHER`. They exist in `schema.py` so adding them later requires no migration.
 
@@ -105,9 +109,9 @@ These are the modules that present an operator UI but write **no** substrate. An
 
 | Module | What's lost | Estimated retrofit cost |
 |---|---|---|
-| **Image → NIS (beta)** | Every photo-driven NIS generation + every accept/reject of the LLM's output | Small — same shape as the Bulk Upload retrofit just shipped. Pass ASIN, log `module=NIS` decisions, wire frontend Accept/Edit/Reject to `/api/atlas/decision-response`. |
-| **Variations** | Every parent/child merge or split decision the operator approves | Small — single endpoint, single decision shape. Module enum value needed (`Module.VARIATIONS` doesn't exist yet — propose adding it). |
-| **Listing Lab** | Every variant generation attempt + which variant the operator picked | Small but lower priority — it's an R&D tool, not a daily workflow. Defer to after Image → NIS retrofit. |
+| ~~**Image → NIS (beta)**~~ | ~~Every photo-driven NIS generation~~ | ~~Small~~ | **CLOSED at `eb32657`** — retrofitted. |
+| ~~**Variations**~~ | ~~Every parent/child merge or split decision~~ | ~~Small~~ | **CLOSED at the present commit** — retrofitted. |
+| **Listing Lab** | Every variant generation attempt + which variant the operator picked | Small but lower priority — R&D tool, not a daily workflow. |
 | **Recommendations** | Endpoint `/api/intel/accept` exists but the UI is hidden. If we re-enable it, substrate writes need to be added at the same time. | Small. Don't re-enable the nav item until this is done. |
 
 ---
@@ -116,12 +120,13 @@ These are the modules that present an operator UI but write **no** substrate. An
 
 Strict priority. Numbered so we can reference these as "Item 1", "Item 2".
 
-1. **Phase 2 closed-loop attribution** — the actual reason `pre_change_snapshot` exists. Read the snapshots we've started capturing, compare to current outcome_events, surface "your title change moved CVR by +X%" in the Memory tab. This is the next material build, not another module.
-2. **Image → NIS substrate retrofit** — the largest current data-loss surface. Beta users are clicking accept/reject on photo-driven generations every day with zero substrate capture.
-3. **Variations substrate retrofit** — second largest gap. Parent/child decisions are some of the highest-stakes operator calls in Atlas; they should be in Memory.
+1. **Phase 2 closed-loop attribution** — blocked on data, not code. Resume in 4-6 weeks when there are enough before/after pairs to attribute against. Until then, the Confound view (shipped at `ea54e04`) is the honest interim.
+2. ~~**Image → NIS substrate retrofit**~~ — **DONE at `eb32657`.**
+3. ~~**Variations substrate retrofit**~~ — **DONE at the present commit.**
 4. **NIS page visual re-skin** — cosmetic. The Bulk Upload page works fine, it just doesn't share the Memory/Marketing/Budget design system. Standalone polish pass.
 5. **Catalog Health → per-ASIN substrate** — refactor from category roll-ups to per-ASIN decision_events. Only do this once Phase 2 needs per-ASIN granularity. Otherwise current aggregation is fine.
 6. **Sidebar cleanup** — delete the duplicate `Promote → Ad Bulksheet` and `Promote → Keywords` entries since the real flows live under Marketing now. Either delete or rename to "Coming soon (now under Marketing)".
+7. **Listing Lab substrate retrofit** — lowest priority remaining gap. R&D tool, not daily workflow.
 
 ---
 
@@ -167,3 +172,5 @@ This list isn't redundant — `schema.py` defines the data shapes, but the team 
 Append below this line. Do not edit entries above.
 
 - **v1.0 — 2026-05-16, SHA `2b75615`** — Initial strategy map. Audit conducted after the NIS substrate retrofit (pass ASIN to `log_field_decision`). 4 substrate-writing modules confirmed (NIS, Catalog Health, Marketing, Budget). 3 real gaps identified (Image → NIS, Variations, Listing Lab). 6-item sequencing list. Glossary pinned down.
+- **v1.1 — 2026-05-16, SHA `eb32657`** — Image → NIS retrofit shipped. Now substrate-native: opens session per `/generate`, logs 8 decision_events with `nis.image.vision_driven` rule marker, attaches operator_responses on `field_wrong` feedback. Gap closed.
+- **v1.2 — 2026-05-16, present commit** — Variations retrofit shipped. `Module.VARIATIONS` enum added. `/api/merge/analyze` opens a session and logs one decision_event per proposed action (`field_name='parentage_correction'`). `/api/merge/approve` writes accept/reject operator_responses. Now 6 substrate-writing modules + Confound view. Variations + Image → NIS no longer in the gap list. Three real gaps remain: Listing Lab (lowest priority), hidden Recommendations endpoint, and Catalog Health per-ASIN granularity (blocked-on-need).
