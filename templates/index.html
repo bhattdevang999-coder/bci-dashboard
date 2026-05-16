@@ -3286,6 +3286,60 @@
 .info-tip.open .info-tip-pop { display: block; }
 .info-tip-pop strong { color: var(--accent); }
 
+/* ═══ Wizard: mode toggle + batch switcher ═══ */
+.wiz-mode-toggle {
+  display: flex; gap: 6px; align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.wiz-mode-btn {
+  background: var(--bg); color: var(--text-sec);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 14px; font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 120ms ease;
+  font-family: inherit;
+}
+.wiz-mode-btn:hover { color: var(--text); }
+.wiz-mode-btn.active {
+  background: var(--accent); color: #0b0d10;
+  border-color: var(--accent); font-weight: 600;
+}
+.wiz-batch-switcher {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg);
+}
+.wiz-batch-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); color: var(--text-sec);
+  font-size: 11px; cursor: pointer;
+  font-family: ui-monospace, monospace;
+  transition: all 120ms ease;
+}
+.wiz-batch-pill:hover { color: var(--text); }
+.wiz-batch-pill.active {
+  background: var(--accent); color: #0b0d10; border-color: var(--accent); font-weight: 600;
+}
+.wiz-batch-pill[data-status="pending"] { opacity: 0.5; }
+.wiz-batch-pill[data-status="loading"] { color: var(--accent); border-color: var(--accent); }
+.wiz-batch-pill[data-status="error"]   { color: #ef4444; border-color: rgba(239,68,68,0.4); }
+.wiz-batch-pill[data-status="ready"]   .wiz-batch-pill-count { color: var(--text); }
+.wiz-batch-pill-count {
+  font-family: inherit; font-size: 10px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0 6px; color: var(--text-sec);
+}
+.wiz-batch-progress {
+  font-size: 12px; color: var(--text-sec);
+  margin-top: 8px;
+}
+.wiz-batch-progress strong { color: var(--accent); font-family: ui-monospace, monospace; }
+
 /* ═══ Day-1 Keyword Wizard ═══ */
 .wiz-modal {
   position: fixed; inset: 0; background: rgba(0,0,0,0.7);
@@ -6901,14 +6955,37 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
 
       <!-- Phase 1: Setup -->
       <div id="wiz-phase-setup" class="wiz-phase active">
-        <div class="wiz-section">
+
+        <!-- Mode toggle: single vs batch -->
+        <div class="wiz-mode-toggle">
+          <button id="wiz-mode-single" class="wiz-mode-btn active" onclick="wizSetMode('single')">Single ASIN</button>
+          <button id="wiz-mode-batch" class="wiz-mode-btn" onclick="wizSetMode('batch')">Batch (up to 40 ASINs)</button>
+          <span class="info-tip" onclick="toggleInfoTip(this, event)" style="margin-left:6px;">i
+            <span class="info-tip-pop"><strong>Single vs batch.</strong> Single runs the wizard once for one ASIN. Batch lets you paste a list (one ASIN per line, up to 40) and the wizard generates a candidate set per ASIN sequentially — ~6–10 seconds each, ~5 min total for a full Novelle catalog. Each ASIN's decisions still get logged independently to Memory. At the end you download one merged bulk CSV with all campaigns ready to upload.</span>
+          </span>
+        </div>
+
+        <!-- Single-ASIN field (shown by default) -->
+        <div class="wiz-section wiz-single-only">
           <label class="wiz-label">
             ASIN <span style="color:var(--text-sec); font-weight:400;">(required)</span>
             <span class="info-tip" onclick="toggleInfoTip(this, event)">i
-              <span class="info-tip-pop"><strong>What this is.</strong> Amazon Standard Identification Number — the 10-character ID for the listing you want to advertise. Format: <code>B0</code> + 8 alphanumeric chars. Atlas uses this to anchor every keyword decision so the audit trail in Memory ties back to a specific product. Multiple ASINs in one wizard run isn't supported yet — run the wizard once per ASIN for now.</span>
+              <span class="info-tip-pop"><strong>What this is.</strong> Amazon Standard Identification Number — the 10-character ID for the listing you want to advertise. Format: <code>B0</code> + 8 alphanumeric chars. Atlas uses this to anchor every keyword decision so the audit trail in Memory ties back to a specific product.</span>
             </span>
           </label>
           <input id="wiz-asin" type="text" class="wiz-input" placeholder="B0XXXXXXXX" />
+        </div>
+
+        <!-- Batch ASIN textarea (hidden by default) -->
+        <div class="wiz-section wiz-batch-only" style="display:none;">
+          <label class="wiz-label">
+            ASINs <span style="color:var(--text-sec); font-weight:400;">(one per line, up to 40)</span>
+            <span class="info-tip" onclick="toggleInfoTip(this, event)">i
+              <span class="info-tip-pop"><strong>Batch input.</strong> Paste one ASIN per line. Whitespace and blank lines are ignored. Atlas will run candidate generation for each ASIN sequentially, then walk you through them one ASIN at a time in the review phase. A single product type / style name applies to all ASINs in the batch, so batch is best when the ASINs are size/color variations of the same style.</span>
+            </span>
+          </label>
+          <textarea id="wiz-asin-list" class="wiz-input" rows="6" placeholder="B0XXXXXXX1\nB0XXXXXXX2\nB0XXXXXXX3"></textarea>
+          <div id="wiz-asin-list-summary" style="font-size:11px; color:var(--text-sec); margin-top:6px;"></div>
         </div>
         <div class="wiz-section">
           <label class="wiz-label">
@@ -6947,6 +7024,8 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
 
       <!-- Phase 2: Review -->
       <div id="wiz-phase-review" class="wiz-phase">
+        <!-- Batch-mode ASIN switcher (hidden in single mode) -->
+        <div id="wiz-batch-switcher" class="wiz-batch-switcher" style="display:none;"></div>
         <div id="wiz-review-summary" class="wiz-review-summary"></div>
         <div class="wiz-review-filters">
           <input id="wiz-search" type="text" class="wiz-input" placeholder="Filter candidates…" oninput="wizFilterRender()" style="max-width:280px;" />
@@ -12894,28 +12973,81 @@ document.addEventListener('click', (e) => {
 
 // ════════════ Day-1 Keyword Wizard ═════════════════════════════
 const wizState = {
+  mode: 'single',          // 'single' | 'batch'
   sessionId: null,
-  asin: '',
-  candidates: [],          // [{...candidate, _decision: null|accept|edit|reject|comment, _editedKeyword, _editedMatch, _comment, _scope, _logged }]
+  asin: '',                // active ASIN being reviewed
+  candidates: [],          // candidate list for the active ASIN
+  // Batch-specific. asinSet[ASIN] = { status: 'pending'|'loading'|'ready'|'error', candidates: [...], error: '' }
+  asinSet: {},
+  asinOrder: [],           // ordering for the switcher
   themeFilter: '',
   searchFilter: '',
   phase: 'setup',          // setup | review | submit | done
 };
 
 function wizOpen() {
+  wizState.mode = 'single';
   wizState.sessionId = null;
   wizState.asin = '';
   wizState.candidates = [];
+  wizState.asinSet = {};
+  wizState.asinOrder = [];
   wizState.themeFilter = '';
   wizState.searchFilter = '';
-  ['wiz-asin', 'wiz-product-type', 'wiz-style-name', 'wiz-notes'].forEach(id => {
+  ['wiz-asin', 'wiz-asin-list', 'wiz-product-type', 'wiz-style-name', 'wiz-notes'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const cnt = document.getElementById('wiz-count'); if (cnt) cnt.value = '40';
   const exem = document.getElementById('wiz-exemplar'); if (exem) exem.checked = false;
+  // Listener for the batch textarea so we show live count
+  const ta = document.getElementById('wiz-asin-list');
+  if (ta && !ta._bound) {
+    ta.addEventListener('input', wizUpdateAsinListSummary);
+    ta._bound = true;
+  }
+  wizSetMode('single');
   wizGoPhase('setup');
   document.getElementById('wiz-modal')?.classList.add('open');
   setTimeout(() => document.getElementById('wiz-asin')?.focus(), 100);
+}
+
+function wizSetMode(mode) {
+  wizState.mode = mode;
+  document.getElementById('wiz-mode-single')?.classList.toggle('active', mode === 'single');
+  document.getElementById('wiz-mode-batch')?.classList.toggle('active', mode === 'batch');
+  document.querySelectorAll('.wiz-single-only').forEach(el => el.style.display = mode === 'single' ? '' : 'none');
+  document.querySelectorAll('.wiz-batch-only').forEach(el => el.style.display = mode === 'batch' ? '' : 'none');
+  if (mode === 'batch') wizUpdateAsinListSummary();
+}
+
+function wizParseAsinList() {
+  const text = document.getElementById('wiz-asin-list')?.value || '';
+  const seen = new Set();
+  const out = [];
+  for (const line of text.split(/[\n,;]+/)) {
+    const a = line.trim().toUpperCase();
+    if (!a) continue;
+    if (seen.has(a)) continue;
+    seen.add(a);
+    out.push(a);
+  }
+  return out;
+}
+
+function wizUpdateAsinListSummary() {
+  const asins = wizParseAsinList();
+  const el = document.getElementById('wiz-asin-list-summary');
+  if (!el) return;
+  if (asins.length === 0) {
+    el.textContent = '';
+    return;
+  }
+  const invalid = asins.filter(a => !/^B0[A-Z0-9]{8}$/.test(a));
+  const warnText = invalid.length > 0
+    ? ` · ${invalid.length} look${invalid.length === 1 ? 's' : ''} non-standard (${invalid.slice(0, 3).join(', ')}${invalid.length > 3 ? '…' : ''})`
+    : '';
+  const overText = asins.length > 40 ? ' · over 40, only the first 40 will run' : '';
+  el.textContent = `${asins.length} ASIN${asins.length === 1 ? '' : 's'} parsed${warnText}${overText}`;
 }
 
 function wizClose() {
@@ -12964,6 +13096,13 @@ function wizGoSubmit() {
 }
 
 async function wizGenerate() {
+  if (wizState.mode === 'batch') {
+    return wizGenerateBatch();
+  }
+  return wizGenerateSingle();
+}
+
+async function wizGenerateSingle() {
   const asin = document.getElementById('wiz-asin').value.trim().toUpperCase();
   if (!asin) { alert('ASIN is required.'); document.getElementById('wiz-asin').focus(); return; }
   if (!/^B0[A-Z0-9]{8}$/.test(asin)) {
@@ -12972,7 +13111,6 @@ async function wizGenerate() {
   const productType = document.getElementById('wiz-product-type').value.trim();
   const styleName = document.getElementById('wiz-style-name').value.trim();
   const count = parseInt(document.getElementById('wiz-count').value || '40', 10);
-  // 1) Open the session
   const startBtn = document.querySelector('#wiz-phase-setup .btn-primary');
   const originalLabel = startBtn ? startBtn.textContent : '';
   if (startBtn) { startBtn.disabled = true; startBtn.textContent = 'Opening session…'; }
@@ -12985,26 +13123,135 @@ async function wizGenerate() {
     if (!sd.ok) { alert('Could not open session: ' + (sd.error || 'unknown')); return; }
     wizState.sessionId = sd.session_id;
     wizState.asin = asin;
+    wizState.asinOrder = [asin];
+    wizState.asinSet = { [asin]: { status: 'loading', candidates: [], error: '' } };
     if (startBtn) startBtn.textContent = 'Generating candidates…';
-    const gr = await fetch('/api/atlas/marketing/wizard/generate', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ asin, product_type: productType, style_name: styleName, target_count: count }),
-    });
-    const gd = await gr.json();
-    if (!gd.ok) { alert('Generation failed: ' + (gd.error || 'unknown')); return; }
-    wizState.candidates = (gd.candidates || []).map(c => ({
-      ...c,
-      _decision: null, _editedKeyword: c.keyword, _editedMatch: c.match_type,
-      _comment: '', _scope: 'just_this', _logged: false,
-    }));
-    wizRenderReviewSummary(gd);
-    wizRenderCandidates();
+    const result = await wizFetchCandidatesFor(asin, productType, styleName, count);
+    if (!result.ok) { alert('Generation failed: ' + (result.error || 'unknown')); return; }
+    wizState.asinSet[asin] = { status: 'ready', candidates: result.candidates, error: '', meta: result.meta };
+    wizSwitchAsin(asin);
     wizGoPhase('review');
   } catch (e) {
     alert('Network error: ' + e.message);
   } finally {
     if (startBtn) { startBtn.disabled = false; startBtn.textContent = originalLabel; }
   }
+}
+
+async function wizGenerateBatch() {
+  const asins = wizParseAsinList().slice(0, 40);
+  if (asins.length === 0) { alert('Paste at least one ASIN, one per line.'); return; }
+  const productType = document.getElementById('wiz-product-type').value.trim();
+  const styleName = document.getElementById('wiz-style-name').value.trim();
+  const count = parseInt(document.getElementById('wiz-count').value || '40', 10);
+  const startBtn = document.querySelector('#wiz-phase-setup .btn-primary');
+  const originalLabel = startBtn ? startBtn.textContent : '';
+  if (startBtn) { startBtn.disabled = true; startBtn.textContent = 'Opening batch session…'; }
+  try {
+    // One session covers the whole batch.
+    const sr = await fetch('/api/atlas/marketing/wizard/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asin: asins[0] }),
+    });
+    const sd = await sr.json();
+    if (!sd.ok) { alert('Could not open session: ' + (sd.error || 'unknown')); return; }
+    wizState.sessionId = sd.session_id;
+    wizState.asinOrder = asins;
+    wizState.asinSet = {};
+    asins.forEach(a => { wizState.asinSet[a] = { status: 'pending', candidates: [], error: '' }; });
+    wizState.asin = asins[0];
+    // Show review phase immediately so the operator can watch progress.
+    wizSwitchAsin(asins[0]);
+    wizGoPhase('review');
+    // Sequentially fetch candidates per ASIN. Sequential keeps the LLM
+    // load reasonable and avoids Render request pile-up.
+    for (const asin of asins) {
+      wizState.asinSet[asin].status = 'loading';
+      wizRenderBatchSwitcher();
+      const result = await wizFetchCandidatesFor(asin, productType, styleName, count);
+      if (result.ok) {
+        wizState.asinSet[asin] = { status: 'ready', candidates: result.candidates, error: '', meta: result.meta };
+      } else {
+        wizState.asinSet[asin] = { status: 'error', candidates: [], error: result.error || 'failed' };
+      }
+      wizRenderBatchSwitcher();
+      // If this is the active ASIN, refresh the review pane.
+      if (asin === wizState.asin) wizSwitchAsin(asin);
+    }
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  } finally {
+    if (startBtn) { startBtn.disabled = false; startBtn.textContent = originalLabel; }
+  }
+}
+
+async function wizFetchCandidatesFor(asin, productType, styleName, count) {
+  try {
+    const r = await fetch('/api/atlas/marketing/wizard/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asin, product_type: productType, style_name: styleName, target_count: count }),
+    });
+    const d = await r.json();
+    if (!d.ok) return { ok: false, error: d.error || 'unknown' };
+    const candidates = (d.candidates || []).map(c => ({
+      ...c,
+      _decision: null, _editedKeyword: c.keyword, _editedMatch: c.match_type,
+      _comment: '', _scope: 'just_this', _logged: false,
+    }));
+    return { ok: true, candidates, meta: { source: d.source, siblings_used: d.siblings_used, brand_profile_version: d.brand_profile_version } };
+  } catch (e) {
+    return { ok: false, error: e.message || 'network error' };
+  }
+}
+
+function wizSwitchAsin(asin) {
+  if (!wizState.asinSet[asin]) return;
+  wizState.asin = asin;
+  wizState.candidates = wizState.asinSet[asin].candidates || [];
+  wizState.themeFilter = '';
+  wizState.searchFilter = '';
+  const searchEl = document.getElementById('wiz-search');
+  if (searchEl) searchEl.value = '';
+  document.querySelectorAll('.wiz-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-theme') === ''));
+  // Update review summary header from the per-ASIN meta we cached.
+  const meta = wizState.asinSet[asin].meta || { source: 'fallback', siblings_used: 0 };
+  wizRenderReviewSummary({ candidates: wizState.candidates, source: meta.source, siblings_used: meta.siblings_used, brand_profile_version: meta.brand_profile_version });
+  wizRenderCandidates();
+  wizRenderBatchSwitcher();
+  // Update title
+  const titleEl = document.getElementById('wiz-title');
+  if (titleEl) titleEl.textContent = wizState.mode === 'batch' ? `Review candidates · ${asin} (${wizState.asinOrder.indexOf(asin) + 1} of ${wizState.asinOrder.length})` : `Review candidates · ${asin}`;
+}
+
+function wizRenderBatchSwitcher() {
+  const el = document.getElementById('wiz-batch-switcher');
+  if (!el) return;
+  if (wizState.mode !== 'batch' || !wizState.asinOrder.length) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = '';
+  let ready = 0, loading = 0, errors = 0, pending = 0;
+  const pills = wizState.asinOrder.map(asin => {
+    const r = wizState.asinSet[asin] || { status: 'pending', candidates: [] };
+    if (r.status === 'ready') ready++;
+    else if (r.status === 'loading') loading++;
+    else if (r.status === 'error') errors++;
+    else pending++;
+    const accepted = (r.candidates || []).filter(c => c._decision === 'accept' || c._decision === 'edit').length;
+    const total = (r.candidates || []).length;
+    const isActive = asin === wizState.asin;
+    const status = r.status;
+    let label = asin;
+    let count = '';
+    if (status === 'loading') { count = '<span class="wiz-batch-pill-count">…</span>'; }
+    else if (status === 'error') { count = '<span class="wiz-batch-pill-count" title="' + escHtml(r.error || '') + '">err</span>'; }
+    else if (status === 'pending') { count = ''; }
+    else { count = `<span class="wiz-batch-pill-count">${accepted}/${total}</span>`; }
+    return `<span class="wiz-batch-pill${isActive ? ' active' : ''}" data-status="${status}" onclick="wizSwitchAsin('${escHtml(asin)}')">${escHtml(label)}${count}</span>`;
+  }).join('');
+  const summary = `<div class="wiz-batch-progress"><strong>${ready}</strong>/${wizState.asinOrder.length} ready${loading > 0 ? ` · ${loading} loading` : ''}${errors > 0 ? ` · ${errors} error${errors === 1 ? '' : 's'}` : ''}${pending > 0 ? ` · ${pending} queued` : ''}</div>`;
+  el.innerHTML = pills + summary;
 }
 
 function wizRenderReviewSummary(gd) {
@@ -13047,11 +13294,30 @@ function wizFilteredIndices() {
 }
 
 function wizCounts() {
+  // For the active ASIN only.
   const out = { accept: 0, edit: 0, reject: 0, comment: 0, pending: 0 };
   wizState.candidates.forEach(c => {
     if (c._decision) out[c._decision] = (out[c._decision] || 0) + 1;
     else out.pending++;
   });
+  return out;
+}
+
+function wizBatchCounts() {
+  // Aggregate across every ASIN in the batch (or just the active ASIN in single mode).
+  const out = { accept: 0, edit: 0, reject: 0, comment: 0, pending: 0, asins_with_accepted: 0 };
+  const asins = wizState.mode === 'batch' ? wizState.asinOrder : [wizState.asin];
+  for (const asin of asins) {
+    const r = wizState.asinSet[asin];
+    if (!r) continue;
+    let asinAccepted = 0;
+    for (const c of (r.candidates || [])) {
+      if (c._decision) out[c._decision] = (out[c._decision] || 0) + 1;
+      else out.pending++;
+      if (c._decision === 'accept' || c._decision === 'edit') asinAccepted++;
+    }
+    if (asinAccepted > 0) out.asins_with_accepted++;
+  }
   return out;
 }
 
@@ -13217,12 +13483,16 @@ async function wizLogDecision(i, action) {
 function wizRenderSubmitSummary() {
   const el = document.getElementById('wiz-submit-summary');
   if (!el) return;
-  const c = wizCounts();
+  const c = wizBatchCounts();
+  const asinNote = wizState.mode === 'batch'
+    ? `<div style="grid-column: span 4; text-align:center; font-size:11px; color:var(--text-sec); margin-top:6px;">Across ${wizState.asinOrder.length} ASIN${wizState.asinOrder.length === 1 ? '' : 's'} · ${c.asins_with_accepted} with at least one accepted candidate</div>`
+    : '';
   el.innerHTML = `
     <div class="wiz-stat" data-kind="accept"><div class="wiz-stat-num">${c.accept}</div><div class="wiz-stat-label">Accepted</div></div>
     <div class="wiz-stat" data-kind="edit"><div class="wiz-stat-num">${c.edit}</div><div class="wiz-stat-label">Edited</div></div>
     <div class="wiz-stat" data-kind="reject"><div class="wiz-stat-num">${c.reject}</div><div class="wiz-stat-label">Rejected</div></div>
     <div class="wiz-stat"><div class="wiz-stat-num">${c.pending}</div><div class="wiz-stat-label">No decision</div></div>
+    ${asinNote}
   `;
 }
 
@@ -13246,9 +13516,10 @@ async function wizSubmit() {
   }
 }
 
-async function wizDownloadCsv() {
-  // Build the accepted list from candidates with _decision === 'accept' or 'edit'
-  const accepted = wizState.candidates
+function _wizAcceptedFor(asin) {
+  const r = wizState.asinSet[asin];
+  if (!r) return [];
+  return (r.candidates || [])
     .filter(c => c._decision === 'accept' || c._decision === 'edit')
     .map(c => {
       if (c._decision === 'edit' && c.operator_value) {
@@ -13265,6 +13536,17 @@ async function wizDownloadCsv() {
         suggested_bid_high: c.suggested_bid_high,
       };
     });
+}
+
+async function wizDownloadCsv() {
+  if (wizState.mode === 'batch') {
+    return wizDownloadBatchCsv();
+  }
+  return wizDownloadSingleCsv();
+}
+
+async function wizDownloadSingleCsv() {
+  const accepted = _wizAcceptedFor(wizState.asin);
   if (!accepted.length) { alert('No accepted or edited candidates to export.'); return; }
   try {
     const r = await fetch('/api/atlas/marketing/wizard/export', {
@@ -13277,6 +13559,33 @@ async function wizDownloadCsv() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `atlas_day1_${wizState.asin}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  }
+}
+
+async function wizDownloadBatchCsv() {
+  // Build the batches payload from every ASIN that has accepted/edited candidates.
+  const batches = wizState.asinOrder
+    .map(asin => ({ asin, accepted: _wizAcceptedFor(asin) }))
+    .filter(b => b.accepted.length > 0);
+  if (!batches.length) {
+    alert('No accepted or edited candidates across any ASIN. Accept or edit at least one before exporting.');
+    return;
+  }
+  try {
+    const r = await fetch('/api/atlas/marketing/wizard/batch-export', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ batches }),
+    });
+    if (!r.ok) { alert('Export failed: ' + r.status); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `atlas_day1_batch_${batches.length}_asins.csv`;
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   } catch (e) {

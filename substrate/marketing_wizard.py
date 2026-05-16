@@ -505,7 +505,51 @@ def candidates_to_bulk_csv(
     return "\n".join(lines) + "\n"
 
 
+def batch_candidates_to_bulk_csv(
+    batches: list[dict[str, Any]],
+    *,
+    campaign_prefix: str = "Atlas day-1",
+) -> str:
+    """Render multiple per-ASIN candidate batches as one merged bulk CSV.
+
+    Each batch is a dict with keys:
+        asin (str)                     - required
+        accepted (list[dict])          - required, candidate dicts
+        campaign_name (str, optional)  - defaults to f'{campaign_prefix} - {asin}'
+        ad_group_name (str, optional)  - defaults to f'day-1 · {asin}'
+
+    Empty batches (asin with no accepted) are skipped silently.
+    Returns a single CSV string with one header row + N data rows.
+    Each ASIN gets its own campaign so PPC reporting stays per-ASIN clean.
+    """
+    headers = [
+        "Campaign Name", "Ad Group Name", "ASIN", "Keyword Text",
+        "Match Type", "Bid", "State",
+    ]
+    lines = [",".join(headers)]
+    for batch in batches:
+        asin = (batch.get("asin") or "").strip()
+        accepted = batch.get("accepted") or []
+        if not asin or not accepted:
+            continue
+        campaign_name = batch.get("campaign_name") or f"{campaign_prefix} - {asin}"
+        ad_group_name = batch.get("ad_group_name") or f"day-1 · {asin}"
+        for c in accepted:
+            kw = (c.get("keyword") or "").replace(",", " ")
+            if not kw:
+                continue
+            mt = (c.get("match_type") or "broad").lower()
+            low = c.get("suggested_bid_low") or 0.75
+            high = c.get("suggested_bid_high") or 1.20
+            bid = round((float(low) + float(high)) / 2.0, 2)
+            lines.append(",".join([
+                campaign_name, ad_group_name, asin, kw, mt, f"{bid:.2f}", "enabled",
+            ]))
+    return "\n".join(lines) + "\n"
+
+
 __all__ = [
     "generate_candidates",
     "candidates_to_bulk_csv",
+    "batch_candidates_to_bulk_csv",
 ]

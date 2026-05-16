@@ -11695,6 +11695,36 @@ def atlas_mkt_wizard_submit():
     return jsonify({"ok": True, "session_id": session_id})
 
 
+@app.route("/api/atlas/marketing/wizard/batch-export", methods=["POST"])
+def atlas_mkt_wizard_batch_export():
+    """Render an accepted-candidate list across many ASINs as one merged bulk CSV.
+
+    Body:
+        batches: list of { asin, accepted, campaign_name?, ad_group_name? }
+        campaign_prefix: optional, defaults to 'Atlas day-1'
+
+    Each ASIN keeps its own campaign so PPC reports stay per-ASIN clean.
+    """
+    body = request.get_json(silent=True) or {}
+    batches = body.get("batches") or []
+    if not isinstance(batches, list) or not batches:
+        return jsonify({"ok": False, "error": "batches[] required"}), 400
+    try:
+        from substrate.marketing_wizard import batch_candidates_to_bulk_csv
+        csv_body = batch_candidates_to_bulk_csv(
+            batches,
+            campaign_prefix=(body.get("campaign_prefix") or "Atlas day-1"),
+        )
+    except Exception as exc:
+        print(f"[atlas] wizard batch export failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    fn = body.get("filename") or f"atlas_day1_batch_{len(batches)}_asins.csv"
+    return Response(
+        csv_body, mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={fn}"},
+    )
+
+
 @app.route("/api/atlas/marketing/wizard/export", methods=["POST"])
 def atlas_mkt_wizard_export():
     """Render an accepted candidate list as a downloadable bulk CSV.
