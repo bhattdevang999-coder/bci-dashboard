@@ -377,6 +377,27 @@ app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
 CORS(app)
 
 
+# ─── Atlas substrate bootstrap ────────────────────────────────────
+# When DATABASE_URL is set (production on Render), apply the substrate
+# schema once at import time. The migration uses CREATE TABLE IF NOT EXISTS
+# everywhere so re-running is safe — every deploy hits this code path.
+#
+# If Postgres is unreachable or schema apply fails, we log and continue.
+# The logger automatically falls back to JSONL writes so generation
+# still works.
+try:
+    from substrate.db import get_pool, apply_schema as _atlas_apply_schema
+    _atlas_pool = get_pool()
+    if _atlas_pool is not None:
+        with _atlas_pool.connection() as _atlas_conn:
+            _atlas_apply_schema(_atlas_conn)
+        print("[atlas] substrate Postgres schema applied", flush=True)
+    else:
+        print("[atlas] no DATABASE_URL set; substrate using JSONL backend", flush=True)
+except Exception as _atlas_boot_exc:
+    print(f"[atlas] substrate Postgres bootstrap skipped: {_atlas_boot_exc}", flush=True)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # NIS RULE ENGINE — universal Amazon NIS conditional-logic evaluator.
 # Reads .xlsm templates, parses every CF/DV formula, evaluates against form state.

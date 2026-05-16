@@ -29,6 +29,13 @@ def _with_temp_root(fn):
         sess = tempfile.mkdtemp(prefix="atlas_jt_sess_")
         os.environ["ATLAS_SUBSTRATE_ROOT"] = sub
         os.environ["ATLAS_SESSIONS_ROOT"] = sess
+        # When running against Postgres, wipe between tests for isolation.
+        # No-op under pure JSONL runs.
+        try:
+            from substrate.db import wipe_substrate_for_tests
+            wipe_substrate_for_tests()
+        except Exception:
+            pass
         try:
             return fn(*args, **kwargs)
         finally:
