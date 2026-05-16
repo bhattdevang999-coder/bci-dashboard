@@ -96,7 +96,6 @@ smoke "marketing/keywords"    "/api/atlas/marketing/keywords?limit=1" '"ok":true
 smoke "brand-voice"           "/api/atlas/brand-voice"                '"ok":true'
 smoke "marketing/budget"      "/api/atlas/marketing/budget"           '"ok":true'
 smoke "marketing/variance"    "/api/atlas/marketing/budget/variance?period=2026-05" '"ok":true'
-smoke "docs/onboarding"       "/docs/onboarding"                       'Atlas .{0,5} Onboarding'
 
 # Wizard endpoints are POST-only; smoke them with a lightweight start call.
 function smoke_post() {

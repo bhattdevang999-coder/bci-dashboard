@@ -12061,15 +12061,11 @@ def atlas_mkt_wizard_export():
     )
 
 
-@app.route("/docs/onboarding", methods=["GET"])
-def docs_onboarding():
-    """Operator-facing onboarding + user directions page.
-
-    Renders a static HTML doc with English / Urdu / Bangla language toggle.
-    The Urdu and Bangla versions are AI-translated and clearly flagged as
-    not yet reviewed by a native speaker — the English version is canon.
-    """
-    return render_template("docs/onboarding.html")
+# /docs/onboarding intentionally removed — the static onboarding doc was
+# too blunt for the agency rollout. Devang will walk new operators through
+# Atlas in person instead. The template file was also deleted with this
+# change; recover from git history if a future doc needs the starting
+# point.
 
 
 @app.route("/api/version", methods=["GET"])
