@@ -253,6 +253,96 @@
     flex-shrink: 0;
   }
 
+  /* Atlas sidebar items (Home, Inputs, Memory, User directions, Marketing) */
+  .atlas-nav { padding-top: 4px; }
+  .nav-item-atlas {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    color: var(--text-sec);
+    user-select: none;
+    text-decoration: none;   /* in case the element is an <a> */
+  }
+  .nav-item-atlas:hover { background: var(--bg); color: var(--text); }
+  .nav-item-atlas:visited { color: inherit; }
+  .nav-item-atlas.active {
+    background: var(--accent-lt);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .atlas-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-sec);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .nav-item-atlas:hover .atlas-dot { background: var(--text); }
+  .nav-item-atlas.active .atlas-dot { background: var(--accent); }
+
+  .nav-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-sec);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 20px 6px;
+    font-weight: 600;
+  }
+  .nav-module-num {
+    color: var(--text-sec);
+    font-weight: 700;
+  }
+  .nav-status {
+    margin-left: auto;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+    font-weight: 700;
+  }
+  .nav-status-live { background: rgba(34, 197, 94, 0.14); color: #22c55e; }
+  .nav-status-next { background: rgba(245, 158, 11, 0.14); color: #f59e0b; }
+  .nav-status-soon { background: var(--bg); color: var(--text-sec); border: 1px solid var(--border); }
+
+  .nav-item-soon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    color: var(--text-sec);
+    opacity: 0.55;
+    cursor: not-allowed;
+    user-select: none;
+  }
+  .nav-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-sec); flex-shrink: 0;
+  }
+  .nav-dot.live { background: #22c55e; }
+  .nav-dot.soon { background: var(--text-sec); opacity: 0.5; }
+  .nav-pill {
+    margin-left: auto;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+    font-weight: 700;
+  }
+  .nav-pill-beta { background: rgba(94, 234, 212, 0.14); color: var(--accent); }
+  .nav-pill-soon { background: var(--bg); color: var(--text-sec); border: 1px solid var(--border); }
+
   /* Merge nav item — fully active */
   .nav-item-merge {
     display: flex;
@@ -5486,6 +5576,9 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="nav-item-atlas" id="nav-memory" onclick="showMemoryPage()">
       <span class="atlas-dot"></span> Memory
     </div>
+    <div class="nav-item-atlas" id="nav-marketing" onclick="showMarketingPage()">
+      <span class="atlas-dot"></span> Marketing
+    </div>
     <a class="nav-item-atlas" id="nav-docs" href="/docs/onboarding" target="_blank" rel="noopener">
       <span class="atlas-dot"></span> User directions
     </a>
@@ -6483,6 +6576,72 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
         <div id="memory-decisions" class="memory-decisions"></div>
         <div id="memory-dec-paginate" class="memory-paginate" style="display:none;"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ════════════ MARKETING PAGE (Phase 1 Path B Step 1) ════════════ -->
+  <div id="marketing-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Marketing</h1>
+      <div class="page-hero-sub">Upload PPC bulk files and Search Term Reports. Atlas builds a keyword library that compounds daily — every upload appends a new observation, so the longer you run, the sharper the direction signal becomes.</div>
+    </div>
+
+    <!-- Upload zone -->
+    <div id="mkt-dropzone" class="inputs-dropzone"
+         ondragover="mktDragOver(event)"
+         ondragleave="mktDragLeave(event)"
+         ondrop="mktDrop(event)">
+      <div class="inputs-dropzone-icon">↓</div>
+      <div class="inputs-dropzone-title">Drop a PPC bulk file or Search Term Report</div>
+      <div class="inputs-dropzone-sub">US English Amazon Campaign Manager exports · CSV / TSV / XLSX</div>
+      <div class="inputs-dropzone-cta">
+        <input type="file" id="mkt-file" style="display:none;" onchange="mktFileSelected(this.files)" accept=".csv,.tsv,.txt,.xlsx,.xls" />
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('mkt-file').click()">Choose file</button>
+      </div>
+    </div>
+    <div id="mkt-detection" class="inputs-detection" style="display:none;"></div>
+
+    <!-- Filters -->
+    <div class="memory-filters" style="margin-top:24px;">
+      <div class="memory-filter-group">
+        <label class="memory-filter-label">Search</label>
+        <input id="mkt-q" class="memory-select" type="text" placeholder="yoga pants, wool, …" oninput="mktDebounced()" />
+      </div>
+      <div class="memory-filter-group">
+        <label class="memory-filter-label">ASIN</label>
+        <input id="mkt-asin" class="memory-select" type="text" placeholder="B0XXXX" oninput="mktDebounced()" />
+      </div>
+      <div class="memory-filter-group">
+        <label class="memory-filter-label">Sort by</label>
+        <select id="mkt-order" class="memory-select" onchange="mktRefresh()">
+          <option value="last_seen_at">Most recent</option>
+          <option value="last_acos">Highest ACOS</option>
+          <option value="last_spend">Highest spend</option>
+          <option value="keyword">Keyword A→Z</option>
+        </select>
+      </div>
+      <div class="memory-filter-spacer"></div>
+      <button class="btn btn-secondary btn-sm" onclick="mktRefresh()">Refresh</button>
+    </div>
+
+    <!-- Keyword library list -->
+    <div class="memory-list-wrap">
+      <div id="mkt-list" class="memory-sessions"></div>
+      <div id="mkt-paginate" class="memory-paginate" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Keyword direction drawer -->
+  <div id="mkt-detail" class="memory-detail-overlay" onclick="mktCloseDetail(event)">
+    <div class="memory-detail-panel" onclick="event.stopPropagation()">
+      <div class="memory-detail-header">
+        <div>
+          <div id="mkt-detail-title" class="memory-detail-title">Keyword</div>
+          <div id="mkt-detail-sub" class="memory-detail-sub"></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="mktCloseDetail()">Close</button>
+      </div>
+      <div id="mkt-detail-body" class="memory-detail-body"></div>
     </div>
   </div>
 
@@ -8291,7 +8450,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'memory-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
+const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'memory-page', 'marketing-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -12088,6 +12247,245 @@ function memoryRenderResponse(r) {
       <span class="memory-decision-ts">${metaLine}</span>
       ${value}
       ${comment}
+    </div>`;
+}
+
+// ══════════════ Atlas Marketing (Phase 1 Path B Step 1) ═════════════════
+const mktState = { page: 0, pageSize: 50, total: 0, debounceTimer: null };
+
+function showMarketingPage() {
+  _showPage('marketing-page', 'Atlas · Marketing',
+    'Keyword library + direction signal. Compounds with every PPC bulk upload.');
+  const nav = document.getElementById('nav-marketing');
+  if (nav) nav.classList.add('active');
+  mktState.page = 0;
+  mktRefresh();
+}
+
+function mktDebounced() {
+  clearTimeout(mktState.debounceTimer);
+  mktState.debounceTimer = setTimeout(() => { mktState.page = 0; mktRefresh(); }, 300);
+}
+
+function mktDragOver(e) { e.preventDefault(); document.getElementById('mkt-dropzone')?.classList.add('drag-over'); }
+function mktDragLeave(e) { e.preventDefault(); document.getElementById('mkt-dropzone')?.classList.remove('drag-over'); }
+function mktDrop(e) {
+  e.preventDefault();
+  document.getElementById('mkt-dropzone')?.classList.remove('drag-over');
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+    mktFileSelected(e.dataTransfer.files);
+  }
+}
+
+async function mktFileSelected(files) {
+  if (!files || !files.length) return;
+  const file = files[0];
+  const det = document.getElementById('mkt-detection');
+  if (det) {
+    det.style.display = '';
+    det.innerHTML = `<div class="inputs-detection-row"><span class="inputs-detection-label">File</span><span class="inputs-detection-value">${escHtml(file.name)} (${(file.size/1024).toFixed(1)} KB)</span></div><div class="inputs-detection-row"><span class="inputs-detection-label">Status</span><span class="inputs-detection-value">Uploading…</span></div>`;
+  }
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch('/api/atlas/marketing/upload', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (!d.ok) {
+      if (det) det.innerHTML += `<div class="inputs-detection-row inputs-detection-unknown">Error: ${escHtml(d.error || 'unknown')}</div>`;
+      return;
+    }
+    if (det) {
+      det.innerHTML = `
+        <div class="inputs-detection-row"><span class="inputs-detection-label">File</span><span class="inputs-detection-value">${escHtml(file.name)}</span></div>
+        <div class="inputs-detection-row"><span class="inputs-detection-label">Detected as</span><span class="inputs-detection-value inputs-detection-kind">${escHtml(d.file_kind || '—')}</span></div>
+        <div class="inputs-detection-row"><span class="inputs-detection-label">Rows parsed</span><span class="inputs-detection-value">${d.rows_parsed} keyword rows</span></div>
+        <div class="inputs-detection-row"><span class="inputs-detection-label">Library</span><span class="inputs-detection-value">${d.keywords_written} new · ${d.outcome_rows} observations appended</span></div>`;
+    }
+    if (typeof showToast === 'function') showToast(`Uploaded · ${d.rows_parsed} keywords · ${d.outcome_rows} observations`, 'success');
+    setTimeout(() => { mktState.page = 0; mktRefresh(); }, 400);
+  } catch (e) {
+    if (det) det.innerHTML += `<div class="inputs-detection-row inputs-detection-unknown">Upload failed: ${escHtml(e.message)}</div>`;
+  }
+}
+
+async function mktRefresh() {
+  const listEl = document.getElementById('mkt-list');
+  const pgEl = document.getElementById('mkt-paginate');
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="memory-empty">Loading…</div>';
+  if (pgEl) pgEl.style.display = 'none';
+  const q = document.getElementById('mkt-q')?.value.trim() || '';
+  const asin = document.getElementById('mkt-asin')?.value.trim() || '';
+  const order = document.getElementById('mkt-order')?.value || 'last_seen_at';
+  const offset = mktState.page * mktState.pageSize;
+  const params = new URLSearchParams({ limit: mktState.pageSize, offset, order_by: order });
+  if (q) params.set('q', q);
+  if (asin) params.set('asin', asin);
+  try {
+    const r = await fetch('/api/atlas/marketing/keywords?' + params.toString());
+    if (!r.ok) {
+      listEl.innerHTML = `<div class="memory-empty">Failed to load (HTTP ${r.status}).</div>`;
+      return;
+    }
+    const d = await r.json();
+    const rows = (d && d.keywords) || [];
+    mktState.total = d.total || 0;
+    if (!rows.length) {
+      listEl.innerHTML = '<div class="memory-empty">No keywords yet. Drop a PPC bulk file or Search Term Report to start.</div>';
+      return;
+    }
+    listEl.innerHTML = rows.map(mktRenderRow).join('');
+    mktRenderPagination();
+  } catch (e) {
+    listEl.innerHTML = `<div class="memory-empty">Failed to load: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function mktRenderRow(k) {
+  const kw = escHtml(k.keyword || k.keyword_norm || '—');
+  const mt = k.match_type ? escHtml(k.match_type) : '—';
+  const asins = Array.isArray(k.asins) ? k.asins : [];
+  const asinChip = asins.length === 0
+    ? '<span class="memory-decision-asin">no ASIN</span>'
+    : (asins.length === 1
+        ? `<span class="memory-decision-asin">${escHtml(asins[0])}</span>`
+        : `<span class="memory-decision-asin" title="${escHtml(asins.join(', '))}">${escHtml(asins[0])} +${asins.length - 1}</span>`);
+  const acos = (k.last_acos != null) ? (k.last_acos * 100).toFixed(1) + '%' : '—';
+  const spend = (k.last_spend != null) ? '$' + k.last_spend.toFixed(2) : '—';
+  const clicks = (k.last_clicks != null) ? k.last_clicks.toLocaleString() : '—';
+  const seen = k.last_seen_at ? new Date(k.last_seen_at).toLocaleDateString() : '—';
+  const norm = encodeURIComponent(k.keyword_norm || k.keyword || '');
+  const asin1 = asins[0] ? encodeURIComponent(asins[0]) : '';
+  return `
+    <div class="memory-session-row" onclick="mktOpenDetail('${norm}', '${asin1}')" style="grid-template-columns: 1.4fr 90px 130px 100px 100px 100px 90px;">
+      <div class="memory-decision-field-cell">${kw}<small style="display:block; color:var(--text-sec); font-weight:400; margin-top:2px;">match: ${mt}</small></div>
+      <div>${asinChip}</div>
+      <div class="memory-decision-asin" style="text-transform:uppercase; letter-spacing:0.3px;">${escHtml(k.last_source_kind || '—')}</div>
+      <div>${escHtml(acos)}</div>
+      <div>${escHtml(spend)}</div>
+      <div>${escHtml(clicks)}</div>
+      <div class="memory-decision-asin">${escHtml(seen)}</div>
+    </div>`;
+}
+
+function mktRenderPagination() {
+  const pgEl = document.getElementById('mkt-paginate');
+  if (!pgEl) return;
+  const start = mktState.page * mktState.pageSize + 1;
+  const end = Math.min(mktState.total, (mktState.page + 1) * mktState.pageSize);
+  if (mktState.total <= mktState.pageSize) { pgEl.style.display = 'none'; return; }
+  const canPrev = mktState.page > 0, canNext = end < mktState.total;
+  pgEl.style.display = '';
+  pgEl.innerHTML = `
+    <button class="btn btn-secondary btn-sm" ${canPrev?'':'disabled'} onclick="mktPage(-1)">← Prev</button>
+    <span>${start.toLocaleString()}–${end.toLocaleString()} of ${mktState.total.toLocaleString()}</span>
+    <button class="btn btn-secondary btn-sm" ${canNext?'':'disabled'} onclick="mktPage(1)">Next →</button>`;
+}
+
+function mktPage(delta) {
+  const maxPage = Math.max(0, Math.ceil(mktState.total / mktState.pageSize) - 1);
+  const next = Math.min(maxPage, Math.max(0, mktState.page + delta));
+  if (next === mktState.page) return;
+  mktState.page = next; mktRefresh();
+}
+
+async function mktOpenDetail(normEncoded, asinEncoded) {
+  const overlay = document.getElementById('mkt-detail');
+  const titleEl = document.getElementById('mkt-detail-title');
+  const subEl = document.getElementById('mkt-detail-sub');
+  const bodyEl = document.getElementById('mkt-detail-body');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  const keyword = decodeURIComponent(normEncoded || '');
+  const asin = decodeURIComponent(asinEncoded || '');
+  titleEl.textContent = keyword || 'Keyword';
+  subEl.textContent = asin ? ('ASIN: ' + asin) : 'no ASIN linked';
+  bodyEl.innerHTML = '<div class="memory-detail-loading">Loading direction signal…</div>';
+  try {
+    const params = new URLSearchParams({ keyword });
+    if (asin) params.set('asin', asin);
+    const r = await fetch('/api/atlas/marketing/direction?' + params.toString());
+    const d = await r.json();
+    if (!d.ok) {
+      bodyEl.innerHTML = `<div class="memory-detail-loading">Failed: ${escHtml(d.error || 'unknown')}</div>`;
+      return;
+    }
+    mktRenderDetail(keyword, asin, d);
+  } catch (e) {
+    bodyEl.innerHTML = `<div class="memory-detail-loading">Failed: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function mktCloseDetail(e) {
+  if (e && e.target && e.target.id !== 'mkt-detail') return;
+  document.getElementById('mkt-detail')?.classList.remove('open');
+}
+
+const _MKT_CONFIDENCE_LABELS = {
+  no_data:     { text: 'no data',     color: 'var(--text-sec)' },
+  prior_only:  { text: 'prior only (n=1)', color: 'var(--text-sec)' },
+  too_early:   { text: 'too early',   color: '#f59e0b' },
+  directional: { text: 'directional', color: '#60a5fa' },
+  established: { text: 'established', color: '#a78bfa' },
+  statistical: { text: 'statistical', color: '#22c55e' },
+};
+
+function mktRenderDetail(keyword, asin, d) {
+  const bodyEl = document.getElementById('mkt-detail-body');
+  const nObs = d.n_observations || 0;
+  const metrics = d.metrics || {};
+  const order = ['acos', 'spend', 'organic_rank', 'clicks', 'orders', 'impressions', 'ctr', 'cvr', 'search_volume'];
+  const present = order.filter(m => metrics[m] && metrics[m].n);
+  if (!present.length) {
+    bodyEl.innerHTML = `
+      <div class="memory-detail-section">
+        <div class="memory-detail-section-title">Direction signal</div>
+        <div class="memory-detail-loading">No observations yet for this keyword. Upload a PPC bulk or Search Term Report to start the time series.</div>
+      </div>`;
+    return;
+  }
+  const cards = present.map(m => {
+    const s = metrics[m];
+    const conf = _MKT_CONFIDENCE_LABELS[s.confidence_label] || { text: s.confidence_label, color: 'var(--text-sec)' };
+    const arrow = s.direction === 'up' ? '↑' : (s.direction === 'down' ? '↓' : '→');
+    const arrowColor = (s.direction === 'down' && (m === 'acos' || m === 'spend')) ? '#22c55e'
+                     : (s.direction === 'up' && (m === 'acos' || m === 'spend')) ? '#ef4444'
+                     : (s.direction === 'up') ? '#22c55e'
+                     : (s.direction === 'down') ? '#ef4444' : 'var(--text-sec)';
+    const fmt = (v) => {
+      if (v == null) return '—';
+      if (m === 'acos' || m === 'ctr' || m === 'cvr') return (v * 100).toFixed(1) + '%';
+      if (m === 'spend') return '$' + v.toFixed(2);
+      return Number.isInteger(v) ? v.toLocaleString() : v.toFixed(2);
+    };
+    const pct = s.pct_delta != null ? (s.pct_delta >= 0 ? '+' : '') + s.pct_delta.toFixed(1) + '%' : '';
+    return `
+      <div class="memory-decision-card">
+        <div class="memory-decision-head">
+          <span class="memory-decision-field" style="color:var(--text);">${escHtml(m)}</span>
+          <span class="memory-decision-ts" style="color:${conf.color}; font-weight:600;">${escHtml(conf.text)} · n=${s.n}</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:14px; font-size:18px;">
+          <span style="color:${arrowColor}; font-size:22px; line-height:1;">${arrow}</span>
+          <span style="color:var(--text-sec); font-size:13px;">${fmt(s.first)}</span>
+          <span style="color:var(--text-sec); font-size:13px;">→</span>
+          <span style="color:var(--text); font-weight:600;">${fmt(s.last)}</span>
+          ${pct ? `<span style="color:${arrowColor}; font-size:13px; font-weight:600;">${escHtml(pct)}</span>` : ''}
+        </div>
+        <div class="memory-decision-meta">
+          <span>first: ${escHtml(new Date(s.first_observed_at).toLocaleDateString())}</span>
+          <span>last: ${escHtml(new Date(s.last_observed_at).toLocaleDateString())}</span>
+        </div>
+      </div>`;
+  }).join('');
+  bodyEl.innerHTML = `
+    <div class="memory-detail-section">
+      <div class="memory-detail-section-title">Direction signal (${nObs} observations across ${present.length} metrics)</div>
+      <div style="font-size:12px; color:var(--text-sec); margin-bottom:14px;">
+        Atlas reports direction with confidence proportional to data density. With one upload you'll see "prior only". With 14+ daily uploads, the trend is statistically established.
+        For ACOS and spend, down is good (green arrow); for others, up is good. Color follows business meaning, not raw direction.
+      </div>
+      ${cards}
     </div>`;
 }
 
