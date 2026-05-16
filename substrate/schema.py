@@ -50,6 +50,7 @@ class Module(str, Enum):
     NIS = "nis"
     CATALOG_HEALTH = "catalog_health"
     MARKETING = "marketing"
+    BUDGET = "budget"
     EXPERIMENTS = "experiments"
     LEAK = "leak"
     OTHER = "other"

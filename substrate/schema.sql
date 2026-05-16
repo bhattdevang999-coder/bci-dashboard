@@ -419,3 +419,54 @@ CREATE INDEX IF NOT EXISTS idx_keyword_library_workspace_acos
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v3', 'Add keyword_library for Marketing module (Phase 1).')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v4 — Budget substrate.
+--
+-- Captures planned spend so the closed-loop attribution layer (Phase 2)
+-- has a budget context to compare actual spend against. Strictly PPC for
+-- v1 — operational costs (photography, A+ design, content rewrites) are
+-- explicitly out of scope.
+--
+-- Granularity v1: one row per (workspace_id, period, scope_type, scope_value).
+--   - period      = YYYY-MM (e.g. '2026-05')
+--   - scope_type  = 'theme' | 'overall' | 'asin' (asin reserved for v2)
+--   - scope_value = the theme name ('branded' | 'feature' | 'competitor'),
+--                   the literal '_overall' for total budgets, or an ASIN.
+--
+-- Schema is designed so per-ASIN budgets can be added in v2 without
+-- migration: the same table holds them with scope_type='asin' and
+-- scope_value=ASIN. v1 UI just doesn't expose that path yet.
+--
+-- Every budget set/revise also writes a decision_event with module='budget',
+-- field_name='monthly_allocation' so the audit trail in Memory carries
+-- budget intent the same way it carries listing intent. The budget table
+-- is the rolled-up *current state* projection; substrate_events is the
+-- append-only history.
+-- ===========================================================================
+
+CREATE TABLE IF NOT EXISTS budget (
+    workspace_id   TEXT        NOT NULL,
+    period         TEXT        NOT NULL,                    -- 'YYYY-MM'
+    scope_type     TEXT        NOT NULL
+                                CHECK (scope_type IN ('theme', 'overall', 'asin')),
+    scope_value    TEXT        NOT NULL,                    -- theme name | '_overall' | ASIN
+    amount         NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
+    currency       TEXT        NOT NULL DEFAULT 'USD',
+    set_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    set_by         TEXT,                                    -- operator_id
+    notes          TEXT,
+    meta           JSONB DEFAULT '{}'::jsonb,
+    PRIMARY KEY (workspace_id, period, scope_type, scope_value)
+);
+
+CREATE INDEX IF NOT EXISTS idx_budget_workspace_period
+    ON budget (workspace_id, period DESC);
+
+CREATE INDEX IF NOT EXISTS idx_budget_workspace_scope
+    ON budget (workspace_id, scope_type, scope_value);
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v4', 'Add budget table for PPC budget tracking (Phase 1).')
+    ON CONFLICT (version) DO NOTHING;

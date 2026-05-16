@@ -11438,6 +11438,115 @@ def atlas_marketing_direction():
     return jsonify({"ok": True, "workspace_id": workspace_id, **d})
 
 
+# ---------------------------------------------------------------------------
+# Budget endpoints (Phase 1 — PPC budget tracking).
+# Budgets live under /marketing/ since they're strictly PPC for v1; the UI
+# surfaces them as a sub-tab inside the Marketing module.
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/atlas/marketing/budget", methods=["GET"])
+def atlas_marketing_budget_list():
+    """List budgets for the current workspace, optionally filtered to a period."""
+    workspace_id = _atlas_current_workspace()
+    period = (request.args.get("period") or "").strip() or None
+    try:
+        from substrate.budget import list_budgets
+        rows = list_budgets(workspace_id, period=period)
+    except Exception as exc:
+        print(f"[atlas] budget list failed: {exc}", flush=True)
+        rows = []
+    return jsonify({
+        "ok": True,
+        "workspace_id": workspace_id,
+        "period": period,
+        "budgets": rows,
+        "total": len(rows),
+    })
+
+
+@app.route("/api/atlas/marketing/budget", methods=["POST"])
+def atlas_marketing_budget_set():
+    """Upsert a budget row. Strictly PPC for v1.
+
+    JSON body:
+        period       'YYYY-MM' (required)
+        scope_type   'theme' | 'overall' | 'asin' (required)
+        scope_value  theme name | '_overall' | ASIN (required)
+        amount       numeric, >= 0 (required)
+        currency     default 'USD'
+        notes        optional free text
+    """
+    workspace_id = _atlas_current_workspace()
+    payload = request.get_json(silent=True) or {}
+    period = (payload.get("period") or "").strip()
+    scope_type = (payload.get("scope_type") or "").strip()
+    scope_value = (payload.get("scope_value") or "").strip()
+    if "amount" not in payload:
+        return jsonify({"ok": False, "error": "amount required"}), 400
+    try:
+        from substrate.budget import set_budget
+        operator_id = (request.cookies.get(_ATLAS_OPERATOR_COOKIE) or "").strip() or None
+        result = set_budget(
+            workspace_id, period, scope_type, scope_value, payload["amount"],
+            currency=(payload.get("currency") or "USD"),
+            set_by=operator_id,
+            notes=payload.get("notes"),
+        )
+    except Exception as exc:
+        print(f"[atlas] budget set failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    status = 200 if result.get("ok") else 400
+    return jsonify({"workspace_id": workspace_id, **result}), status
+
+
+@app.route("/api/atlas/marketing/budget", methods=["DELETE"])
+def atlas_marketing_budget_delete():
+    """Remove one budget row. Audit-trail decision_events stay in place.
+
+    Accepts period / scope_type / scope_value via query string or JSON body.
+    """
+    workspace_id = _atlas_current_workspace()
+    payload = request.get_json(silent=True) or {}
+    period = (request.args.get("period") or payload.get("period") or "").strip()
+    scope_type = (request.args.get("scope_type") or payload.get("scope_type") or "").strip()
+    scope_value = (request.args.get("scope_value") or payload.get("scope_value") or "").strip()
+    try:
+        from substrate.budget import delete_budget
+        result = delete_budget(workspace_id, period, scope_type, scope_value)
+    except Exception as exc:
+        print(f"[atlas] budget delete failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    status = 200 if result.get("ok") else 400
+    return jsonify({"workspace_id": workspace_id, **result}), status
+
+
+@app.route("/api/atlas/marketing/budget/variance", methods=["GET"])
+def atlas_marketing_budget_variance():
+    """Compute planned-vs-actual variance for one period.
+
+    Query params:
+        period   'YYYY-MM' (required)
+
+    Returns scopes (overall + per-theme + per-ASIN where data exists),
+    totals, and a content_changes_summary. NIS decisions in the period on
+    ASINs that had spend appear as markers so the operator can read
+    variance honestly (a price/title change is a confound).
+    """
+    workspace_id = _atlas_current_workspace()
+    period = (request.args.get("period") or "").strip()
+    if not period:
+        return jsonify({"ok": False, "error": "period required (YYYY-MM)"}), 400
+    try:
+        from substrate.budget import variance_for_period
+        result = variance_for_period(workspace_id, period)
+    except Exception as exc:
+        print(f"[atlas] budget variance failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    status = 200 if result.get("ok") else 400
+    return jsonify({"workspace_id": workspace_id, **result}), status
+
+
 @app.route("/api/atlas/marketing/upload", methods=["POST"])
 def atlas_marketing_upload():
     """Upload + parse a PPC bulk file or Search Term Report.
