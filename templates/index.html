@@ -2904,6 +2904,205 @@
   font-size: 13px;
 }
 
+/* ═══ Memory tab (Phase 1 Week 2) ═══ */
+.memory-filters {
+  display: flex; align-items: flex-end; gap: 16px;
+  margin: 0 0 18px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.memory-filter-group { display: flex; flex-direction: column; gap: 4px; }
+.memory-filter-label {
+  font-size: 11px; color: var(--text-sec);
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.memory-filter-spacer { flex: 1; }
+.memory-select {
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px; font-size: 13px; min-width: 160px;
+}
+.memory-select:focus { border-color: var(--accent); outline: none; }
+.memory-list-wrap {
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); overflow: hidden;
+}
+.memory-sessions { max-height: 640px; overflow-y: auto; }
+.memory-session-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 200px 240px 80px;
+  gap: 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  align-items: center;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.memory-session-row:last-child { border-bottom: none; }
+.memory-session-row:hover { background: var(--bg); }
+.memory-session-when { color: var(--text); }
+.memory-session-when small { display: block; color: var(--text-sec); font-size: 11px; margin-top: 2px; }
+.memory-session-operator { color: var(--text); }
+.memory-session-operator small { display: block; color: var(--text-sec); font-size: 11px; margin-top: 2px; }
+.memory-session-state {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.3px;
+}
+.memory-session-state[data-state="submitted"] { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
+.memory-session-state[data-state="live"]      { background: rgba(245, 158, 11, 0.14); color: #f59e0b; }
+.memory-session-state[data-state="abandoned"] { background: rgba(239, 68, 68, 0.12);  color: #ef4444; }
+.memory-session-counts {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  font-size: 11px; color: var(--text-sec);
+}
+.memory-count-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--bg); border: 1px solid var(--border);
+}
+.memory-count-chip strong { color: var(--text); font-weight: 600; }
+.memory-count-chip[data-kind="accept"] strong { color: #22c55e; }
+.memory-count-chip[data-kind="edit"]   strong { color: #60a5fa; }
+.memory-count-chip[data-kind="reject"] strong { color: #ef4444; }
+.memory-session-exemplar {
+  text-align: right; font-size: 11px; color: var(--text-sec);
+}
+.memory-session-exemplar[data-exemplar="true"] { color: #f59e0b; font-weight: 600; }
+.memory-empty {
+  padding: 48px 16px; text-align: center;
+  color: var(--text-sec); font-size: 13px;
+}
+.memory-paginate {
+  display: flex; justify-content: center; align-items: center; gap: 12px;
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-sec);
+}
+.memory-paginate .btn { min-width: 90px; }
+
+/* Detail drawer */
+.memory-detail-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  display: none; z-index: 9100;
+  justify-content: flex-end;
+}
+.memory-detail-overlay.open { display: flex; }
+.memory-detail-panel {
+  width: min(880px, 100%); height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 24px rgba(0,0,0,0.3);
+}
+.memory-detail-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 18px 20px; border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+.memory-detail-title { font-size: 16px; font-weight: 600; color: var(--text); }
+.memory-detail-sub { font-size: 12px; color: var(--text-sec); margin-top: 4px; }
+.memory-detail-body { flex: 1; overflow-y: auto; padding: 18px 20px 32px 20px; }
+
+.memory-detail-section {
+  margin-bottom: 24px;
+}
+.memory-detail-section-title {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--text-sec); margin-bottom: 8px;
+}
+.memory-detail-meta-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px;
+  font-size: 12px;
+}
+.memory-detail-meta-grid > div { display: flex; gap: 8px; }
+.memory-detail-meta-grid > div > .k { color: var(--text-sec); width: 110px; }
+.memory-detail-meta-grid > div > .v { color: var(--text); flex: 1; }
+
+.memory-decision-card {
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg);
+  padding: 14px 16px; margin-bottom: 12px;
+}
+.memory-decision-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  margin-bottom: 8px;
+}
+.memory-decision-field {
+  font-family: ui-monospace, monospace;
+  font-size: 12px; color: var(--accent); font-weight: 600;
+}
+.memory-decision-ts { font-size: 11px; color: var(--text-sec); }
+.memory-decision-output {
+  font-size: 13px; color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 10px;
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 220px; overflow-y: auto;
+}
+.memory-decision-meta {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  margin-top: 8px; font-size: 11px; color: var(--text-sec);
+}
+.memory-decision-meta strong { color: var(--text); font-weight: 600; }
+.memory-response-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+.memory-response-action {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.3px;
+  margin-right: 8px;
+}
+.memory-response-action[data-action="accept"] { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
+.memory-response-action[data-action="edit"]   { background: rgba(96, 165, 250, 0.14); color: #60a5fa; }
+.memory-response-action[data-action="reject"] { background: rgba(239, 68, 68, 0.12);  color: #ef4444; }
+.memory-response-action[data-action="dismiss"]{ background: var(--bg); color: var(--text-sec); border: 1px solid var(--border); }
+.memory-response-action[data-action="view"]   { background: var(--bg); color: var(--text-sec); border: 1px solid var(--border); }
+.memory-response-value {
+  margin-top: 6px;
+  font-size: 12px; color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px;
+  white-space: pre-wrap; word-break: break-word;
+}
+.memory-response-comment {
+  margin-top: 6px; font-size: 12px; color: var(--text-sec);
+  font-style: italic;
+}
+.memory-snapshot-pill {
+  display: inline-flex; gap: 4px; align-items: center;
+  padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(139, 92, 246, 0.14);
+  color: #a78bfa;
+}
+.memory-snapshot-pill[data-quality="empty"]   { background: var(--bg); color: var(--text-sec); }
+.memory-snapshot-pill[data-quality="partial"] { background: rgba(245, 158, 11, 0.14); color: #f59e0b; }
+.memory-snapshot-pill[data-quality="full"]    { background: rgba(34, 197, 94, 0.14); color: #22c55e; }
+.memory-snapshot-details {
+  margin-top: 6px;
+  font-size: 11px; color: var(--text-sec);
+  font-family: ui-monospace, monospace;
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px;
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 140px; overflow-y: auto;
+}
+.memory-detail-loading {
+  padding: 32px 16px; text-align: center;
+  color: var(--text-sec); font-size: 13px;
+}
+
 /* Atlas end-of-session summary modal */
 .atlas-session-modal {
   position: fixed;
@@ -5235,6 +5434,9 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="nav-item-atlas" id="nav-inputs" onclick="showInputsPage()">
       <span class="atlas-dot"></span> Inputs
     </div>
+    <div class="nav-item-atlas" id="nav-memory" onclick="showMemoryPage()">
+      <span class="atlas-dot"></span> Memory
+    </div>
 
     <div class="nav-section-divider"></div>
     <div class="nav-label">
@@ -6151,6 +6353,55 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
         <button class="btn btn-secondary btn-sm" onclick="inputsRefreshHistory()">Refresh</button>
       </div>
       <div id="inputs-history" class="inputs-history"></div>
+    </div>
+  </div>
+
+  <!-- ═════════════════ MEMORY PAGE (Phase 1 Week 2) ════════════════════ -->
+  <div id="memory-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Memory</h1>
+      <div class="page-hero-sub">Every session Atlas has ever run for this brand. Click a row to see the decisions, the operator's responses, and the pre-change snapshot captured at the moment each decision was made.</div>
+    </div>
+
+    <!-- Filters bar -->
+    <div class="memory-filters">
+      <div class="memory-filter-group">
+        <label class="memory-filter-label">State</label>
+        <select id="memory-filter-state" class="memory-select" onchange="memoryRefreshSessions()">
+          <option value="">All</option>
+          <option value="submitted">Submitted</option>
+          <option value="live">Live</option>
+          <option value="abandoned">Abandoned</option>
+        </select>
+      </div>
+      <div class="memory-filter-group">
+        <label class="memory-filter-label">Operator</label>
+        <select id="memory-filter-operator" class="memory-select" onchange="memoryRefreshSessions()">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div class="memory-filter-spacer"></div>
+      <button class="btn btn-secondary btn-sm" onclick="memoryRefreshSessions()">Refresh</button>
+    </div>
+
+    <!-- Sessions list -->
+    <div class="memory-list-wrap">
+      <div id="memory-sessions" class="memory-sessions"></div>
+      <div id="memory-paginate" class="memory-paginate" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Session detail drawer -->
+  <div id="memory-detail" class="memory-detail-overlay" onclick="memoryCloseDetail(event)">
+    <div class="memory-detail-panel" onclick="event.stopPropagation()">
+      <div class="memory-detail-header">
+        <div>
+          <div id="memory-detail-title" class="memory-detail-title">Session</div>
+          <div id="memory-detail-sub" class="memory-detail-sub"></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="memoryCloseDetail()">Close</button>
+      </div>
+      <div id="memory-detail-body" class="memory-detail-body"></div>
     </div>
   </div>
 
@@ -7945,7 +8196,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
+const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'memory-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -11328,6 +11579,289 @@ async function inputsFileSelected(files) {
     // Other kinds aren't fully wired yet; still record the audit.
     if (det) det.innerHTML += `<div class="inputs-detection-row"><span class="inputs-detection-label">Note</span><span class="inputs-detection-value">This file kind isn't routed to a parser yet. The audit row records the upload but no analysis runs.</span></div>`;
   }
+}
+
+// ══════════════ Atlas Memory (Phase 1 Week 2) ═════════════════════
+const memoryState = {
+  page: 0,
+  pageSize: 50,
+  total: 0,
+  operators: [],
+  operatorsLoaded: false,
+};
+
+function showMemoryPage() {
+  _showPage('memory-page', 'Atlas · Memory',
+    'Every session, every decision, every operator response — with the snapshot Atlas captured at the time.');
+  const navEl = document.getElementById('nav-memory');
+  if (navEl) navEl.classList.add('active');
+  memoryState.page = 0;
+  memoryLoadOperators().then(() => memoryRefreshSessions());
+}
+
+async function memoryLoadOperators() {
+  if (memoryState.operatorsLoaded) return;
+  try {
+    const r = await fetch('/api/atlas/operators');
+    const d = await r.json();
+    memoryState.operators = (d && d.operators) || [];
+    const sel = document.getElementById('memory-filter-operator');
+    if (sel) {
+      const current = sel.value;
+      const opts = ['<option value="">All</option>'].concat(
+        memoryState.operators.map(op => {
+          const label = escHtml(op.display_name || op.operator_id);
+          return `<option value="${escHtml(op.operator_id)}">${label}</option>`;
+        })
+      );
+      sel.innerHTML = opts.join('');
+      if (current) sel.value = current;
+    }
+    memoryState.operatorsLoaded = true;
+  } catch (e) {
+    console.warn('memory operators load failed:', e);
+  }
+}
+
+async function memoryRefreshSessions() {
+  const listEl = document.getElementById('memory-sessions');
+  const pgEl = document.getElementById('memory-paginate');
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="memory-empty">Loading…</div>';
+  if (pgEl) pgEl.style.display = 'none';
+  const state = document.getElementById('memory-filter-state')?.value || '';
+  const operator = document.getElementById('memory-filter-operator')?.value || '';
+  const offset = memoryState.page * memoryState.pageSize;
+  const params = new URLSearchParams({ limit: memoryState.pageSize, offset });
+  if (state) params.set('state', state);
+  if (operator) params.set('operator_id', operator);
+  try {
+    const r = await fetch('/api/atlas/memory/sessions?' + params.toString());
+    if (!r.ok) {
+      listEl.innerHTML = `<div class="memory-empty">Failed to load sessions (HTTP ${r.status}).</div>`;
+      return;
+    }
+    const d = await r.json();
+    const rows = (d && d.sessions) || [];
+    memoryState.total = d.total || 0;
+    if (!rows.length) {
+      listEl.innerHTML = '<div class="memory-empty">No sessions match the current filters.</div>';
+      return;
+    }
+    listEl.innerHTML = rows.map(memoryRenderRow).join('');
+    memoryRenderPagination();
+  } catch (e) {
+    listEl.innerHTML = `<div class="memory-empty">Failed to load: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function memoryRenderRow(s) {
+  const started = s.started_at ? new Date(s.started_at) : null;
+  const ended = s.ended_at ? new Date(s.ended_at) : null;
+  const when = started ? started.toLocaleString() : '—';
+  const dur = (started && ended) ? memoryFormatDuration(ended - started) : (s.state === 'live' ? 'still open' : '');
+  const op = escHtml(s.operator_display || s.operator_id || '—');
+  const opId = escHtml(s.operator_id || '');
+  const state = (s.state || 'live').toLowerCase();
+  const exemplar = s.exemplar ? 'true' : 'false';
+  const exemplarLabel = s.exemplar ? '★ exemplar' : '';
+  const counts = `
+    <span class="memory-count-chip"><strong>${s.decisions_count || 0}</strong> decisions</span>
+    <span class="memory-count-chip" data-kind="accept"><strong>${s.accepts_count || 0}</strong> ✓</span>
+    <span class="memory-count-chip" data-kind="edit"><strong>${s.edits_count || 0}</strong> ✎</span>
+    <span class="memory-count-chip" data-kind="reject"><strong>${s.rejects_count || 0}</strong> ✕</span>
+  `;
+  const sid = escHtml(s.session_id || '');
+  return `
+    <div class="memory-session-row" onclick="memoryOpenDetail('${sid}')">
+      <div class="memory-session-when">${escHtml(when)}<small>${escHtml(dur)}</small></div>
+      <div><span class="memory-session-state" data-state="${escHtml(state)}">${escHtml(state)}</span></div>
+      <div class="memory-session-operator">${op}<small>${opId}</small></div>
+      <div class="memory-session-counts">${counts}</div>
+      <div class="memory-session-exemplar" data-exemplar="${exemplar}">${escHtml(exemplarLabel)}</div>
+    </div>`;
+}
+
+function memoryFormatDuration(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return '';
+  const sec = Math.round(ms / 1000);
+  if (sec < 60) return `${sec}s`;
+  const min = Math.round(sec / 60);
+  if (min < 60) return `${min}m`;
+  const hr = Math.floor(min / 60);
+  const rem = min % 60;
+  return rem ? `${hr}h ${rem}m` : `${hr}h`;
+}
+
+function memoryRenderPagination() {
+  const pgEl = document.getElementById('memory-paginate');
+  if (!pgEl) return;
+  const start = memoryState.page * memoryState.pageSize + 1;
+  const end = Math.min(memoryState.total, (memoryState.page + 1) * memoryState.pageSize);
+  if (memoryState.total <= memoryState.pageSize) {
+    pgEl.style.display = 'none';
+    return;
+  }
+  const canPrev = memoryState.page > 0;
+  const canNext = end < memoryState.total;
+  pgEl.style.display = '';
+  pgEl.innerHTML = `
+    <button class="btn btn-secondary btn-sm" ${canPrev ? '' : 'disabled'} onclick="memoryPage(-1)">← Prev</button>
+    <span>${start.toLocaleString()}–${end.toLocaleString()} of ${memoryState.total.toLocaleString()}</span>
+    <button class="btn btn-secondary btn-sm" ${canNext ? '' : 'disabled'} onclick="memoryPage(1)">Next →</button>
+  `;
+}
+
+function memoryPage(delta) {
+  const maxPage = Math.max(0, Math.ceil(memoryState.total / memoryState.pageSize) - 1);
+  const next = Math.min(maxPage, Math.max(0, memoryState.page + delta));
+  if (next === memoryState.page) return;
+  memoryState.page = next;
+  memoryRefreshSessions();
+}
+
+async function memoryOpenDetail(sessionId) {
+  if (!sessionId) return;
+  const overlay = document.getElementById('memory-detail');
+  const titleEl = document.getElementById('memory-detail-title');
+  const subEl = document.getElementById('memory-detail-sub');
+  const bodyEl = document.getElementById('memory-detail-body');
+  if (!overlay || !bodyEl) return;
+  overlay.classList.add('open');
+  titleEl.textContent = 'Session';
+  subEl.textContent = sessionId;
+  bodyEl.innerHTML = '<div class="memory-detail-loading">Loading session…</div>';
+  try {
+    const r = await fetch(`/api/atlas/memory/sessions/${encodeURIComponent(sessionId)}`);
+    if (r.status === 404) {
+      bodyEl.innerHTML = '<div class="memory-detail-loading">Session not found.</div>';
+      return;
+    }
+    const d = await r.json();
+    if (!d.ok) {
+      bodyEl.innerHTML = `<div class="memory-detail-loading">Failed to load: ${escHtml(d.error || 'unknown')}</div>`;
+      return;
+    }
+    memoryRenderDetail(d.session);
+  } catch (e) {
+    bodyEl.innerHTML = `<div class="memory-detail-loading">Failed to load: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function memoryCloseDetail(e) {
+  if (e && e.target && e.target.id !== 'memory-detail') return;
+  document.getElementById('memory-detail')?.classList.remove('open');
+}
+
+function memoryRenderDetail(session) {
+  const titleEl = document.getElementById('memory-detail-title');
+  const subEl = document.getElementById('memory-detail-sub');
+  const bodyEl = document.getElementById('memory-detail-body');
+  const started = session.started_at ? new Date(session.started_at) : null;
+  const ended = session.ended_at ? new Date(session.ended_at) : null;
+  const stateLabel = (session.state || 'live').toLowerCase();
+  titleEl.innerHTML = `${escHtml(session.operator_display || session.operator_id || '—')} · <span class="memory-session-state" data-state="${escHtml(stateLabel)}">${escHtml(stateLabel)}</span>${session.exemplar ? ' <span class="memory-session-exemplar" data-exemplar="true">★ exemplar</span>' : ''}`;
+  subEl.textContent = session.session_id;
+
+  const decisions = (session.timeline || []).filter(e => e.event_kind === 'decision_event');
+  const headerHtml = `
+    <div class="memory-detail-section">
+      <div class="memory-detail-section-title">Overview</div>
+      <div class="memory-detail-meta-grid">
+        <div><span class="k">Started</span><span class="v">${escHtml(started ? started.toLocaleString() : '—')}</span></div>
+        <div><span class="k">Ended</span><span class="v">${escHtml(ended ? ended.toLocaleString() : (session.state === 'live' ? 'still open' : '—'))}</span></div>
+        <div><span class="k">Module</span><span class="v">${escHtml(session.module || '—')}</span></div>
+        <div><span class="k">Operator</span><span class="v">${escHtml(session.operator_display || session.operator_id || '—')}</span></div>
+        <div><span class="k">Decisions</span><span class="v">${session.decisions_count || 0}</span></div>
+        <div><span class="k">Responses</span><span class="v">${session.responses_count || 0}</span></div>
+      </div>
+    </div>`;
+  const notes = session.operator_notes ? `
+    <div class="memory-detail-section">
+      <div class="memory-detail-section-title">Operator notes</div>
+      <div class="memory-decision-output">${escHtml(session.operator_notes)}</div>
+    </div>` : '';
+
+  const decisionsHtml = decisions.length
+    ? decisions.map(memoryRenderDecisionCard).join('')
+    : '<div class="memory-detail-loading">No decisions logged in this session.</div>';
+
+  bodyEl.innerHTML = `
+    ${headerHtml}
+    ${notes}
+    <div class="memory-detail-section">
+      <div class="memory-detail-section-title">Decisions (${decisions.length})</div>
+      ${decisionsHtml}
+    </div>
+  `;
+}
+
+function memoryRenderDecisionCard(d) {
+  const ts = d.timestamp ? new Date(d.timestamp).toLocaleString() : '—';
+  const field = escHtml(d.field_name || '—');
+  const out = memoryFormatOutput(d.atlas_output);
+  const conf = (d.overall_confidence != null) ? `<span><strong>${(d.overall_confidence * 100).toFixed(0)}%</strong> confidence</span>` : '';
+  const rules = Array.isArray(d.rules_injected) ? d.rules_injected.length : 0;
+  const rulesChip = rules ? `<span><strong>${rules}</strong> rule${rules === 1 ? '' : 's'} injected</span>` : '';
+  const asin = d._meta && d._meta.asin ? `<span>ASIN <strong>${escHtml(d._meta.asin)}</strong></span>` : '';
+  const responses = (d.operator_responses || []).map(memoryRenderResponse).join('');
+  const snap = d.pre_change_snapshot;
+  let snapHtml = '';
+  if (snap && typeof snap === 'object') {
+    const q = snap.data_quality || 'empty';
+    const captured = snap.captured_at ? new Date(snap.captured_at).toLocaleString() : '';
+    const detail = JSON.stringify(snap, null, 2);
+    snapHtml = `
+      <div class="memory-response-block">
+        <span class="memory-snapshot-pill" data-quality="${escHtml(q)}">snapshot · ${escHtml(q)}</span>
+        <span class="memory-decision-ts" style="margin-left:8px;">${escHtml(captured)}</span>
+        <div class="memory-snapshot-details">${escHtml(detail)}</div>
+      </div>`;
+  }
+  return `
+    <div class="memory-decision-card">
+      <div class="memory-decision-head">
+        <span class="memory-decision-field">${field}</span>
+        <span class="memory-decision-ts">${escHtml(ts)}</span>
+      </div>
+      <div class="memory-decision-output">${out}</div>
+      <div class="memory-decision-meta">${conf}${rulesChip}${asin}</div>
+      ${responses}
+      ${snapHtml}
+    </div>`;
+}
+
+function memoryFormatOutput(out) {
+  if (out == null) return '<em>(no output)</em>';
+  if (typeof out === 'string') return escHtml(out);
+  if (typeof out === 'object') {
+    if (typeof out.value === 'string') return escHtml(out.value);
+    try { return escHtml(JSON.stringify(out, null, 2)); }
+    catch (e) { return escHtml(String(out)); }
+  }
+  return escHtml(String(out));
+}
+
+function memoryRenderResponse(r) {
+  const action = (r.operator_action || 'view').toLowerCase();
+  const bits = [];
+  if (r.operator_scope && r.operator_scope !== 'none') bits.push('scope: ' + r.operator_scope);
+  if (r.operator_time_to_decision_ms) bits.push((r.operator_time_to_decision_ms / 1000).toFixed(1) + 's');
+  if (r.operator_viewed_case) bits.push('opened Why panel');
+  const metaLine = bits.length ? bits.map(escHtml).join(' · ') : '';
+  const value = r.operator_value && action === 'edit'
+    ? `<div class="memory-response-value">${memoryFormatOutput(r.operator_value)}</div>`
+    : '';
+  const comment = r.operator_comment
+    ? `<div class="memory-response-comment">“${escHtml(r.operator_comment)}”</div>`
+    : '';
+  return `
+    <div class="memory-response-block">
+      <span class="memory-response-action" data-action="${escHtml(action)}">${escHtml(action)}</span>
+      <span class="memory-decision-ts">${metaLine}</span>
+      ${value}
+      ${comment}
+    </div>`;
 }
 
 function showMergePage() {

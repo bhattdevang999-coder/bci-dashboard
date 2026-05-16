@@ -11257,6 +11257,65 @@ def atlas_inputs_detect():
         return jsonify({"ok": False, "error": str(exc)[:200]}), 200
 
 
+@app.route("/api/atlas/memory/sessions", methods=["GET"])
+def atlas_memory_sessions():
+    """Return a page of past sessions for the Memory tab.
+
+    Query params:
+        limit       - default 50, max 200
+        offset      - default 0
+        state       - optional: 'live' | 'submitted' | 'abandoned'
+        operator_id - optional filter
+    Response: { ok, workspace_id, sessions, total }
+    """
+    workspace_id = _atlas_current_workspace()
+    try:
+        limit = int(request.args.get("limit") or 50)
+    except ValueError:
+        limit = 50
+    try:
+        offset = int(request.args.get("offset") or 0)
+    except ValueError:
+        offset = 0
+    state = (request.args.get("state") or "").strip() or None
+    if state and state not in ("live", "submitted", "abandoned"):
+        return jsonify({"ok": False, "error": "invalid state"}), 400
+    operator_id = (request.args.get("operator_id") or "").strip() or None
+    try:
+        from substrate.memory import list_sessions
+        result = list_sessions(
+            workspace_id=workspace_id,
+            limit=limit,
+            offset=offset,
+            state=state,
+            operator_id=operator_id,
+        )
+    except Exception as exc:
+        print(f"[atlas] memory sessions list failed: {exc}", flush=True)
+        result = {"sessions": [], "total": 0}
+    return jsonify({
+        "ok": True,
+        "workspace_id": workspace_id,
+        "sessions": result.get("sessions", []),
+        "total": result.get("total", 0),
+    })
+
+
+@app.route("/api/atlas/memory/sessions/<session_id>", methods=["GET"])
+def atlas_memory_session_detail(session_id: str):
+    """Return the full timeline for a single session."""
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.memory import get_session_detail
+        detail = get_session_detail(workspace_id, session_id)
+    except Exception as exc:
+        print(f"[atlas] memory session detail failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "detail unavailable"}), 500
+    if detail is None:
+        return jsonify({"ok": False, "error": "session not found"}), 404
+    return jsonify({"ok": True, "workspace_id": workspace_id, "session": detail})
+
+
 @app.route("/api/atlas/visible-brands", methods=["GET"])
 def api_atlas_visible_brands():
     """Return the operator-facing brand list + the default brand.
