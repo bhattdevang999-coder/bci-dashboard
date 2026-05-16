@@ -92,6 +92,24 @@ smoke "memory/decisions"      "/api/atlas/memory/decisions?limit=1"   '"ok":true
 smoke "marketing/keywords"    "/api/atlas/marketing/keywords?limit=1" '"ok":true'
 smoke "docs/onboarding"       "/docs/onboarding"                       'Atlas .{0,5} Onboarding'
 
+# Wizard endpoints are POST-only; smoke them with a lightweight start call.
+function smoke_post() {
+  local label="$1" path="$2" body="$3" expect="$4"
+  local out
+  out=$(curl -s -w "\n__HTTP__%{http_code}" --max-time 12 -X POST \
+        -H "Content-Type: application/json" -d "${body}" \
+        "${LIVE}${path}" 2>/dev/null || echo "__HTTP__000")
+  local code="${out##*__HTTP__}"; local body_resp="${out%__HTTP__*}"
+  if [[ "${code}" != "200" ]]; then
+    echo "  [FAIL] ${label} → HTTP ${code}"; fail=$((fail+1)); return
+  fi
+  if [[ -n "${expect}" && ! "${body_resp}" =~ ${expect} ]]; then
+    echo "  [FAIL] ${label} → 200 but body missing /${expect}/"; fail=$((fail+1)); return
+  fi
+  echo "  [PASS] ${label}"
+}
+smoke_post "wizard/start"    "/api/atlas/marketing/wizard/start"    '{"asin":"B0SMOKE"}'    '"ok":true'
+
 if (( fail > 0 )); then
   echo "verify_deploy: ✗ ${fail} smoke check(s) failed"
   exit 2

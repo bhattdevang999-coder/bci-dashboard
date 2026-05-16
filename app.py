@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
 
-from flask import Flask, request, jsonify, render_template, send_file, send_from_directory, abort
+from flask import Flask, request, jsonify, render_template, send_file, send_from_directory, abort, Response
 from flask_cors import CORS
 import openpyxl
 from openpyxl.styles import PatternFill, Font, Border, Alignment
@@ -11516,6 +11516,202 @@ def atlas_marketing_upload():
     except Exception as exc:
         print(f"[atlas] marketing upload failed: {exc}", flush=True)
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/marketing/wizard/start", methods=["POST"])
+def atlas_mkt_wizard_start():
+    """Open a marketing day-1 wizard session.
+
+    JSON body: { asin: str (required), product_type?: str, style_name?: str }
+    Returns: { ok, session_id }
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    asin = (body.get("asin") or "").strip()
+    if not asin:
+        return jsonify({"ok": False, "error": "asin required"}), 400
+    operator_id = session_data.get("operator_id") or "anonymous"
+    try:
+        from substrate.logger import open_session
+        from substrate.schema import Module
+        s = open_session(workspace_id=workspace_id, operator_id=operator_id, module=Module.MARKETING)
+    except Exception as exc:
+        print(f"[atlas] wizard open session failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "could not open session"}), 500
+    return jsonify({
+        "ok": True,
+        "session_id": s.session_id,
+        "workspace_id": workspace_id,
+        "asin": asin,
+    })
+
+
+@app.route("/api/atlas/marketing/wizard/generate", methods=["POST"])
+def atlas_mkt_wizard_generate():
+    """Generate candidate keyword list for an ASIN.
+
+    JSON body: { asin, product_type?, style_name?, target_count? }
+    Returns: { ok, asin, candidates: [...], source: 'llm'|'fallback', siblings_used }
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    asin = (body.get("asin") or "").strip()
+    if not asin:
+        return jsonify({"ok": False, "error": "asin required"}), 400
+    target = int(body.get("target_count") or 40)
+    target = max(5, min(target, 80))
+    try:
+        from substrate.marketing_wizard import generate_candidates
+        result = generate_candidates(
+            workspace_id=workspace_id,
+            asin=asin,
+            product_type=body.get("product_type"),
+            style_name=body.get("style_name"),
+            target_count=target,
+            anthropic_client=_anthropic_client,
+        )
+    except Exception as exc:
+        print(f"[atlas] wizard generate failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    return jsonify({"ok": True, "workspace_id": workspace_id, **result})
+
+
+@app.route("/api/atlas/marketing/wizard/decision", methods=["POST"])
+def atlas_mkt_wizard_decision():
+    """Log a single candidate decision (accept/edit/reject/comment).
+
+    JSON body:
+        session_id (required), asin (required), candidate (required dict),
+        action (accept|edit|reject|comment), operator_value? (for edits),
+        scope? (just_this|brand_always), comment?
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    session_id = (body.get("session_id") or "").strip()
+    asin = (body.get("asin") or "").strip()
+    candidate = body.get("candidate") or {}
+    action = (body.get("action") or "").strip().lower()
+    if not (session_id and asin and isinstance(candidate, dict)
+            and action in ("accept", "edit", "reject", "comment")):
+        return jsonify({"ok": False, "error": "missing session_id/asin/candidate/action"}), 400
+    keyword = (candidate.get("keyword") or "").strip()
+    if not keyword:
+        return jsonify({"ok": False, "error": "candidate.keyword required"}), 400
+    operator_value = body.get("operator_value")
+    scope = (body.get("scope") or "none").strip().lower()
+    comment = (body.get("comment") or "").strip() or None
+    brand_profile_version = body.get("brand_profile_version") or f"{workspace_id}_legacy"
+    try:
+        from substrate.logger import (
+            log_field_decision, update_field_decision_with_operator_response,
+        )
+        from substrate.schema import Module, OperatorAction, OperatorScope
+        # 1) Write the decision_event (Atlas's proposal)
+        event_id = log_field_decision(
+            workspace_id=workspace_id,
+            session_id=session_id,
+            module=Module.MARKETING,
+            field_name="keyword_candidate",
+            atlas_output={
+                "keyword": keyword,
+                "match_type": candidate.get("match_type"),
+                "theme": candidate.get("theme"),
+                "suggested_bid_low": candidate.get("suggested_bid_low"),
+                "suggested_bid_high": candidate.get("suggested_bid_high"),
+                "rationale": candidate.get("rationale"),
+                "has_history": candidate.get("has_history", False),
+            },
+            overall_confidence=float(candidate.get("confidence") or 0.5),
+            rules_injected=[],
+            brand_profile_version=brand_profile_version,
+            asin=asin,
+            enforce_filter=False,   # keyword decisions always log
+        )
+        if not event_id:
+            return jsonify({"ok": False, "error": "decision write skipped"}), 500
+        # 2) Write the operator_response
+        try:
+            op_action = OperatorAction(action)
+        except ValueError:
+            op_action = OperatorAction.COMMENT
+        try:
+            op_scope = OperatorScope(scope)
+        except ValueError:
+            op_scope = OperatorScope.NONE
+        update_field_decision_with_operator_response(
+            workspace_id=workspace_id,
+            event_id=event_id,
+            operator_action=op_action,
+            operator_value=operator_value,
+            operator_scope=op_scope,
+            operator_comment=comment,
+            operator_viewed_case=True,
+        )
+    except Exception as exc:
+        print(f"[atlas] wizard decision failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    return jsonify({"ok": True, "event_id": event_id})
+
+
+@app.route("/api/atlas/marketing/wizard/submit", methods=["POST"])
+def atlas_mkt_wizard_submit():
+    """Finalize a wizard session. Body: { session_id, operator_notes?, exemplar? }."""
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    session_id = (body.get("session_id") or "").strip()
+    if not session_id:
+        return jsonify({"ok": False, "error": "session_id required"}), 400
+    notes = body.get("operator_notes")
+    exemplar = bool(body.get("exemplar", False))
+    try:
+        from substrate.logger import submit_session, read_session
+        from substrate.schema import SessionObject, Module
+        # Reconstruct a SessionObject from the substrate row
+        meta = read_session(workspace_id, session_id)
+        if meta is None:
+            return jsonify({"ok": False, "error": "session not found"}), 404
+        s = SessionObject(
+            workspace_id=workspace_id,
+            operator_id=meta.get("operator_id") or "anonymous",
+            module=Module(meta.get("module") or "marketing"),
+            session_id=session_id,
+            started_at=meta.get("started_at"),
+            state=meta.get("state") or "live",
+        )
+        submit_session(s, operator_notes=notes, exemplar=exemplar)
+    except Exception as exc:
+        print(f"[atlas] wizard submit failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    return jsonify({"ok": True, "session_id": session_id})
+
+
+@app.route("/api/atlas/marketing/wizard/export", methods=["POST"])
+def atlas_mkt_wizard_export():
+    """Render an accepted candidate list as a downloadable bulk CSV.
+
+    Body: { asin, accepted: [...], campaign_name?, ad_group_name? }
+    """
+    body = request.get_json(silent=True) or {}
+    asin = (body.get("asin") or "").strip()
+    accepted = body.get("accepted") or []
+    if not asin or not isinstance(accepted, list) or not accepted:
+        return jsonify({"ok": False, "error": "asin + accepted[] required"}), 400
+    try:
+        from substrate.marketing_wizard import candidates_to_bulk_csv
+        csv_body = candidates_to_bulk_csv(
+            asin=asin,
+            accepted=accepted,
+            campaign_name=(body.get("campaign_name") or f"Atlas day-1 - {asin}"),
+            ad_group_name=body.get("ad_group_name"),
+        )
+    except Exception as exc:
+        print(f"[atlas] wizard export failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+    return Response(
+        csv_body,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=atlas_day1_{asin}.csv"},
+    )
 
 
 @app.route("/docs/onboarding", methods=["GET"])
