@@ -2905,6 +2905,55 @@
 }
 
 /* ═══ Memory tab (Phase 1 Week 2) ═══ */
+.memory-subtabs {
+  display: flex; gap: 6px;
+  margin: 0 0 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.memory-subtab {
+  background: transparent; color: var(--text-sec);
+  border: none; border-bottom: 2px solid transparent;
+  padding: 8px 14px; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: color 120ms, border-color 120ms;
+}
+.memory-subtab:hover { color: var(--text); }
+.memory-subtab.active {
+  color: var(--text); border-bottom-color: var(--accent); font-weight: 600;
+}
+.memory-decisions { max-height: 640px; overflow-y: auto; }
+.memory-decision-row {
+  display: grid;
+  grid-template-columns: 120px 130px 130px 1fr 90px 110px;
+  gap: 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  align-items: center;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.memory-decision-row:last-child { border-bottom: none; }
+.memory-decision-row:hover { background: var(--bg); }
+.memory-decision-when small { display: block; color: var(--text-sec); font-size: 11px; margin-top: 2px; }
+.memory-decision-field-cell {
+  font-family: ui-monospace, monospace;
+  font-size: 12px; color: var(--accent); font-weight: 600;
+  word-break: break-word;
+}
+.memory-decision-asin {
+  font-family: ui-monospace, monospace; font-size: 11px;
+  color: var(--text-sec);
+}
+.memory-decision-preview {
+  color: var(--text); font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+.memory-decision-operator-cell {
+  color: var(--text-sec); font-size: 11px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .memory-filters {
   display: flex; align-items: flex-end; gap: 16px;
   margin: 0 0 18px 0;
@@ -6360,34 +6409,77 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
   <div id="memory-page" class="content content-wide" style="display:none;">
     <div class="page-hero">
       <h1 class="page-hero-title">Memory</h1>
-      <div class="page-hero-sub">Every session Atlas has ever run for this brand. Click a row to see the decisions, the operator's responses, and the pre-change snapshot captured at the moment each decision was made.</div>
+      <div class="page-hero-sub">Every session and every decision Atlas has ever run for this brand. Sessions group decisions into one operator sitting; the Decisions view is a flat audit across all sessions.</div>
     </div>
 
-    <!-- Filters bar -->
-    <div class="memory-filters">
-      <div class="memory-filter-group">
-        <label class="memory-filter-label">State</label>
-        <select id="memory-filter-state" class="memory-select" onchange="memoryRefreshSessions()">
-          <option value="">All</option>
-          <option value="submitted">Submitted</option>
-          <option value="live">Live</option>
-          <option value="abandoned">Abandoned</option>
-        </select>
-      </div>
-      <div class="memory-filter-group">
-        <label class="memory-filter-label">Operator</label>
-        <select id="memory-filter-operator" class="memory-select" onchange="memoryRefreshSessions()">
-          <option value="">All</option>
-        </select>
-      </div>
-      <div class="memory-filter-spacer"></div>
-      <button class="btn btn-secondary btn-sm" onclick="memoryRefreshSessions()">Refresh</button>
+    <!-- Sub-tab switcher -->
+    <div class="memory-subtabs">
+      <button id="memory-tab-sessions" class="memory-subtab active" onclick="memorySetTab('sessions')">Sessions</button>
+      <button id="memory-tab-decisions" class="memory-subtab" onclick="memorySetTab('decisions')">Decisions</button>
     </div>
 
-    <!-- Sessions list -->
-    <div class="memory-list-wrap">
-      <div id="memory-sessions" class="memory-sessions"></div>
-      <div id="memory-paginate" class="memory-paginate" style="display:none;"></div>
+    <!-- Sessions sub-view -->
+    <div id="memory-view-sessions">
+      <div class="memory-filters">
+        <div class="memory-filter-group">
+          <label class="memory-filter-label">State</label>
+          <select id="memory-filter-state" class="memory-select" onchange="memoryRefreshSessions()">
+            <option value="">All</option>
+            <option value="submitted">Submitted</option>
+            <option value="live">Live</option>
+            <option value="abandoned">Abandoned</option>
+          </select>
+        </div>
+        <div class="memory-filter-group">
+          <label class="memory-filter-label">Operator</label>
+          <select id="memory-filter-operator" class="memory-select" onchange="memoryRefreshSessions()">
+            <option value="">All</option>
+          </select>
+        </div>
+        <div class="memory-filter-spacer"></div>
+        <button class="btn btn-secondary btn-sm" onclick="memoryRefreshSessions()">Refresh</button>
+      </div>
+      <div class="memory-list-wrap">
+        <div id="memory-sessions" class="memory-sessions"></div>
+        <div id="memory-paginate" class="memory-paginate" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Decisions sub-view -->
+    <div id="memory-view-decisions" style="display:none;">
+      <div class="memory-filters">
+        <div class="memory-filter-group">
+          <label class="memory-filter-label">Field</label>
+          <input id="memory-dec-field" class="memory-select" type="text" placeholder="item_name, bullet, …" oninput="memoryDecDebounced()" />
+        </div>
+        <div class="memory-filter-group">
+          <label class="memory-filter-label">ASIN</label>
+          <input id="memory-dec-asin" class="memory-select" type="text" placeholder="B0XXXX" oninput="memoryDecDebounced()" />
+        </div>
+        <div class="memory-filter-group">
+          <label class="memory-filter-label">Action</label>
+          <select id="memory-dec-action" class="memory-select" onchange="memoryRefreshDecisions()">
+            <option value="">All</option>
+            <option value="accept">Accept</option>
+            <option value="edit">Edit</option>
+            <option value="reject">Reject</option>
+            <option value="comment">Comment</option>
+            <option value="no_response">No response</option>
+          </select>
+        </div>
+        <div class="memory-filter-group">
+          <label class="memory-filter-label">Operator</label>
+          <select id="memory-dec-operator" class="memory-select" onchange="memoryRefreshDecisions()">
+            <option value="">All</option>
+          </select>
+        </div>
+        <div class="memory-filter-spacer"></div>
+        <button class="btn btn-secondary btn-sm" onclick="memoryRefreshDecisions()">Refresh</button>
+      </div>
+      <div class="memory-list-wrap">
+        <div id="memory-decisions" class="memory-decisions"></div>
+        <div id="memory-dec-paginate" class="memory-paginate" style="display:none;"></div>
+      </div>
     </div>
   </div>
 
@@ -11590,13 +11682,145 @@ const memoryState = {
   operatorsLoaded: false,
 };
 
+const memoryDecState = {
+  page: 0,
+  pageSize: 50,
+  total: 0,
+  debounceTimer: null,
+};
+
 function showMemoryPage() {
   _showPage('memory-page', 'Atlas · Memory',
     'Every session, every decision, every operator response — with the snapshot Atlas captured at the time.');
   const navEl = document.getElementById('nav-memory');
   if (navEl) navEl.classList.add('active');
   memoryState.page = 0;
-  memoryLoadOperators().then(() => memoryRefreshSessions());
+  memoryLoadOperators().then(() => {
+    memoryRefreshSessions();
+  });
+}
+
+function memorySetTab(tab) {
+  const isSessions = (tab === 'sessions');
+  document.getElementById('memory-view-sessions').style.display = isSessions ? '' : 'none';
+  document.getElementById('memory-view-decisions').style.display = isSessions ? 'none' : '';
+  document.getElementById('memory-tab-sessions').classList.toggle('active', isSessions);
+  document.getElementById('memory-tab-decisions').classList.toggle('active', !isSessions);
+  if (!isSessions) {
+    memoryDecState.page = 0;
+    memoryPopulateDecOperators();
+    memoryRefreshDecisions();
+  }
+}
+
+function memoryPopulateDecOperators() {
+  const sel = document.getElementById('memory-dec-operator');
+  if (!sel || sel.options.length > 1) return;
+  const opts = ['<option value="">All</option>'].concat(
+    (memoryState.operators || []).map(op => {
+      const label = escHtml(op.display_name || op.operator_id);
+      return `<option value="${escHtml(op.operator_id)}">${label}</option>`;
+    })
+  );
+  sel.innerHTML = opts.join('');
+}
+
+function memoryDecDebounced() {
+  clearTimeout(memoryDecState.debounceTimer);
+  memoryDecState.debounceTimer = setTimeout(() => {
+    memoryDecState.page = 0;
+    memoryRefreshDecisions();
+  }, 300);
+}
+
+async function memoryRefreshDecisions() {
+  const listEl = document.getElementById('memory-decisions');
+  const pgEl = document.getElementById('memory-dec-paginate');
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="memory-empty">Loading…</div>';
+  if (pgEl) pgEl.style.display = 'none';
+  const field = document.getElementById('memory-dec-field')?.value.trim() || '';
+  const asin = document.getElementById('memory-dec-asin')?.value.trim() || '';
+  const action = document.getElementById('memory-dec-action')?.value || '';
+  const operator = document.getElementById('memory-dec-operator')?.value || '';
+  const offset = memoryDecState.page * memoryDecState.pageSize;
+  const params = new URLSearchParams({ limit: memoryDecState.pageSize, offset });
+  if (field) params.set('field', field);
+  if (asin) params.set('asin', asin);
+  if (action) params.set('action', action);
+  if (operator) params.set('operator_id', operator);
+  try {
+    const r = await fetch('/api/atlas/memory/decisions?' + params.toString());
+    if (!r.ok) {
+      listEl.innerHTML = `<div class="memory-empty">Failed to load decisions (HTTP ${r.status}).</div>`;
+      return;
+    }
+    const d = await r.json();
+    const rows = (d && d.decisions) || [];
+    memoryDecState.total = d.total || 0;
+    if (!rows.length) {
+      listEl.innerHTML = '<div class="memory-empty">No decisions match the current filters.</div>';
+      return;
+    }
+    listEl.innerHTML = rows.map(memoryRenderDecisionRow).join('');
+    memoryRenderDecPagination();
+  } catch (e) {
+    listEl.innerHTML = `<div class="memory-empty">Failed to load: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function memoryRenderDecisionRow(d) {
+  const ts = d.timestamp ? new Date(d.timestamp) : null;
+  const when = ts ? ts.toLocaleString() : '—';
+  const field = escHtml(d.field_name || '—');
+  const action = (d.operator_action || 'no_response').toLowerCase();
+  const asin = d.asin ? escHtml(d.asin) : '—';
+  const operator = escHtml(d.operator_display || d.operator_id || '—');
+  const sid = escHtml(d.session_id || '');
+  // Build a preview of the output — prefer .value if present.
+  let preview = '';
+  const out = d.atlas_output;
+  if (out == null) preview = '';
+  else if (typeof out === 'string') preview = out;
+  else if (typeof out === 'object') {
+    preview = (typeof out.value === 'string') ? out.value : JSON.stringify(out);
+  }
+  return `
+    <div class="memory-decision-row" onclick="memoryOpenDetail('${sid}')">
+      <div class="memory-decision-when">${escHtml(when)}<small>${escHtml(d.module || '')}</small></div>
+      <div class="memory-decision-field-cell">${field}</div>
+      <div class="memory-decision-asin">${asin}</div>
+      <div class="memory-decision-preview">${escHtml(preview)}</div>
+      <div><span class="memory-response-action" data-action="${escHtml(action)}">${escHtml(action)}</span></div>
+      <div class="memory-decision-operator-cell" title="${operator}">${operator}</div>
+    </div>`;
+}
+
+function memoryRenderDecPagination() {
+  const pgEl = document.getElementById('memory-dec-paginate');
+  if (!pgEl) return;
+  const start = memoryDecState.page * memoryDecState.pageSize + 1;
+  const end = Math.min(memoryDecState.total, (memoryDecState.page + 1) * memoryDecState.pageSize);
+  if (memoryDecState.total <= memoryDecState.pageSize) {
+    pgEl.style.display = 'none';
+    return;
+  }
+  const canPrev = memoryDecState.page > 0;
+  const canNext = end < memoryDecState.total;
+  pgEl.style.display = '';
+  pgEl.innerHTML = `
+    <button class="btn btn-secondary btn-sm" ${canPrev ? '' : 'disabled'} onclick="memoryDecPage(-1)">← Prev</button>
+    <span>${start.toLocaleString()}–${end.toLocaleString()} of ${memoryDecState.total.toLocaleString()}</span>
+    <button class="btn btn-secondary btn-sm" ${canNext ? '' : 'disabled'} onclick="memoryDecPage(1)">Next →</button>
+  `;
+}
+
+function memoryDecPage(delta) {
+  const maxPage = Math.max(0, Math.ceil(memoryDecState.total / memoryDecState.pageSize) - 1);
+  const next = Math.min(maxPage, Math.max(0, memoryDecState.page + delta));
+  if (next === memoryDecState.page) return;
+  memoryDecState.page = next;
+  memoryRefreshDecisions();
 }
 
 async function memoryLoadOperators() {

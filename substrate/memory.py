@@ -502,4 +502,315 @@ def get_session_detail(workspace_id: str, session_id: str) -> Optional[dict[str,
     return _jsonl_session_detail(workspace_id, session_id)
 
 
-__all__ = ["list_sessions", "get_session_detail"]
+# ---------------------------------------------------------------------------
+# Cross-session decisions feed.
+#
+# Used by the Memory tab's "Decisions" sub-view. A flat list of every
+# decision_event for the workspace, with each one carrying:
+#   - the operator's terminal response (accept/edit/reject/dismiss/view)
+#     folded in, if any. "view" rows are surfaced but de-prioritised
+#     when an accept/edit/reject exists later.
+#   - the parent session_id + operator_id so the UI can deep-link back.
+#   - the pre_change_snapshot captured at decision time.
+#
+# Filters supported (all optional, AND-combined):
+#   field          substring match on field_name (ILIKE)
+#   asin           exact match on meta->>'asin'
+#   action         'accept' | 'edit' | 'reject' | 'comment' | 'no_response'
+#                  ('no_response' = decisions with zero operator_response rows)
+#   operator_id    decisions whose session belongs to this operator
+#   session_id     decisions in a single session (link from Sessions view)
+#   start / end    ISO timestamp window on the decision's timestamp
+# ---------------------------------------------------------------------------
+
+_TERMINAL_ACTIONS = ("accept", "edit", "reject", "comment")
+
+
+def _terminal_response(responses: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
+    """Pick the operator's terminal response from a list of responses.
+
+    Order of precedence: latest terminal action wins; if there are only
+    view/intermediate rows, returns the latest one.
+    """
+    if not responses:
+        return None
+    terminals = [r for r in responses if r.get("operator_action") in _TERMINAL_ACTIONS]
+    if terminals:
+        terminals.sort(key=lambda r: r.get("timestamp") or "", reverse=True)
+        return terminals[0]
+    responses_sorted = sorted(responses, key=lambda r: r.get("timestamp") or "", reverse=True)
+    return responses_sorted[0]
+
+
+def _pg_list_decisions(
+    workspace_id: str,
+    limit: int,
+    offset: int,
+    field: Optional[str],
+    asin: Optional[str],
+    action: Optional[str],
+    operator_id: Optional[str],
+    session_id: Optional[str],
+    start: Optional[str],
+    end: Optional[str],
+) -> dict[str, Any]:
+    pool = get_pool()
+    where = ["d.workspace_id = %s", "d.event_kind = 'decision_event'"]
+    params: list[Any] = [workspace_id]
+    if field:
+        where.append("d.field_name ILIKE %s")
+        params.append(f"%{field}%")
+    if asin:
+        where.append("d.meta->>'asin' = %s")
+        params.append(asin)
+    if session_id:
+        where.append("d.session_id = %s")
+        params.append(session_id)
+    if start:
+        where.append("d.timestamp >= %s")
+        params.append(start)
+    if end:
+        where.append("d.timestamp <= %s")
+        params.append(end)
+    if operator_id:
+        # operator_id lives on substrate_sessions; join.
+        where.append(
+            "d.session_id IN (SELECT session_id FROM substrate_sessions "
+            "WHERE workspace_id = d.workspace_id AND operator_id = %s)"
+        )
+        params.append(operator_id)
+
+    where_sql = " AND ".join(where)
+
+    # Aggregate the operator's terminal response per decision in SQL using
+    # DISTINCT ON. Action filter (including 'no_response') applies after.
+    sql_decisions = f"""
+        WITH base AS (
+            SELECT d.event_id, d.session_id, d.timestamp,
+                   d.module, d.field_name,
+                   d.rules_injected, d.atlas_output, d.overall_confidence,
+                   d.private_scope, d.contributable_scope,
+                   d.brand_profile_version,
+                   d.meta, d.pre_change_snapshot
+            FROM substrate_events d
+            WHERE {where_sql}
+        ),
+        resp AS (
+            SELECT DISTINCT ON (r.links_to_event_id)
+                   r.links_to_event_id AS decision_id,
+                   r.event_id    AS response_event_id,
+                   r.timestamp   AS response_ts,
+                   r.operator_action,
+                   r.operator_value,
+                   r.operator_scope,
+                   r.operator_time_to_decision_ms,
+                   r.operator_comment,
+                   r.operator_viewed_case
+            FROM substrate_events r
+            JOIN base b ON b.event_id = r.links_to_event_id
+            WHERE r.event_kind = 'operator_response'
+              AND r.workspace_id = %s
+            ORDER BY r.links_to_event_id,
+                     CASE WHEN r.operator_action IN ('accept','edit','reject','comment') THEN 0 ELSE 1 END,
+                     r.timestamp DESC
+        )
+        SELECT b.event_id, b.session_id, b.timestamp,
+               b.module, b.field_name,
+               b.rules_injected, b.atlas_output, b.overall_confidence,
+               b.private_scope, b.contributable_scope,
+               b.brand_profile_version,
+               b.meta, b.pre_change_snapshot,
+               s.operator_id,
+               COALESCE(o.display_name, s.operator_id) AS operator_display,
+               resp.response_event_id, resp.response_ts,
+               resp.operator_action, resp.operator_value, resp.operator_scope,
+               resp.operator_time_to_decision_ms, resp.operator_comment,
+               resp.operator_viewed_case
+        FROM base b
+        LEFT JOIN resp ON resp.decision_id = b.event_id
+        LEFT JOIN substrate_sessions s
+            ON s.session_id = b.session_id AND s.workspace_id = %s
+        LEFT JOIN operators o
+            ON o.workspace_id = s.workspace_id AND o.operator_id = s.operator_id
+    """
+    action_clause = ""
+    extra_params: list[Any] = []
+    if action == "no_response":
+        action_clause = " WHERE resp.response_event_id IS NULL"
+    elif action in _TERMINAL_ACTIONS:
+        action_clause = " WHERE resp.operator_action = %s"
+        extra_params.append(action)
+
+    sql_full = (
+        sql_decisions
+        + action_clause
+        + " ORDER BY b.timestamp DESC, b.event_id DESC LIMIT %s OFFSET %s"
+    )
+    sql_count = (
+        f"SELECT COUNT(*) FROM ( {sql_decisions} {action_clause} ) sub"
+    )
+
+    # Build params: base WHERE params appear in both queries. The CTE has
+    # `params` for `base`, then [workspace_id] for `resp`, then
+    # [workspace_id] for the session join, then action_clause params.
+    cte_params = tuple(params) + (workspace_id, workspace_id) + tuple(extra_params)
+
+    rows: list[dict[str, Any]] = []
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql_count, cte_params)
+            total = int(cur.fetchone()[0])
+            cur.execute(sql_full, cte_params + (limit, offset))
+            cols = [d[0] for d in cur.description]
+            for r in cur:
+                d = dict(zip(cols, r))
+                d["timestamp"] = _iso(d.get("timestamp"))
+                d["response_ts"] = _iso(d.get("response_ts"))
+                for k in ("event_id", "response_event_id"):
+                    if d.get(k) is not None:
+                        d[k] = str(d[k])
+                meta = d.pop("meta", None) or {}
+                d["_meta"] = meta
+                d["asin"] = meta.get("asin") if isinstance(meta, dict) else None
+                snap = d.get("pre_change_snapshot")
+                if snap == {} or snap is None:
+                    d["pre_change_snapshot"] = None
+                rows.append(d)
+    return {"decisions": rows, "total": total}
+
+
+def _jsonl_list_decisions(
+    workspace_id: str,
+    limit: int,
+    offset: int,
+    field: Optional[str],
+    asin: Optional[str],
+    action: Optional[str],
+    operator_id: Optional[str],
+    session_id: Optional[str],
+    start: Optional[str],
+    end: Optional[str],
+) -> dict[str, Any]:
+    """In-memory filter over JSONL events. Test/dev path only."""
+    events = _jsonl_iter_events(workspace_id)
+
+    # Build decision_id -> [responses] map.
+    responses_by_decision: dict[str, list[dict[str, Any]]] = {}
+    decision_rows: list[dict[str, Any]] = []
+    for ev in events:
+        kind = ev.get("event_kind")
+        if kind == "decision_event":
+            decision_rows.append(ev)
+        elif kind == "operator_response":
+            parent = ev.get("links_to_event_id")
+            if parent:
+                responses_by_decision.setdefault(parent, []).append(ev)
+
+    # Sessions → operator_id (for operator_id filter)
+    sessions_map: dict[str, dict[str, Any]] = {}
+    try:
+        root = os.path.join(_jsonl_sessions_root(), workspace_id)
+        if os.path.isdir(root):
+            for fn in os.listdir(root):
+                if not fn.endswith(".json"):
+                    continue
+                with open(os.path.join(root, fn), "r", encoding="utf-8") as fh:
+                    s = json.load(fh)
+                if s.get("session_id"):
+                    sessions_map[s["session_id"]] = s
+    except OSError:
+        pass
+
+    filtered: list[dict[str, Any]] = []
+    for d in decision_rows:
+        if field and field.lower() not in (d.get("field_name") or "").lower():
+            continue
+        meta = d.get("_meta") or {}
+        if asin and meta.get("asin") != asin:
+            continue
+        if session_id and d.get("session_id") != session_id:
+            continue
+        ts = d.get("timestamp") or ""
+        if start and ts < start:
+            continue
+        if end and ts > end:
+            continue
+        sid = d.get("session_id") or ""
+        session_row = sessions_map.get(sid, {})
+        if operator_id and session_row.get("operator_id") != operator_id:
+            continue
+
+        responses = responses_by_decision.get(d.get("event_id") or "", [])
+        resp = _terminal_response(responses)
+        if action == "no_response":
+            if resp is not None:
+                continue
+        elif action in _TERMINAL_ACTIONS:
+            if resp is None or resp.get("operator_action") != action:
+                continue
+
+        row = {
+            "event_id": d.get("event_id"),
+            "session_id": sid,
+            "timestamp": ts,
+            "module": d.get("module"),
+            "field_name": d.get("field_name"),
+            "rules_injected": d.get("rules_injected") or [],
+            "atlas_output": d.get("atlas_output"),
+            "overall_confidence": d.get("overall_confidence"),
+            "private_scope": d.get("private_scope"),
+            "contributable_scope": d.get("contributable_scope"),
+            "brand_profile_version": d.get("brand_profile_version"),
+            "_meta": meta,
+            "asin": meta.get("asin") if isinstance(meta, dict) else None,
+            "pre_change_snapshot": d.get("pre_change_snapshot"),
+            "operator_id": session_row.get("operator_id"),
+            "operator_display": session_row.get("operator_id"),
+            "response_event_id": resp.get("event_id") if resp else None,
+            "response_ts": resp.get("timestamp") if resp else None,
+            "operator_action": resp.get("operator_action") if resp else None,
+            "operator_value": resp.get("operator_value") if resp else None,
+            "operator_scope": resp.get("operator_scope") if resp else None,
+            "operator_time_to_decision_ms": resp.get("operator_time_to_decision_ms") if resp else None,
+            "operator_comment": resp.get("operator_comment") if resp else None,
+            "operator_viewed_case": resp.get("operator_viewed_case") if resp else None,
+        }
+        filtered.append(row)
+
+    filtered.sort(key=lambda r: r.get("timestamp") or "", reverse=True)
+    page = filtered[offset:offset + limit]
+    return {"decisions": page, "total": len(filtered)}
+
+
+def list_decisions(
+    workspace_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    field: Optional[str] = None,
+    asin: Optional[str] = None,
+    action: Optional[str] = None,
+    operator_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+) -> dict[str, Any]:
+    """Cross-session flat decisions feed.
+
+    Shape: { decisions: [ ... ], total: int }
+    """
+    limit = max(1, min(int(limit), 200))
+    offset = max(0, int(offset))
+    if action and action not in _TERMINAL_ACTIONS + ("no_response",):
+        action = None
+    if _use_postgres():
+        return _pg_list_decisions(
+            workspace_id, limit, offset,
+            field, asin, action, operator_id, session_id, start, end,
+        )
+    return _jsonl_list_decisions(
+        workspace_id, limit, offset,
+        field, asin, action, operator_id, session_id, start, end,
+    )
+
+
+__all__ = ["list_sessions", "get_session_detail", "list_decisions"]

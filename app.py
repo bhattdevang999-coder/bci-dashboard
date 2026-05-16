@@ -11307,6 +11307,59 @@ def atlas_memory_sessions():
     })
 
 
+@app.route("/api/atlas/memory/decisions", methods=["GET"])
+def atlas_memory_decisions():
+    """Cross-session decisions feed for the Memory tab.
+
+    Query params (all optional):
+        limit          default 50, max 200
+        offset         default 0
+        field          substring match on field_name
+        asin           exact match
+        action         accept | edit | reject | dismiss | no_response
+        operator_id    filter by the operator who ran the session
+        session_id     scope to a single session (deep-link from Sessions)
+        start, end     ISO timestamp bounds on the decision's timestamp
+    Response: { ok, workspace_id, decisions: [...], total }
+    """
+    workspace_id = _atlas_current_workspace()
+    try:
+        limit = int(request.args.get("limit") or 50)
+    except ValueError:
+        limit = 50
+    try:
+        offset = int(request.args.get("offset") or 0)
+    except ValueError:
+        offset = 0
+    field = (request.args.get("field") or "").strip() or None
+    asin = (request.args.get("asin") or "").strip() or None
+    action = (request.args.get("action") or "").strip() or None
+    if action and action not in ("accept", "edit", "reject", "comment", "no_response"):
+        return jsonify({"ok": False, "error": "invalid action"}), 400
+    operator_id = (request.args.get("operator_id") or "").strip() or None
+    session_id = (request.args.get("session_id") or "").strip() or None
+    start = (request.args.get("start") or "").strip() or None
+    end = (request.args.get("end") or "").strip() or None
+    try:
+        from substrate.memory import list_decisions
+        result = list_decisions(
+            workspace_id=workspace_id,
+            limit=limit, offset=offset,
+            field=field, asin=asin, action=action,
+            operator_id=operator_id, session_id=session_id,
+            start=start, end=end,
+        )
+    except Exception as exc:
+        print(f"[atlas] memory decisions list failed: {exc}", flush=True)
+        result = {"decisions": [], "total": 0}
+    return jsonify({
+        "ok": True,
+        "workspace_id": workspace_id,
+        "decisions": result.get("decisions", []),
+        "total": result.get("total", 0),
+    })
+
+
 @app.route("/api/atlas/memory/sessions/<session_id>", methods=["GET"])
 def atlas_memory_session_detail(session_id: str):
     """Return the full timeline for a single session."""
