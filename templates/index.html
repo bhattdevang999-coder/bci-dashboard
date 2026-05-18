@@ -6248,6 +6248,18 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="nav-item-atlas" id="nav-unknowns" onclick="showUnknownsPage()">
       <span class="atlas-dot"></span> Unknowns
     </div>
+    <div class="nav-item-atlas" id="nav-brand-position" onclick="showBrandPositionPage()">
+      <span class="atlas-dot"></span> Brand Position
+    </div>
+    <div class="nav-item-atlas" id="nav-operator-positions" onclick="showOperatorPositionsPage()">
+      <span class="atlas-dot"></span> Operator Positions
+    </div>
+    <div class="nav-item-atlas" id="nav-pricing" onclick="showPricingPage()">
+      <span class="atlas-dot"></span> Pricing
+    </div>
+    <div class="nav-item-atlas" id="nav-velune-onboarding" onclick="showVeluneOnboardingPage()">
+      <span class="atlas-dot"></span> Velune Onboarding
+    </div>
     <div class="nav-section-divider"></div>
     <div class="nav-label">
       <span class="nav-module-num">01</span> Create
@@ -7682,6 +7694,227 @@ best seller"></textarea>
     </div>
     <div id="unk-list" class="bv-section">
       <div class="ue-empty">(loading)</div>
+    </div>
+  </div>
+
+  <!-- ═════════ M2: BRAND POSITION PAGE ═════════ -->
+  <div id="brand-position-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Brand Position</h1>
+      <div class="page-hero-sub">
+        One row. Reviewed quarterly. Daily decisions read from it; they don't change it. Every NIS, pricing, and recommendation reasoning chain pulls this row into Layer 2.
+      </div>
+    </div>
+    <div id="bp-banner" class="bv-section" style="display:none;"></div>
+    <div class="bv-section">
+      <div class="bv-field">
+        <label class="bv-label">Position statement</label>
+        <textarea id="bp-statement" class="bv-input" rows="2" placeholder="Premium-adjacent visual quality at $35-55 entry-tier price."></textarea>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Customer hypothesis</label>
+        <textarea id="bp-hypothesis" class="bv-input" rows="2" placeholder="Lululemon-curious shoppers trading down, or CRZ-loyal shoppers trading up."></textarea>
+      </div>
+      <div class="bv-grid-2">
+        <div class="bv-field">
+          <label class="bv-label">Competitor set (comma-separated)</label>
+          <input id="bp-competitors" class="bv-input" type="text" placeholder="lululemon, alo_yoga, crz_yoga, vuori, gymshark, halara"/>
+        </div>
+        <div class="bv-field">
+          <label class="bv-label">Price band anchor target ($)</label>
+          <input id="bp-anchor" class="bv-input" type="number" step="0.01" placeholder="42"/>
+        </div>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Competitor roles (JSON)</label>
+        <textarea id="bp-roles" class="bv-input" rows="4" style="font-family:ui-monospace,Consolas,monospace;font-size:12px;" placeholder='{"lululemon":"visual_anchor","crz_yoga":"direct_competitor","vuori":"price_ceiling"}'></textarea>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Next review at</label>
+        <input id="bp-next-review" class="bv-input" type="date"/>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:14px;">
+        <button class="btn btn-primary btn-sm" onclick="bpSave()">Save brand position</button>
+        <button class="btn btn-secondary btn-sm" onclick="bpLoad()">Reload</button>
+        <span id="bp-status" class="bv-save-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ M2: OPERATOR POSITIONS PAGE ═════════ -->
+  <div id="operator-positions-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Operator Positions</h1>
+      <div class="page-hero-sub">
+        Your beliefs and rules as substrate. Hard refusals always apply. Style positions accumulate from edits. More-specific scope wins over less-specific.
+      </div>
+    </div>
+    <div class="bv-section">
+      <div class="bv-grid-2">
+        <div class="bv-field">
+          <label class="bv-label">Scope</label>
+          <select id="op-scope" class="bv-input">
+            <option value="global">global</option>
+            <option value="brand" selected>brand</option>
+            <option value="family">family</option>
+            <option value="asin">asin</option>
+            <option value="decision_class">decision_class</option>
+            <option value="family_decision_class">family_decision_class</option>
+          </select>
+        </div>
+        <div class="bv-field">
+          <label class="bv-label">Scope ref (asin / family / decision_class)</label>
+          <input id="op-scope-ref" class="bv-input" type="text" placeholder="e.g. velune_pocket"/>
+        </div>
+      </div>
+      <div class="bv-grid-2">
+        <div class="bv-field">
+          <label class="bv-label">Position type</label>
+          <select id="op-type" class="bv-input">
+            <option value="strategic">strategic</option>
+            <option value="style">style</option>
+            <option value="hard_refusal">hard_refusal</option>
+            <option value="workflow">workflow</option>
+            <option value="preference">preference</option>
+          </select>
+        </div>
+        <div class="bv-field">
+          <label class="bv-label">&nbsp;</label>
+          <button class="btn btn-primary btn-sm" onclick="opCreate()" style="margin-top:6px;">Create position</button>
+        </div>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Claim</label>
+        <textarea id="op-claim" class="bv-input" rows="2" placeholder="e.g. 'Athletic positioning only, no Casual'"></textarea>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Reasoning (saved for future you)</label>
+        <textarea id="op-reasoning" class="bv-input" rows="2" placeholder="Why you hold this position."></textarea>
+      </div>
+      <span id="op-status" class="bv-save-status"></span>
+    </div>
+    <div class="bv-section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong>Active positions</strong>
+        <button class="btn btn-secondary btn-sm" onclick="opLoad()">Refresh</button>
+      </div>
+      <div id="op-list"><div class="ue-empty">(loading)</div></div>
+    </div>
+  </div>
+
+  <!-- ═════════ M2: PRICING PAGE ═════════ -->
+  <div id="pricing-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Pricing</h1>
+      <div class="page-hero-sub">
+        Your floor and ceiling rules are substrate. Atlas computes implications on every price set. Mode 1 (LLM, uncalibrated) available now. Mode 2 (calibrated) gated to month 6+.
+      </div>
+    </div>
+    <div class="bv-section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong>Active pricing logic</strong>
+        <button class="btn btn-secondary btn-sm" onclick="plLoad()">Refresh</button>
+      </div>
+      <div id="pl-active" class="bv-grid-2" style="font-family:ui-monospace,Consolas,monospace;font-size:12px;">(loading)</div>
+    </div>
+    <div class="bv-section">
+      <strong>Compute floor (variable contribution = 0)</strong>
+      <div class="bv-grid-2" style="margin-top:10px;">
+        <div class="bv-field"><label class="bv-label">Landed cost ($)</label><input id="pl-landed" class="bv-input" type="number" step="0.01" value="10.00"/></div>
+        <div class="bv-field"><label class="bv-label">FBA fee ($)</label><input id="pl-fba" class="bv-input" type="number" step="0.01" value="4.50"/></div>
+        <div class="bv-field"><label class="bv-label">3PL fee ($)</label><input id="pl-3pl" class="bv-input" type="number" step="0.01" value="1.20"/></div>
+        <div class="bv-field"><label class="bv-label">Ad spend / unit ($)</label><input id="pl-ads" class="bv-input" type="number" step="0.01" value="8.00"/></div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+        <button class="btn btn-primary btn-sm" onclick="plComputeFloor()">Compute floor</button>
+        <span id="pl-floor-out" class="bv-save-status"></span>
+      </div>
+    </div>
+    <div class="bv-section">
+      <strong>Log a pricing decision</strong>
+      <div class="bv-grid-2" style="margin-top:10px;">
+        <div class="bv-field"><label class="bv-label">ASIN</label><input id="pd-asin" class="bv-input" type="text" placeholder="B0XXXXXXXX"/></div>
+        <div class="bv-field"><label class="bv-label">Price ($)</label><input id="pd-price" class="bv-input" type="number" step="0.01"/></div>
+        <div class="bv-field">
+          <label class="bv-label">Goal regime</label>
+          <select id="pd-regime" class="bv-input">
+            <option value="launch_velocity">launch_velocity</option>
+            <option value="margin">margin</option>
+            <option value="volume">volume</option>
+          </select>
+        </div>
+        <div class="bv-field">
+          <label class="bv-label">Mode</label>
+          <select id="pd-mode" class="bv-input">
+            <option value="manual">manual</option>
+            <option value="mode1_llm">mode1_llm</option>
+          </select>
+        </div>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Reasoning</label>
+        <textarea id="pd-reasoning" class="bv-input" rows="2" placeholder="Why this price?"></textarea>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+        <button class="btn btn-primary btn-sm" onclick="pdLog()">Log decision</button>
+        <span id="pd-status" class="bv-save-status"></span>
+      </div>
+    </div>
+    <div class="bv-section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong>Recent pricing decisions</strong>
+        <button class="btn btn-secondary btn-sm" onclick="pdLoad()">Refresh</button>
+      </div>
+      <div id="pd-list"><div class="ue-empty">(loading)</div></div>
+    </div>
+  </div>
+
+  <!-- ═════════ M2: VELUNE ONBOARDING WIZARD ═════════ -->
+  <div id="velune-onboarding-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Velune Onboarding</h1>
+      <div class="page-hero-sub">
+        2 parents (pocket / no-pocket) → 40 children (4 colors × 5 sizes each). Seeds 5 starter operator positions. Estimated 60-90 min including operator confirmation pass.
+      </div>
+    </div>
+    <div class="bv-section">
+      <strong>Parent ASINs</strong>
+      <div class="bv-grid-2" style="margin-top:10px;">
+        <div class="bv-field"><label class="bv-label">Pocket family parent ASIN</label><input id="vw-parent-pocket" class="bv-input" type="text" value="B0VEL-PKT"/></div>
+        <div class="bv-field"><label class="bv-label">No-pocket family parent ASIN</label><input id="vw-parent-nopkt" class="bv-input" type="text" value="B0VEL-NPK"/></div>
+      </div>
+    </div>
+    <div class="bv-section">
+      <strong>Shared variation axes (apply to both families)</strong>
+      <div class="bv-grid-2" style="margin-top:10px;">
+        <div class="bv-field">
+          <label class="bv-label">Colors (one per line: name | color_map)</label>
+          <textarea id="vw-colors" class="bv-input" rows="5" style="font-family:ui-monospace,Consolas,monospace;font-size:12px;">Midnight Black | Black
+Slate Grey | Grey
+Deep Navy | Blue
+Mauve | Pink</textarea>
+        </div>
+        <div class="bv-field">
+          <label class="bv-label">Sizes (comma-separated)</label>
+          <input id="vw-sizes" class="bv-input" type="text" value="XS, S, M, L, XL"/>
+        </div>
+      </div>
+    </div>
+    <div class="bv-section">
+      <strong>Shared parent ground-truth (applied to both parents; you can edit per-parent after)</strong>
+      <div class="bv-grid-2" style="margin-top:10px;">
+        <div class="bv-field"><label class="bv-label">Brand</label><input id="vw-brand" class="bv-input" type="text" value="Novelle"/></div>
+        <div class="bv-field"><label class="bv-label">Material</label><input id="vw-material" class="bv-input" type="text" value="79% Nylon, 21% Spandex"/></div>
+        <div class="bv-field"><label class="bv-label">Rise height (inches)</label><input id="vw-rise" class="bv-input" type="number" step="0.1" value="11"/></div>
+        <div class="bv-field"><label class="bv-label">Country of origin</label><input id="vw-coo" class="bv-input" type="text" value="Bangladesh"/></div>
+      </div>
+    </div>
+    <div class="bv-section">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-primary btn-sm" onclick="vwSubmit()">Run onboarding</button>
+        <span id="vw-status" class="bv-save-status"></span>
+      </div>
+      <div id="vw-result" style="margin-top:14px;"></div>
     </div>
   </div>
 
@@ -14679,6 +14912,348 @@ async function unkResolve(unknownId, status) {
     }
   } catch (err) {
     alert('Resolve failed: ' + err);
+  }
+}
+
+// ════════════ M2: Brand Position / Operator Positions / Pricing / Velune Onboarding ════════
+
+function showBrandPositionPage() {
+  _showPage('brand-position-page', 'Atlas · Brand Position',
+            'Strategic position (one row, reviewed quarterly)');
+  const nav = document.getElementById('nav-brand-position');
+  if (nav) {
+    document.querySelectorAll('.nav-item-atlas, .nav-item').forEach(el => el.classList.remove('active'));
+    nav.classList.add('active');
+  }
+  bpLoad();
+}
+async function bpLoad() {
+  try {
+    const r = await fetch('/api/atlas/brand-position');
+    const d = await r.json();
+    if (!d.ok || !d.row) {
+      ueSetStatus('bp-status', 'No brand_position row yet — fill in and save.', '');
+      const today = new Date(); today.setMonth(today.getMonth() + 3);
+      document.getElementById('bp-next-review').value = today.toISOString().slice(0,10);
+      return;
+    }
+    const row = d.row;
+    document.getElementById('bp-statement').value = row.position_statement || '';
+    document.getElementById('bp-hypothesis').value = row.positioning_hypothesis || '';
+    document.getElementById('bp-competitors').value = (row.competitor_set || []).join(', ');
+    document.getElementById('bp-anchor').value = (row.price_band || {}).anchor_target || '';
+    document.getElementById('bp-roles').value = JSON.stringify(row.competitor_role || {}, null, 2);
+    document.getElementById('bp-next-review').value = (row.next_review_at || '').slice(0,10);
+    ueSetStatus('bp-status', `Loaded. Revision ${row.revision}.`, 'ok');
+    const banner = document.getElementById('bp-banner');
+    if (row.next_review_at && new Date(row.next_review_at) < new Date()) {
+      banner.style.display = 'block';
+      banner.innerHTML = `<div class="bv-hint" style="color:var(--accent);">Review overdue — next_review_at was ${row.next_review_at.slice(0,10)}.</div>`;
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch (err) {
+    ueSetStatus('bp-status', 'Load failed: ' + err, 'err');
+  }
+}
+async function bpSave() {
+  const competitors = document.getElementById('bp-competitors').value.split(',').map(s => s.trim()).filter(Boolean);
+  let roles = {};
+  const rolesRaw = document.getElementById('bp-roles').value.trim();
+  if (rolesRaw) {
+    try { roles = JSON.parse(rolesRaw); }
+    catch (e) { ueSetStatus('bp-status', 'Competitor roles JSON invalid', 'err'); return; }
+  }
+  const anchor = parseFloat(document.getElementById('bp-anchor').value) || null;
+  const nextReview = document.getElementById('bp-next-review').value;
+  if (!nextReview) { ueSetStatus('bp-status', 'next_review_at required', 'err'); return; }
+  const body = {
+    position_statement: document.getElementById('bp-statement').value.trim(),
+    positioning_hypothesis: document.getElementById('bp-hypothesis').value.trim(),
+    competitor_set: competitors,
+    competitor_role: roles,
+    price_band: anchor ? { anchor_target: anchor } : {},
+    next_review_at: nextReview + 'T00:00:00Z',
+  };
+  ueSetStatus('bp-status', 'Saving…', '');
+  try {
+    const r = await fetch('/api/atlas/brand-position', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.ok) { ueSetStatus('bp-status', 'Saved.', 'ok'); bpLoad(); }
+    else ueSetStatus('bp-status', 'Save failed: ' + (d.error || ''), 'err');
+  } catch (err) {
+    ueSetStatus('bp-status', 'Save failed: ' + err, 'err');
+  }
+}
+
+function showOperatorPositionsPage() {
+  _showPage('operator-positions-page', 'Atlas · Operator Positions',
+            'Operator beliefs and rules as substrate');
+  const nav = document.getElementById('nav-operator-positions');
+  if (nav) {
+    document.querySelectorAll('.nav-item-atlas, .nav-item').forEach(el => el.classList.remove('active'));
+    nav.classList.add('active');
+  }
+  opLoad();
+}
+async function opLoad() {
+  try {
+    const r = await fetch('/api/atlas/operator-positions');
+    const d = await r.json();
+    const container = document.getElementById('op-list');
+    if (!d.ok || !d.rows || !d.rows.length) {
+      container.innerHTML = '<div class="ue-empty">No active positions yet. Create one above, or run the Velune onboarding to seed the starter five.</div>';
+      return;
+    }
+    let html = '<table class="ue-table"><thead><tr><th>Type</th><th>Scope</th><th>Claim</th><th>Reasoning</th><th>Created</th><th></th></tr></thead><tbody>';
+    d.rows.forEach(p => {
+      const created = p.created_at ? p.created_at.slice(0,10) : '—';
+      const scope = p.scope + (p.scope_ref ? ':' + p.scope_ref : '');
+      const typeCls = p.position_type === 'hard_refusal' ? 'ue-num-bad' : '';
+      html += `<tr>
+        <td class="${typeCls}">${cnEscape(p.position_type)}</td>
+        <td>${cnEscape(scope)}</td>
+        <td>${cnEscape(p.claim)}</td>
+        <td style="color:var(--text-sec);font-size:12px;">${cnEscape(p.reasoning || '—')}</td>
+        <td>${cnEscape(created)}</td>
+        <td><button class="btn btn-secondary btn-sm" onclick="opArchive('${p.position_id}')">Archive</button></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch (err) {
+    document.getElementById('op-list').innerHTML = '<div class="ue-empty">Load failed: ' + cnEscape(String(err)) + '</div>';
+  }
+}
+async function opCreate() {
+  const claim = document.getElementById('op-claim').value.trim();
+  if (!claim) { ueSetStatus('op-status', 'Claim required', 'err'); return; }
+  const body = {
+    scope: document.getElementById('op-scope').value,
+    scope_ref: document.getElementById('op-scope-ref').value.trim() || null,
+    claim: claim,
+    reasoning: document.getElementById('op-reasoning').value.trim() || null,
+    position_type: document.getElementById('op-type').value,
+  };
+  ueSetStatus('op-status', 'Creating…', '');
+  try {
+    const r = await fetch('/api/atlas/operator-positions', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.ok) {
+      ueSetStatus('op-status', 'Created.', 'ok');
+      document.getElementById('op-claim').value = '';
+      document.getElementById('op-reasoning').value = '';
+      opLoad();
+    } else ueSetStatus('op-status', 'Create failed: ' + (d.error || ''), 'err');
+  } catch (err) {
+    ueSetStatus('op-status', 'Create failed: ' + err, 'err');
+  }
+}
+async function opArchive(pid) {
+  if (!confirm('Archive this position? It will no longer apply to future decisions.')) return;
+  try {
+    const r = await fetch(`/api/atlas/operator-positions/${encodeURIComponent(pid)}/archive`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'
+    });
+    const d = await r.json();
+    if (d.ok) opLoad();
+    else alert('Archive failed: ' + (d.error || ''));
+  } catch (err) { alert('Archive failed: ' + err); }
+}
+
+function showPricingPage() {
+  _showPage('pricing-page', 'Atlas · Pricing',
+            'Operator-set floor and ceiling rules; Atlas computes implications');
+  const nav = document.getElementById('nav-pricing');
+  if (nav) {
+    document.querySelectorAll('.nav-item-atlas, .nav-item').forEach(el => el.classList.remove('active'));
+    nav.classList.add('active');
+  }
+  plLoad(); pdLoad();
+}
+async function plLoad() {
+  try {
+    const r = await fetch('/api/atlas/pricing-logic');
+    const d = await r.json();
+    const c = document.getElementById('pl-active');
+    if (!d.ok || !d.row) {
+      c.innerHTML = '<div class="ue-empty">No active pricing_logic row yet.</div>';
+      return;
+    }
+    const row = d.row;
+    c.innerHTML = `
+      <div><strong>Floor rule</strong><pre style="white-space:pre-wrap;">${cnEscape(JSON.stringify(row.floor_rule, null, 2))}</pre></div>
+      <div><strong>Ceiling rule</strong><pre style="white-space:pre-wrap;">${cnEscape(JSON.stringify(row.ceiling_rule, null, 2))}</pre></div>
+      <div style="grid-column:1/-1;color:var(--text-sec);">Scope: ${cnEscape(row.scope)}${row.scope_ref?' · '+cnEscape(row.scope_ref):''} · Revision ${row.revision} · Set by ${cnEscape(row.set_by||'')}</div>
+    `;
+  } catch (err) {
+    document.getElementById('pl-active').innerHTML = '<div class="ue-empty">Load failed: ' + cnEscape(String(err)) + '</div>';
+  }
+}
+async function plComputeFloor() {
+  const body = {
+    floor_rule: { method: 'variable_contribution_zero' },
+    landed_cost: parseFloat(document.getElementById('pl-landed').value) || 0,
+    fba_fee: parseFloat(document.getElementById('pl-fba').value) || 0,
+    third_pl_fee: parseFloat(document.getElementById('pl-3pl').value) || 0,
+    ad_spend_per_unit: parseFloat(document.getElementById('pl-ads').value) || 0,
+  };
+  try {
+    const r = await fetch('/api/atlas/pricing-floor/compute', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.ok) ueSetStatus('pl-floor-out', 'Floor: $' + d.floor, 'ok');
+    else ueSetStatus('pl-floor-out', 'Compute failed: ' + (d.error || ''), 'err');
+  } catch (err) { ueSetStatus('pl-floor-out', 'Compute failed: ' + err, 'err'); }
+}
+async function pdLog() {
+  const asin = document.getElementById('pd-asin').value.trim();
+  const price = parseFloat(document.getElementById('pd-price').value);
+  if (!asin || isNaN(price)) { ueSetStatus('pd-status', 'ASIN + price required', 'err'); return; }
+  const body = {
+    asin: asin, price_set: price,
+    goal_regime: document.getElementById('pd-regime').value,
+    mode: document.getElementById('pd-mode').value,
+    reasoning: document.getElementById('pd-reasoning').value.trim() || null,
+  };
+  ueSetStatus('pd-status', 'Logging…', '');
+  try {
+    const r = await fetch('/api/atlas/pricing-decisions', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.ok) { ueSetStatus('pd-status', 'Logged.', 'ok'); pdLoad(); }
+    else ueSetStatus('pd-status', 'Log failed: ' + (d.error || ''), 'err');
+  } catch (err) { ueSetStatus('pd-status', 'Log failed: ' + err, 'err'); }
+}
+async function pdLoad() {
+  try {
+    const r = await fetch('/api/atlas/pricing-decisions?limit=20');
+    const d = await r.json();
+    const c = document.getElementById('pd-list');
+    if (!d.ok || !d.rows || !d.rows.length) {
+      c.innerHTML = '<div class="ue-empty">No decisions logged yet.</div>';
+      return;
+    }
+    let html = '<table class="ue-table"><thead><tr><th>When</th><th>ASIN</th><th>Price</th><th>Regime</th><th>Mode</th><th>Floor</th><th>Reasoning</th></tr></thead><tbody>';
+    d.rows.forEach(p => {
+      const when = p.price_set_at ? p.price_set_at.slice(0,16).replace('T',' ') : '—';
+      html += `<tr>
+        <td>${cnEscape(when)}</td>
+        <td>${cnEscape(p.asin)}</td>
+        <td>$${p.price_set != null ? p.price_set.toFixed(2) : '—'}</td>
+        <td>${cnEscape(p.goal_regime || '—')}</td>
+        <td>${cnEscape(p.mode)}</td>
+        <td>${p.floor_at_time != null ? '$'+p.floor_at_time.toFixed(2) : '—'}</td>
+        <td style="color:var(--text-sec);font-size:12px;">${cnEscape(p.reasoning || '—')}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    c.innerHTML = html;
+  } catch (err) {
+    document.getElementById('pd-list').innerHTML = '<div class="ue-empty">Load failed: ' + cnEscape(String(err)) + '</div>';
+  }
+}
+
+function showVeluneOnboardingPage() {
+  _showPage('velune-onboarding-page', 'Atlas · Velune Onboarding',
+            '2 parents → 40 children + 5 starter positions');
+  const nav = document.getElementById('nav-velune-onboarding');
+  if (nav) {
+    document.querySelectorAll('.nav-item-atlas, .nav-item').forEach(el => el.classList.remove('active'));
+    nav.classList.add('active');
+  }
+}
+async function vwSubmit() {
+  const pp = document.getElementById('vw-parent-pocket').value.trim();
+  const pnp = document.getElementById('vw-parent-nopkt').value.trim();
+  if (!pp || !pnp) { ueSetStatus('vw-status', 'Both parent ASINs required', 'err'); return; }
+
+  const colors = document.getElementById('vw-colors').value.split('\n')
+    .map(l => l.trim()).filter(Boolean)
+    .map(line => {
+      const parts = line.split('|').map(s => s.trim());
+      return { color_name: parts[0], color_map: parts[1] || parts[0] };
+    });
+  const sizes = document.getElementById('vw-sizes').value.split(',')
+    .map(s => s.trim()).filter(Boolean);
+  if (colors.length === 0 || sizes.length === 0) {
+    ueSetStatus('vw-status', 'Colors and sizes required', 'err'); return;
+  }
+  const sharedFields = {
+    brand: document.getElementById('vw-brand').value.trim(),
+    material: document.getElementById('vw-material').value.trim(),
+    rise_height_inches: parseFloat(document.getElementById('vw-rise').value) || null,
+    country_of_origin: document.getElementById('vw-coo').value.trim(),
+  };
+  const body = {
+    parents: [
+      {
+        asin: pp,
+        variation_family: 'velune_pocket',
+        ground_truth_fields: {
+          ...sharedFields,
+          product_name: 'Novelle Velune High-Rise 7/8 Pocket Leggings',
+          pocket_description: 'Hidden Waistband Pocket',
+          pocket_count: 1,
+          pocket_type: 'hidden_waistband',
+        },
+        field_sources: {
+          material: { value: sharedFields.material, source: 'factory_provided', confirmed_by_operator: false },
+          country_of_origin: { value: sharedFields.country_of_origin, source: 'factory_provided', confirmed_by_operator: false },
+        },
+      },
+      {
+        asin: pnp,
+        variation_family: 'velune_no_pocket',
+        ground_truth_fields: {
+          ...sharedFields,
+          product_name: 'Novelle Velune High-Rise 7/8 Leggings',
+          pocket_description: 'No Pocket',
+          pocket_count: 0,
+          pocket_type: 'none',
+        },
+        field_sources: {
+          material: { value: sharedFields.material, source: 'factory_provided', confirmed_by_operator: false },
+        },
+      },
+    ],
+    children_axes: {
+      [pp]:  { colors: colors, sizes: sizes, child_asin_prefix: pp },
+      [pnp]: { colors: colors, sizes: sizes, child_asin_prefix: pnp },
+    },
+    seed_positions: true,
+  };
+  ueSetStatus('vw-status', 'Running onboarding…', '');
+  try {
+    const r = await fetch('/api/atlas/velune-onboarding', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.ok) {
+      ueSetStatus('vw-status', `Done. ${d.created.parents} parents, ${d.created.children} children, ${d.created.positions} positions.`, 'ok');
+      const res = document.getElementById('vw-result');
+      let html = `<div class="bv-hint"><strong>Created</strong>: ${d.created.parents} parents, ${d.created.children} children, ${d.created.positions} new positions.</div>`;
+      if (d.errors && d.errors.length) {
+        html += '<div class="bv-hint" style="color:var(--accent);margin-top:8px;"><strong>Errors</strong>:<ul>' +
+          d.errors.map(e => '<li>' + cnEscape(e) + '</li>').join('') + '</ul></div>';
+      }
+      res.innerHTML = html;
+    } else {
+      ueSetStatus('vw-status', 'Failed: ' + (d.error || 'unknown'), 'err');
+    }
+  } catch (err) {
+    ueSetStatus('vw-status', 'Failed: ' + err, 'err');
   }
 }
 

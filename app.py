@@ -13959,6 +13959,659 @@ def atlas_session_submit():
     return jsonify({"ok": True, "session_id": session_id})
 
 
+# ─── M2: mode-aware substrate endpoints ───────────────────────────────────
+
+@app.route("/api/atlas/field-schema", methods=["GET"])
+def atlas_field_schema():
+    """Return the full field_schema.yml as JSON. Front-end caches this."""
+    try:
+        from substrate.field_suggest import load_field_schema
+        schema = load_field_schema()
+        return jsonify({"ok": True, "schema": schema})
+    except Exception as exc:
+        print(f"[atlas] field-schema failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/field-suggest", methods=["POST"])
+def atlas_field_suggest():
+    """Resolve a field's mode + payload (LLM-suggest fires here).
+
+    Body: {table: str, field: str, context: dict|null}
+    """
+    body = request.get_json(silent=True) or {}
+    table = (body.get("table") or "").strip()
+    field = (body.get("field") or "").strip()
+    if not table or not field:
+        return jsonify({"ok": False, "error": "table and field required"}), 400
+    context = body.get("context") or {}
+    if not isinstance(context, dict):
+        context = {}
+    try:
+        from substrate.field_suggest import suggest_for_field
+        out = suggest_for_field(table, field, context=context)
+        return jsonify(out)
+    except Exception as exc:
+        print(f"[atlas] field-suggest failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/asin-metadata/<asin>", methods=["GET"])
+def atlas_asin_metadata_get(asin: str):
+    """Read asin_metadata with parent-child inheritance applied.
+
+    Query: ?raw=1 returns the unmerged child row.
+    """
+    workspace_id = _atlas_current_workspace()
+    raw = request.args.get("raw") == "1"
+    try:
+        from substrate.asin_metadata import (
+            get_asin_metadata, read_asin_metadata,
+        )
+        row = (get_asin_metadata if raw else read_asin_metadata)(
+            workspace_id, asin,
+        )
+        if row is None:
+            return jsonify({"ok": False, "error": "not found"}), 404
+        return jsonify({"ok": True, "row": row})
+    except Exception as exc:
+        print(f"[atlas] asin-metadata get failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/asin-metadata", methods=["POST"])
+def atlas_asin_metadata_set():
+    """Upsert one asin_metadata row.
+
+    Body: {asin, parent_asin?, variation_family?, variation_axes?,
+           ground_truth_fields?, field_sources?}
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    asin = (body.get("asin") or "").strip()
+    if not asin:
+        return jsonify({"ok": False, "error": "asin required"}), 400
+    set_by = (body.get("set_by") or "devang").strip()
+    try:
+        from substrate.asin_metadata import set_asin_metadata
+        ok = set_asin_metadata(
+            workspace_id, asin,
+            parent_asin=(body.get("parent_asin") or None),
+            variation_family=(body.get("variation_family") or None),
+            variation_axes=body.get("variation_axes") or None,
+            ground_truth_fields=body.get("ground_truth_fields") or {},
+            field_sources=body.get("field_sources") or {},
+            set_by=set_by,
+        )
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] asin-metadata set failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/asin-metadata/<asin>/confirm-field",
+           methods=["POST"])
+def atlas_asin_confirm_field(asin: str):
+    """Mark one field's source as confirmed_by_operator=true.
+
+    Body: {field: str, confirmed_by?: str}
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    field = (body.get("field") or "").strip()
+    if not field:
+        return jsonify({"ok": False, "error": "field required"}), 400
+    confirmed_by = (body.get("confirmed_by") or "devang").strip()
+    try:
+        from substrate.asin_metadata import confirm_field
+        ok = confirm_field(workspace_id, asin, field, confirmed_by)
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] confirm-field failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/asin-metadata/<asin>/field", methods=["POST"])
+def atlas_asin_set_field(asin: str):
+    """Set one field's value + source.
+
+    Body: {field, value, source, confirmed?, set_by?}
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    field = (body.get("field") or "").strip()
+    source = (body.get("source") or "operator_typed").strip()
+    if not field:
+        return jsonify({"ok": False, "error": "field required"}), 400
+    try:
+        from substrate.asin_metadata import record_field_source
+        ok = record_field_source(
+            workspace_id, asin, field,
+            value=body.get("value"),
+            source=source,
+            confirmed=bool(body.get("confirmed", False)),
+            set_by=(body.get("set_by") or "devang").strip(),
+        )
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] set-field failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/asin-metadata/family/<parent_asin>",
+           methods=["GET"])
+def atlas_asin_family(parent_asin: str):
+    """List all ASINs in a variation family (parent + children)."""
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.asin_metadata import list_family_asins
+        rows = list_family_asins(workspace_id, parent_asin)
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] family list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/brand-position", methods=["GET"])
+def atlas_brand_position_get():
+    """Return workspace's brand_position row."""
+    workspace_id = _atlas_current_workspace()
+    try:
+        from substrate.brand_position import get_brand_position
+        row = get_brand_position(workspace_id)
+        if row is None:
+            return jsonify({"ok": True, "row": None})
+        return jsonify({"ok": True, "row": row})
+    except Exception as exc:
+        print(f"[atlas] brand-position get failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/brand-position", methods=["POST"])
+def atlas_brand_position_set():
+    """Upsert workspace's brand_position row.
+
+    Body: {position_statement, competitor_set[], competitor_role{},
+           price_band{}, positioning_hypothesis?, next_review_at,
+           review_freq?, set_by?}
+    """
+    from datetime import datetime
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    statement = (body.get("position_statement") or "").strip()
+    if not statement:
+        return jsonify({"ok": False, "error": "position_statement required"}), 400
+    next_review_raw = body.get("next_review_at")
+    if not next_review_raw:
+        return jsonify({"ok": False, "error": "next_review_at required"}), 400
+    try:
+        next_review = datetime.fromisoformat(
+            str(next_review_raw).replace("Z", "+00:00")
+        )
+    except ValueError:
+        return jsonify({"ok": False, "error": "next_review_at invalid"}), 400
+    try:
+        from substrate.brand_position import set_brand_position
+        ok = set_brand_position(
+            workspace_id,
+            position_statement=statement,
+            competitor_set=list(body.get("competitor_set") or []),
+            competitor_role=dict(body.get("competitor_role") or {}),
+            price_band=dict(body.get("price_band") or {}),
+            positioning_hypothesis=body.get("positioning_hypothesis"),
+            next_review_at=next_review,
+            set_by=(body.get("set_by") or "devang").strip(),
+            review_freq=(body.get("review_freq") or "quarterly").strip(),
+        )
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] brand-position set failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/operator-positions", methods=["GET"])
+def atlas_op_positions_list():
+    """List active operator_positions. Filters: scope, scope_ref,
+    position_type, asin (resolves via read_active_positions)."""
+    workspace_id = _atlas_current_workspace()
+    asin = (request.args.get("asin") or "").strip() or None
+    family = (request.args.get("family") or "").strip() or None
+    dc = (request.args.get("decision_class") or "").strip() or None
+    scope = (request.args.get("scope") or "").strip() or None
+    scope_ref = (request.args.get("scope_ref") or "").strip() or None
+    ptype = (request.args.get("position_type") or "").strip() or None
+    try:
+        from substrate.operator_positions import (
+            list_active_positions, read_active_positions,
+        )
+        if asin or family or dc:
+            rows = read_active_positions(
+                workspace_id, asin=asin, family=family,
+                decision_class=dc,
+            )
+        else:
+            rows = list_active_positions(
+                workspace_id, scope=scope, scope_ref=scope_ref,
+                position_type=ptype,
+            )
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] operator-positions list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/operator-positions", methods=["POST"])
+def atlas_op_positions_create():
+    """Create one operator_position.
+
+    Body: {scope, scope_ref?, claim, reasoning?, position_type?,
+           evidence_refs?, created_by_event_id?}
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    claim = (body.get("claim") or "").strip()
+    scope = (body.get("scope") or "").strip()
+    if not claim or not scope:
+        return jsonify({"ok": False, "error": "scope+claim required"}), 400
+    try:
+        from substrate.operator_positions import create_position
+        pid = create_position(
+            workspace_id,
+            scope=scope,
+            scope_ref=(body.get("scope_ref") or None),
+            claim=claim,
+            reasoning=body.get("reasoning"),
+            position_type=(body.get("position_type") or "strategic"),
+            operator_id=(body.get("operator_id") or "devang"),
+            evidence_refs=list(body.get("evidence_refs") or []),
+            created_by_event_id=body.get("created_by_event_id"),
+        )
+        if pid is None:
+            return jsonify({"ok": False, "error": "create failed"}), 400
+        return jsonify({"ok": True, "position_id": pid})
+    except Exception as exc:
+        print(f"[atlas] operator-positions create failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/operator-positions/<position_id>/archive",
+           methods=["POST"])
+def atlas_op_positions_archive(position_id: str):
+    """Archive a position."""
+    body = request.get_json(silent=True) or {}
+    archived_by = (body.get("archived_by") or "devang").strip()
+    try:
+        from substrate.operator_positions import archive_position
+        ok = archive_position(position_id, archived_by)
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] operator-positions archive failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/pricing-logic", methods=["GET"])
+def atlas_pricing_logic_get():
+    """Read active pricing_logic for an ASIN/family/global."""
+    workspace_id = _atlas_current_workspace()
+    asin = (request.args.get("asin") or "").strip() or None
+    family = (request.args.get("family") or "").strip() or None
+    try:
+        from substrate.pricing_logic import read_active_logic
+        row = read_active_logic(workspace_id, asin=asin, family=family)
+        return jsonify({"ok": True, "row": row})
+    except Exception as exc:
+        print(f"[atlas] pricing-logic get failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/pricing-logic", methods=["POST"])
+def atlas_pricing_logic_set():
+    """Upsert a pricing_logic row.
+
+    Body: {scope, scope_ref?, floor_rule, ceiling_rule, reasoning?,
+           ceiling_next_review_at?, set_by?}
+    """
+    from datetime import datetime
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    scope = (body.get("scope") or "").strip()
+    floor_rule = body.get("floor_rule")
+    ceiling_rule = body.get("ceiling_rule")
+    if not scope or not isinstance(floor_rule, dict) or not isinstance(
+        ceiling_rule, dict,
+    ):
+        return jsonify({"ok": False,
+                        "error": "scope + floor_rule + ceiling_rule required"}), 400
+    review_at = None
+    raw = body.get("ceiling_next_review_at")
+    if raw:
+        try:
+            review_at = datetime.fromisoformat(
+                str(raw).replace("Z", "+00:00")
+            )
+        except ValueError:
+            return jsonify({"ok": False,
+                            "error": "ceiling_next_review_at invalid"}), 400
+    try:
+        from substrate.pricing_logic import set_pricing_logic
+        ok = set_pricing_logic(
+            workspace_id,
+            scope=scope,
+            scope_ref=body.get("scope_ref"),
+            floor_rule=floor_rule,
+            ceiling_rule=ceiling_rule,
+            reasoning=body.get("reasoning"),
+            set_by=(body.get("set_by") or "devang").strip(),
+            ceiling_next_review_at=review_at,
+        )
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] pricing-logic set failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/pricing-decisions", methods=["GET"])
+def atlas_pricing_decisions_list():
+    """List recent pricing_decisions. Filters: asin, goal_regime, limit."""
+    workspace_id = _atlas_current_workspace()
+    asin = (request.args.get("asin") or "").strip() or None
+    regime = (request.args.get("goal_regime") or "").strip() or None
+    try:
+        limit = max(1, min(int(request.args.get("limit") or 50), 200))
+    except ValueError:
+        limit = 50
+    try:
+        from substrate.pricing_logic import list_pricing_decisions
+        rows = list_pricing_decisions(
+            workspace_id, asin=asin, goal_regime=regime, limit=limit,
+        )
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] pricing-decisions list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/pricing-decisions", methods=["POST"])
+def atlas_pricing_decisions_log():
+    """Append one pricing_decisions row.
+
+    Body: {asin, price_set, mode, goal_regime?, floor_at_time?,
+           ceiling_at_time?, play_zone_position?, reasoning?,
+           pattern_tags?, meta?, price_set_by?}
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    asin = (body.get("asin") or "").strip()
+    if not asin:
+        return jsonify({"ok": False, "error": "asin required"}), 400
+    try:
+        price = float(body.get("price_set"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "price_set must be number"}), 400
+    mode = (body.get("mode") or "manual").strip()
+    try:
+        from substrate.pricing_logic import log_pricing_decision
+        did = log_pricing_decision(
+            workspace_id,
+            asin=asin,
+            price_set=price,
+            price_set_by=(body.get("price_set_by") or "devang").strip(),
+            mode=mode,
+            goal_regime=(body.get("goal_regime") or "launch_velocity"),
+            floor_at_time=body.get("floor_at_time"),
+            ceiling_at_time=body.get("ceiling_at_time"),
+            play_zone_position=body.get("play_zone_position"),
+            reasoning=body.get("reasoning"),
+            pattern_tags=list(body.get("pattern_tags") or []),
+            meta=dict(body.get("meta") or {}),
+        )
+        if did is None:
+            return jsonify({"ok": False, "error": "log failed"}), 400
+        return jsonify({"ok": True, "decision_id": did})
+    except Exception as exc:
+        print(f"[atlas] pricing-decisions log failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/pricing-floor/compute", methods=["POST"])
+def atlas_pricing_floor_compute():
+    """Compute variable_contribution_zero floor from passed-in costs.
+
+    Body: {floor_rule, landed_cost, fba_fee, third_pl_fee,
+           ad_spend_per_unit, referral_rate?}
+    """
+    body = request.get_json(silent=True) or {}
+    rule = body.get("floor_rule") or {"method": "variable_contribution_zero"}
+    try:
+        from substrate.pricing_logic import compute_floor_from_rule
+        floor = compute_floor_from_rule(
+            rule,
+            landed_cost=body.get("landed_cost"),
+            fba_fee=body.get("fba_fee"),
+            third_pl_fee=body.get("third_pl_fee"),
+            ad_spend_per_unit=body.get("ad_spend_per_unit"),
+            referral_rate=float(body.get("referral_rate") or 0.15),
+        )
+        return jsonify({"ok": True, "floor": floor})
+    except Exception as exc:
+        print(f"[atlas] pricing-floor compute failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/competitor-state", methods=["GET"])
+def atlas_competitor_state_list():
+    """List competitor observations. Filters: competitor_id, metric, limit."""
+    workspace_id = _atlas_current_workspace()
+    cid = (request.args.get("competitor_id") or "").strip() or None
+    metric = (request.args.get("metric") or "").strip() or None
+    try:
+        limit = max(1, min(int(request.args.get("limit") or 50), 200))
+    except ValueError:
+        limit = 50
+    try:
+        from substrate.competitor_state import list_observations
+        rows = list_observations(
+            workspace_id, competitor_id=cid, metric=metric, limit=limit,
+        )
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] competitor-state list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/competitor-state", methods=["POST"])
+def atlas_competitor_state_record():
+    """Record a competitor observation.
+
+    Body: {competitor_id, metric, value, source?, asin?, notes?, observed_by?}
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    cid = (body.get("competitor_id") or "").strip()
+    metric = (body.get("metric") or "").strip()
+    if not cid or not metric or "value" not in body:
+        return jsonify({"ok": False,
+                        "error": "competitor_id, metric, value required"}), 400
+    try:
+        from substrate.competitor_state import record_observation
+        oid = record_observation(
+            workspace_id,
+            competitor_id=cid,
+            metric=metric,
+            value=body["value"],
+            observed_by=(body.get("observed_by") or "devang").strip(),
+            source=(body.get("source") or "operator_manual"),
+            asin=body.get("asin"),
+            notes=body.get("notes"),
+        )
+        if oid is None:
+            return jsonify({"ok": False, "error": "record failed"}), 400
+        return jsonify({"ok": True, "observation_id": oid})
+    except Exception as exc:
+        print(f"[atlas] competitor-state record failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/velune-onboarding", methods=["POST"])
+def atlas_velune_onboarding():
+    """Velune family onboarding wizard.
+
+    Body shape:
+      {
+        parents: [
+          {asin, variation_family, ground_truth_fields, field_sources?},
+          ...
+        ],
+        children_axes: {  # map of parent_asin -> {colors[], sizes[]}
+          "<parent_asin>": {
+            "colors": [{"color_name":..., "color_map":...}, ...],
+            "sizes":  ["XS","S","M","L","XL"],
+            "child_asin_prefix": "B0VEL-PKT"  # optional
+          }, ...
+        },
+        seed_positions: bool  (default true)
+      }
+
+    Creates 2 parent rows + 4*5=20 child rows per parent, seeds positions
+    #1-5 from OPERATOR_POSITIONS.md.
+
+    Returns {ok, created: {parents:int, children:int, positions:int},
+              errors: [str]}.
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    parents = list(body.get("parents") or [])
+    children_axes = dict(body.get("children_axes") or {})
+    seed_positions = bool(body.get("seed_positions", True))
+    if not parents:
+        return jsonify({"ok": False, "error": "parents[] required"}), 400
+
+    created = {"parents": 0, "children": 0, "positions": 0}
+    errors: list[str] = []
+
+    try:
+        from substrate.asin_metadata import set_asin_metadata
+        from substrate.operator_positions import create_position
+
+        # 1. Parents
+        for p in parents:
+            asin = (p.get("asin") or "").strip()
+            if not asin:
+                errors.append("parent missing asin")
+                continue
+            ok = set_asin_metadata(
+                workspace_id, asin,
+                variation_family=p.get("variation_family"),
+                ground_truth_fields=p.get("ground_truth_fields") or {},
+                field_sources=p.get("field_sources") or {},
+                set_by="devang",
+            )
+            if ok:
+                created["parents"] += 1
+            else:
+                errors.append(f"parent {asin} insert failed")
+
+        # 2. Children — generate color * size matrix
+        for parent_asin, axes in children_axes.items():
+            colors = list(axes.get("colors") or [])
+            sizes = list(axes.get("sizes") or [])
+            prefix = (axes.get("child_asin_prefix") or parent_asin).strip()
+            if not colors or not sizes:
+                errors.append(f"{parent_asin} missing colors or sizes")
+                continue
+            # Inherit family from parent if not overridden
+            family = next(
+                (p.get("variation_family") for p in parents
+                 if (p.get("asin") or "") == parent_asin),
+                None,
+            )
+            for color in colors:
+                cname = (color.get("color_name") or "").strip()
+                cmap = (color.get("color_map") or cname).strip()
+                if not cname:
+                    continue
+                for size in sizes:
+                    size_clean = str(size).strip()
+                    if not size_clean:
+                        continue
+                    color_slug = cname.upper().replace(" ", "")[:6]
+                    child_asin = f"{prefix}-{color_slug}-{size_clean}"
+                    ok = set_asin_metadata(
+                        workspace_id, child_asin,
+                        parent_asin=parent_asin,
+                        variation_family=family,
+                        variation_axes={"color": cname, "size": size_clean},
+                        ground_truth_fields={
+                            "color_name": cname,
+                            "color_map": cmap,
+                            "size": size_clean,
+                        },
+                        set_by="devang",
+                    )
+                    if ok:
+                        created["children"] += 1
+                    else:
+                        errors.append(f"child {child_asin} insert failed")
+
+        # 3. Seed positions #1-5 if not already present
+        if seed_positions:
+            from substrate.operator_positions import list_active_positions
+            existing_claims = {
+                r["claim"]
+                for r in list_active_positions(workspace_id)
+            }
+            starters = [
+                {"scope": "brand", "scope_ref": None,
+                 "claim": "Athletic positioning only, no Casual",
+                 "reasoning": ("Brand position is premium-adjacent at $35-55; "
+                              "Casual register dilutes intent at this tier"),
+                 "position_type": "strategic"},
+                {"scope": "brand", "scope_ref": None,
+                 "claim": "No discount, value, or budget language in any content",
+                 "reasoning": ("Premium-adjacent positioning incompatible "
+                              "with value framing"),
+                 "position_type": "hard_refusal"},
+                {"scope": "family", "scope_ref": "velune_pocket",
+                 "claim": ("Family has hidden_waistband pocket; pocket details "
+                          "must be accurate in all content"),
+                 "reasoning": ("Pocket vs no-pocket is the family-defining "
+                              "differentiator; accuracy prevents return-rate spikes"),
+                 "position_type": "hard_refusal"},
+                {"scope": "family", "scope_ref": "velune_no_pocket",
+                 "claim": ("Product Name must NOT include 'with Pockets' or "
+                          "imply pocket presence"),
+                 "reasoning": ("Family is explicitly no-pocket; product name "
+                              "accuracy is launch-blocking"),
+                 "position_type": "hard_refusal"},
+                {"scope": "brand", "scope_ref": None,
+                 "claim": ("Goal regime defaults to launch velocity for first "
+                          "60 days per ASIN, then transitions to margin unless "
+                          "operator overrides"),
+                 "reasoning": ("Launch ranking is time-sensitive; margin "
+                              "optimization happens after rank stabilizes"),
+                 "position_type": "workflow"},
+            ]
+            for s in starters:
+                if s["claim"] in existing_claims:
+                    continue
+                pid = create_position(workspace_id, **s)
+                if pid:
+                    created["positions"] += 1
+
+        return jsonify({
+            "ok": True,
+            "workspace_id": workspace_id,
+            "created": created,
+            "errors": errors,
+        })
+    except Exception as exc:
+        print(f"[atlas] velune onboarding failed: {exc}", flush=True)
+        return jsonify({"ok": False,
+                        "error": str(exc)[:200],
+                        "created": created,
+                        "errors": errors}), 500
+
+
 @app.route("/api/lab/load-session", methods=["POST"])
 def lab_load_session():
     """Restore a saved Lab session by filename.
