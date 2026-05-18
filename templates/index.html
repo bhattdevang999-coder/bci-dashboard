@@ -264,7 +264,12 @@
     transition: background 0.15s, color 0.15s;
     border-left: 3px solid transparent;
     font-size: 14px;
-    color: var(--text-sec);
+    /* Was var(--text-sec) #7A7974 on white — ~4.0:1, near AA floor.
+       Bumped to --text #28251D for clear AAA contrast on the
+       white sidebar. Same change applied to .nav-item-soon and
+       .nav-label below. */
+    color: var(--text);
+    font-weight: 500;
     user-select: none;
     text-decoration: none;   /* in case the element is an <a> */
   }
@@ -280,7 +285,9 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--text-sec);
+    /* Was --text-sec; bump to a darker tone so the dot is
+       visible against the white sidebar. */
+    background: #5a5852;
     flex-shrink: 0;
     transition: background 0.15s;
   }
@@ -292,15 +299,17 @@
     align-items: center;
     gap: 8px;
     font-size: 11px;
-    color: var(--text-sec);
+    /* Was --text-sec; bump to a darker tone so cohort headers
+       like "01 Create" / "02 Optimize" are clearly readable. */
+    color: #4a4842;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 16px 20px 6px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .nav-module-num {
-    color: var(--text-sec);
-    font-weight: 700;
+    color: var(--accent);
+    font-weight: 800;
   }
   .nav-status {
     margin-left: auto;
@@ -321,8 +330,13 @@
     padding: 9px 20px;
     border-left: 3px solid transparent;
     font-size: 14px;
-    color: var(--text-sec);
-    opacity: 0.55;
+    /* Was --text-sec at 0.55 opacity — effectively unreadable.
+       Now: darker base color, milder opacity, so coming-soon
+       items still look distinct from active items but are
+       legible. */
+    color: #4a4842;
+    opacity: 0.78;
+    font-weight: 500;
     cursor: not-allowed;
     user-select: none;
   }
