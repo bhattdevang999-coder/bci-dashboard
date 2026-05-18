@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ rec.source }} → Novelle · Response form</title>
+  <style>
+    :root {
+      --bg: #fafaf7;
+      --panel: #ffffff;
+      --text: #1b1b1b;
+      --text-sec: #5a5a5a;
+      --border: #e5e2db;
+      --accent: #b8420f;
+      --ok: #2f7a4a;
+      --warn: #b8420f;
+      --shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 32px 24px 96px;
+    }
+    .masthead {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .masthead h1 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 500;
+      font-size: 22px;
+      margin: 0;
+    }
+    .meta {
+      font-size: 12px;
+      color: var(--text-sec);
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 18px 22px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+    .panel h2 {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 10px;
+      color: var(--text);
+    }
+    .field {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .field:last-child { border-bottom: none; }
+    .field-name {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+    .field-submitted {
+      font-size: 13px;
+      color: var(--text-sec);
+      margin-bottom: 6px;
+    }
+    .field-flag {
+      background: rgba(184, 66, 15, 0.08);
+      border-left: 3px solid var(--warn);
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #6a2807;
+      margin: 8px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .response-area {
+      width: 100%;
+      min-height: 70px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 13px;
+      background: #fdfcf9;
+      resize: vertical;
+    }
+    .conf {
+      display: inline-flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .conf input { margin: 0; }
+    .conf label {
+      font-size: 12px;
+      color: var(--text-sec);
+    }
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 -1px 4px rgba(0,0,0,0.04);
+    }
+    .footer .status { font-size: 12px; color: var(--text-sec); }
+    .btn {
+      background: var(--text);
+      color: #fff;
+      border: 0;
+      padding: 9px 18px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .expired, .invalid {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-sec);
+    }
+    .expired h1, .invalid h1 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 500;
+      font-size: 24px;
+      color: var(--text);
+    }
+    code {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px;
+      background: #f0ece4;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+{% if not rec %}
+  <div class="wrap invalid">
+    <h1>Link expired or invalid</h1>
+    <p>This response link is no longer valid. It may have expired
+       (links last 7 days by default) or already been used. Please
+       contact Novelle to request a new link.</p>
+  </div>
+{% else %}
+  <div class="wrap">
+    <div class="masthead">
+      <div>
+        <h1>Novelle × {{ rec.source }}</h1>
+        <div class="meta">
+          Response form for recommendation submitted
+          {{ (rec.ingested_at or "")[:10] }} · link expires
+          {{ (rec.response_expires_at or "")[:10] }}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Background</h2>
+      <p>You're being asked to respond to flags Novelle raised on your
+         submitted recommendation. Novelle is launching as
+         {% if rec.scope_asins %}<code>{{ rec.scope_asins|join(", ") }}</code>{% else %}a new family{% endif %}.
+         You'll see only the fields where your reasoning or revision is
+         needed. Sections answered by the manufacturer or Novelle's
+         operator are not shown here.</p>
+    </div>
+
+    <form id="respond-form" data-rec-id="{{ rec.rec_id }}" data-token="{{ token }}">
+      <div class="panel">
+        <h2>Your responses needed ({{ pending_evals|length }})</h2>
+        {% if not pending_evals %}
+          <p class="meta">No agency-owned fields need a response on this
+             recommendation. You can close this tab.</p>
+        {% endif %}
+        {% for e in pending_evals %}
+          <div class="field" data-eval-id="{{ e.eval_id }}">
+            <div class="field-name">{{ e.field_name }}</div>
+            <div class="field-submitted">
+              Submitted value: <code>{{ e.submitted_value or "(blank)" }}</code>
+            </div>
+            <div class="field-flag">
+              Novelle's flag: {{ e.reasoning }}
+              {% if e.proposed_alternative %}
+                <br/>Atlas suggests instead: <code>{{ e.proposed_alternative }}</code>
+              {% endif %}
+            </div>
+            <textarea class="response-area"
+                      name="response"
+                      data-eval-id="{{ e.eval_id }}"
+                      placeholder="Your reasoning, revision, or 'agreed — revise to X.'">{{ e.agency_response or "" }}</textarea>
+            <div class="conf">
+              <label>Confidence (1-5):</label>
+              {% for n in [1,2,3,4,5] %}
+                <label>
+                  <input type="radio" name="conf_{{ e.eval_id }}" value="{{ n }}"
+                         {% if e.agency_confidence == n %}checked{% endif %}>
+                  {{ n }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if other_evals %}
+      <div class="panel">
+        <h2>Context (read-only, no response needed) — {{ other_evals|length }}</h2>
+        {% for e in other_evals %}
+          <div class="field">
+            <div class="field-name">{{ e.field_name }}</div>
+            <div class="field-submitted">
+              <code>{{ e.submitted_value or "(blank)" }}</code> · owned by
+              {{ e.field_owner }} · verdict: {{ e.verdict }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </form>
+
+    <div class="footer">
+      <div class="status" id="status">Draft is saved locally as you type.</div>
+      <div>
+        <button type="button" class="btn secondary" onclick="respSaveDraft()">Save draft</button>
+        <button type="button" class="btn" onclick="respSubmitFinal()">Submit final</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const respRecId = document.getElementById('respond-form').dataset.recId;
+    const respToken = document.getElementById('respond-form').dataset.token;
+
+    function _collect() {
+      const out = [];
+      document.querySelectorAll('.field[data-eval-id]').forEach(el => {
+        const evalId = el.dataset.evalId;
+        const ta = el.querySelector('textarea.response-area');
+        const conf = el.querySelector(`input[name="conf_${evalId}"]:checked`);
+        out.push({
+          eval_id: evalId,
+          response_text: (ta?.value || '').trim(),
+          agency_confidence: conf ? parseInt(conf.value, 10) : null,
+        });
+      });
+      return out;
+    }
+
+    async function respSaveDraft() {
+      const status = document.getElementById('status');
+      status.textContent = 'Saving draft…';
+      try {
+        const r = await fetch(`/respond/${respRecId}/draft`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({token: respToken, responses: _collect()})
+        });
+        const d = await r.json();
+        if (d.ok) {
+          status.textContent = `Draft saved at ${new Date().toLocaleTimeString()}.`;
+        } else {
+          status.textContent = 'Save failed: ' + (d.error || 'unknown');
+        }
+      } catch (err) {
+        status.textContent = 'Save failed: ' + err;
+      }
+    }
+
+    async function respSubmitFinal() {
+      if (!confirm("Submit final responses? Once submitted, this link cannot be used again. Contact Novelle if you need to make corrections.")) return;
+      const status = document.getElementById('status');
+      status.textContent = 'Submitting…';
+      try {
+        const r = await fetch(`/respond/${respRecId}/submit`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({token: respToken, responses: _collect()})
+        });
+        const d = await r.json();
+        if (d.ok) {
+          document.body.innerHTML = `<div class="wrap invalid"><h1>Thank you</h1><p>Your responses have been submitted to Novelle. You can close this tab.</p></div>`;
+        } else {
+          status.textContent = 'Submit failed: ' + (d.error || 'unknown');
+        }
+      } catch (err) {
+        status.textContent = 'Submit failed: ' + err;
+      }
+    }
+  </script>
+{% endif %}
+</body>
+</html>

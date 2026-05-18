@@ -6260,6 +6260,9 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="nav-item-atlas" id="nav-velune-onboarding" onclick="showVeluneOnboardingPage()">
       <span class="atlas-dot"></span> Velune Onboarding
     </div>
+    <div class="nav-item-atlas" id="nav-recommendations" onclick="showRecommendationsPage()">
+      <span class="atlas-dot"></span> Recommendations
+    </div>
     <div class="nav-section-divider"></div>
     <div class="nav-label">
       <span class="nav-module-num">01</span> Create
@@ -7916,6 +7919,81 @@ Mauve | Pink</textarea>
       </div>
       <div id="vw-result" style="margin-top:14px;"></div>
     </div>
+  </div>
+
+  <!-- ═════════ M4: RECOMMENDATIONS PAGE ═════════ -->
+  <div id="recommendations-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Recommendations</h1>
+      <div class="page-hero-sub">
+        External recommendations (agency PDFs, vendor tool output, operator notes) land here as substrate. Atlas evaluates each field against the 5-layer reasoning chain. Agency-owned fields get a tokenized response link so they can answer inside the system without a dashboard login.
+      </div>
+    </div>
+    <div class="bv-section">
+      <strong>Ingest a new recommendation</strong>
+      <div class="bv-grid-2" style="margin-top:10px;">
+        <div class="bv-field"><label class="bv-label">Source</label><input id="rec-source" class="bv-input" type="text" placeholder="acme_agency"/></div>
+        <div class="bv-field">
+          <label class="bv-label">Source tier</label>
+          <select id="rec-tier" class="bv-input">
+            <option value="">(unspecified)</option>
+            <option value="top_agency">top_agency</option>
+            <option value="mid_agency" selected>mid_agency</option>
+            <option value="budget_agency">budget_agency</option>
+            <option value="vendor_tool">vendor_tool</option>
+            <option value="operator">operator</option>
+            <option value="internal_sop">internal_sop</option>
+          </select>
+        </div>
+        <div class="bv-field"><label class="bv-label">Source contact (email)</label><input id="rec-contact" class="bv-input" type="text" placeholder="agency@example.com"/></div>
+        <div class="bv-field">
+          <label class="bv-label">Rec type</label>
+          <select id="rec-type" class="bv-input">
+            <option value="backend_fields">backend_fields</option>
+            <option value="keyword_list">keyword_list</option>
+            <option value="pricing_proposal">pricing_proposal</option>
+            <option value="listing_copy">listing_copy</option>
+            <option value="image_brief">image_brief</option>
+            <option value="other">other</option>
+          </select>
+        </div>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Scope ASINs (comma-separated)</label>
+        <input id="rec-scope-asins" class="bv-input" type="text" placeholder="B0VEL-PKT, B0VEL-NPK"/>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Raw text (paste from agency PDF / email / vendor tool)</label>
+        <textarea id="rec-raw" class="bv-input" rows="8" style="font-family:ui-monospace,Consolas,monospace;font-size:12px;" placeholder="Material: 79% Nylon, 21% Spandex
+Part Number: Yoga Leggings
+Lifestyle: Casual
+Pocket Description: No Pocket
+..."></textarea>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-primary btn-sm" onclick="recIngest()">Ingest + evaluate</button>
+        <span id="rec-ingest-status" class="bv-save-status"></span>
+      </div>
+    </div>
+    <div class="bv-section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong>Inbox</strong>
+        <div>
+          <select id="rec-filter-status" class="bv-input" style="width:auto;display:inline-block;" onchange="recList()">
+            <option value="">All statuses</option>
+            <option value="pending_evaluation">pending_evaluation</option>
+            <option value="evaluated">evaluated</option>
+            <option value="awaiting_response">awaiting_response</option>
+            <option value="response_received">response_received</option>
+            <option value="resolved">resolved</option>
+            <option value="archived">archived</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="recList()">Refresh</button>
+        </div>
+      </div>
+      <div id="rec-list"><div class="ue-empty">(loading)</div></div>
+    </div>
+    <div id="rec-detail" style="margin-top:16px;"></div>
   </div>
 
   <!-- ════ BUDGET · Content-change drawer ════ -->
@@ -15255,6 +15333,202 @@ async function vwSubmit() {
   } catch (err) {
     ueSetStatus('vw-status', 'Failed: ' + err, 'err');
   }
+}
+
+// ════════════ M4: Recommendations inbox ════════════
+
+function showRecommendationsPage() {
+  _showPage('recommendations-page', 'Atlas · Recommendations',
+            'External recommendations as substrate; tokenized agency response');
+  const nav = document.getElementById('nav-recommendations');
+  if (nav) {
+    document.querySelectorAll('.nav-item-atlas, .nav-item').forEach(el => el.classList.remove('active'));
+    nav.classList.add('active');
+  }
+  recList();
+}
+async function recList() {
+  const status = document.getElementById('rec-filter-status').value;
+  const url = '/api/atlas/recommendations' + (status ? '?status=' + encodeURIComponent(status) : '');
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    const c = document.getElementById('rec-list');
+    if (!d.ok || !d.rows || !d.rows.length) {
+      c.innerHTML = '<div class="ue-empty">No recommendations on file. Ingest one above.</div>';
+      return;
+    }
+    let html = '<table class="ue-table"><thead><tr><th>Ingested</th><th>Source</th><th>Tier</th><th>Type</th><th>Scope</th><th>Status</th><th></th></tr></thead><tbody>';
+    d.rows.forEach(rec => {
+      const when = rec.ingested_at ? rec.ingested_at.slice(0,16).replace('T',' ') : '—';
+      const scope = (rec.scope_asins || []).join(', ') || '—';
+      const statusCls = rec.status === 'pending_evaluation' ? 'ue-num-warn' :
+                        rec.status === 'awaiting_response' ? 'ue-num-warn' : '';
+      html += `<tr>
+        <td>${cnEscape(when)}</td>
+        <td>${cnEscape(rec.source)}</td>
+        <td>${cnEscape(rec.source_tier || '—')}</td>
+        <td>${cnEscape(rec.rec_type || '—')}</td>
+        <td>${cnEscape(scope)}</td>
+        <td class="${statusCls}">${cnEscape(rec.status)}</td>
+        <td><button class="btn btn-secondary btn-sm" onclick="recOpen('${rec.rec_id}')">Open</button></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    c.innerHTML = html;
+  } catch (err) {
+    document.getElementById('rec-list').innerHTML = '<div class="ue-empty">Load failed: ' + cnEscape(String(err)) + '</div>';
+  }
+}
+async function recIngest() {
+  const source = document.getElementById('rec-source').value.trim();
+  if (!source) { ueSetStatus('rec-ingest-status', 'Source required', 'err'); return; }
+  const scopeRaw = document.getElementById('rec-scope-asins').value;
+  const scope = scopeRaw.split(',').map(s => s.trim()).filter(Boolean);
+  const body = {
+    source: source,
+    source_tier: document.getElementById('rec-tier').value || null,
+    source_contact: document.getElementById('rec-contact').value.trim() || null,
+    rec_type: document.getElementById('rec-type').value,
+    scope_asins: scope,
+    raw_text: document.getElementById('rec-raw').value,
+  };
+  ueSetStatus('rec-ingest-status', 'Creating…', '');
+  try {
+    const r = await fetch('/api/atlas/recommendations', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!d.ok) { ueSetStatus('rec-ingest-status', 'Failed: ' + (d.error || ''), 'err'); return; }
+    ueSetStatus('rec-ingest-status', 'Created. Running evaluation…', '');
+    const r2 = await fetch(`/api/atlas/recommendations/${encodeURIComponent(d.rec_id)}/evaluate`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'
+    });
+    const d2 = await r2.json();
+    if (d2.ok) {
+      ueSetStatus('rec-ingest-status', `Done. ${d2.evaluations_written} verdicts written.`, 'ok');
+      document.getElementById('rec-raw').value = '';
+      recList();
+      recOpen(d.rec_id);
+    } else {
+      ueSetStatus('rec-ingest-status', 'Eval failed: ' + (d2.error || ''), 'err');
+    }
+  } catch (err) {
+    ueSetStatus('rec-ingest-status', 'Failed: ' + err, 'err');
+  }
+}
+async function recOpen(recId) {
+  const detail = document.getElementById('rec-detail');
+  detail.innerHTML = '<div class="bv-section"><div class="ue-empty">Loading…</div></div>';
+  try {
+    const r = await fetch(`/api/atlas/recommendations/${encodeURIComponent(recId)}`);
+    const d = await r.json();
+    if (!d.ok) { detail.innerHTML = '<div class="bv-section"><div class="ue-empty">Load failed.</div></div>'; return; }
+    const rec = d.rec;
+    const s = d.summary || {};
+    const tokenUrl = rec.response_token_url || null;
+    let html = `<div class="bv-section">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <strong>${cnEscape(rec.source)}</strong> · ${cnEscape(rec.rec_type || '—')}
+          <div style="color:var(--text-sec); font-size:12px;">
+            Scope: ${cnEscape((rec.scope_asins||[]).join(', ') || '—')} ·
+            Status: ${cnEscape(rec.status)} ·
+            Ingested ${cnEscape((rec.ingested_at||'').slice(0,16).replace('T',' '))}
+          </div>
+          <div style="margin-top:8px; color:var(--text-sec); font-size:12px;">
+            Verdict counts · agree:${s.agree||0} partial:${s.partial||0}
+            disagree:${s.disagree||0} unknown:${s.unknown||0}
+            · pending operator:${s.pending_operator_decision||0}
+            · awaiting agency:${s.awaiting_agency_response||0}
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <button class="btn btn-primary btn-sm" onclick="recGenerateToken('${rec.rec_id}')">Generate response link</button>
+          <button class="btn btn-secondary btn-sm" onclick="recReEvaluate('${rec.rec_id}')">Re-evaluate</button>
+        </div>
+      </div>
+      ${tokenUrl ? `<div class="bv-hint" style="margin-top:10px;">Active response link (expires ${cnEscape((rec.response_expires_at||'').slice(0,10))}):<br/><code style="word-break:break-all;">${cnEscape(tokenUrl)}</code></div>` : ''}
+    </div>`;
+    if (d.evaluations && d.evaluations.length) {
+      html += '<div class="bv-section"><strong>Per-field verdicts</strong>';
+      html += '<table class="ue-table" style="margin-top:10px;"><thead><tr><th>Field</th><th>Owner</th><th>Submitted</th><th>Verdict</th><th>Reasoning</th><th>Agency</th><th>Operator</th></tr></thead><tbody>';
+      d.evaluations.forEach(e => {
+        const verdictCls = e.verdict === 'disagree' ? 'ue-num-bad' :
+                           e.verdict === 'unknown' ? 'ue-num-warn' : '';
+        const opCell = e.operator_decision
+          ? `<span class="bv-ok">${cnEscape(e.operator_decision)}</span>${e.final_value ? '<br/><span style="font-family:ui-monospace;font-size:11px;">'+cnEscape(e.final_value)+'</span>' : ''}`
+          : `<button class="btn btn-secondary btn-sm" onclick="recDecide('${e.eval_id}','${rec.rec_id}')">Decide</button>`;
+        const agencyCell = e.agency_response
+          ? `<div style="font-size:12px;">${cnEscape(e.agency_response)}</div>${e.agency_confidence ? '<div style="color:var(--text-sec);font-size:11px;">Conf: '+e.agency_confidence+'/5</div>':''}`
+          : (e.field_owner === 'agency' ? '<span style="color:var(--text-sec);">awaiting</span>' : '—');
+        html += `<tr>
+          <td><strong>${cnEscape(e.field_name)}</strong></td>
+          <td>${cnEscape(e.field_owner)}</td>
+          <td style="font-family:ui-monospace;font-size:11px;">${cnEscape(e.submitted_value || '—')}</td>
+          <td class="${verdictCls}">${cnEscape(e.verdict)}${e.confidence != null ? `<br/><span style="font-size:11px;color:var(--text-sec);">${(e.confidence*100).toFixed(0)}%</span>` : ''}</td>
+          <td style="color:var(--text-sec);font-size:12px;">${cnEscape(e.reasoning)}${e.proposed_alternative ? '<br/><strong>Alt:</strong> '+cnEscape(e.proposed_alternative) : ''}</td>
+          <td>${agencyCell}</td>
+          <td>${opCell}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+    } else {
+      html += '<div class="bv-section"><div class="ue-empty">No evaluations yet. Click Re-evaluate above.</div></div>';
+    }
+    detail.innerHTML = html;
+  } catch (err) {
+    detail.innerHTML = '<div class="bv-section"><div class="ue-empty">Load failed: ' + cnEscape(String(err)) + '</div></div>';
+  }
+}
+async function recGenerateToken(recId) {
+  if (!confirm('Generate a fresh response link? Any prior link will be invalidated.')) return;
+  try {
+    const r = await fetch(`/api/atlas/recommendations/${encodeURIComponent(recId)}/token`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ttl_days: 7})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      alert('Response link generated.\n\nCopy and forward to agency:\n\n' + d.url);
+      recOpen(recId);
+      recList();
+    } else {
+      alert('Token gen failed: ' + (d.error || ''));
+    }
+  } catch (err) { alert('Token gen failed: ' + err); }
+}
+async function recReEvaluate(recId) {
+  if (!confirm('Re-run evaluation? This will append new verdict rows for any new fields, but does not delete prior verdicts.')) return;
+  try {
+    const r = await fetch(`/api/atlas/recommendations/${encodeURIComponent(recId)}/evaluate`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({force_reparse: true})
+    });
+    const d = await r.json();
+    if (d.ok) { recOpen(recId); } else { alert('Eval failed: ' + (d.error || '')); }
+  } catch (err) { alert('Eval failed: ' + err); }
+}
+async function recDecide(evalId, recId) {
+  const decision = prompt("Operator decision: 'accept', 'override', 'defer', or 'reject'?");
+  if (!decision) return;
+  const valid = ['accept','override','defer','reject'];
+  if (!valid.includes(decision)) { alert('Invalid decision'); return; }
+  let finalValue = null;
+  if (decision === 'accept' || decision === 'override') {
+    finalValue = prompt('Final value to apply (leave blank to skip):') || null;
+  }
+  const reasoning = prompt('Reasoning (saved with decision):') || null;
+  try {
+    const r = await fetch(`/api/atlas/evaluations/${encodeURIComponent(evalId)}/operator-decision`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({decision, final_value: finalValue, reasoning})
+    });
+    const d = await r.json();
+    if (d.ok) recOpen(recId);
+    else alert('Decision failed: ' + (d.error || ''));
+  } catch (err) { alert('Decision failed: ' + err); }
 }
 
 // ════════════ Marketing · Budget tab (Phase 1 Path B Step 3) ═══════════

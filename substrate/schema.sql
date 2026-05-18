@@ -833,3 +833,126 @@ CREATE INDEX IF NOT EXISTS idx_competitor_state_lookup
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v7', 'M2: asin_metadata, brand_position, operator_positions, pricing_logic, pricing_decisions, competitor_state.')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v8 MIGRATION (M4, 2026-05-18): recommendation ingest + agency response.
+--
+-- Implements RECOMMENDATION_INGEST.md. Every external recommendation
+-- lands as substrate; Atlas evaluates each field against the 5-layer
+-- citation chain; tokenized response link lets agencies answer inside
+-- the system without a dashboard login.
+--
+-- Tables:
+--   recommendation_ingest   — incoming recs + tokenized response link state
+--   atlas_evaluation        — per-field verdict, agency response, operator
+--                             decision, final value
+-- ===========================================================================
+
+CREATE TABLE IF NOT EXISTS recommendation_ingest (
+    rec_id                TEXT PRIMARY KEY,
+    workspace_id          TEXT NOT NULL,
+
+    source                TEXT NOT NULL,
+                          -- 'acme_agency' | 'helium10' | 'operator_note' | ...
+    source_tier           TEXT,
+                          -- 'top_agency' | 'mid_agency' | 'budget_agency'
+                          -- | 'vendor_tool' | 'operator' | 'internal_sop'
+    source_contact        TEXT,
+
+    raw_text              TEXT,
+    raw_file_path         TEXT,
+    raw_file_hash         TEXT,
+
+    parsed_fields         JSONB,
+    scope_asins           TEXT[] DEFAULT ARRAY[]::TEXT[],
+    scope_confidence      NUMERIC(4, 3),
+    rec_type              TEXT,
+                          -- 'backend_fields' | 'keyword_list'
+                          -- | 'pricing_proposal' | 'listing_copy' | ...
+
+    ingested_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    ingested_by           TEXT,
+
+    status                TEXT NOT NULL DEFAULT 'pending_evaluation',
+                          -- 'pending_evaluation' | 'evaluated'
+                          -- | 'awaiting_response' | 'response_received'
+                          -- | 'resolved' | 'archived'
+
+    -- Tokenized response link (single-use; expires)
+    response_token        TEXT UNIQUE,
+    response_token_url    TEXT,
+    response_expires_at   TIMESTAMPTZ,
+    response_received_at  TIMESTAMPTZ,
+
+    meta                  JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_rec_ingest_status
+    ON recommendation_ingest (workspace_id, status, ingested_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_rec_ingest_source
+    ON recommendation_ingest (workspace_id, source, ingested_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_rec_ingest_token
+    ON recommendation_ingest (response_token)
+    WHERE response_token IS NOT NULL;
+
+
+CREATE TABLE IF NOT EXISTS atlas_evaluation (
+    eval_id              TEXT PRIMARY KEY,
+    rec_id               TEXT NOT NULL
+                         REFERENCES recommendation_ingest(rec_id)
+                         ON DELETE CASCADE,
+    workspace_id         TEXT NOT NULL,
+
+    field_name           TEXT NOT NULL,
+    submitted_value      TEXT,
+    field_owner          TEXT NOT NULL,
+                         -- 'manufacturer' | 'agency' | 'amazon_taxonomy'
+                         -- | 'operator_strategic' | 'atlas_calibrated'
+                         -- | 'ambiguous'
+
+    verdict              TEXT NOT NULL,
+                         -- 'agree' | 'partial' | 'disagree' | 'unknown'
+    reasoning            TEXT NOT NULL,
+    citations            JSONB DEFAULT '[]'::jsonb,
+
+    proposed_alternative TEXT,
+    test_design          TEXT,
+    evidence_path        TEXT,
+
+    confidence           NUMERIC(4, 3),
+    criticality          TEXT,
+                         -- 'launch_blocking' | 'high' | 'normal' | 'low'
+
+    -- Agency response (via tokenized link)
+    agency_response      TEXT,
+    agency_response_at   TIMESTAMPTZ,
+    agency_confidence    INTEGER,    -- 1-5 self-rating
+
+    -- Operator decision
+    operator_decision    TEXT,
+                         -- 'accept' | 'override' | 'defer' | 'reject'
+    operator_decided_at  TIMESTAMPTZ,
+    operator_reasoning   TEXT,
+    final_value          TEXT,
+
+    evaluated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    meta                 JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_atlas_eval_rec
+    ON atlas_evaluation (rec_id, evaluated_at);
+
+CREATE INDEX IF NOT EXISTS idx_atlas_eval_pending
+    ON atlas_evaluation (rec_id)
+    WHERE operator_decision IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_atlas_eval_owner
+    ON atlas_evaluation (workspace_id, field_owner, evaluated_at DESC);
+
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v8', 'M4: recommendation_ingest + atlas_evaluation.')
+    ON CONFLICT (version) DO NOTHING;

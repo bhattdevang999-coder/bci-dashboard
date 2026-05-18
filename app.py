@@ -14612,6 +14612,335 @@ def atlas_velune_onboarding():
                         "errors": errors}), 500
 
 
+# ─── M4: recommendation ingest + tokenized response ────────────────────
+
+@app.route("/api/atlas/recommendations", methods=["GET"])
+def atlas_recommendations_list():
+    """List recommendations newest first. Filters: status, source, limit."""
+    workspace_id = _atlas_current_workspace()
+    status = (request.args.get("status") or "").strip() or None
+    source = (request.args.get("source") or "").strip() or None
+    try:
+        limit = max(1, min(int(request.args.get("limit") or 50), 200))
+    except ValueError:
+        limit = 50
+    try:
+        from substrate.recommendation_ingest import list_recommendations
+        rows = list_recommendations(
+            workspace_id, status=status, source=source, limit=limit,
+        )
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] recommendations list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/recommendations", methods=["POST"])
+def atlas_recommendations_create():
+    """Create a recommendation_ingest row.
+
+    Body: {source, source_tier?, source_contact?, raw_text?,
+           raw_file_path?, rec_type?, scope_asins?, scope_confidence?,
+           parsed_fields?}
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    source = (body.get("source") or "").strip()
+    if not source:
+        return jsonify({"ok": False, "error": "source required"}), 400
+    try:
+        from substrate.recommendation_ingest import create_recommendation
+        rec_id = create_recommendation(
+            workspace_id,
+            source=source,
+            source_tier=body.get("source_tier"),
+            source_contact=body.get("source_contact"),
+            raw_text=body.get("raw_text"),
+            raw_file_path=body.get("raw_file_path"),
+            raw_file_hash=body.get("raw_file_hash"),
+            rec_type=body.get("rec_type"),
+            scope_asins=list(body.get("scope_asins") or []),
+            scope_confidence=body.get("scope_confidence"),
+            parsed_fields=body.get("parsed_fields") or None,
+            ingested_by=(body.get("ingested_by") or "devang").strip(),
+        )
+        if rec_id is None:
+            return jsonify({"ok": False, "error": "create failed"}), 400
+        return jsonify({"ok": True, "rec_id": rec_id})
+    except Exception as exc:
+        print(f"[atlas] recommendations create failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/recommendations/<rec_id>", methods=["GET"])
+def atlas_recommendations_get(rec_id: str):
+    """Return one recommendation + its evaluation rows + summary."""
+    try:
+        from substrate.recommendation_ingest import get_recommendation
+        from substrate.atlas_evaluation import (
+            list_evaluations, summarize_rec,
+        )
+        rec = get_recommendation(rec_id)
+        if rec is None:
+            return jsonify({"ok": False, "error": "not found"}), 404
+        evals = list_evaluations(rec_id)
+        summary = summarize_rec(rec_id)
+        return jsonify({
+            "ok": True, "rec": rec,
+            "evaluations": evals, "summary": summary,
+        })
+    except Exception as exc:
+        print(f"[atlas] recommendations get failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/recommendations/<rec_id>/evaluate",
+           methods=["POST"])
+def atlas_recommendations_evaluate(rec_id: str):
+    """Run parse + verdict pass on a recommendation.
+
+    Body (optional): {force_reparse: bool}. When parsed_fields already
+    exists and force_reparse is false (default), reuses prior parse.
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    force_reparse = bool(body.get("force_reparse", False))
+    try:
+        from substrate.recommendation_ingest import (
+            get_recommendation, update_parse, set_status,
+        )
+        from substrate.atlas_evaluation import create_evaluation
+        from substrate.rec_evaluator import (
+            parse_raw_text, evaluate_recommendation,
+        )
+        from substrate.brand_position import get_brand_position
+
+        rec = get_recommendation(rec_id)
+        if rec is None:
+            return jsonify({"ok": False, "error": "not found"}), 404
+
+        parsed = rec.get("parsed_fields") or {}
+        if force_reparse or not parsed:
+            parsed = parse_raw_text(rec.get("raw_text") or "")
+            update_parse(rec_id, parsed_fields=parsed)
+
+        if not parsed:
+            return jsonify({
+                "ok": False,
+                "error": "no parsed fields; supply parsed_fields explicitly",
+            }), 400
+
+        bp = get_brand_position(workspace_id)
+        verdicts = evaluate_recommendation(
+            parsed,
+            workspace_id=workspace_id,
+            source=rec.get("source") or "",
+            source_tier=rec.get("source_tier"),
+            scope_asins=rec.get("scope_asins") or [],
+            brand_position=bp,
+        )
+        written = 0
+        for v in verdicts:
+            eid = create_evaluation(
+                rec_id, workspace_id,
+                field_name=v["field_name"],
+                submitted_value=v.get("submitted_value"),
+                field_owner=v["field_owner"],
+                verdict=v["verdict"],
+                reasoning=v["reasoning"],
+                citations=v.get("citations") or [],
+                proposed_alternative=v.get("proposed_alternative"),
+                test_design=v.get("test_design"),
+                evidence_path=v.get("evidence_path"),
+                confidence=v.get("confidence"),
+                criticality=v.get("criticality") or "normal",
+            )
+            if eid:
+                written += 1
+        set_status(rec_id, "evaluated")
+        return jsonify({
+            "ok": True, "rec_id": rec_id,
+            "parsed_fields": parsed,
+            "evaluations_written": written,
+        })
+    except Exception as exc:
+        print(f"[atlas] recommendations evaluate failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/recommendations/<rec_id>/token",
+           methods=["POST"])
+def atlas_recommendations_token(rec_id: str):
+    """Generate (or regenerate) the tokenized response link.
+
+    Body (optional): {ttl_days: int, base_url: str}
+    """
+    body = request.get_json(silent=True) or {}
+    base_url = body.get("base_url") or request.host_url.rstrip("/")
+    try:
+        ttl_days = max(1, min(int(body.get("ttl_days") or 7), 30))
+    except (TypeError, ValueError):
+        ttl_days = 7
+    try:
+        from substrate.recommendation_ingest import generate_response_token
+        link = generate_response_token(
+            rec_id, base_url=base_url, ttl_days=ttl_days,
+        )
+        if link is None:
+            return jsonify({"ok": False, "error": "token gen failed"}), 400
+        return jsonify({"ok": True, **link})
+    except Exception as exc:
+        print(f"[atlas] recommendations token failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/recommendations/<rec_id>/status",
+           methods=["POST"])
+def atlas_recommendations_set_status(rec_id: str):
+    """Change a recommendation's status.
+
+    Body: {status: str}
+    """
+    body = request.get_json(silent=True) or {}
+    status = (body.get("status") or "").strip()
+    if not status:
+        return jsonify({"ok": False, "error": "status required"}), 400
+    try:
+        from substrate.recommendation_ingest import set_status
+        ok = set_status(rec_id, status)
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] set_status failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/evaluations/<eval_id>/operator-decision",
+           methods=["POST"])
+def atlas_eval_operator_decision(eval_id: str):
+    """Record the operator's final call on one evaluation row.
+
+    Body: {decision: accept|override|defer|reject,
+           final_value?, reasoning?}
+    """
+    body = request.get_json(silent=True) or {}
+    decision = (body.get("decision") or "").strip()
+    if not decision:
+        return jsonify({"ok": False, "error": "decision required"}), 400
+    try:
+        from substrate.atlas_evaluation import apply_operator_decision
+        ok = apply_operator_decision(
+            eval_id,
+            decision=decision,
+            final_value=body.get("final_value"),
+            reasoning=body.get("reasoning"),
+        )
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] operator-decision failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ─── Public tokenized response page (no login) ─────────────────────────
+
+@app.route("/respond/<rec_id>", methods=["GET"])
+def respond_get(rec_id: str):
+    """Render the agency-facing response form. Token in query string."""
+    from flask import render_template, abort
+    token = (request.args.get("token") or "").strip()
+    try:
+        from substrate.recommendation_ingest import lookup_by_token
+        from substrate.atlas_evaluation import list_evaluations
+        rec = lookup_by_token(rec_id, token)
+        if rec is None:
+            return render_template(
+                "_atlas_respond.html",
+                rec=None, token=None,
+                pending_evals=[], other_evals=[],
+            )
+        all_evals = list_evaluations(rec_id)
+        pending = [
+            e for e in all_evals
+            if e["field_owner"] == "agency"
+            and not e.get("agency_response")
+        ]
+        other = [e for e in all_evals if e not in pending]
+        return render_template(
+            "_atlas_respond.html",
+            rec=rec, token=token,
+            pending_evals=pending,
+            other_evals=other,
+        )
+    except Exception as exc:
+        print(f"[atlas] respond_get failed: {exc}", flush=True)
+        return abort(500)
+
+
+@app.route("/respond/<rec_id>/draft", methods=["POST"])
+def respond_save_draft(rec_id: str):
+    """Save draft responses without flipping status or consuming token."""
+    body = request.get_json(silent=True) or {}
+    token = (body.get("token") or "").strip()
+    responses = list(body.get("responses") or [])
+    try:
+        from substrate.recommendation_ingest import lookup_by_token
+        from substrate.atlas_evaluation import apply_agency_response
+        rec = lookup_by_token(rec_id, token)
+        if rec is None:
+            return jsonify({"ok": False, "error": "invalid or expired token"}), 403
+        written = 0
+        for r in responses:
+            eid = (r.get("eval_id") or "").strip()
+            text = (r.get("response_text") or "").strip()
+            if not eid or not text:
+                continue
+            ok = apply_agency_response(
+                eid,
+                response_text=text,
+                agency_confidence=r.get("agency_confidence"),
+            )
+            if ok:
+                written += 1
+        return jsonify({"ok": True, "saved": written})
+    except Exception as exc:
+        print(f"[atlas] respond_save_draft failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/respond/<rec_id>/submit", methods=["POST"])
+def respond_submit_final(rec_id: str):
+    """Final submit: writes responses, flips status, consumes token."""
+    body = request.get_json(silent=True) or {}
+    token = (body.get("token") or "").strip()
+    responses = list(body.get("responses") or [])
+    try:
+        from substrate.recommendation_ingest import (
+            lookup_by_token, mark_response_received, consume_token,
+        )
+        from substrate.atlas_evaluation import apply_agency_response
+        rec = lookup_by_token(rec_id, token)
+        if rec is None:
+            return jsonify({"ok": False, "error": "invalid or expired token"}), 403
+        written = 0
+        for r in responses:
+            eid = (r.get("eval_id") or "").strip()
+            text = (r.get("response_text") or "").strip()
+            if not eid or not text:
+                continue
+            ok = apply_agency_response(
+                eid,
+                response_text=text,
+                agency_confidence=r.get("agency_confidence"),
+            )
+            if ok:
+                written += 1
+        mark_response_received(rec_id)
+        consume_token(rec_id)
+        return jsonify({"ok": True, "saved": written})
+    except Exception as exc:
+        print(f"[atlas] respond_submit failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/lab/load-session", methods=["POST"])
 def lab_load_session():
     """Restore a saved Lab session by filename.

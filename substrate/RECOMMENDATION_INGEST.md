@@ -400,3 +400,19 @@ Append below this line.
   ambiguous). Tokenized response link with 7-day expiration,
   no agency login required. Evaluation prompt formalized
   (5-layer citation chain). Ingest pipeline 7 steps.
+- **v1.1 — 2026-05-18 (latest), present commit** — Shipped.
+  Schema v8 applied (recommendation_ingest + atlas_evaluation
+  with UNIQUE token + expiry). Writers in
+  substrate/recommendation_ingest.py +
+  substrate/atlas_evaluation.py + substrate/rec_evaluator.py.
+  Evaluator has explicit LLM-unavailable fallback path that
+  produces 'unknown' verdicts via heuristic owner map
+  (manufacturer/agency/amazon_taxonomy fields keyed off field
+  name); never blocks the ingest. The dashboard's
+  Recommendations page lists, ingests, evaluates, generates
+  tokens, and records operator decisions. The public
+  /respond/<rec_id>?token=... renders the agency form,
+  /draft saves without consuming the token, /submit writes
+  responses and consumes the token. Multi-round agency
+  workflow is still out of scope per the v1.0 design (one
+  link, one response, one operator decision per ingest).
