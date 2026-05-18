@@ -1,0 +1,168 @@
+# Decision Class Requirements
+#
+# What context is REQUIRED vs NICE_TO_HAVE for each decision class.
+# Missing items become unknowns rows; confidence is reduced per the
+# penalty config below.
+#
+# Per UNKNOWNS.md and CITATION_CHAIN.md, conservative starter values.
+# Tune in week 2 based on actual fire rate vs. operator's calibration
+# of where confidence felt wrong.
+
+# Penalty model (used by build_context to compute evidence_strength)
+#   - missing required field:    subtract penalty_per_missing_required
+#   - missing nice_to_have:       subtract penalty_per_missing_nice
+# Confidence_floor: 0.10 (never goes below this even if all missing)
+
+penalty_per_missing_required: 0.20
+penalty_per_missing_nice: 0.05
+confidence_floor: 0.10
+confidence_ceiling: 0.95   # never claim certainty
+
+# Decision classes
+classes:
+
+  title_generation:
+    required:
+      - asin_metadata.material
+      - asin_metadata.fit_type
+      - asin_metadata.size
+      - asin_metadata.color_name
+      - asin_metadata.pocket_description
+      - brand_position
+      - brand_voice
+    nice_to_have:
+      - asin_metadata.fabric_gsm
+      - asin_metadata.upf
+      - asin_metadata.item_length_description
+      - asin_metadata.rise_height_inches
+      - outcome_events.cohort_evidence
+      - competitor_state.title_patterns
+      - calibration_state.source_recs
+
+  bullet_generation:
+    required:
+      - asin_metadata.material
+      - asin_metadata.special_features
+      - asin_metadata.fit_type
+      - brand_position
+      - brand_voice
+    nice_to_have:
+      - asin_metadata.fabric_gsm
+      - asin_metadata.upf
+      - asin_metadata.care_instructions
+      - outcome_events.cohort_evidence
+
+  description_generation:
+    required:
+      - asin_metadata.material
+      - asin_metadata.specific_uses
+      - brand_position
+      - brand_voice
+    nice_to_have:
+      - asin_metadata.fabric_gsm
+      - asin_metadata.lifestyle
+      - asin_metadata.country_of_origin
+      - outcome_events.cohort_evidence
+
+  a_plus_content:
+    required:
+      - asin_metadata.material
+      - asin_metadata.special_features
+      - brand_position
+      - brand_voice
+    nice_to_have:
+      - asin_metadata.fabric_gsm
+      - asin_metadata.lifestyle
+      - asin_metadata.specific_uses
+      - asin_metadata.care_instructions
+      - outcome_events.cohort_evidence
+
+  image_brief:
+    required:
+      - asin_metadata.color_name
+      - asin_metadata.fit_type
+      - asin_metadata.pocket_description
+      - brand_position
+    nice_to_have:
+      - brand_voice  # tone informs styling direction
+      - competitor_state.image_patterns
+
+  backend_field_fill:
+    required:
+      - asin_metadata.material
+      - asin_metadata.country_of_origin
+      - asin_metadata.size
+      - asin_metadata.color_name
+    nice_to_have:
+      - asin_metadata.fabric_gsm
+      - asin_metadata.upf
+      - asin_metadata.care_instructions
+
+  recommendation_evaluation:
+    required:
+      - brand_position
+      - brand_voice
+      - asin_metadata
+    nice_to_have:
+      - calibration_state.source_class
+      - operator_positions.scope_match
+
+  voice_compliance_check:
+    required:
+      - brand_voice
+    nice_to_have:
+      - operator_positions.style
+
+  variation_parentage:
+    required:
+      - asin_metadata.parent_asin
+      - asin_metadata.variation_axes
+    nice_to_have:
+      - outcome_events.parent_history
+
+  pricing_decision_mode1:
+    required:
+      - cost_inputs.landed_cost
+      - cost_inputs.fba_fee
+      - cost_inputs.referral_pct
+      - pricing_logic.floor_rule
+      - pricing_logic.ceiling_rule
+      - brand_position
+    nice_to_have:
+      - competitor_state.ceiling_anchor_value
+      - outcome_events.elasticity_data
+      - asin_state.bsr_current
+      - cost_inputs.third_pl_fee
+
+  pricing_decision_mode2:
+    # Same requirements as mode1 PLUS calibration data
+    required:
+      - cost_inputs.landed_cost
+      - cost_inputs.fba_fee
+      - cost_inputs.referral_pct
+      - pricing_logic.floor_rule
+      - pricing_logic.ceiling_rule
+      - brand_position
+      - calibration_state.pricing_decisions
+      - pricing_decisions.history_min_30
+    nice_to_have:
+      - competitor_state.ceiling_anchor_value
+      - outcome_events.elasticity_data
+
+  cost_review:
+    required:
+      - cost_inputs
+    nice_to_have:
+      - outcome_events.recent_volume
+      - cost_inputs.history
+
+  launch_brief:
+    required:
+      - asin_metadata
+      - brand_position
+      - brand_voice
+      - pricing_logic
+    nice_to_have:
+      - operator_positions.launch_workflow
+      - asin_metadata.country_of_origin
+      - cost_inputs

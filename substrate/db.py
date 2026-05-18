@@ -162,7 +162,9 @@ def wipe_substrate_for_tests() -> None:
                     keyword_library,
                     budget,
                     cost_inputs,
-                    brand_overhead
+                    brand_overhead,
+                    unknowns,
+                    citation_rejections
                 RESTART IDENTITY CASCADE
                 """
             )

@@ -527,3 +527,111 @@ CREATE TABLE IF NOT EXISTS brand_overhead (
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v5', 'Unit Economics Phase C: cost_inputs + brand_overhead.')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- Schema v6 — Phase 1.5 substrate
+--
+-- Adds:
+--   1. Decision provenance columns on substrate_events (CONTEXT.md)
+--   2. Citation tables (CITATION_CHAIN.md)
+--   3. unknowns table (UNKNOWNS.md)
+--
+-- Per design docs committed 2026-05-18.
+-- ===========================================================================
+
+-- 1. Decision provenance + citation columns on substrate_events
+ALTER TABLE substrate_events
+  ADD COLUMN IF NOT EXISTS context_rows_read     TEXT[],
+  ADD COLUMN IF NOT EXISTS context_rows_used     TEXT[],
+  ADD COLUMN IF NOT EXISTS evidence_strength     TEXT,
+  ADD COLUMN IF NOT EXISTS calibration_class     TEXT,
+  ADD COLUMN IF NOT EXISTS citations             JSONB,
+  ADD COLUMN IF NOT EXISTS citation_outcomes     JSONB,
+  ADD COLUMN IF NOT EXISTS confidence_breakdown  JSONB,
+  ADD COLUMN IF NOT EXISTS convention_flags      JSONB;
+
+CREATE INDEX IF NOT EXISTS idx_substrate_events_calibration_class
+  ON substrate_events (workspace_id, calibration_class, timestamp DESC)
+  WHERE calibration_class IS NOT NULL;
+
+
+-- 2. Citation rejections — operator-driven, future calibration input
+CREATE TABLE IF NOT EXISTS citation_rejections (
+    rejection_id        TEXT PRIMARY KEY,
+    workspace_id        TEXT NOT NULL,
+    decision_event_id   TEXT NOT NULL,
+    citation_layer      TEXT NOT NULL,    -- factual|strategic|voice|evidence|calibrated_external|convention
+    citation_source_id  TEXT NOT NULL,    -- the substrate row id rejected
+    reason              TEXT,
+    rejected_by         TEXT,
+    rejected_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    meta                JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_citation_rejections_layer
+  ON citation_rejections (workspace_id, citation_layer, rejected_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_citation_rejections_source
+  ON citation_rejections (workspace_id, citation_source_id);
+
+
+-- 3. Unknowns — ignorance catalog (UNKNOWNS.md)
+CREATE TABLE IF NOT EXISTS unknowns (
+    unknown_id           TEXT PRIMARY KEY,
+    workspace_id         TEXT NOT NULL,
+
+    scope                TEXT NOT NULL,
+                         -- 'global' | 'brand' | 'asin' | 'family'
+                         -- | 'decision_class'
+    scope_ref            TEXT,
+                         -- ASIN | family_id | decision_class name
+                         -- nullable when scope='global'
+
+    question             TEXT NOT NULL,
+
+    required_for         TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+                         -- decision_class names this unknown affects
+
+    evidence_path        TEXT NOT NULL,
+                         -- 'factory_spec_sheet' | 'agency_response' |
+                         -- 'helium10_weekly' | 'a_b_test' |
+                         -- 'outcome_measurement' | 'operator_decision' |
+                         -- 'declared_unknowable'
+
+    status               TEXT NOT NULL DEFAULT 'open',
+                         -- 'open' | 'partial' | 'answered'
+                         -- | 'declared_unknowable' | 'expired'
+
+    priority             TEXT NOT NULL DEFAULT 'normal',
+                         -- 'launch_blocking' | 'high' | 'normal' | 'low'
+
+    partial_evidence     JSONB DEFAULT '[]'::jsonb,
+    answer_value         JSONB,
+    answer_source        TEXT,
+    answered_at          TIMESTAMPTZ,
+    answered_by          TEXT,
+
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by_event_id  TEXT,
+    created_by_module    TEXT,
+
+    meta                 JSONB DEFAULT '{}'::jsonb
+);
+
+-- Active-unknowns lookups
+CREATE INDEX IF NOT EXISTS idx_unknowns_status_priority
+  ON unknowns (workspace_id, status, priority, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_unknowns_evidence_path
+  ON unknowns (workspace_id, status, evidence_path)
+  WHERE status IN ('open', 'partial');
+
+CREATE INDEX IF NOT EXISTS idx_unknowns_scope_ref
+  ON unknowns (workspace_id, scope, scope_ref)
+  WHERE status IN ('open', 'partial');
+
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v6', 'Phase 1.5: provenance columns, citation tables, unknowns.')
+    ON CONFLICT (version) DO NOTHING;
