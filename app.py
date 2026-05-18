@@ -11687,6 +11687,171 @@ def atlas_unit_economics_margin():
     return jsonify({**roll, "available_periods": periods})
 
 
+# ────────────────────────────────────────────────────────────────
+# Cited NIS (Phase 1.5 · M3): 5-layer reasoning chain on every output
+# ────────────────────────────────────────────────────────────────
+
+@app.route("/api/atlas/cited-nis/generate", methods=["POST"])
+def atlas_cited_nis_generate():
+    """Generate cited content (title/bullet/description) via the 5-layer
+    reasoning chain. Per CITATION_CHAIN.md.
+
+    Body:
+      asin            (optional): ASIN to generate for
+      decision_class  required: 'title_generation' | 'bullet_generation' |
+                                'description_generation'
+      operator_id     (optional): defaults to 'devang' (single-operator)
+
+    Returns the full bundle_summary, primary/alternates, citations
+    (with verifier_status), confidence breakdown, and decision_event_id.
+    """
+    body = request.get_json(silent=True) or {}
+    asin = (body.get("asin") or "").strip() or None
+    decision_class = (body.get("decision_class") or "").strip()
+    operator_id = (body.get("operator_id") or "devang").strip()
+    workspace_id = _atlas_current_workspace()
+
+    if not decision_class:
+        return jsonify({"ok": False,
+                        "error": "decision_class required"}), 400
+
+    try:
+        from substrate.citation_chain import generate_cited
+        result = generate_cited(
+            workspace_id=workspace_id,
+            asin=asin,
+            decision_class=decision_class,
+            operator_id=operator_id,
+            log_decision=True,
+        )
+        return jsonify({"ok": True, **result})
+    except Exception as exc:
+        print(f"[atlas] cited-nis generate failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/cited-nis/preview-context", methods=["POST"])
+def atlas_cited_nis_preview_context():
+    """Read-only preview of the assembled context (no LLM call, no
+    unknowns emission). Useful for showing operator what L0 sees before
+    they ask for generation.
+    """
+    body = request.get_json(silent=True) or {}
+    asin = (body.get("asin") or "").strip() or None
+    decision_class = (body.get("decision_class") or "").strip()
+    operator_id = (body.get("operator_id") or "devang").strip()
+    workspace_id = _atlas_current_workspace()
+
+    if not decision_class:
+        return jsonify({"ok": False,
+                        "error": "decision_class required"}), 400
+
+    try:
+        from substrate.context import build_context
+        bundle = build_context(
+            workspace_id=workspace_id,
+            asin=asin,
+            decision_class=decision_class,
+            operator_id=operator_id,
+            emit_unknowns_on_gaps=False,
+        )
+        return jsonify({"ok": True, "bundle": bundle})
+    except Exception as exc:
+        print(f"[atlas] preview context failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/unknowns", methods=["GET"])
+def atlas_unknowns_list():
+    """List open unknowns. Filters: scope, scope_ref, evidence_path,
+    decision_class.
+    """
+    workspace_id = _atlas_current_workspace()
+    scope = (request.args.get("scope") or "").strip() or None
+    scope_ref = (request.args.get("scope_ref") or "").strip() or None
+    evidence_path = (request.args.get("evidence_path") or "").strip() or None
+    decision_class = (request.args.get("decision_class") or "").strip() or None
+    try:
+        from substrate.unknowns import list_open_unknowns
+        rows = list_open_unknowns(
+            workspace_id=workspace_id,
+            scope=scope,
+            scope_ref=scope_ref,
+            evidence_path=evidence_path,
+            decision_class=decision_class,
+        )
+        return jsonify({"ok": True, "workspace_id": workspace_id,
+                        "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] unknowns list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": "unknowns unavailable"}), 500
+
+
+@app.route("/api/atlas/unknowns/<unknown_id>/resolve", methods=["POST"])
+def atlas_unknowns_resolve(unknown_id: str):
+    """Mark an unknown as answered or declared_unknowable."""
+    body = request.get_json(silent=True) or {}
+    answer_value = body.get("answer_value")
+    answer_source = (body.get("answer_source") or "operator_typed").strip()
+    status = (body.get("status") or "answered").strip()
+    answered_by = (body.get("answered_by") or "devang").strip()
+    try:
+        from substrate.unknowns import resolve_unknown
+        ok = resolve_unknown(
+            unknown_id=unknown_id,
+            answer_value=answer_value,
+            answer_source=answer_source,
+            answered_by=answered_by,
+            status=status,
+        )
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] unknowns resolve failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/citation-rejections", methods=["POST"])
+def atlas_citation_rejection_log():
+    """Log an operator rejection of a specific citation."""
+    body = request.get_json(silent=True) or {}
+    decision_event_id = (body.get("decision_event_id") or "").strip()
+    citation_layer = (body.get("citation_layer") or "").strip()
+    citation_source_id = (body.get("citation_source_id") or "").strip()
+    reason = (body.get("reason") or "").strip()
+    rejected_by = (body.get("rejected_by") or "devang").strip()
+    workspace_id = _atlas_current_workspace()
+
+    if not (decision_event_id and citation_layer and citation_source_id):
+        return jsonify({"ok": False,
+                        "error": "decision_event_id, citation_layer, citation_source_id required"}), 400
+
+    try:
+        from substrate.db import get_pool
+        import uuid as _uuid
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "substrate unavailable"}), 500
+        rejection_id = str(_uuid.uuid4())
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO citation_rejections (
+                        rejection_id, workspace_id, decision_event_id,
+                        citation_layer, citation_source_id, reason,
+                        rejected_by
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (rejection_id, workspace_id, decision_event_id,
+                     citation_layer, citation_source_id, reason, rejected_by),
+                )
+            conn.commit()
+        return jsonify({"ok": True, "rejection_id": rejection_id})
+    except Exception as exc:
+        print(f"[atlas] citation rejection log failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/atlas/memory/decisions/<event_id>/confound", methods=["GET"])
 def atlas_memory_decision_confound(event_id: str):
     """Confound view for one decision_event.

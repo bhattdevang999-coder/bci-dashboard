@@ -6228,6 +6228,12 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="nav-item-atlas" id="nav-unit-economics" onclick="showUnitEconomicsPage()">
       <span class="atlas-dot"></span> Unit Economics
     </div>
+    <div class="nav-item-atlas" id="nav-cited-nis" onclick="showCitedNisPage()">
+      <span class="atlas-dot"></span> Cited NIS
+    </div>
+    <div class="nav-item-atlas" id="nav-unknowns" onclick="showUnknownsPage()">
+      <span class="atlas-dot"></span> Unknowns
+    </div>
     <div class="nav-section-divider"></div>
     <div class="nav-label">
       <span class="nav-module-num">01</span> Create
@@ -7602,6 +7608,66 @@ best seller"></textarea>
           <span id="ue-overhead-save-status" class="bv-save-status"></span>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ════════════ CITED NIS PAGE (Phase 1.5 · M3) ════════════ -->
+  <div id="cited-nis-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Cited NIS</h1>
+      <div class="page-hero-sub">
+        Generate Amazon listing content with a 5-layer reasoning chain. Every choice cites the substrate row that drove it. Citations are shown expandable. Open unknowns explicitly visible so the operator knows what's missing.
+      </div>
+    </div>
+
+    <div class="bv-section">
+      <div class="bv-grid-2">
+        <div class="bv-field">
+          <label class="bv-label">ASIN</label>
+          <input id="cn-asin" class="bv-input" type="text" placeholder="B0XXXXXXXX (or leave blank for global)" />
+        </div>
+        <div class="bv-field">
+          <label class="bv-label">Decision class</label>
+          <select id="cn-decision-class" class="bv-input">
+            <option value="title_generation">title_generation</option>
+            <option value="bullet_generation">bullet_generation</option>
+            <option value="description_generation">description_generation</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:14px;">
+        <button class="btn btn-secondary btn-sm" onclick="cnPreviewContext()">Preview context (no LLM)</button>
+        <button class="btn btn-primary btn-sm" onclick="cnGenerate()">Generate cited output</button>
+        <span id="cn-status" class="bv-save-status"></span>
+      </div>
+    </div>
+
+    <div id="cn-output" style="margin-top:16px;"></div>
+  </div>
+
+  <!-- ════════════ UNKNOWNS PAGE (Phase 1.5 · M3) ════════════ -->
+  <div id="unknowns-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Unknowns</h1>
+      <div class="page-hero-sub">
+        What Atlas doesn't know yet. Every reasoning chain that hits a missing input emits a row here. Grouped by who can answer (factory / agency / operator / outcome). Closing an unknown improves confidence on the decisions waiting on it.
+      </div>
+    </div>
+    <div class="ue-toolbar">
+      <label>Evidence path</label>
+      <select id="unk-evidence-path" onchange="unkLoad()">
+        <option value="">All</option>
+        <option value="factory_spec_sheet">Factory</option>
+        <option value="agency_response">Agency</option>
+        <option value="operator_decision">Operator</option>
+        <option value="outcome_measurement">Outcome</option>
+        <option value="a_b_test">A/B test</option>
+        <option value="helium10_weekly">Helium 10</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="unkLoad()" style="margin-left:auto;">Refresh</button>
+    </div>
+    <div id="unk-list" class="bv-section">
+      <div class="ue-empty">(loading)</div>
     </div>
   </div>
 
@@ -9596,7 +9662,7 @@ const state = {
 
 // ═══════════════════════ NAVIGATION ═══════════════════════
 // ── Page visibility helper ─────────────────────────────────────────────────
-const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'memory-page', 'marketing-page', 'brand-voice-page', 'unit-economics-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
+const ALL_PAGES = ['atlas-page', 'atlas-preview-page', 'inputs-page', 'memory-page', 'marketing-page', 'brand-voice-page', 'unit-economics-page', 'cited-nis-page', 'unknowns-page', 'nis-page', 'catalog-page', 'merge-page', 'intel-page', 'engine-page', 'beta-image-page', 'lab-grid-page'];
 
 function _showPage(pageId, title, subtitle) {
   ALL_PAGES.forEach(id => {
@@ -14240,6 +14306,366 @@ function ueSetStatus(elId, text, kind) {
   el.classList.remove('bv-ok', 'bv-err');
   if (kind === 'ok') el.classList.add('bv-ok');
   if (kind === 'err') el.classList.add('bv-err');
+}
+
+// ════════════ Cited NIS + Unknowns (Phase 1.5 · M3) ═════════════════
+function showCitedNisPage() {
+  _showPage('cited-nis-page', 'Atlas · Cited NIS',
+            'Content generation with 5-layer reasoning chain');
+  const nav = document.getElementById('nav-cited-nis');
+  if (nav) {
+    document.querySelectorAll('.nav-item-atlas, .nav-item').forEach(el => el.classList.remove('active'));
+    nav.classList.add('active');
+  }
+}
+
+function showUnknownsPage() {
+  _showPage('unknowns-page', 'Atlas · Unknowns',
+            'What Atlas doesn\u2019t know yet, routed to owner queues');
+  const nav = document.getElementById('nav-unknowns');
+  if (nav) {
+    document.querySelectorAll('.nav-item-atlas, .nav-item').forEach(el => el.classList.remove('active'));
+    nav.classList.add('active');
+  }
+  unkLoad();
+}
+
+function cnEscape(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function cnPct(v) {
+  if (v === null || v === undefined || isNaN(Number(v))) return '—';
+  return (Number(v) * 100).toFixed(0) + '%';
+}
+
+function cnConfidenceBar(label, val) {
+  const pct = Math.max(0, Math.min(100, Math.round(Number(val || 0) * 100)));
+  const cells = 10;
+  const filled = Math.round(pct / 10);
+  const bar = '▓'.repeat(filled) + '░'.repeat(cells - filled);
+  return `<div style="font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--text-sec);">
+    <span style="display:inline-block;width:160px;">${cnEscape(label)}:</span>
+    <span style="color:var(--text);">${bar}</span>
+    <span style="margin-left:8px;">${pct}%</span>
+  </div>`;
+}
+
+function cnCitationStatusBadge(status) {
+  const colors = {
+    verified: 'background:rgba(47,122,74,0.12);color:#2f7a4a;',
+    weak: 'background:rgba(184,66,15,0.12);color:#b8420f;',
+    convention: 'background:rgba(120,120,120,0.12);color:var(--text-sec);'
+  };
+  const style = colors[status] || colors.weak;
+  return `<span style="${style};padding:1px 6px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;">${cnEscape(status || 'unknown')}</span>`;
+}
+
+async function cnPreviewContext() {
+  const asin = document.getElementById('cn-asin').value.trim() || null;
+  const decision_class = document.getElementById('cn-decision-class').value;
+  ueSetStatus('cn-status', 'Loading context…', '');
+  try {
+    const r = await fetch('/api/atlas/cited-nis/preview-context', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({asin, decision_class})
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      ueSetStatus('cn-status', 'Error: ' + (d.error || 'unknown'), 'err');
+      return;
+    }
+    ueSetStatus('cn-status', 'Context loaded.', 'ok');
+    cnRenderBundle(d.bundle);
+  } catch (err) {
+    ueSetStatus('cn-status', 'Error: ' + err, 'err');
+  }
+}
+
+async function cnGenerate() {
+  const asin = document.getElementById('cn-asin').value.trim() || null;
+  const decision_class = document.getElementById('cn-decision-class').value;
+  ueSetStatus('cn-status', 'Generating (calling Claude)…', '');
+  document.getElementById('cn-output').innerHTML =
+    '<div class="ue-empty">Generating with 5-layer citation chain. This usually takes 5–20 seconds.</div>';
+  try {
+    const r = await fetch('/api/atlas/cited-nis/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({asin, decision_class})
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      ueSetStatus('cn-status', 'Error: ' + (d.error || 'unknown'), 'err');
+      document.getElementById('cn-output').innerHTML =
+        '<div class="ue-empty">Generation failed: ' + cnEscape(d.error || 'unknown') + '</div>';
+      return;
+    }
+    ueSetStatus('cn-status', 'Generated.', 'ok');
+    cnRenderGeneration(d);
+  } catch (err) {
+    ueSetStatus('cn-status', 'Error: ' + err, 'err');
+  }
+}
+
+function cnRenderBundle(bundle) {
+  if (!bundle) {
+    document.getElementById('cn-output').innerHTML =
+      '<div class="ue-empty">(no bundle)</div>';
+    return;
+  }
+  const layers = [
+    ['factual', 'Layer 1 — Factual'],
+    ['strategic', 'Layer 2 — Strategic'],
+    ['voice', 'Layer 3 — Voice'],
+    ['evidence', 'Layer 4 — Evidence'],
+    ['calibrated_external', 'Layer 5 — Calibrated external'],
+    ['market_state', 'Layer 6 — Market state'],
+    ['competitor_state', 'Layer 7 — Competitor state'],
+    ['unit_economics', 'Layer 8 — Unit economics'],
+    ['goals', 'Layer 9 — Goals']
+  ];
+  let html = '<div class="bv-section"><div class="bv-section-h">Assembled context</div>';
+  html += `<div class="bv-hint" style="margin-bottom:10px;">
+    Evidence strength: <strong>${cnEscape(bundle.evidence_strength || 'absent')}</strong>
+    · Confidence starting: <strong>${cnPct(bundle.confidence_starting)}</strong>
+    · Open unknowns: <strong>${(bundle.unknowns || []).length}</strong>
+    · Rows consulted: <strong>${(bundle.context_rows_read || []).length}</strong>
+  </div>`;
+  layers.forEach(([key, label]) => {
+    const data = bundle[key];
+    const isEmpty = !data || (Object.keys(data).length === 0)
+      || (data && data._overridden);
+    html += `<details style="margin-top:8px;">
+      <summary style="cursor:pointer;font-weight:600;${isEmpty?'color:var(--text-sec);':''}">${cnEscape(label)} ${isEmpty?'<span class="bv-hint">(empty)</span>':''}</summary>
+      <pre class="bv-prompt-preview" style="margin-top:8px;">${cnEscape(JSON.stringify(data, null, 2))}</pre>
+    </details>`;
+  });
+  html += '</div>';
+  if ((bundle.unknowns || []).length) {
+    html += '<div class="bv-section" style="margin-top:16px;">';
+    html += '<div class="bv-section-h">Open unknowns affecting this decision</div>';
+    html += '<table class="ue-table"><thead><tr><th>Question</th><th>Owner</th><th>Priority</th></tr></thead><tbody>';
+    (bundle.unknowns || []).forEach(u => {
+      html += `<tr>
+        <td>${cnEscape(u.question)}</td>
+        <td>${cnEscape(u.evidence_path)}</td>
+        <td>${cnEscape(u.priority)}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
+  document.getElementById('cn-output').innerHTML = html;
+}
+
+function cnRenderGeneration(d) {
+  const primary = d.primary || '(no primary)';
+  const alts = d.alternates || [];
+  const cits = d.citations || [];
+  const cb = d.confidence_breakdown || {};
+  const bundleSummary = d.bundle_summary || {};
+  const conventions = d.convention_flags || [];
+
+  let html = '<div class="bv-section">';
+  html += `<div class="bv-section-h">Generated output</div>`;
+  html += `<div style="font-size:18px;font-weight:600;color:var(--text);padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">
+    ${cnEscape(primary)}
+  </div>`;
+  html += `<div class="bv-hint">
+    Confidence final: <strong>${cnPct(d.confidence_final)}</strong>
+    · LLM self-reported: <strong>${cnPct(d.confidence_self_reported)}</strong>
+    · Substrate starting: <strong>${cnPct(d.confidence_starting)}</strong>
+    · Evidence: <strong>${cnEscape(bundleSummary.evidence_strength || 'absent')}</strong>
+    · Event: <code>${cnEscape((d.decision_event_id || '').slice(0,8))}</code>
+  </div>`;
+
+  // Confidence breakdown
+  if (Object.keys(cb).length) {
+    html += '<div style="margin-top:14px;">';
+    ['voice_compliance','factual_accuracy','positioning_match','evidence_grounding','convention_share'].forEach(k => {
+      if (k in cb) html += cnConfidenceBar(k.replace(/_/g, ' '), cb[k]);
+    });
+    html += '</div>';
+  }
+
+  // Alternates
+  if (alts.length) {
+    html += '<details style="margin-top:14px;"><summary style="cursor:pointer;font-weight:600;">Alternates (' + alts.length + ')</summary>';
+    alts.forEach(a => {
+      html += `<div style="margin-top:6px;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:14px;">${cnEscape(a)}</div>`;
+    });
+    html += '</details>';
+  }
+  html += '</div>';
+
+  // Citations
+  html += '<div class="bv-section" style="margin-top:16px;">';
+  html += `<div class="bv-section-h">Reasoning chain · ${cits.length} citation${cits.length === 1 ? '' : 's'}</div>`;
+  if (!cits.length) {
+    html += '<div class="ue-empty">No citations produced by LLM (possible JSON parse failure).</div>';
+  } else {
+    html += '<table class="ue-table"><thead><tr><th>Layer</th><th>Claim</th><th>Source rows</th><th>Status</th><th></th></tr></thead><tbody>';
+    cits.forEach((c, idx) => {
+      const rowIds = (c.source_row_ids || []).map(r => `<code style="font-size:11px;">${cnEscape(r)}</code>`).join('<br>') || '<span class="ue-num-na">—</span>';
+      const rejectBtn = (c.layer !== 'convention') ?
+        `<button class="btn btn-secondary btn-sm" onclick="cnRejectCitation('${cnEscape(d.decision_event_id)}','${cnEscape(c.layer)}','${cnEscape((c.source_row_ids||[])[0]||'')}')" style="font-size:11px;">Reject</button>` :
+        '';
+      html += `<tr>
+        <td><strong>${cnEscape(c.layer)}</strong></td>
+        <td>${cnEscape(c.claim)}<br><span class="bv-hint">${cnEscape(c.rationale || '')}</span></td>
+        <td>${rowIds}</td>
+        <td>${cnCitationStatusBadge(c.verifier_status)}</td>
+        <td>${rejectBtn}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+  }
+  if (conventions.length) {
+    html += '<div style="margin-top:12px;">';
+    html += `<div class="bv-hint" style="font-weight:600;color:var(--text);">${conventions.length} convention flag${conventions.length === 1 ? '' : 's'} (no substrate row)</div>`;
+    conventions.forEach(cf => {
+      html += `<div style="margin-top:6px;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:12px;">
+        <strong>${cnEscape(cf.claim)}</strong> — <span class="bv-hint">${cnEscape(cf.rationale || '')}</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Missing context summary
+  const missReq = bundleSummary.missing_required || [];
+  const missNice = bundleSummary.missing_nice || [];
+  if (missReq.length + missNice.length > 0) {
+    html += '<div class="bv-section" style="margin-top:16px;">';
+    html += '<div class="bv-section-h">What\u2019s holding confidence back</div>';
+    if (missReq.length) {
+      html += '<div class="bv-hint" style="font-weight:600;color:#b8420f;">Required (' + missReq.length + ')</div>';
+      html += '<ul style="font-size:12px;color:var(--text-sec);">';
+      missReq.forEach(p => { html += `<li>${cnEscape(p)}</li>`; });
+      html += '</ul>';
+    }
+    if (missNice.length) {
+      html += '<div class="bv-hint" style="font-weight:600;">Nice to have (' + missNice.length + ')</div>';
+      html += '<ul style="font-size:12px;color:var(--text-sec);">';
+      missNice.forEach(p => { html += `<li>${cnEscape(p)}</li>`; });
+      html += '</ul>';
+    }
+    html += '<div class="bv-hint" style="margin-top:6px;">Close any of these in the Unknowns view to lift confidence on the next generation.</div>';
+    html += '</div>';
+  }
+
+  // LLM raw, for transparency
+  if (d.llm_raw) {
+    html += '<details style="margin-top:16px;"><summary style="cursor:pointer;color:var(--text-sec);">Raw LLM response</summary>';
+    html += `<pre class="bv-prompt-preview" style="max-height:300px;overflow-y:auto;">${cnEscape(d.llm_raw)}</pre>`;
+    html += '</details>';
+  }
+
+  document.getElementById('cn-output').innerHTML = html;
+}
+
+async function cnRejectCitation(eventId, layer, sourceId) {
+  if (!eventId || !layer || !sourceId) return;
+  const reason = prompt('Reason for rejecting this citation (saved as substrate):') || '';
+  if (!reason) return;
+  try {
+    const r = await fetch('/api/atlas/citation-rejections', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        decision_event_id: eventId,
+        citation_layer: layer,
+        citation_source_id: sourceId,
+        reason: reason
+      })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      ueSetStatus('cn-status', 'Citation rejection logged.', 'ok');
+    } else {
+      ueSetStatus('cn-status', 'Reject failed: ' + (d.error || ''), 'err');
+    }
+  } catch (err) {
+    ueSetStatus('cn-status', 'Reject failed: ' + err, 'err');
+  }
+}
+
+async function unkLoad() {
+  const ep = document.getElementById('unk-evidence-path').value;
+  const url = '/api/atlas/unknowns' + (ep ? '?evidence_path=' + encodeURIComponent(ep) : '');
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    const container = document.getElementById('unk-list');
+    if (!d.ok || !d.rows || !d.rows.length) {
+      container.innerHTML = '<div class="ue-empty">No open unknowns. Either nothing needs answering, or substrate is empty.</div>';
+      return;
+    }
+    // Group by evidence_path
+    const groups = {};
+    d.rows.forEach(u => {
+      const key = u.evidence_path || 'unknown';
+      (groups[key] = groups[key] || []).push(u);
+    });
+    let html = `<div class="bv-hint" style="margin-bottom:10px;">${d.count} open unknown${d.count === 1 ? '' : 's'} across ${Object.keys(groups).length} queue${Object.keys(groups).length === 1 ? '' : 's'}.</div>`;
+    Object.keys(groups).sort().forEach(key => {
+      html += `<div style="margin-top:14px;"><div class="bv-section-h">${cnEscape(key)} · ${groups[key].length}</div>`;
+      html += '<table class="ue-table"><thead><tr><th>Question</th><th>Scope</th><th>Priority</th><th>Required for</th><th>Created</th><th></th></tr></thead><tbody>';
+      groups[key].forEach(u => {
+        const created = u.created_at ? u.created_at.slice(0, 16).replace('T', ' ') : '—';
+        const reqfor = (u.required_for || []).join(', ') || '—';
+        const scopeRef = u.scope + (u.scope_ref ? ':' + u.scope_ref : '');
+        const pCls = u.priority === 'launch_blocking' ? 'ue-num-bad' :
+                     u.priority === 'high' ? 'ue-num-bad' : '';
+        html += `<tr>
+          <td>${cnEscape(u.question)}</td>
+          <td>${cnEscape(scopeRef)}</td>
+          <td class="${pCls}">${cnEscape(u.priority)}</td>
+          <td>${cnEscape(reqfor)}</td>
+          <td>${cnEscape(created)}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="unkResolve('${u.unknown_id}','answered')">Answer</button>
+            <button class="btn btn-secondary btn-sm" onclick="unkResolve('${u.unknown_id}','declared_unknowable')">Unknowable</button>
+          </td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+    });
+    container.innerHTML = html;
+  } catch (err) {
+    document.getElementById('unk-list').innerHTML =
+      '<div class="ue-empty">Load failed: ' + cnEscape(String(err)) + '</div>';
+  }
+}
+
+async function unkResolve(unknownId, status) {
+  let answer = null;
+  if (status === 'answered') {
+    const txt = prompt('Answer (saved as substrate):') || '';
+    if (!txt) return;
+    answer = {text: txt};
+  } else {
+    const reason = prompt('Reason (declared unknowable):') || 'declared by operator';
+    answer = {reasoning: reason};
+  }
+  try {
+    const r = await fetch(`/api/atlas/unknowns/${encodeURIComponent(unknownId)}/resolve`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({answer_value: answer, status: status,
+                            answer_source: 'operator_typed'})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      unkLoad();
+    } else {
+      alert('Resolve failed: ' + (d.error || ''));
+    }
+  } catch (err) {
+    alert('Resolve failed: ' + err);
+  }
 }
 
 // ════════════ Marketing · Budget tab (Phase 1 Path B Step 3) ═══════════
