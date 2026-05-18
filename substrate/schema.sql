@@ -956,3 +956,74 @@ CREATE INDEX IF NOT EXISTS idx_atlas_eval_owner
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v8', 'M4: recommendation_ingest + atlas_evaluation.')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v9 MIGRATION (M5, 2026-05-18): content_benchmarks.
+--
+-- Implements CONTENT_BENCHMARKS.md. When operator approves a piece of
+-- generated content along with its full citation chain, the approval
+-- becomes a benchmark. Future generations on sibling ASINs seed from
+-- the benchmark instead of re-deriving. Scope hierarchy:
+-- asin > family > global.
+-- ===========================================================================
+
+CREATE TABLE IF NOT EXISTS content_benchmarks (
+    benchmark_id              TEXT PRIMARY KEY,
+    workspace_id              TEXT NOT NULL,
+
+    scope                     TEXT NOT NULL,
+                              -- 'global' | 'family' | 'asin'
+                              -- | 'family_decision_class'
+    scope_ref                 TEXT,
+                              -- e.g., 'velune_pocket_family'; nullable
+                              -- when scope='global'
+
+    benchmark_type            TEXT NOT NULL,
+                              -- 'title' | 'bullets' | 'description'
+                              -- | 'a_plus' | 'image_brief'
+                              -- | 'backend_fields' | 'launch_brief'
+
+    approved_value            JSONB NOT NULL,
+                              -- the content itself (string or structured)
+    resolved_inputs           JSONB NOT NULL DEFAULT '{}'::jsonb,
+                              -- frozen context bundle at lock time
+    source_event_id           TEXT NOT NULL,
+                              -- decision_event_id from substrate_events
+
+    citations                 JSONB NOT NULL DEFAULT '[]'::jsonb,
+                              -- 5-layer citation chain from approving call
+    open_unknowns_at_approval TEXT[] DEFAULT ARRAY[]::TEXT[],
+                              -- unknown_ids open at lock time; we flag
+                              -- this benchmark when any of them close
+
+    status                    TEXT NOT NULL DEFAULT 'active',
+                              -- 'active' | 'review_recommended'
+                              -- | 'superseded' | 'archived'
+    review_reason             TEXT,
+    superseded_by             TEXT,
+                              -- benchmark_id of replacement
+
+    approved_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    approved_by               TEXT NOT NULL,
+    last_used_at              TIMESTAMPTZ,
+    used_count                INTEGER NOT NULL DEFAULT 0,
+
+    meta                      JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_benchmarks_scope
+    ON content_benchmarks (workspace_id, scope, scope_ref, status);
+
+CREATE INDEX IF NOT EXISTS idx_benchmarks_type
+    ON content_benchmarks (workspace_id, benchmark_type, status,
+                            approved_at DESC);
+
+-- GIN index so unknown-resolution can find affected benchmarks fast.
+CREATE INDEX IF NOT EXISTS idx_benchmarks_open_unknowns
+    ON content_benchmarks USING GIN (open_unknowns_at_approval);
+
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v9', 'M5: content_benchmarks.')
+    ON CONFLICT (version) DO NOTHING;

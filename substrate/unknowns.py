@@ -242,6 +242,12 @@ def resolve_unknown(
     tables (e.g., asin_metadata). That propagation is the caller's
     responsibility per UNKNOWNS.md §"When unknowns close" — keeps this
     function simple and avoids accidental writes to other tables.
+
+    Side effect (best-effort, per CONTENT_BENCHMARKS.md §"Auto-flag on
+    unknown resolution"): any content_benchmarks that had this
+    unknown_id open at approval time are flipped to
+    'review_recommended' so the operator can decide whether to keep,
+    regenerate, or archive them. Never blocks the resolve.
     """
     if status not in ("answered", "declared_unknowable", "partial"):
         return False
@@ -260,6 +266,7 @@ def resolve_unknown(
                         answered_at = NOW(),
                         answered_by = %s
                     WHERE unknown_id = %s
+                    RETURNING workspace_id
                     """,
                     (
                         status,
@@ -269,12 +276,27 @@ def resolve_unknown(
                         unknown_id,
                     ),
                 )
+                row = cur.fetchone()
                 affected = cur.rowcount
             conn.commit()
-            return affected > 0
+            if affected == 0 or row is None:
+                return False
+            workspace_id = row[0]
     except Exception as exc:
         logger.warning("resolve_unknown failed: %s", exc)
         return False
+
+    # Best-effort benchmark flag. Import inside to avoid circular import
+    # risk at module load and to keep this side effect optional.
+    if status in ("answered", "declared_unknowable"):
+        try:
+            from .content_benchmarks import flag_by_unknown
+            flag_by_unknown(workspace_id, unknown_id)
+        except Exception as exc:
+            logger.warning(
+                "unknowns.resolve_unknown benchmark flag skipped: %s", exc
+            )
+    return True
 
 
 def declare_unknowable(

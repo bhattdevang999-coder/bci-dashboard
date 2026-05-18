@@ -172,7 +172,8 @@ def wipe_substrate_for_tests() -> None:
                     pricing_decisions,
                     competitor_state,
                     recommendation_ingest,
-                    atlas_evaluation
+                    atlas_evaluation,
+                    content_benchmarks
                 RESTART IDENTITY CASCADE
                 """
             )

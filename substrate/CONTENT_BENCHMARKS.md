@@ -274,3 +274,17 @@ Append below this line.
   on unknown resolution (review recommended, not regenerate).
   Operator decides supersede / archive / keep. Voice-version
   bumps flag affected benchmarks via same mechanism.
+- **v1.1 — 2026-05-18 (latest), present commit** — Shipped. Schema
+  v9 applied. Writer in substrate/content_benchmarks.py covers
+  lock_benchmark (with 3-per-scope cap), list_applicable (scope
+  priority asin > family_decision_class > family > global, then
+  used_count, then recency), bump_usage, supersede, archive,
+  reactivate, and flag_by_unknown. Hook into
+  substrate/unknowns.resolve_unknown flips affected benchmarks to
+  review_recommended (best-effort; swallowed if it fails so it
+  never blocks unknown resolution). UI: Benchmarks sidebar page
+  with lock form, applicable-preview resolver, archive/reactivate
+  inline actions, and review_reason displayed in the inbox table.
+  NIS-side benchmark-seeded generation (the prompt-switch that
+  pulls top applicable benchmark into the citation chain on each
+  generation) is NOT yet wired — that's a follow-up pass.

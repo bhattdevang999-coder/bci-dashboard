@@ -14840,6 +14840,197 @@ def atlas_eval_operator_decision(eval_id: str):
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
 
 
+# ─── M5: content benchmarks ─────────────────────────────────────────
+
+@app.route("/api/atlas/benchmarks", methods=["GET"])
+def atlas_benchmarks_list():
+    """List benchmarks. Filters: scope, scope_ref, benchmark_type, status."""
+    workspace_id = _atlas_current_workspace()
+    scope = (request.args.get("scope") or "").strip() or None
+    scope_ref = request.args.get("scope_ref")
+    if scope_ref is not None:
+        scope_ref = scope_ref.strip() or None
+    benchmark_type = (request.args.get("benchmark_type") or "").strip() or None
+    status = (request.args.get("status") or "").strip() or None
+    try:
+        from substrate.content_benchmarks import list_benchmarks
+        rows = list_benchmarks(
+            workspace_id,
+            scope=scope, scope_ref=scope_ref,
+            benchmark_type=benchmark_type, status=status,
+        )
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] benchmarks list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/benchmarks", methods=["POST"])
+def atlas_benchmarks_lock():
+    """Lock a new benchmark.
+
+    Body: {scope, scope_ref?, benchmark_type, approved_value,
+           source_event_id, citations?, resolved_inputs?,
+           open_unknowns_at_approval?, approved_by?, enforce_cap?}
+    """
+    workspace_id = _atlas_current_workspace()
+    body = request.get_json(silent=True) or {}
+    scope = (body.get("scope") or "").strip()
+    btype = (body.get("benchmark_type") or "").strip()
+    source_event_id = (body.get("source_event_id") or "").strip()
+    if not scope or not btype or not source_event_id or \
+       "approved_value" not in body:
+        return jsonify({
+            "ok": False,
+            "error": (
+                "scope, benchmark_type, source_event_id, "
+                "and approved_value are required"
+            ),
+        }), 400
+    try:
+        from substrate.content_benchmarks import lock_benchmark
+        bid = lock_benchmark(
+            workspace_id,
+            scope=scope,
+            scope_ref=(body.get("scope_ref") or None),
+            benchmark_type=btype,
+            approved_value=body["approved_value"],
+            source_event_id=source_event_id,
+            approved_by=(body.get("approved_by") or "devang"),
+            citations=list(body.get("citations") or []),
+            resolved_inputs=dict(body.get("resolved_inputs") or {}),
+            open_unknowns_at_approval=list(
+                body.get("open_unknowns_at_approval") or []
+            ),
+            enforce_cap=bool(body.get("enforce_cap", True)),
+            meta=dict(body.get("meta") or {}),
+        )
+        if bid is None:
+            return jsonify({
+                "ok": False,
+                "error": (
+                    "lock failed (cap reached or invalid input); "
+                    "archive an active benchmark or check inputs"
+                ),
+            }), 400
+        return jsonify({"ok": True, "benchmark_id": bid})
+    except Exception as exc:
+        print(f"[atlas] benchmarks lock failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/benchmarks/<benchmark_id>", methods=["GET"])
+def atlas_benchmarks_get(benchmark_id: str):
+    """Fetch one benchmark."""
+    try:
+        from substrate.content_benchmarks import get_benchmark
+        row = get_benchmark(benchmark_id)
+        if row is None:
+            return jsonify({"ok": False, "error": "not found"}), 404
+        return jsonify({"ok": True, "row": row})
+    except Exception as exc:
+        print(f"[atlas] benchmarks get failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/benchmarks/applicable", methods=["GET"])
+def atlas_benchmarks_applicable():
+    """Resolve benchmarks that could seed a generation.
+
+    Query: ?benchmark_type=title&asin=B0...&family=velune_pocket
+           &decision_class=title_generation&include_review=1
+    """
+    workspace_id = _atlas_current_workspace()
+    btype = (request.args.get("benchmark_type") or "").strip()
+    if not btype:
+        return jsonify({
+            "ok": False, "error": "benchmark_type required",
+        }), 400
+    asin = (request.args.get("asin") or "").strip() or None
+    family = (request.args.get("family") or "").strip() or None
+    dc = (request.args.get("decision_class") or "").strip() or None
+    include_review = request.args.get("include_review") == "1"
+    try:
+        from substrate.content_benchmarks import list_applicable
+        rows = list_applicable(
+            workspace_id,
+            benchmark_type=btype,
+            asin=asin, family=family, decision_class=dc,
+            include_review_recommended=include_review,
+        )
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] benchmarks applicable failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/benchmarks/<benchmark_id>/archive",
+           methods=["POST"])
+def atlas_benchmarks_archive(benchmark_id: str):
+    """Archive a benchmark."""
+    body = request.get_json(silent=True) or {}
+    archived_by = (body.get("archived_by") or "devang").strip()
+    try:
+        from substrate.content_benchmarks import archive
+        ok = archive(benchmark_id, archived_by)
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] benchmarks archive failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/benchmarks/<benchmark_id>/reactivate",
+           methods=["POST"])
+def atlas_benchmarks_reactivate(benchmark_id: str):
+    """Move a review_recommended benchmark back to active."""
+    body = request.get_json(silent=True) or {}
+    by = (body.get("reactivated_by") or "devang").strip()
+    try:
+        from substrate.content_benchmarks import reactivate
+        ok = reactivate(benchmark_id, by)
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] benchmarks reactivate failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/benchmarks/<old_id>/supersede",
+           methods=["POST"])
+def atlas_benchmarks_supersede(old_id: str):
+    """Mark old benchmark superseded by a new one.
+
+    Body: {new_benchmark_id, superseded_by_operator?}
+    """
+    body = request.get_json(silent=True) or {}
+    new_id = (body.get("new_benchmark_id") or "").strip()
+    by = (body.get("superseded_by_operator") or "devang").strip()
+    if not new_id:
+        return jsonify({
+            "ok": False, "error": "new_benchmark_id required",
+        }), 400
+    try:
+        from substrate.content_benchmarks import supersede
+        ok = supersede(old_id, new_id, by)
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] benchmarks supersede failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/benchmarks/<benchmark_id>/bump-usage",
+           methods=["POST"])
+def atlas_benchmarks_bump_usage(benchmark_id: str):
+    """Increment used_count + last_used_at. Called by NIS when a
+    generation seeds from this benchmark."""
+    try:
+        from substrate.content_benchmarks import bump_usage
+        ok = bump_usage(benchmark_id)
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] benchmarks bump_usage failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 # ─── Public tokenized response page (no login) ─────────────────────────
 
 @app.route("/respond/<rec_id>", methods=["GET"])

@@ -6263,6 +6263,9 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
     <div class="nav-item-atlas" id="nav-recommendations" onclick="showRecommendationsPage()">
       <span class="atlas-dot"></span> Recommendations
     </div>
+    <div class="nav-item-atlas" id="nav-benchmarks" onclick="showBenchmarksPage()">
+      <span class="atlas-dot"></span> Benchmarks
+    </div>
     <div class="nav-section-divider"></div>
     <div class="nav-label">
       <span class="nav-module-num">01</span> Create
@@ -7994,6 +7997,109 @@ Pocket Description: No Pocket
       <div id="rec-list"><div class="ue-empty">(loading)</div></div>
     </div>
     <div id="rec-detail" style="margin-top:16px;"></div>
+  </div>
+
+  <!-- ═════════ M5: BENCHMARKS PAGE ═════════ -->
+  <div id="benchmarks-page" class="content content-wide" style="display:none;">
+    <div class="page-hero">
+      <h1 class="page-hero-title">Benchmarks</h1>
+      <div class="page-hero-sub">
+        When you approve a piece of generated content along with its full citation chain, lock it as a benchmark. Future generations on sibling ASINs seed from the benchmark instead of re-deriving. Scope hierarchy: ASIN beats family beats global. When an unknown that was open at lock-in time later closes, the benchmark is flagged for review (never auto-regenerated).
+      </div>
+    </div>
+    <div class="bv-section">
+      <strong>Lock a new benchmark</strong>
+      <div class="bv-grid-2" style="margin-top:10px;">
+        <div class="bv-field">
+          <label class="bv-label">Scope</label>
+          <select id="bm-scope" class="bv-input">
+            <option value="global">global</option>
+            <option value="family" selected>family</option>
+            <option value="asin">asin</option>
+            <option value="family_decision_class">family_decision_class</option>
+          </select>
+        </div>
+        <div class="bv-field">
+          <label class="bv-label">Scope ref</label>
+          <input id="bm-scope-ref" class="bv-input" type="text" placeholder="e.g. velune_pocket"/>
+        </div>
+        <div class="bv-field">
+          <label class="bv-label">Benchmark type</label>
+          <select id="bm-type" class="bv-input">
+            <option value="title">title</option>
+            <option value="bullets">bullets</option>
+            <option value="description">description</option>
+            <option value="a_plus">a_plus</option>
+            <option value="image_brief">image_brief</option>
+            <option value="backend_fields">backend_fields</option>
+            <option value="launch_brief">launch_brief</option>
+          </select>
+        </div>
+        <div class="bv-field">
+          <label class="bv-label">Source event id</label>
+          <input id="bm-source-event" class="bv-input" type="text" placeholder="decision_event_id from the approved generation"/>
+        </div>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Approved value</label>
+        <textarea id="bm-value" class="bv-input" rows="3" placeholder="The content as approved — title text, bullets array, etc."></textarea>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Open unknowns at approval (comma-separated unknown_ids; optional)</label>
+        <input id="bm-unknowns" class="bv-input" type="text" placeholder="uuid1, uuid2"/>
+      </div>
+      <div class="bv-field">
+        <label class="bv-label">Citations (JSON array; optional)</label>
+        <textarea id="bm-citations" class="bv-input" rows="3" style="font-family:ui-monospace,Consolas,monospace;font-size:12px;" placeholder='[{"layer":"factual","source":"asin_metadata#247"}]'></textarea>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-primary btn-sm" onclick="bmLock()">Lock benchmark</button>
+        <span id="bm-lock-status" class="bv-save-status"></span>
+      </div>
+      <div class="bv-hint" style="margin-top:8px;">Cap of 3 active benchmarks per (scope, scope_ref, type). Archive one to add another.</div>
+    </div>
+    <div class="bv-section">
+      <strong>Resolve applicable benchmarks (preview seed candidates)</strong>
+      <div class="bv-grid-2" style="margin-top:10px;">
+        <div class="bv-field"><label class="bv-label">Type</label>
+          <select id="bm-app-type" class="bv-input">
+            <option value="title">title</option>
+            <option value="bullets">bullets</option>
+            <option value="description">description</option>
+            <option value="a_plus">a_plus</option>
+            <option value="image_brief">image_brief</option>
+            <option value="backend_fields">backend_fields</option>
+            <option value="launch_brief">launch_brief</option>
+          </select>
+        </div>
+        <div class="bv-field"><label class="bv-label">ASIN</label><input id="bm-app-asin" class="bv-input" type="text" placeholder="B0..."/></div>
+        <div class="bv-field"><label class="bv-label">Family</label><input id="bm-app-family" class="bv-input" type="text" placeholder="velune_pocket"/></div>
+        <div class="bv-field"><label class="bv-label">Decision class</label><input id="bm-app-dc" class="bv-input" type="text" placeholder="title_generation"/></div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-secondary btn-sm" onclick="bmApplicable()">Resolve</button>
+        <label style="font-size:12px;color:var(--text-sec);">
+          <input type="checkbox" id="bm-app-include-review"/> include review_recommended
+        </label>
+      </div>
+      <div id="bm-app-result" style="margin-top:10px;"></div>
+    </div>
+    <div class="bv-section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong>All benchmarks</strong>
+        <div>
+          <select id="bm-filter-status" class="bv-input" style="width:auto; display:inline-block;" onchange="bmList()">
+            <option value="">All statuses</option>
+            <option value="active">active</option>
+            <option value="review_recommended">review_recommended</option>
+            <option value="superseded">superseded</option>
+            <option value="archived">archived</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="bmList()">Refresh</button>
+        </div>
+      </div>
+      <div id="bm-list"><div class="ue-empty">(loading)</div></div>
+    </div>
   </div>
 
   <!-- ════ BUDGET · Content-change drawer ════ -->
@@ -15529,6 +15635,169 @@ async function recDecide(evalId, recId) {
     if (d.ok) recOpen(recId);
     else alert('Decision failed: ' + (d.error || ''));
   } catch (err) { alert('Decision failed: ' + err); }
+}
+
+// ════════════ M5: Benchmarks ════════════
+
+function showBenchmarksPage() {
+  _showPage('benchmarks-page', 'Atlas · Benchmarks',
+            'Lock approved generations; seed sibling-ASIN generations from them');
+  const nav = document.getElementById('nav-benchmarks');
+  if (nav) {
+    document.querySelectorAll('.nav-item-atlas, .nav-item').forEach(el => el.classList.remove('active'));
+    nav.classList.add('active');
+  }
+  bmList();
+}
+async function bmList() {
+  const status = document.getElementById('bm-filter-status').value;
+  const url = '/api/atlas/benchmarks' + (status ? '?status=' + encodeURIComponent(status) : '');
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    const c = document.getElementById('bm-list');
+    if (!d.ok || !d.rows || !d.rows.length) {
+      c.innerHTML = '<div class="ue-empty">No benchmarks yet. Lock one above to seed sibling generations.</div>';
+      return;
+    }
+    let html = '<table class="ue-table"><thead><tr><th>Type</th><th>Scope</th><th>Approved</th><th>Value</th><th>Used</th><th>Status</th><th></th></tr></thead><tbody>';
+    d.rows.forEach(b => {
+      const when = b.approved_at ? b.approved_at.slice(0,10) : '—';
+      const scope = b.scope + (b.scope_ref ? ':' + b.scope_ref : '');
+      const value = typeof b.approved_value === 'string'
+        ? b.approved_value
+        : JSON.stringify(b.approved_value).slice(0, 100);
+      const statusCls = b.status === 'review_recommended' ? 'ue-num-warn' :
+                        b.status === 'archived' || b.status === 'superseded' ? 'ue-num-bad' : '';
+      const actionBtn = b.status === 'review_recommended'
+        ? `<button class="btn btn-secondary btn-sm" onclick="bmReactivate('${b.benchmark_id}')">Reactivate</button> <button class="btn btn-secondary btn-sm" onclick="bmArchive('${b.benchmark_id}')">Archive</button>`
+        : (b.status === 'active'
+          ? `<button class="btn btn-secondary btn-sm" onclick="bmArchive('${b.benchmark_id}')">Archive</button>`
+          : '—');
+      const reviewReason = b.review_reason
+        ? `<div style="font-size:11px; color:var(--accent); margin-top:4px;">${cnEscape(b.review_reason)}</div>`
+        : '';
+      html += `<tr>
+        <td>${cnEscape(b.benchmark_type)}</td>
+        <td>${cnEscape(scope)}</td>
+        <td>${cnEscape(when)}</td>
+        <td style="max-width:380px; font-family:ui-monospace,Consolas,monospace; font-size:12px;">${cnEscape(value)}</td>
+        <td>${b.used_count || 0}</td>
+        <td class="${statusCls}">${cnEscape(b.status)}${reviewReason}</td>
+        <td>${actionBtn}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    c.innerHTML = html;
+  } catch (err) {
+    document.getElementById('bm-list').innerHTML = '<div class="ue-empty">Load failed: ' + cnEscape(String(err)) + '</div>';
+  }
+}
+async function bmLock() {
+  const scope = document.getElementById('bm-scope').value;
+  const scopeRef = document.getElementById('bm-scope-ref').value.trim() || null;
+  const btype = document.getElementById('bm-type').value;
+  const sourceEvent = document.getElementById('bm-source-event').value.trim();
+  const value = document.getElementById('bm-value').value;
+  const unknownsRaw = document.getElementById('bm-unknowns').value.trim();
+  const citationsRaw = document.getElementById('bm-citations').value.trim();
+  if (!sourceEvent || !value) {
+    ueSetStatus('bm-lock-status', 'source_event_id and approved_value required', 'err');
+    return;
+  }
+  let citations = [];
+  if (citationsRaw) {
+    try { citations = JSON.parse(citationsRaw); }
+    catch (e) { ueSetStatus('bm-lock-status', 'Citations JSON invalid', 'err'); return; }
+  }
+  const unknowns = unknownsRaw
+    ? unknownsRaw.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  ueSetStatus('bm-lock-status', 'Locking…', '');
+  try {
+    const r = await fetch('/api/atlas/benchmarks', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        scope, scope_ref: scopeRef,
+        benchmark_type: btype,
+        approved_value: value,
+        source_event_id: sourceEvent,
+        citations,
+        open_unknowns_at_approval: unknowns,
+        approved_by: 'devang',
+      })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      ueSetStatus('bm-lock-status', 'Locked.', 'ok');
+      document.getElementById('bm-value').value = '';
+      document.getElementById('bm-source-event').value = '';
+      document.getElementById('bm-unknowns').value = '';
+      document.getElementById('bm-citations').value = '';
+      bmList();
+    } else {
+      ueSetStatus('bm-lock-status', 'Lock failed: ' + (d.error || ''), 'err');
+    }
+  } catch (err) {
+    ueSetStatus('bm-lock-status', 'Lock failed: ' + err, 'err');
+  }
+}
+async function bmApplicable() {
+  const btype = document.getElementById('bm-app-type').value;
+  const asin = document.getElementById('bm-app-asin').value.trim();
+  const family = document.getElementById('bm-app-family').value.trim();
+  const dc = document.getElementById('bm-app-dc').value.trim();
+  const includeReview = document.getElementById('bm-app-include-review').checked;
+  const params = new URLSearchParams({benchmark_type: btype});
+  if (asin) params.append('asin', asin);
+  if (family) params.append('family', family);
+  if (dc) params.append('decision_class', dc);
+  if (includeReview) params.append('include_review', '1');
+  try {
+    const r = await fetch('/api/atlas/benchmarks/applicable?' + params.toString());
+    const d = await r.json();
+    const out = document.getElementById('bm-app-result');
+    if (!d.ok || !d.rows || !d.rows.length) {
+      out.innerHTML = '<div class="ue-empty">No applicable benchmarks. NIS would generate from scratch for this ASIN/family.</div>';
+      return;
+    }
+    let html = '<div class="bv-hint">Ranked by specificity, then used_count, then recency. Top row is what NIS would seed from.</div>';
+    html += '<table class="ue-table" style="margin-top:8px;"><thead><tr><th>Rank</th><th>Scope</th><th>Value</th><th>Used</th><th>Status</th></tr></thead><tbody>';
+    d.rows.forEach((b, i) => {
+      const scope = b.scope + (b.scope_ref ? ':' + b.scope_ref : '');
+      const value = typeof b.approved_value === 'string'
+        ? b.approved_value
+        : JSON.stringify(b.approved_value).slice(0, 100);
+      const statusCls = b.status === 'review_recommended' ? 'ue-num-warn' : '';
+      html += `<tr><td>${i+1}</td><td>${cnEscape(scope)}</td><td style="font-family:ui-monospace;font-size:12px;">${cnEscape(value)}</td><td>${b.used_count||0}</td><td class="${statusCls}">${cnEscape(b.status)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    out.innerHTML = html;
+  } catch (err) {
+    document.getElementById('bm-app-result').innerHTML = '<div class="ue-empty">Load failed: ' + cnEscape(String(err)) + '</div>';
+  }
+}
+async function bmArchive(bid) {
+  if (!confirm('Archive this benchmark? It will no longer apply to future generations.')) return;
+  try {
+    const r = await fetch(`/api/atlas/benchmarks/${encodeURIComponent(bid)}/archive`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'
+    });
+    const d = await r.json();
+    if (d.ok) bmList();
+    else alert('Archive failed: ' + (d.error || ''));
+  } catch (err) { alert('Archive failed: ' + err); }
+}
+async function bmReactivate(bid) {
+  if (!confirm('Reactivate this benchmark? You are confirming the current value still applies despite the closed unknown.')) return;
+  try {
+    const r = await fetch(`/api/atlas/benchmarks/${encodeURIComponent(bid)}/reactivate`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'
+    });
+    const d = await r.json();
+    if (d.ok) bmList();
+    else alert('Reactivate failed: ' + (d.error || ''));
+  } catch (err) { alert('Reactivate failed: ' + err); }
 }
 
 // ════════════ Marketing · Budget tab (Phase 1 Path B Step 3) ═══════════
