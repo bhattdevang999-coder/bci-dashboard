@@ -371,9 +371,11 @@ def _layer_competitor_state(workspace_id: str, asin: Optional[str]
             with conn.cursor() as cur:
                 cur.execute("SELECT to_regclass('competitor_state')")
                 if cur.fetchone()[0]:
+                    # M2 ships competitor_state with `asin` column and
+                    # JSONB `value` (numeric OR structured per metric).
                     cur.execute(
                         """
-                        SELECT competitor_id, asin_or_sku, metric, value,
+                        SELECT competitor_id, asin, metric, value,
                                observed_at, source
                         FROM competitor_state
                         WHERE workspace_id = %s
@@ -385,14 +387,15 @@ def _layer_competitor_state(workspace_id: str, asin: Optional[str]
                     for r in cur.fetchall():
                         snapshots.append({
                             "competitor_id": r[0],
-                            "asin_or_sku": r[1],
+                            "asin": r[1],
                             "metric": r[2],
-                            "value": float(r[3]) if r[3] is not None else None,
+                            "value": r[3],  # JSONB — keep as-is
                             "observed_at": r[4].isoformat() if r[4] else None,
                             "source": r[5],
                         })
                         rows_read.append(
-                            f"competitor_state#{r[0]}/{r[1]}/{r[2]}@{r[4].isoformat() if r[4] else 'na'}"
+                            f"competitor_state#{r[0]}/{r[1] or '-'}/{r[2]}"
+                            f"@{r[4].isoformat() if r[4] else 'na'}"
                         )
     except Exception as exc:
         logger.warning("layer_competitor_state read failed: %s", exc)

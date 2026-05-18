@@ -35,6 +35,85 @@ from .db import get_pool
 logger = logging.getLogger("atlas.substrate.citation_chain")
 
 
+# decision_class → benchmark_type mapping. Keys match
+# _DECISION_CLASS_INSTRUCTIONS plus a passthrough for anything else.
+_DECISION_CLASS_TO_BENCHMARK_TYPE = {
+    "title_generation": "title",
+    "bullet_generation": "bullets",
+    "description_generation": "description",
+    "a_plus_generation": "a_plus",
+    "image_brief_generation": "image_brief",
+    "backend_fields_generation": "backend_fields",
+    "launch_brief_generation": "launch_brief",
+}
+
+
+def _benchmark_type_for(decision_class: str) -> Optional[str]:
+    """Resolve decision_class to a benchmark_type, or None if no match."""
+    if not decision_class:
+        return None
+    return _DECISION_CLASS_TO_BENCHMARK_TYPE.get(decision_class)
+
+
+def resolve_applicable_benchmarks(
+    workspace_id: str,
+    bundle: dict,
+    decision_class: str,
+) -> list[dict]:
+    """Return ranked applicable benchmarks for this generation.
+
+    Reads `variation_family` from the L0 factual layer. Returns at most
+    3 active benchmarks ranked by scope priority (asin > family > global).
+    Never raises; returns [] on any failure.
+    """
+    btype = _benchmark_type_for(decision_class)
+    if not btype:
+        return []
+    asin = bundle.get("asin")
+    factual = bundle.get("factual") or {}
+    family = factual.get("variation_family")
+    try:
+        from .content_benchmarks import list_applicable
+        rows = list_applicable(
+            workspace_id,
+            benchmark_type=btype,
+            asin=asin, family=family,
+            decision_class=decision_class,
+            include_review_recommended=False,
+        )
+        return rows[:3]
+    except Exception as exc:
+        logger.warning("resolve_applicable_benchmarks failed: %s", exc)
+        return []
+
+
+def _render_benchmarks_layer(benchmarks: list[dict]) -> str:
+    """Render the benchmarks section of the prompt."""
+    if not benchmarks:
+        return "(no prior approved patterns at this scope)"
+    lines = []
+    for i, b in enumerate(benchmarks):
+        scope = b.get("scope")
+        scope_ref = b.get("scope_ref")
+        scope_label = scope + (f":{scope_ref}" if scope_ref else "")
+        val = b.get("approved_value")
+        if not isinstance(val, str):
+            try:
+                val = json.dumps(val, ensure_ascii=False)
+            except Exception:
+                val = str(val)
+        used = b.get("used_count") or 0
+        lines.append(
+            f"  Rank {i+1} (scope={scope_label}, used_count={used}, "
+            f"benchmark_id={b.get('benchmark_id')}):"
+        )
+        # Truncate value for the prompt — 600 char per benchmark plenty.
+        if len(val) > 600:
+            val = val[:600] + " ...(truncated)"
+        lines.append(f"    {val}")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Prompt assembly
 # ---------------------------------------------------------------------------
@@ -88,8 +167,18 @@ def _render_unknowns(unknowns: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def build_cited_prompt(bundle: dict, decision_class: str) -> str:
-    """Build the citation-chain prompt from an L0 bundle."""
+def build_cited_prompt(
+    bundle: dict,
+    decision_class: str,
+    benchmarks: Optional[list[dict]] = None,
+) -> str:
+    """Build the citation-chain prompt from an L0 bundle.
+
+    When `benchmarks` is non-empty, a PRIOR APPROVED PATTERNS section is
+    injected after the context layers and the LLM is told to seed from
+    the top-ranked benchmark and explicitly cite which one (or note it
+    is intentionally diverging).
+    """
     instr = _DECISION_CLASS_INSTRUCTIONS.get(
         decision_class,
         f"Generate a {decision_class} output. Cite substrate rows for "
@@ -121,6 +210,23 @@ def build_cited_prompt(bundle: dict, decision_class: str) -> str:
     parts.append("=" * 72)
     parts.append(_render_unknowns(bundle.get("unknowns") or []))
     parts.append("")
+
+    if benchmarks:
+        parts.append("=" * 72)
+        parts.append(
+            "PRIOR APPROVED PATTERNS (operator-locked benchmarks for this scope)"
+        )
+        parts.append("=" * 72)
+        parts.append(_render_benchmarks_layer(benchmarks))
+        parts.append("")
+        parts.append(
+            "Treat Rank 1 as the strong default. Match its structure, voice, "
+            "and key facts unless the current ASIN's facts force a divergence. "
+            "In your output, set the new top-level field `seeded_from_benchmark` "
+            "to the benchmark_id you used as the seed (or null if you "
+            "intentionally diverged \u2014 explain why in `seed_divergence_reason`)."
+        )
+        parts.append("")
 
     parts.append("=" * 72)
     parts.append("YOUR JOB")
@@ -156,14 +262,14 @@ def build_cited_prompt(bundle: dict, decision_class: str) -> str:
     parts.append("=" * 72)
     parts.append("OUTPUT FORMAT — STRICT JSON ONLY (no surrounding prose)")
     parts.append("=" * 72)
-    parts.append(json.dumps({
+    output_schema: dict[str, Any] = {
         "primary": "<text>",
         "alternates": ["<alt1>", "<alt2>"],
         "citations": [
             {
                 "claim": "<short description of what this citation supports>",
-                "layer": "factual|strategic|voice|evidence|calibrated_external|convention",
-                "source_row_ids": ["<row_id from context_rows_read>"],
+                "layer": "factual|strategic|voice|evidence|calibrated_external|convention|benchmark",
+                "source_row_ids": ["<row_id from context_rows_read or benchmark_id>"],
                 "rationale": "<one sentence>"
             }
         ],
@@ -178,8 +284,16 @@ def build_cited_prompt(bundle: dict, decision_class: str) -> str:
         "open_unknowns_referenced": ["<unknown_id>"],
         "convention_flags": [
             {"claim": "<text>", "rationale": "<why this is convention>"}
-        ]
-    }, indent=2))
+        ],
+    }
+    if benchmarks:
+        output_schema["seeded_from_benchmark"] = (
+            "<benchmark_id or null if you diverged>"
+        )
+        output_schema["seed_divergence_reason"] = (
+            "<one sentence; required only if seeded_from_benchmark is null>"
+        )
+    parts.append(json.dumps(output_schema, indent=2))
     return "\n".join(parts)
 
 
@@ -240,25 +354,35 @@ def _call_llm(prompt: str, *, model: str = "claude-sonnet-4-5",
 # ---------------------------------------------------------------------------
 
 
-def verify_citations(citations: list[dict], rows_read: list[str]
-                     ) -> list[dict]:
+def verify_citations(
+    citations: list[dict],
+    rows_read: list[str],
+    *,
+    benchmark_ids: Optional[list[str]] = None,
+) -> list[dict]:
     """Mark each citation with verifier_status.
 
     'verified'   — every source_row_id is present in rows_read
-    'weak'       — at least one source_row_id missing from rows_read
+                   OR every source_row_id (layer='benchmark') is in
+                   the benchmark_ids the prompt was seeded with.
+    'weak'       — at least one source_row_id missing
     'convention' — citation is layer='convention', no row check needed
     """
     rows_set = set(rows_read or [])
+    benchmark_set = set(benchmark_ids or [])
     out: list[dict] = []
     for c in citations or []:
         layer = c.get("layer")
         row_ids = c.get("source_row_ids") or []
         if layer == "convention" or not row_ids:
             c2 = dict(c)
-            c2["verifier_status"] = "convention" if layer == "convention" else "weak"
+            c2["verifier_status"] = (
+                "convention" if layer == "convention" else "weak"
+            )
             out.append(c2)
             continue
-        missing = [r for r in row_ids if r not in rows_set]
+        valid_set = benchmark_set if layer == "benchmark" else rows_set
+        missing = [r for r in row_ids if r not in valid_set]
         c2 = dict(c)
         if not missing:
             c2["verifier_status"] = "verified"
@@ -303,7 +427,18 @@ def generate_cited(
         emit_unknowns_on_gaps=True,
     )
 
-    prompt = build_cited_prompt(bundle, decision_class)
+    # Resolve applicable benchmarks (M5b). Empty list when none apply.
+    applicable_benchmarks = resolve_applicable_benchmarks(
+        workspace_id, bundle, decision_class,
+    )
+    benchmark_ids = [
+        b.get("benchmark_id") for b in applicable_benchmarks
+        if b.get("benchmark_id")
+    ]
+
+    prompt = build_cited_prompt(
+        bundle, decision_class, benchmarks=applicable_benchmarks,
+    )
     raw = _call_llm(prompt)
     parsed = _extract_json(raw) if raw else None
 
@@ -313,17 +448,36 @@ def generate_cited(
     convention_flags: list[dict] = []
     primary = None
     alternates: list[str] = []
+    seeded_from_benchmark: Optional[str] = None
+    seed_divergence_reason: Optional[str] = None
 
     if parsed:
         citations = verify_citations(
             parsed.get("citations") or [],
             bundle.get("context_rows_read") or [],
+            benchmark_ids=benchmark_ids,
         )
         confidence_self = parsed.get("confidence_self_reported")
         confidence_breakdown = parsed.get("confidence_breakdown") or {}
         convention_flags = parsed.get("convention_flags") or []
         primary = parsed.get("primary")
         alternates = parsed.get("alternates") or []
+        seeded_raw = parsed.get("seeded_from_benchmark")
+        # Only honor if it's in the list we offered to the LLM.
+        if seeded_raw in benchmark_ids:
+            seeded_from_benchmark = seeded_raw
+        seed_divergence_reason = parsed.get("seed_divergence_reason")
+
+    # Bump usage on the seeded benchmark (best-effort).
+    if seeded_from_benchmark:
+        try:
+            from .content_benchmarks import bump_usage
+            bump_usage(seeded_from_benchmark)
+        except Exception as exc:
+            logger.warning(
+                "bump_usage failed for %s: %s",
+                seeded_from_benchmark, exc,
+            )
 
     confidence_starting = bundle.get("confidence_starting") or 0.0
     if confidence_self is None:
@@ -357,6 +511,9 @@ def generate_cited(
                 "unknowns_at_decision": [
                     u["unknown_id"] for u in (bundle.get("unknowns") or [])
                 ],
+                "applicable_benchmark_ids": benchmark_ids,
+                "seeded_from_benchmark": seeded_from_benchmark,
+                "seed_divergence_reason": seed_divergence_reason,
             },
             citations=citations,
             confidence_breakdown=confidence_breakdown,
@@ -387,6 +544,18 @@ def generate_cited(
         "confidence_final": confidence_final,
         "convention_flags": convention_flags,
         "open_unknowns_referenced": (parsed or {}).get("open_unknowns_referenced") or [],
+        "applicable_benchmarks": [
+            {
+                "benchmark_id": b.get("benchmark_id"),
+                "scope": b.get("scope"),
+                "scope_ref": b.get("scope_ref"),
+                "approved_value": b.get("approved_value"),
+                "used_count": b.get("used_count"),
+            }
+            for b in applicable_benchmarks
+        ],
+        "seeded_from_benchmark": seeded_from_benchmark,
+        "seed_divergence_reason": seed_divergence_reason,
         "llm_raw": raw,
         "llm_failed": raw is None,
         "decision_event_id": decision_event_id,
@@ -463,4 +632,5 @@ __all__ = [
     "build_cited_prompt",
     "verify_citations",
     "generate_cited",
+    "resolve_applicable_benchmarks",
 ]

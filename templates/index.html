@@ -14921,6 +14921,37 @@ function cnRenderGeneration(d) {
     html += '</div>';
   }
 
+  // Benchmark seeding (M5b)
+  const appBenchmarks = d.applicable_benchmarks || [];
+  if (appBenchmarks.length) {
+    const seeded = d.seeded_from_benchmark;
+    const divergeReason = d.seed_divergence_reason;
+    html += '<div style="margin-top:14px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;">';
+    html += '<div class="bv-hint" style="font-weight:600;color:var(--text);margin-bottom:6px;">Benchmark seeding</div>';
+    if (seeded) {
+      const used = appBenchmarks.find(b => b.benchmark_id === seeded);
+      const scope = used ? (used.scope + (used.scope_ref ? ':' + used.scope_ref : '')) : '?';
+      html += `<div style="font-size:12px;">Seeded from benchmark <code>${cnEscape(seeded.slice(0,8))}</code> (scope: ${cnEscape(scope)}). used_count incremented.</div>`;
+    } else {
+      html += '<div style="font-size:12px;color:var(--text-sec);">Atlas chose to generate from scratch despite ' + appBenchmarks.length + ' applicable benchmark' + (appBenchmarks.length === 1 ? '' : 's') + '.</div>';
+      if (divergeReason) {
+        html += `<div style="font-size:12px;margin-top:4px;"><strong>Reason:</strong> ${cnEscape(divergeReason)}</div>`;
+      }
+    }
+    html += '<details style="margin-top:6px;"><summary style="cursor:pointer;font-size:12px;">Applicable benchmarks offered (' + appBenchmarks.length + ')</summary>';
+    appBenchmarks.forEach((b, i) => {
+      const scopeLabel = b.scope + (b.scope_ref ? ':' + b.scope_ref : '');
+      const isPicked = b.benchmark_id === seeded;
+      const val = typeof b.approved_value === 'string' ? b.approved_value : JSON.stringify(b.approved_value);
+      html += `<div style="margin-top:6px;padding:6px 10px;background:var(--panel);border-radius:4px;font-size:12px;${isPicked ? 'border-left:3px solid var(--accent);' : ''}">
+        <strong>Rank ${i+1}</strong> · scope: ${cnEscape(scopeLabel)} · used_count: ${b.used_count || 0}${isPicked ? ' · <span style="color:var(--accent);font-weight:600;">SEEDED</span>' : ''}
+        <div style="font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--text-sec);margin-top:2px;">${cnEscape(val.slice(0, 140))}</div>
+      </div>`;
+    });
+    html += '</details>';
+    html += '</div>';
+  }
+
   // Alternates
   if (alts.length) {
     html += '<details style="margin-top:14px;"><summary style="cursor:pointer;font-weight:600;">Alternates (' + alts.length + ')</summary>';

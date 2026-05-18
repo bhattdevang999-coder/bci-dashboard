@@ -288,3 +288,19 @@ Append below this line.
   NIS-side benchmark-seeded generation (the prompt-switch that
   pulls top applicable benchmark into the citation chain on each
   generation) is NOT yet wired — that's a follow-up pass.
+- **v1.2 — 2026-05-18 (latest), present commit** — Wired into
+  citation_chain. New helper resolve_applicable_benchmarks reads
+  variation_family from the L0 factual layer and passes the result
+  into build_cited_prompt, which renders a PRIOR APPROVED PATTERNS
+  section. The LLM is told to seed from Rank 1 and return
+  seeded_from_benchmark in its JSON output. generate_cited
+  validates the returned id against the list we offered, calls
+  bump_usage on the seeded benchmark, and records
+  applicable_benchmark_ids + seeded_from_benchmark +
+  seed_divergence_reason on the decision_event. The Cited NIS UI
+  shows a Benchmark seeding panel with the picked benchmark
+  highlighted. NOT YET: the verifier doesn't currently re-check
+  whether the LLM's seeded_from_benchmark claim is honest (e.g.,
+  it could claim to seed from B but produce text that ignores B).
+  We'd need an output-vs-benchmark similarity check for that —
+  follow-up work, not blocking.
