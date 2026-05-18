@@ -164,7 +164,13 @@ def wipe_substrate_for_tests() -> None:
                     cost_inputs,
                     brand_overhead,
                     unknowns,
-                    citation_rejections
+                    citation_rejections,
+                    asin_metadata,
+                    brand_position,
+                    operator_positions,
+                    pricing_logic,
+                    pricing_decisions,
+                    competitor_state
                 RESTART IDENTITY CASCADE
                 """
             )

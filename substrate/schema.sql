@@ -635,3 +635,201 @@ CREATE INDEX IF NOT EXISTS idx_unknowns_scope_ref
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v6', 'Phase 1.5: provenance columns, citation tables, unknowns.')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v7 MIGRATION (M2, 2026-05-18): mode-aware substrate primitives.
+--
+-- Implements design docs ASIN_METADATA.md, BRAND_POSITION.md,
+-- OPERATOR_POSITIONS.md, PRICING_LOGIC.md, RECOMMENDATION_INGEST.md.
+-- Six tables:
+--   1. asin_metadata             — ground-truth physical/Amazon backend fields
+--   2. brand_position            — strategic brand position (one per workspace)
+--   3. operator_positions        — operator beliefs/rules as substrate
+--   4. pricing_logic             — operator-set floor/ceiling rules
+--   5. pricing_decisions         — journal of every price set + outcomes
+--   6. competitor_state          — manual competitor observations
+-- ===========================================================================
+
+-- 1. asin_metadata
+CREATE TABLE IF NOT EXISTS asin_metadata (
+    workspace_id          TEXT NOT NULL,
+    asin                  TEXT NOT NULL,
+
+    -- Variation structure
+    parent_asin           TEXT,
+    variation_family      TEXT,
+    variation_axes        JSONB,
+
+    -- Ground truth (apparel-leggings field set; see ASIN_METADATA.md)
+    ground_truth_fields   JSONB NOT NULL DEFAULT '{}'::jsonb,
+
+    -- Source attribution + operator-confirmation flow
+    field_sources         JSONB NOT NULL DEFAULT '{}'::jsonb,
+
+    -- Versioning + audit
+    revision              INTEGER NOT NULL DEFAULT 1,
+    set_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    set_by                TEXT,
+    last_confirmed_at     TIMESTAMPTZ,
+
+    meta                  JSONB DEFAULT '{}'::jsonb,
+    PRIMARY KEY (workspace_id, asin)
+);
+
+CREATE INDEX IF NOT EXISTS idx_asin_metadata_family
+    ON asin_metadata (workspace_id, variation_family);
+
+CREATE INDEX IF NOT EXISTS idx_asin_metadata_parent
+    ON asin_metadata (workspace_id, parent_asin)
+    WHERE parent_asin IS NOT NULL;
+
+
+-- 2. brand_position (one row per workspace)
+CREATE TABLE IF NOT EXISTS brand_position (
+    workspace_id            TEXT PRIMARY KEY,
+
+    position_statement      TEXT NOT NULL,
+    competitor_set          TEXT[] NOT NULL,
+    competitor_role         JSONB NOT NULL DEFAULT '{}'::jsonb,
+    price_band              JSONB NOT NULL DEFAULT '{}'::jsonb,
+    positioning_hypothesis  TEXT,
+
+    pricing_logic_revision  INTEGER,
+
+    review_freq             TEXT NOT NULL DEFAULT 'quarterly',
+    last_reviewed_at        TIMESTAMPTZ,
+    next_review_at          TIMESTAMPTZ NOT NULL,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    set_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    set_by                  TEXT NOT NULL,
+
+    meta                    JSONB DEFAULT '{}'::jsonb
+);
+
+
+-- 3. operator_positions (per OPERATOR_POSITIONS.md)
+CREATE TABLE IF NOT EXISTS operator_positions (
+    position_id           TEXT PRIMARY KEY,
+    workspace_id          TEXT NOT NULL,
+    operator_id           TEXT NOT NULL DEFAULT 'devang',
+
+    scope                 TEXT NOT NULL,
+                          -- 'global'|'brand'|'asin'|'family'
+                          -- |'decision_class'|'family_decision_class'
+    scope_ref             TEXT,
+
+    claim                 TEXT NOT NULL,
+    reasoning             TEXT,
+
+    position_type         TEXT NOT NULL DEFAULT 'strategic',
+                          -- 'strategic'|'style'|'hard_refusal'
+                          -- |'workflow'|'preference'
+
+    status                TEXT NOT NULL DEFAULT 'active',
+                          -- 'active'|'archived'|'superseded'
+
+    superseded_by         TEXT,
+    evidence_refs         TEXT[] DEFAULT ARRAY[]::TEXT[],
+
+    revision              INTEGER NOT NULL DEFAULT 1,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by_event_id   TEXT,
+    last_reviewed_at      TIMESTAMPTZ,
+
+    meta                  JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_op_positions_scope
+    ON operator_positions (workspace_id, status, scope, scope_ref);
+
+CREATE INDEX IF NOT EXISTS idx_op_positions_type
+    ON operator_positions (workspace_id, status, position_type);
+
+
+-- 4. pricing_logic (operator-set rules; scope-keyed)
+CREATE TABLE IF NOT EXISTS pricing_logic (
+    workspace_id            TEXT NOT NULL,
+    scope                   TEXT NOT NULL,            -- 'global'|'family'|'asin'
+    scope_ref               TEXT NOT NULL DEFAULT '', -- empty string for global
+
+    floor_rule              JSONB NOT NULL,
+    ceiling_rule            JSONB NOT NULL,
+    reasoning               TEXT,
+
+    revision                INTEGER NOT NULL DEFAULT 1,
+    set_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    set_by                  TEXT NOT NULL,
+
+    ceiling_next_review_at  TIMESTAMPTZ,
+
+    meta                    JSONB DEFAULT '{}'::jsonb,
+    PRIMARY KEY (workspace_id, scope, scope_ref)
+);
+
+
+-- 5. pricing_decisions (journal)
+CREATE TABLE IF NOT EXISTS pricing_decisions (
+    decision_id          TEXT PRIMARY KEY,
+    workspace_id         TEXT NOT NULL,
+    asin                 TEXT NOT NULL,
+
+    price_set            NUMERIC(12, 2) NOT NULL,
+    price_set_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    price_set_by         TEXT NOT NULL,
+
+    floor_at_time        NUMERIC(12, 2),
+    ceiling_at_time      NUMERIC(12, 2),
+    play_zone_position   TEXT,
+                         -- 'below_floor'|'near_floor'|'middle'
+                         -- |'near_ceiling'|'above_ceiling'
+
+    goal_regime          TEXT,
+                         -- 'launch_velocity'|'margin'|'volume'
+
+    reasoning            TEXT,
+
+    mode                 TEXT NOT NULL,
+                         -- 'manual'|'mode1_llm'|'mode2_calibrated'
+
+    outcome_at_30d       JSONB,
+    outcome_at_60d       JSONB,
+    outcome_at_90d       JSONB,
+    pattern_tags         TEXT[] DEFAULT ARRAY[]::TEXT[],
+
+    meta                 JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_pricing_decisions_asin
+    ON pricing_decisions (workspace_id, asin, price_set_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_pricing_decisions_regime
+    ON pricing_decisions (workspace_id, goal_regime, price_set_at DESC);
+
+
+-- 6. competitor_state (manual competitor observations)
+CREATE TABLE IF NOT EXISTS competitor_state (
+    observation_id        TEXT PRIMARY KEY,
+    workspace_id          TEXT NOT NULL,
+    competitor_id         TEXT NOT NULL,   -- e.g., 'crz_yoga'
+
+    metric                TEXT NOT NULL,   -- 'price'|'review_count'|'bsr'|'listing_changed'
+    value                 JSONB NOT NULL,  -- numeric or structured per metric
+    observed_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    observed_by           TEXT NOT NULL,
+    source                TEXT NOT NULL DEFAULT 'operator_manual',
+                          -- 'operator_manual'|'helium10'|'keepa'|'jungle_scout'
+    asin                  TEXT,            -- competitor ASIN if known
+    notes                 TEXT,
+
+    meta                  JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_competitor_state_lookup
+    ON competitor_state (workspace_id, competitor_id, metric, observed_at DESC);
+
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v7', 'M2: asin_metadata, brand_position, operator_positions, pricing_logic, pricing_decisions, competitor_state.')
+    ON CONFLICT (version) DO NOTHING;

@@ -1,0 +1,304 @@
+# Field Schema — Four-Mode Entry Framework
+#
+# Every input field in the dashboard declares its entry mode. Atlas
+# decides what to show the operator based on the mode.
+#
+# MODES:
+#   substrate_read  — auto-fill from substrate; operator confirms or
+#                     overrides (with reason)
+#   q_and_a         — Atlas asks question with category-typical examples
+#                     in prose; operator types; reasoning required
+#   llm_suggest     — LLM proposes 2-3 options with reasoning; operator
+#                     picks/edits; edits promoted to substrate
+#   manual_only     — no LLM; operator types; Atlas validates consistency
+#                     against substrate at save time
+#
+# Per design 2026-05-18 (operator's "decision model not form" framing).
+
+# ─── brand_voice ────────────────────────────────────────────────────────────
+brand_voice:
+  tone_descriptors:
+    mode: llm_suggest
+    suggest_count: 5
+    suggest_prompt: |
+      Suggest 3-5 tone descriptors typical for {category} brands at
+      {price_tier} positioning. Read voice from substrate first; only
+      suggest new ones not already present.
+    label: "Tone descriptors"
+    hint: "How should the brand sound? E.g., warm, plainspoken, sharp."
+
+  hero_adjectives:
+    mode: llm_suggest
+    suggest_count: 6
+    suggest_prompt: |
+      Suggest 4-6 hero adjectives that fit the brand's positioning at
+      {position_statement}. These are the descriptive words operators
+      should reach for first. Avoid generic adjectives (good, nice).
+    label: "Hero adjectives"
+    hint: "Preferred descriptive words for the brand."
+
+  banned_phrases:
+    mode: llm_suggest
+    suggest_count: 8
+    use_substrate: [edit_history]
+    suggest_prompt: |
+      Based on this operator's edit history (substrate_events where
+      operator removed phrases from generated content), suggest phrases
+      that should be banned going forward. Include category-typical
+      bans for premium apparel at this price tier.
+    label: "Banned phrases"
+    hint: "Phrases that must NEVER appear in generated content."
+
+  signature_phrases:
+    mode: q_and_a
+    question: |
+      What 1-3 phrases should appear in most {brand} copy?
+      Examples in similar categories: 'wear-anywhere' (Lululemon),
+      'naked feeling' (CRZ Yoga). Yours don't need to mimic; they should
+      be specific to {brand}'s voice and ownable.
+    label: "Signature phrases"
+    hint: "Phrases the brand should own."
+
+  like_examples:
+    mode: manual_only
+    label: "Like-examples"
+    hint: "Titles/copy you've approved before. Paste 2-5 examples."
+
+  unlike_examples:
+    mode: manual_only
+    label: "Unlike-examples"
+    hint: "Titles/copy you've rejected. Paste 2-5 examples."
+
+# ─── asin_metadata ──────────────────────────────────────────────────────────
+asin_metadata:
+  product_name:
+    mode: manual_only
+    consistency_check: [pocket_description]
+    label: "Product name"
+
+  material:
+    mode: manual_only
+    consistency_check: [fabric_type]
+    source_required: [factory_provided, operator_typed, agency_provided]
+    label: "Material"
+    hint: "Factory-supplied material composition. Must match FTC label."
+
+  fabric_type:
+    mode: substrate_read
+    read_from: asin_metadata.material
+    label: "Fabric type"
+    hint: "Auto-set from material composition; confirm or override."
+
+  fabric_gsm:
+    mode: manual_only
+    label: "Fabric weight (GSM)"
+    hint: "Grams per square meter. From factory spec sheet."
+
+  upf:
+    mode: q_and_a
+    question: |
+      Has the fabric been UPF-tested? If yes, enter the rating. If no,
+      enter 'Not Rated' (still missed opportunity for outdoor-use queries
+      but compliant).
+    label: "UPF rating"
+
+  weave_type:
+    mode: llm_suggest
+    suggest_count: 2
+    suggest_prompt: |
+      Given material='{material}' and stretch='{stretch}', what's the
+      most likely weave_type from Amazon's apparel taxonomy?
+    label: "Weave type"
+
+  fit_type:
+    mode: llm_suggest
+    suggest_count: 2
+    suggest_prompt: |
+      Given product_type='{product_type}', length='{length}', and
+      material='{material}', what's the most likely fit_type from
+      Amazon's apparel taxonomy?
+    label: "Fit type"
+
+  apparel_fabric_stretch:
+    mode: llm_suggest
+    suggest_count: 1
+    suggest_prompt: |
+      Given material='{material}' with spandex percentage, classify
+      stretch as: Low / Medium / High / 4-way.
+    label: "Fabric stretch"
+
+  lifestyle:
+    mode: q_and_a
+    question: |
+      Pick lifestyle tags for this ASIN. Category-typical for activewear:
+      Athletic, Casual, Outdoor, Performance. At your {price_tier} tier,
+      'Casual' may dilute athletic intent. Recommend 'Athletic' alone for
+      premium positioning; add 'Casual' only if you want broader reach
+      at cost of CVR.
+    label: "Lifestyle"
+
+  specific_uses:
+    mode: llm_suggest
+    suggest_count: 5
+    suggest_prompt: |
+      Given product_type='{product_type}' and brand position, suggest 3-5
+      specific_uses values. Common for activewear: Yoga, Gym, Running,
+      Workout, Daily Wear, Pilates, Hiking.
+    label: "Specific uses"
+
+  sport_type:
+    mode: substrate_read
+    read_from: amazon_taxonomy.sport_types
+    fallback: manual_only
+    label: "Sport type"
+    hint: "Read from Amazon taxonomy if available; otherwise enter manually."
+
+  theme:
+    mode: llm_suggest
+    suggest_count: 2
+    suggest_prompt: |
+      Pick a theme from Amazon's allowed values for this category.
+      Common options: Sports, Yoga, Fitness, Athletic. More specific
+      is better for COSMO retrieval.
+    label: "Theme"
+
+  pocket_description:
+    mode: manual_only
+    consistency_check: [product_name]
+    label: "Pocket description"
+    hint: "Must match product name and the family this ASIN belongs to."
+
+  rise_height_inches:
+    mode: manual_only
+    label: "Rise height (inches)"
+    hint: "Measured on the base size (typically Medium)."
+
+  country_of_origin:
+    mode: manual_only
+    source_required: [factory_provided]
+    label: "Country of origin"
+    hint: "Factory-confirmed. Required for Amazon apparel."
+
+  care_instructions:
+    mode: manual_only
+    source_required: [factory_provided]
+    label: "Care instructions"
+    hint: "Full: water temp, cycle, dry method, prohibitions."
+
+# ─── operator_positions ──────────────────────────────────────────────────────
+operator_positions:
+  claim:
+    mode: q_and_a
+    question: |
+      State your position as a clear claim. Examples:
+        - "Athletic positioning only, no Casual"
+        - "Pocket reference belongs in first 5 words of titles"
+        - "Never use the word 'shapewear'"
+    label: "Position"
+
+  reasoning:
+    mode: manual_only
+    label: "Reasoning"
+    hint: "Why you hold this position. Saves your thinking for future you."
+
+  position_type:
+    mode: substrate_read
+    read_from: enum
+    options: [strategic, style, hard_refusal, workflow, preference]
+    label: "Type"
+    hint: "Strategic = brand decision; Style = how content reads; Hard refusal = never; Workflow = process gate; Preference = soft."
+
+  scope:
+    mode: substrate_read
+    read_from: enum
+    options: [global, brand, asin, family, decision_class, family_decision_class]
+    label: "Scope"
+
+# ─── brand_position ──────────────────────────────────────────────────────────
+brand_position:
+  position_statement:
+    mode: q_and_a
+    question: |
+      One-sentence brand position. Format:
+        '[Quality descriptor] at [price band] price; competitor anchors: [...]'
+      Example: 'Premium-adjacent visual quality at $35-55; CRZ-adjacent.'
+    label: "Position statement"
+
+  competitor_set:
+    mode: llm_suggest
+    suggest_count: 6
+    suggest_prompt: |
+      Given brand position '{position_statement}' and category, suggest
+      4-6 competitors in three roles: visual_anchor (aspirational, look
+      like them), direct_competitor (head-to-head for same shopper),
+      below_position (avoid sounding like them).
+    label: "Competitor set"
+
+  positioning_hypothesis:
+    mode: q_and_a
+    question: |
+      Who is the actual customer this position bets on? Be specific:
+        - 'Lululemon-curious shoppers trading down'
+        - 'CRZ-loyal shoppers trading up for newer styles'
+        - 'Price-driven Amazon shoppers who want better quality'
+      You can't optimize for all three. Pick one and commit.
+    label: "Customer hypothesis"
+
+# ─── pricing_logic ──────────────────────────────────────────────────────────
+pricing_logic:
+  floor_rule:
+    mode: q_and_a
+    question: |
+      What's the floor below which a price is unacceptable? Options:
+        1. 'Variable contribution = 0' (no per-unit loss)
+        2. 'Brand breakeven' (covers fixed overhead at expected volume)
+        3. 'Minimum margin' (e.g., 30% contribution after ads)
+        4. Manual fixed value
+      Atlas refuses to recommend below the floor.
+    label: "Floor rule"
+
+  ceiling_rule:
+    mode: q_and_a
+    question: |
+      What's the ceiling above which a price is too risky? Options:
+        1. Manual fixed value (e.g., $55)
+        2. Operator-set, anchored to a competitor (e.g., 'match CRZ
+           premium pocket legging, updated manually weekly')
+        3. Computed from a competitor basket
+    label: "Ceiling rule"
+
+# ─── pricing_decisions ──────────────────────────────────────────────────────
+pricing_decisions:
+  reasoning:
+    mode: manual_only
+    label: "Why this price?"
+    hint: "Your reasoning, saved with the decision."
+
+  goal_regime:
+    mode: substrate_read
+    read_from: enum
+    options: [launch_velocity, margin, volume]
+    label: "Goal regime"
+
+# ─── competitor_state ──────────────────────────────────────────────────────
+competitor_state:
+  competitor_id:
+    mode: substrate_read
+    read_from: brand_position.competitor_set
+    label: "Competitor"
+
+  metric:
+    mode: substrate_read
+    read_from: enum
+    options: [price, review_count, bsr, listing_changed]
+    label: "Metric"
+
+  value:
+    mode: manual_only
+    label: "Value"
+    hint: "Type the observed value. Source defaults to operator_manual."
+
+  notes:
+    mode: manual_only
+    label: "Notes"
+    hint: "Optional context (e.g., 'during sale', 'new launch')."
