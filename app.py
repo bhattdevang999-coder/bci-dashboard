@@ -11306,12 +11306,29 @@ def atlas_operator_set():
         op_id = slugify_operator_id(display_name)
 
     workspace_id = _atlas_current_workspace()
-    op = upsert_operator(
-        workspace_id=workspace_id,
-        operator_id=op_id,
-        display_name=display_name,
-        role=role,
-    )
+    try:
+        op = upsert_operator(
+            workspace_id=workspace_id,
+            operator_id=op_id,
+            display_name=display_name,
+            role=role,
+        )
+    except Exception as exc:
+        # Don't 500 the caller — attribution can still proceed with a
+        # synthetic op row + a cookie. Log so we can fix the DB-side
+        # cause without breaking the UX.
+        import traceback
+        print(f"[atlas] upsert_operator failed: {exc}\n"
+              f"{traceback.format_exc()}", flush=True)
+        op = {
+            "workspace_id": workspace_id,
+            "operator_id": op_id,
+            "display_name": display_name,
+            "role": role,
+            "created_at": _dt_boot.now(_tz_boot.utc).isoformat(),
+            "active": True,
+            "db_persist_failed": True,
+        }
 
     session_data["operator_id"] = op_id
     session_data["operator"] = display_name
@@ -15055,10 +15072,29 @@ def atlas_benchmarks_bump_usage(benchmark_id: str):
 
 @app.route("/api/atlas/workspaces", methods=["GET"])
 def atlas_workspaces_list():
-    """List all registered brand workspaces (for the topbar switcher)."""
+    """List all registered brand workspaces (for the topbar switcher).
+
+    Self-healing: if the table is empty (boot-time seed missed it,
+    typical on cold Render starts where the pool isn't ready yet),
+    re-run the seed on the first list call.
+    """
     try:
-        from substrate.brand_workspace import list_workspaces
+        from substrate.brand_workspace import (
+            list_workspaces, register_workspace,
+        )
         rows = list_workspaces()
+        if not rows:
+            # Boot-time seed didn't land. Run it now.
+            try:
+                register_workspace('novelle', display_name='Novelle',
+                                   brand_role='operator_brand')
+                register_workspace('roxy', display_name='Roxy',
+                                   brand_role='audit_only')
+                rows = list_workspaces()
+                print("[atlas] workspaces self-healed on first list", flush=True)
+            except Exception as heal_exc:
+                print(f"[atlas] workspaces self-heal failed: {heal_exc}",
+                      flush=True)
         return jsonify({"ok": True, "rows": rows, "count": len(rows)})
     except Exception as exc:
         print(f"[atlas] workspaces list failed: {exc}", flush=True)
@@ -15095,13 +15131,32 @@ def atlas_workspaces_switch():
 @app.route("/api/atlas/audit-rules", methods=["GET"])
 def atlas_audit_rules_list():
     """List rules. ?workspace_id=X gets the brand-effective ruleset.
-    No workspace_id returns all (global + every brand override)."""
+    No workspace_id returns all (global + every brand override).
+
+    Self-healing: if zero global rules exist, run seed_default_rules() on
+    the first list call. This catches cold-start races on Render where the
+    pool wasn't ready at module-import time.
+    """
     workspace_id = (request.args.get("workspace_id") or "").strip() or None
     include_inactive = request.args.get("include_inactive") == "1"
     try:
         from substrate.audit_rules import (
-            list_active_rules, resolve_rules_for_brand,
+            list_active_rules, resolve_rules_for_brand, seed_default_rules,
         )
+        # Cheap empty-check: count globals only.
+        globals_count = len([
+            r for r in list_active_rules(workspace_id=None,
+                                          include_global=True)
+            if r.get("workspace_id") is None
+        ])
+        if globals_count == 0:
+            try:
+                inserted = seed_default_rules()
+                print(f"[atlas] audit-rules self-healed: seeded {inserted}",
+                      flush=True)
+            except Exception as heal_exc:
+                print(f"[atlas] audit-rules self-heal failed: {heal_exc}",
+                      flush=True)
         if workspace_id and request.args.get("resolved") == "1":
             rows = resolve_rules_for_brand(workspace_id)
         else:
