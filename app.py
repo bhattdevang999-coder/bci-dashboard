@@ -407,6 +407,21 @@ try:
                 print(f"[atlas] seeded {_seeded} brand_profile row(s)", flush=True)
         except Exception as _atlas_seed_exc:
             print(f"[atlas] brand_profile seed skipped: {_atlas_seed_exc}", flush=True)
+        # M6: seed the catalog audit rule library (15 global defaults)
+        try:
+            from substrate.audit_rules import seed_default_rules
+            _rules_seeded = seed_default_rules()
+            if _rules_seeded:
+                print(f"[atlas] seeded {_rules_seeded} audit rule(s)", flush=True)
+        except Exception as _atlas_rules_exc:
+            print(f"[atlas] audit rules seed skipped: {_atlas_rules_exc}", flush=True)
+        # M6: register the operator workspace (Novelle is the default).
+        try:
+            from substrate.brand_workspace import register_workspace
+            register_workspace('novelle', display_name='Novelle',
+                               brand_role='operator_brand')
+        except Exception as _atlas_ws_exc:
+            print(f"[atlas] workspace register skipped: {_atlas_ws_exc}", flush=True)
         # Migrate any surviving JSONL substrate files into Postgres.
         # Idempotent: ON CONFLICT DO NOTHING + deterministic UUIDs for
         # legacy rows that lack event_id. Most deploys this is a no-op
@@ -15028,6 +15043,220 @@ def atlas_benchmarks_bump_usage(benchmark_id: str):
         return jsonify({"ok": ok}), (200 if ok else 400)
     except Exception as exc:
         print(f"[atlas] benchmarks bump_usage failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ─── M6 Day 1: Catalog Audit — workspaces + rules + ingest ────────────
+
+@app.route("/api/atlas/workspaces", methods=["GET"])
+def atlas_workspaces_list():
+    """List all registered brand workspaces (for the topbar switcher)."""
+    try:
+        from substrate.brand_workspace import list_workspaces
+        rows = list_workspaces()
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] workspaces list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/workspaces/switch", methods=["POST"])
+def atlas_workspaces_switch():
+    """Switch the current workspace via cookie. Body: {workspace_id}."""
+    body = request.get_json(silent=True) or {}
+    workspace_id = (body.get("workspace_id") or "").strip()
+    if not workspace_id:
+        return jsonify({"ok": False, "error": "workspace_id required"}), 400
+    try:
+        from substrate.brand_workspace import get_workspace
+        ws = get_workspace(workspace_id)
+        if ws is None or not ws.get("is_active"):
+            return jsonify({"ok": False,
+                            "error": "workspace not registered"}), 404
+        resp = jsonify({"ok": True, "workspace_id": workspace_id,
+                        "workspace": ws})
+        # 90-day cookie so the choice persists across browser sessions
+        resp.set_cookie(
+            "atlas_workspace_id", workspace_id,
+            max_age=60 * 60 * 24 * 90,
+            samesite="Lax", httponly=False,
+        )
+        return resp
+    except Exception as exc:
+        print(f"[atlas] workspaces switch failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/audit-rules", methods=["GET"])
+def atlas_audit_rules_list():
+    """List rules. ?workspace_id=X gets the brand-effective ruleset.
+    No workspace_id returns all (global + every brand override)."""
+    workspace_id = (request.args.get("workspace_id") or "").strip() or None
+    include_inactive = request.args.get("include_inactive") == "1"
+    try:
+        from substrate.audit_rules import (
+            list_active_rules, resolve_rules_for_brand,
+        )
+        if workspace_id and request.args.get("resolved") == "1":
+            rows = resolve_rules_for_brand(workspace_id)
+        else:
+            rows = list_active_rules(
+                workspace_id=workspace_id,
+                include_inactive=include_inactive,
+                include_global=True,
+            )
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] audit-rules list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/audit-rules/<rule_id>", methods=["GET"])
+def atlas_audit_rules_get(rule_id: str):
+    try:
+        from substrate.audit_rules import get_rule
+        row = get_rule(rule_id)
+        if row is None:
+            return jsonify({"ok": False, "error": "not found"}), 404
+        return jsonify({"ok": True, "row": row})
+    except Exception as exc:
+        print(f"[atlas] audit-rules get failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/audit-rules/<rule_id>", methods=["POST"])
+def atlas_audit_rules_edit(rule_id: str):
+    """Edit a rule in place. Body: {threshold_json?, severity?,
+    is_active?, applies_to?, reasoning?}."""
+    body = request.get_json(silent=True) or {}
+    try:
+        from substrate.audit_rules import edit_rule
+        ok = edit_rule(
+            rule_id,
+            edited_by=(body.get("edited_by") or "devang").strip(),
+            threshold_json=body.get("threshold_json"),
+            severity=body.get("severity"),
+            is_active=body.get("is_active"),
+            applies_to=body.get("applies_to"),
+            reasoning=body.get("reasoning"),
+        )
+        return jsonify({"ok": ok}), (200 if ok else 400)
+    except Exception as exc:
+        print(f"[atlas] audit-rules edit failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/audit-rules/<rule_id>/fork", methods=["POST"])
+def atlas_audit_rules_fork(rule_id: str):
+    """Fork a global rule into a brand-specific override.
+
+    Body: {workspace_id, threshold_overrides?, severity_override?,
+           reasoning?}.
+    """
+    body = request.get_json(silent=True) or {}
+    workspace_id = (body.get("workspace_id") or "").strip()
+    if not workspace_id:
+        return jsonify({"ok": False, "error": "workspace_id required"}), 400
+    try:
+        from substrate.audit_rules import fork_for_brand
+        new_id = fork_for_brand(
+            rule_id, workspace_id,
+            threshold_overrides=body.get("threshold_overrides"),
+            severity_override=body.get("severity_override"),
+            forked_by=(body.get("forked_by") or "devang").strip(),
+            reasoning=body.get("reasoning"),
+        )
+        if not new_id:
+            return jsonify({"ok": False, "error": "fork failed"}), 400
+        return jsonify({"ok": True, "rule_id": new_id})
+    except Exception as exc:
+        print(f"[atlas] audit-rules fork failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/catalog/ingest", methods=["POST"])
+def atlas_catalog_ingest():
+    """Ingest a catalog XLSX. Two modes:
+      1) multipart file upload (form field 'file')
+      2) JSON {filepath: "/workspace/..."} for already-uploaded files
+
+    Body / query: workspace_id (required), preview_only (default false).
+    Returns the coverage report.
+    """
+    workspace_id = (
+        (request.form.get("workspace_id")
+         or (request.get_json(silent=True) or {}).get("workspace_id")
+         or request.args.get("workspace_id")
+         or "").strip()
+    )
+    if not workspace_id:
+        return jsonify({"ok": False, "error": "workspace_id required"}), 400
+
+    preview_only = (
+        request.form.get("preview_only") == "1"
+        or (request.get_json(silent=True) or {}).get("preview_only") is True
+    )
+
+    # Resolve filepath
+    filepath = None
+    if "file" in request.files:
+        upload = request.files["file"]
+        if upload and upload.filename:
+            import os, tempfile
+            safe = os.path.basename(upload.filename)
+            dest_dir = "/home/user/workspace"
+            try:
+                os.makedirs(dest_dir, exist_ok=True)
+                filepath = os.path.join(dest_dir, safe)
+                upload.save(filepath)
+            except Exception as exc:
+                return jsonify({"ok": False,
+                                "error": f"upload save failed: {exc}"}), 500
+    if not filepath:
+        body = request.get_json(silent=True) or {}
+        filepath = (body.get("filepath") or "").strip()
+    if not filepath:
+        return jsonify({"ok": False,
+                        "error": "file upload or filepath required"}), 400
+
+    try:
+        from substrate.catalog_ingest import ingest_workbook
+        result = ingest_workbook(
+            filepath, workspace_id,
+            write_substrate=not preview_only,
+            ingested_by=(request.cookies.get("atlas_operator_id") or "devang"),
+        )
+        return jsonify(result)
+    except Exception as exc:
+        print(f"[atlas] catalog ingest failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/catalog/coverage", methods=["GET"])
+def atlas_catalog_coverage():
+    """Return current substrate stats for a workspace.
+
+    Used by the Catalog tab landing to show 'last ingest was X ASINs,
+    cohort split was Y/Z, last audit ran A days ago.'
+    """
+    workspace_id = (
+        request.args.get("workspace_id")
+        or request.cookies.get("atlas_workspace_id")
+        or "novelle"
+    ).strip()
+    try:
+        from substrate.brand_workspace import get_workspace
+        from substrate.catalog_audit import count_by_cohort
+        ws = get_workspace(workspace_id)
+        cohorts = count_by_cohort(workspace_id)
+        return jsonify({
+            "ok": True,
+            "workspace": ws,
+            "cohort_counts": cohorts,
+            "has_ingest": bool(ws and ws.get("catalog_size_asins")),
+        })
+    except Exception as exc:
+        print(f"[atlas] catalog coverage failed: {exc}", flush=True)
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
 
 

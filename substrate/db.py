@@ -173,7 +173,14 @@ def wipe_substrate_for_tests() -> None:
                     competitor_state,
                     recommendation_ingest,
                     atlas_evaluation,
-                    content_benchmarks
+                    content_benchmarks,
+                    audit_decisions,
+                    catalog_audit_findings,
+                    cohort_classifications,
+                    audit_sessions,
+                    analytics_views,
+                    audit_rules,
+                    brand_workspace
                 RESTART IDENTITY CASCADE
                 """
             )

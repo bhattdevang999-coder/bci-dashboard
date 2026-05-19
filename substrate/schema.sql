@@ -1027,3 +1027,304 @@ CREATE INDEX IF NOT EXISTS idx_benchmarks_open_unknowns
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v9', 'M5: content_benchmarks.')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v10 MIGRATION (M6, 2026-05-19): Catalog Audit module.
+--
+-- Implements the catalog audit flow agreed in the M6 spec:
+--
+--   INGEST → CLASSIFY → SLICE → DIAGNOSE → PRIORITIZE → ACT → MEASURE
+--
+-- Tables:
+--   1. brand_workspace         — registry of brands/workspaces (Roxy, Novelle, …)
+--   2. audit_rules             — operator-editable rule library + per-brand overrides
+--   3. cohort_classifications  — per-ASIN cohort assignment (active|latent|archive|unknown)
+--   4. catalog_audit_findings  — one row per (asin, rule, finding) with severity + revenue exposure
+--   5. audit_decisions         — operator accept/edit/reject/defer + dwell time + chosen candidate
+--   6. audit_sessions          — session-level summary of an operator's audit pass
+--   7. analytics_views         — pinned analytics slices ("Tops × A+ × $40-60")
+-- ===========================================================================
+
+-- 1. brand_workspace — registry of brands
+-- Workspace_id keys we already use (novelle, roxy, ...) are now first-class rows.
+-- The topbar workspace switcher reads from this table.
+CREATE TABLE IF NOT EXISTS brand_workspace (
+    workspace_id          TEXT PRIMARY KEY,
+    display_name          TEXT NOT NULL,
+    brand_role            TEXT NOT NULL DEFAULT 'operator_brand',
+                          -- 'operator_brand' (Novelle, our own) |
+                          -- 'audit_only'     (Roxy, TLG diagnostic target) |
+                          -- 'demo'
+
+    sales_period_start    DATE,
+    sales_period_end      DATE,
+    catalog_size_asins    INTEGER,
+
+    is_active             BOOLEAN NOT NULL DEFAULT true,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_audit_at         TIMESTAMPTZ,
+    meta                  JSONB DEFAULT '{}'::jsonb
+);
+
+-- Seed the two we know about. Idempotent.
+INSERT INTO brand_workspace (workspace_id, display_name, brand_role) VALUES
+    ('novelle', 'Novelle', 'operator_brand'),
+    ('roxy',    'Roxy',    'audit_only')
+ON CONFLICT (workspace_id) DO NOTHING;
+
+
+-- 2. audit_rules — the rule library, operator-editable
+-- Global defaults seeded by the application; per-brand overrides land as
+-- separate rows with parent_rule_id pointing at the global. Resolution order:
+-- brand-specific row > global default. Same scope-priority idea as
+-- operator_positions.
+CREATE TABLE IF NOT EXISTS audit_rules (
+    rule_id              TEXT PRIMARY KEY,
+    workspace_id         TEXT,
+                         -- NULL = global default;
+                         -- non-NULL = brand-specific override
+    parent_rule_id       TEXT REFERENCES audit_rules(rule_id),
+                         -- forks (overrides) reference their parent
+
+    name                 TEXT NOT NULL,
+                         -- machine name: 'fewer_than_7_images',
+                         -- 'duplicate_style_group', etc.
+    display_name         TEXT NOT NULL,
+                         -- human label: 'Fewer than 7 images'
+    description          TEXT,
+
+    -- The actual rule
+    rule_kind            TEXT NOT NULL,
+                         -- 'numeric_threshold' | 'presence_check'
+                         -- | 'group_size'      | 'compound'
+                         -- | 'cohort_aggregate'
+    threshold_json       JSONB NOT NULL,
+                         -- e.g., {"column":"image_count","op":"<","value":7}
+    applies_to           JSONB NOT NULL DEFAULT '{}'::jsonb,
+                         -- e.g., {"cohort":"active","decile":"top_revenue"}
+
+    severity             TEXT NOT NULL,
+                         -- 'critical' | 'high' | 'medium' | 'low' | 'strategic'
+    confidence_default   NUMERIC(4,3),
+                         -- e.g., 0.85 if rule has historical predictive accuracy
+    predicted_lift_model TEXT,
+                         -- 'same_parent_aplus' | 'image_count_regression'
+                         -- | 'rule_of_thumb'   | 'unknown'
+
+    is_active            BOOLEAN NOT NULL DEFAULT true,
+
+    revision             INTEGER NOT NULL DEFAULT 1,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by           TEXT NOT NULL DEFAULT 'system',
+    last_edited_at       TIMESTAMPTZ,
+    last_edited_by       TEXT,
+    last_edit_reasoning  TEXT,
+
+    meta                 JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_rules_active
+    ON audit_rules (workspace_id, is_active, name);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_audit_rules_global_name
+    ON audit_rules (name) WHERE workspace_id IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_audit_rules_workspace_name
+    ON audit_rules (workspace_id, name) WHERE workspace_id IS NOT NULL;
+
+
+-- 3. cohort_classifications — per-ASIN cohort assignment
+-- One row per (workspace, asin, classified_at). Reclassification appends a
+-- new row, never updates. inputs_used_json captures the values that drove
+-- the call so audit-of-audit is possible.
+CREATE TABLE IF NOT EXISTS cohort_classifications (
+    classification_id    TEXT PRIMARY KEY,
+    workspace_id         TEXT NOT NULL,
+    asin                 TEXT NOT NULL,
+
+    cohort               TEXT NOT NULL,
+                         -- 'active' | 'latent_in_stock' | 'latent_unranked'
+                         -- | 'archive' | 'unknown'
+
+    inputs_used          JSONB NOT NULL,
+                         -- {"ttm_units":187,"ttm_sessions":8920,
+                         --  "inventory_status":"unknown","bsr_band":"unknown"}
+    rule_applied         TEXT NOT NULL,
+                         -- name of the rule that fired this classification
+
+    classified_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    classified_by        TEXT NOT NULL DEFAULT 'system',
+    is_current           BOOLEAN NOT NULL DEFAULT true,
+                         -- prior classifications get is_current=false on
+                         -- reclassification, but rows are not deleted
+
+    meta                 JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_cohort_current
+    ON cohort_classifications (workspace_id, asin)
+    WHERE is_current = true;
+
+CREATE INDEX IF NOT EXISTS idx_cohort_by_cohort
+    ON cohort_classifications (workspace_id, cohort)
+    WHERE is_current = true;
+
+
+-- 4. catalog_audit_findings — one row per (asin, rule, finding)
+CREATE TABLE IF NOT EXISTS catalog_audit_findings (
+    finding_id           TEXT PRIMARY KEY,
+    workspace_id         TEXT NOT NULL,
+    audit_run_id         TEXT NOT NULL,
+                         -- groups all findings from one audit_run
+    asin                 TEXT NOT NULL,
+    rule_id              TEXT NOT NULL REFERENCES audit_rules(rule_id),
+    rule_name            TEXT NOT NULL,
+                         -- denormalized for fast queue rendering
+
+    severity             TEXT NOT NULL,
+                         -- copied from rule at audit time so historical rows
+                         -- stay stable if the rule's severity changes later
+    revenue_exposure     NUMERIC(14,2),
+                         -- TTM revenue at risk if this finding is ignored
+
+    evidence             JSONB NOT NULL,
+                         -- {"column":"image_count","actual":4,"threshold":7,
+                         --  "substrate_rows":["catalog#B0...","sales#B0..."]}
+    proposed_fix         JSONB,
+                         -- {"action_type":"add_images","details":{...},
+                         --  "expected_lift_pct":12,"confidence":0.85,
+                         --  "queue":"quick_win"}
+    confidence           NUMERIC(4,3),
+    queue                TEXT NOT NULL,
+                         -- 'quick_win' | 'content_quality' | 'strategic'
+                         -- | 'manual_review'
+    priority_score       NUMERIC(8,4),
+
+    -- Outcome attachment (filled later by the cron)
+    outcome_30d          JSONB,
+    outcome_60d          JSONB,
+    outcome_90d          JSONB,
+
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    meta                 JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_findings_run
+    ON catalog_audit_findings (audit_run_id);
+
+CREATE INDEX IF NOT EXISTS idx_findings_asin
+    ON catalog_audit_findings (workspace_id, asin, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_findings_queue
+    ON catalog_audit_findings (workspace_id, queue, priority_score DESC);
+
+CREATE INDEX IF NOT EXISTS idx_findings_rule
+    ON catalog_audit_findings (workspace_id, rule_id, created_at DESC);
+
+
+-- 5. audit_decisions — operator decisions on findings
+-- Captures latency-as-a-feature (time_dwelled_ms, time_to_first_action_ms)
+-- so Loop 1 sees both substance and timing. Edits land as decision_value.
+CREATE TABLE IF NOT EXISTS audit_decisions (
+    decision_id            TEXT PRIMARY KEY,
+    finding_id             TEXT NOT NULL
+                           REFERENCES catalog_audit_findings(finding_id)
+                           ON DELETE CASCADE,
+    workspace_id           TEXT NOT NULL,
+    session_id             TEXT,
+
+    decision_action        TEXT NOT NULL,
+                           -- 'accept' | 'edit' | 'reject'
+                           -- | 'defer' | 'skip'
+    decision_value         JSONB,
+                           -- if edit: the operator's edited fix payload
+                           -- if reject: {"reason":"..."}
+                           -- if defer: {"defer_until":"..."}
+
+    top_candidates_offered JSONB DEFAULT '[]'::jsonb,
+                           -- the 2-3 candidate fixes Atlas surfaced
+    chosen_candidate       TEXT,
+                           -- which one the operator picked (or 'edit'/'reject')
+
+    time_to_first_action_ms INTEGER,
+    time_dwelled_ms        INTEGER,
+
+    decided_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    decided_by             TEXT NOT NULL DEFAULT 'devang',
+
+    meta                   JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_decisions_finding
+    ON audit_decisions (finding_id);
+
+CREATE INDEX IF NOT EXISTS idx_decisions_session
+    ON audit_decisions (session_id, decided_at);
+
+CREATE INDEX IF NOT EXISTS idx_decisions_action
+    ON audit_decisions (workspace_id, decision_action, decided_at DESC);
+
+
+-- 6. audit_sessions — session-level summary
+-- Written when an operator pages out, switches workspace, or sets
+-- "Done for now". Loop 1 trains on these, not raw decisions, because
+-- operator taste at minute 30 differs from minute 3.
+CREATE TABLE IF NOT EXISTS audit_sessions (
+    session_id           TEXT PRIMARY KEY,
+    workspace_id         TEXT NOT NULL,
+    operator_id          TEXT NOT NULL DEFAULT 'devang',
+
+    started_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    ended_at             TIMESTAMPTZ,
+    duration_seconds     INTEGER,
+
+    asins_reviewed       INTEGER NOT NULL DEFAULT 0,
+    accepts              INTEGER NOT NULL DEFAULT 0,
+    edits                INTEGER NOT NULL DEFAULT 0,
+    rejects              INTEGER NOT NULL DEFAULT 0,
+    defers               INTEGER NOT NULL DEFAULT 0,
+    skips                INTEGER NOT NULL DEFAULT 0,
+
+    avg_time_to_decide_ms INTEGER,
+    queue_focus          TEXT,
+                         -- which queue did most attention go to
+    top_reject_reasons   TEXT[] DEFAULT ARRAY[]::TEXT[],
+
+    summary_text         TEXT,
+                         -- one-paragraph reflection (LLM or heuristic)
+
+    meta                 JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_operator
+    ON audit_sessions (operator_id, started_at DESC);
+
+
+-- 7. analytics_views — pinned analytics slices
+-- Operator builds a slice in Analytics → pins it → this row.
+CREATE TABLE IF NOT EXISTS analytics_views (
+    view_id              TEXT PRIMARY KEY,
+    workspace_id         TEXT NOT NULL,
+    operator_id          TEXT NOT NULL DEFAULT 'devang',
+
+    view_name            TEXT NOT NULL,
+    slice_spec           JSONB NOT NULL,
+                         -- {"dimensions":["subcategory","aplus_status"],
+                         --  "filters":{"cohort":"active"},
+                         --  "period":"ttm"}
+
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_opened_at       TIMESTAMPTZ,
+    open_count           INTEGER NOT NULL DEFAULT 0,
+
+    meta                 JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_analytics_views_operator
+    ON analytics_views (workspace_id, operator_id, last_opened_at DESC);
+
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v10', 'M6 Day 1: catalog audit substrate (7 tables) + brand_workspace registry.')
+    ON CONFLICT (version) DO NOTHING;

@@ -2815,6 +2815,216 @@
   white-space: nowrap;
 }
 
+/* ──────── M6: Workspace switcher chip ──────── */
+.atlas-workspace-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px; color: var(--text);
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+.atlas-workspace-chip:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft, rgba(94, 234, 212, 0.08));
+}
+.atlas-workspace-chip-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #5eead4;
+}
+.atlas-workspace-chip-label { font-weight: 600; }
+.atlas-workspace-chip-caret { opacity: 0.6; font-size: 10px; }
+
+.atlas-workspace-popover {
+  position: fixed; z-index: 9200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  min-width: 280px;
+  padding: 6px;
+  display: none;
+}
+.atlas-workspace-popover.open { display: block; }
+.atlas-workspace-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px; color: var(--text);
+}
+.atlas-workspace-row:hover { background: var(--bg); }
+.atlas-workspace-row.current { background: var(--accent-soft, rgba(94,234,212,0.08)); }
+.atlas-workspace-row-name { font-weight: 600; }
+.atlas-workspace-row-meta { color: var(--text-dim); font-size: 11px; margin-left: auto; }
+
+/* ──────── M6: Catalog sub-tabs (Ingest / Audit / Analytics / Rules) ──────── */
+.cat-subnav {
+  display: flex; gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin: 0 0 20px 0;
+  padding: 0;
+}
+.cat-subnav-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+  display: inline-flex; align-items: center; gap: 8px;
+  letter-spacing: 0.01em;
+}
+.cat-subnav-tab:hover { color: var(--text); }
+.cat-subnav-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.cat-subnav-tab .count-pill {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 10px;
+  color: var(--text-dim);
+  min-width: 18px; text-align: center;
+}
+.cat-subnav-tab.active .count-pill {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cat-subpanel { display: none; }
+.cat-subpanel.active { display: block; }
+
+/* M6 Ingest panel */
+.m6-ingest-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.m6-ingest-card h3 {
+  font-size: 16px; font-weight: 600;
+  margin: 0 0 6px 0; color: var(--text);
+}
+.m6-ingest-card .sub {
+  font-size: 12px; color: var(--text-dim);
+  margin-bottom: 18px;
+}
+.m6-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+.m6-dropzone:hover, .m6-dropzone.dragover {
+  border-color: var(--accent);
+  background: var(--accent-soft, rgba(94,234,212,0.05));
+}
+.m6-dropzone-icon { font-size: 32px; opacity: 0.5; margin-bottom: 8px; }
+.m6-dropzone-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.m6-dropzone-sub { font-size: 12px; color: var(--text-dim); }
+.m6-form-row {
+  display: flex; gap: 12px; align-items: center;
+  margin-top: 14px; flex-wrap: wrap;
+}
+.m6-form-row label {
+  font-size: 11px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.m6-form-row input[type="text"], .m6-form-row select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-size: 12px;
+}
+.m6-btn {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 120ms;
+}
+.m6-btn:hover { opacity: 0.85; }
+.m6-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.m6-btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.m6-coverage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+.m6-cov-tile {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.m6-cov-tile .lbl {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.m6-cov-tile .val {
+  font-size: 22px; font-weight: 600; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.m6-cov-tile .delta {
+  font-size: 11px; color: var(--text-dim); margin-top: 3px;
+}
+.m6-skipped-list {
+  margin-top: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.m6-skipped-list h4 {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-dim); margin: 0 0 8px 0;
+}
+.m6-skipped-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.m6-skipped-row:first-of-type { border-top: none; }
+.m6-skipped-row .reason { color: var(--text-dim); font-size: 11px; }
+
+.m6-stub {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-dim);
+}
+.m6-stub h3 { color: var(--text); font-size: 15px; margin: 0 0 6px 0; }
+.m6-stub p { font-size: 12px; margin: 0; max-width: 480px; margin-left: auto; margin-right: auto; }
+.m6-stub .eyebrow {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--accent); margin-bottom: 10px;
+}
+
 .atlas-operator-modal {
   position: fixed;
   inset: 0;
@@ -6392,6 +6602,12 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
       <span id="topbar-title" style="display:none;">Atlas · Home</span>
     </div>
     <div class="topbar-right">
+      <!-- M6: workspace switcher chip (one per brand) -->
+      <button class="atlas-workspace-chip" id="atlas-workspace-chip" onclick="atlasOpenWorkspacePicker()" title="Switch workspace">
+        <span class="atlas-workspace-chip-dot"></span>
+        <span class="atlas-workspace-chip-label" id="atlas-workspace-chip-label">Novelle</span>
+        <span class="atlas-workspace-chip-caret">▾</span>
+      </button>
       <button class="atlas-cmdk-trigger" onclick="atlasOpenPalette()" title="Search Atlas (⌘K)">
         <span class="atlas-cmdk-icon">⌕</span>
         <span class="atlas-cmdk-text">Search Atlas</span>
@@ -8318,7 +8534,111 @@ Pocket Description: No Pocket
 
   <div id="catalog-page" class="content content-wide">
 
-    <!-- Tutorial: How does Catalog Health work? -->
+    <!-- ═══════════════════ M6: Catalog sub-tabs ═══════════════════ -->
+    <nav class="cat-subnav" role="tablist" aria-label="Catalog sub-sections">
+      <button class="cat-subnav-tab active" id="cat-tab-ingest"
+              role="tab" aria-selected="true"
+              onclick="catSetSubtab('ingest')">
+        Ingest
+      </button>
+      <button class="cat-subnav-tab" id="cat-tab-audit"
+              role="tab" aria-selected="false"
+              onclick="catSetSubtab('audit')">
+        Audit <span class="count-pill" id="cat-audit-count">—</span>
+      </button>
+      <button class="cat-subnav-tab" id="cat-tab-analytics"
+              role="tab" aria-selected="false"
+              onclick="catSetSubtab('analytics')">
+        Analytics
+      </button>
+      <button class="cat-subnav-tab" id="cat-tab-rules"
+              role="tab" aria-selected="false"
+              onclick="catSetSubtab('rules')">
+        Rules <span class="count-pill" id="cat-rules-count">—</span>
+      </button>
+    </nav>
+
+    <!-- ─────────── INGEST sub-panel ─────────── -->
+    <div class="cat-subpanel active" id="cat-panel-ingest" role="tabpanel">
+      <div class="m6-ingest-card">
+        <h3>Catalog ingest</h3>
+        <div class="sub">
+          Drop an Atlas catalog template (.xlsx). Atlas writes ASIN metadata,
+          outcome events, and classifies the active/dormant cohort.
+          Active = TTM units &ge; 1 OR sessions &ge; 50. Everything else is
+          marked Unknown until BSR/inventory data arrives.
+        </div>
+
+        <div class="m6-dropzone" id="m6-dropzone"
+             onclick="document.getElementById('m6-ingest-file').click()">
+          <div class="m6-dropzone-icon">⤓</div>
+          <div class="m6-dropzone-title" id="m6-dropzone-title">
+            Drop XLSX here, or click to pick a file
+          </div>
+          <div class="m6-dropzone-sub">
+            Atlas catalog data template · .xlsx · up to 80,000 rows
+          </div>
+          <input type="file" id="m6-ingest-file"
+                 accept=".xlsx,.xls"
+                 style="display:none;"
+                 onchange="m6OnFilePicked(this.files)">
+        </div>
+
+        <div class="m6-form-row">
+          <label>Workspace</label>
+          <input type="text" id="m6-workspace-id" value="novelle"
+                 placeholder="workspace_id">
+          <label style="margin-left:12px;">
+            <input type="checkbox" id="m6-preview-only">
+            Preview only (don't write substrate)
+          </label>
+          <button class="m6-btn" id="m6-run-ingest-btn"
+                  onclick="m6RunIngest()" disabled>
+            Run ingest
+          </button>
+          <span id="m6-ingest-status"
+                style="font-size:11px;color:var(--text-dim);"></span>
+        </div>
+      </div>
+
+      <!-- Coverage report (populated after ingest or page load) -->
+      <div class="m6-ingest-card" id="m6-coverage-card">
+        <h3>Coverage report</h3>
+        <div class="sub" id="m6-coverage-sub">
+          Substrate state for the current workspace.
+        </div>
+        <div class="m6-coverage" id="m6-coverage-tiles">
+          <div class="m6-cov-tile">
+            <div class="lbl">Loading…</div>
+            <div class="val">—</div>
+          </div>
+        </div>
+        <div class="m6-skipped-list" id="m6-skipped-list" style="display:none;">
+          <h4>Skipped rules</h4>
+          <div id="m6-skipped-rows"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────── AUDIT sub-panel (Day 2) ─────────── -->
+    <div class="cat-subpanel" id="cat-panel-audit" role="tabpanel">
+      <div class="m6-stub">
+        <div class="eyebrow">// M6 · DAY 2</div>
+        <h3>Audit run + findings table</h3>
+        <p>
+          Day 2 ships the audit engine that runs the resolved ruleset against
+          the current substrate, writes findings with revenue-at-risk, and
+          surfaces the operator decision trail (accept · reject · edit rule).
+          Until then, the legacy Catalog Health uploader below remains live.
+        </p>
+      </div>
+
+      <!-- Tutorial: How does Catalog Health work? -->
+      <details style="margin-top:24px;">
+        <summary style="cursor:pointer;font-size:12px;color:var(--text-dim);padding:8px 0;">
+          Legacy Catalog Health UI (will be retired after M6 Day 2)
+        </summary>
+        <div id="catalog-legacy-wrapper">
     <div class="tutorial-box" id="catalog-tutorial">
       <div class="tutorial-header" onclick="toggleTutorial('catalog-tutorial')">
         <div class="tutorial-header-left">
@@ -8969,6 +9289,39 @@ Pocket Description: No Pocket
         <div id="ch-matrix-grid" class="ch-matrix-grid" style="margin-top:8px;"></div>
       </div>
     </div>
+
+        </div><!-- /catalog-legacy-wrapper -->
+      </details>
+    </div><!-- /cat-panel-audit -->
+
+    <!-- ─────────── ANALYTICS sub-panel (Day 3) ─────────── -->
+    <div class="cat-subpanel" id="cat-panel-analytics" role="tabpanel">
+      <div class="m6-stub">
+        <div class="eyebrow">// M6 · DAY 3</div>
+        <h3>Catalog analytics</h3>
+        <p>
+          Day 3 ships the dimension picker. Slice your catalog by cohort,
+          parent family, brand, category, age, or any combination. Connectors
+          that aren't wired yet (BSR, inventory, reviews) appear greyed-out
+          rather than hidden — you'll know exactly what's missing.
+        </p>
+      </div>
+    </div><!-- /cat-panel-analytics -->
+
+    <!-- ─────────── RULES sub-panel (Day 4) ─────────── -->
+    <div class="cat-subpanel" id="cat-panel-rules" role="tabpanel">
+      <div class="m6-stub">
+        <div class="eyebrow">// M6 · DAY 4</div>
+        <h3>Rule library editor</h3>
+        <p>
+          Day 4 ships the inline rule editor. Every audit rule is operator-editable
+          substrate — not a config file. Edit thresholds, fork brand-specific
+          overrides, see the live counterfactual (“if you change this, finding
+          count drops from 1,142 to 408”), and accept either as a global default
+          or a brand-only override.
+        </p>
+      </div>
+    </div><!-- /cat-panel-rules -->
 
   </div><!-- /catalog-page -->
 
@@ -13375,10 +13728,314 @@ function showPreviewPage(moduleId) {
 }
 
 function showCatalogPage() {
-  _showPage('catalog-page', 'Atlas · Catalog Health',
-    'See every broken ASIN before it costs you a sale.');
+  _showPage('catalog-page', 'Atlas · Catalog',
+    'Ingest · Audit · Analytics · Rules — every ASIN, every rule, every decision.');
   document.getElementById('nav-catalog').classList.add('active');
+  // Default to the last sub-tab the operator was on (or Ingest).
+  const last = localStorage.getItem('cat_subtab') || 'ingest';
+  catSetSubtab(last);
+  // Refresh coverage so the tiles aren't stale.
+  m6RefreshCoverage();
+  m6RefreshRuleCount();
 }
+
+// ══════════ M6: Catalog sub-tab switching ══════════
+
+function catSetSubtab(name) {
+  const valid = ['ingest', 'audit', 'analytics', 'rules'];
+  if (!valid.includes(name)) name = 'ingest';
+  localStorage.setItem('cat_subtab', name);
+  valid.forEach(n => {
+    const tab = document.getElementById('cat-tab-' + n);
+    const panel = document.getElementById('cat-panel-' + n);
+    if (tab) {
+      tab.classList.toggle('active', n === name);
+      tab.setAttribute('aria-selected', n === name ? 'true' : 'false');
+    }
+    if (panel) panel.classList.toggle('active', n === name);
+  });
+}
+
+// ══════════ M6: Workspace switcher ══════════
+
+let _atlasWorkspaces = [];
+let _atlasWorkspacePopover = null;
+
+function _atlasGetWorkspaceCookie() {
+  const m = document.cookie.match(/(?:^|;\s*)atlas_workspace_id=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : 'novelle';
+}
+
+async function atlasRefreshWorkspaceChip() {
+  try {
+    const r = await fetch('/api/atlas/workspaces');
+    const d = await r.json();
+    _atlasWorkspaces = (d && d.rows) || [];
+  } catch (e) {
+    console.warn('[atlas] workspaces fetch failed:', e);
+    _atlasWorkspaces = [];
+  }
+  const current = _atlasGetWorkspaceCookie();
+  const ws = _atlasWorkspaces.find(w => w.workspace_id === current);
+  const label = document.getElementById('atlas-workspace-chip-label');
+  if (label) label.textContent = ws ? (ws.display_name || ws.workspace_id) : current;
+  // Sync the ingest form's workspace input
+  const wsInput = document.getElementById('m6-workspace-id');
+  if (wsInput && !wsInput.dataset.userTouched) wsInput.value = current;
+}
+
+function atlasOpenWorkspacePicker() {
+  // Close existing popover
+  if (_atlasWorkspacePopover) {
+    _atlasWorkspacePopover.remove();
+    _atlasWorkspacePopover = null;
+    return;
+  }
+  const chip = document.getElementById('atlas-workspace-chip');
+  if (!chip) return;
+  const rect = chip.getBoundingClientRect();
+  const pop = document.createElement('div');
+  pop.className = 'atlas-workspace-popover open';
+  pop.style.top = (rect.bottom + 6) + 'px';
+  pop.style.right = (window.innerWidth - rect.right) + 'px';
+
+  const current = _atlasGetWorkspaceCookie();
+  if (!_atlasWorkspaces.length) {
+    pop.innerHTML = '<div class="atlas-workspace-row">'
+      + '<div>No workspaces registered.</div></div>';
+  } else {
+    pop.innerHTML = _atlasWorkspaces.map(w => {
+      const cls = w.workspace_id === current ? 'atlas-workspace-row current' : 'atlas-workspace-row';
+      const sz = w.catalog_size_asins
+        ? `${w.catalog_size_asins.toLocaleString()} ASINs`
+        : 'no ingest yet';
+      return `<div class="${cls}" onclick="atlasSwitchWorkspace('${w.workspace_id}')">`
+        + `<span class="atlas-workspace-row-name">${w.display_name || w.workspace_id}</span>`
+        + `<span class="atlas-workspace-row-meta">${sz}</span>`
+        + `</div>`;
+    }).join('');
+  }
+  document.body.appendChild(pop);
+  _atlasWorkspacePopover = pop;
+  // Click-away to close
+  setTimeout(() => {
+    document.addEventListener('click', _atlasWorkspaceClickAway, { once: true });
+  }, 0);
+}
+
+function _atlasWorkspaceClickAway(e) {
+  if (!_atlasWorkspacePopover) return;
+  if (_atlasWorkspacePopover.contains(e.target)) return;
+  if (e.target.closest('#atlas-workspace-chip')) return;
+  _atlasWorkspacePopover.remove();
+  _atlasWorkspacePopover = null;
+}
+
+async function atlasSwitchWorkspace(workspaceId) {
+  try {
+    const r = await fetch('/api/atlas/workspaces/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspace_id: workspaceId }),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      alert('Switch failed: ' + (d.error || 'unknown'));
+      return;
+    }
+    if (_atlasWorkspacePopover) {
+      _atlasWorkspacePopover.remove();
+      _atlasWorkspacePopover = null;
+    }
+    // Reset the user-touched flag so the input picks up the new workspace
+    const wsInput = document.getElementById('m6-workspace-id');
+    if (wsInput) delete wsInput.dataset.userTouched;
+    await atlasRefreshWorkspaceChip();
+    // If we're on the catalog page, refresh coverage with the new workspace.
+    if (document.getElementById('catalog-page').style.display !== 'none') {
+      m6RefreshCoverage();
+      m6RefreshRuleCount();
+    }
+  } catch (e) {
+    alert('Switch failed: ' + e);
+  }
+}
+
+// ══════════ M6: Ingest flow ══════════
+
+let _m6PickedFile = null;
+
+function m6OnFilePicked(files) {
+  const f = files && files[0];
+  if (!f) return;
+  _m6PickedFile = f;
+  document.getElementById('m6-dropzone-title').textContent = f.name;
+  document.getElementById('m6-run-ingest-btn').disabled = false;
+}
+
+// Drag-drop wiring (idempotent — wired once on first showCatalogPage)
+function m6WireDropzone() {
+  const dz = document.getElementById('m6-dropzone');
+  if (!dz || dz._wired) return;
+  dz._wired = true;
+  ['dragenter', 'dragover'].forEach(ev => {
+    dz.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.add('dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(ev => {
+    dz.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.remove('dragover');
+    });
+  });
+  dz.addEventListener('drop', e => {
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (files && files.length) m6OnFilePicked(files);
+  });
+  // Track user edits to workspace input so switcher doesn't overwrite
+  const wsInput = document.getElementById('m6-workspace-id');
+  if (wsInput && !wsInput._wired) {
+    wsInput._wired = true;
+    wsInput.addEventListener('input', () => { wsInput.dataset.userTouched = '1'; });
+  }
+}
+
+async function m6RunIngest() {
+  if (!_m6PickedFile) {
+    alert('Pick an XLSX file first.');
+    return;
+  }
+  const workspaceId = (document.getElementById('m6-workspace-id').value || '').trim() || 'novelle';
+  const previewOnly = document.getElementById('m6-preview-only').checked;
+  const btn = document.getElementById('m6-run-ingest-btn');
+  const status = document.getElementById('m6-ingest-status');
+  btn.disabled = true;
+  status.textContent = `Ingesting ${_m6PickedFile.name}… (can take 30–60s for large files)`;
+
+  const fd = new FormData();
+  fd.append('file', _m6PickedFile);
+  fd.append('workspace_id', workspaceId);
+  if (previewOnly) fd.append('preview_only', '1');
+
+  const t0 = performance.now();
+  try {
+    const r = await fetch('/api/atlas/catalog/ingest', { method: 'POST', body: fd });
+    const d = await r.json();
+    const dt = ((performance.now() - t0) / 1000).toFixed(1);
+    if (!d.ok && d.ok !== undefined) {
+      status.textContent = `Failed: ${d.error || 'unknown'} (${dt}s)`;
+      btn.disabled = false;
+      return;
+    }
+    status.textContent = `Done in ${dt}s. Substrate ${previewOnly ? 'preview' : 'written'}.`;
+    m6RenderCoverage(d);
+    btn.disabled = false;
+  } catch (e) {
+    status.textContent = `Error: ${e}`;
+    btn.disabled = false;
+  }
+}
+
+async function m6RefreshCoverage() {
+  m6WireDropzone();
+  const workspaceId = _atlasGetWorkspaceCookie();
+  try {
+    const r = await fetch('/api/atlas/catalog/coverage?workspace_id=' + encodeURIComponent(workspaceId));
+    const d = await r.json();
+    if (!d.ok) return;
+    m6RenderCoverage(d);
+  } catch (e) {
+    console.warn('[m6] coverage fetch failed:', e);
+  }
+}
+
+function _m6Num(n) {
+  if (n === null || n === undefined) return '—';
+  return Number(n).toLocaleString();
+}
+
+function m6RenderCoverage(d) {
+  const tiles = document.getElementById('m6-coverage-tiles');
+  if (!tiles) return;
+  // The ingest endpoint returns a richer payload (rows_parsed, asin_metadata_written, etc.).
+  // The coverage endpoint returns workspace + cohort_counts.
+  const cohorts = d.cohort_counts || (d.cohort_split || {});
+  const ws = d.workspace || {};
+  const totalCatalog = ws.catalog_size_asins
+    || (cohorts.active || 0) + (cohorts.dormant || 0) + (cohorts.unknown || 0)
+    || d.rows_parsed
+    || 0;
+  const active = cohorts.active || 0;
+  const dormant = cohorts.dormant || 0;
+  const unknown = cohorts.unknown || 0;
+  const lastIngest = d.ingested_at || ws.last_ingest_at;
+  const lastIngestStr = lastIngest
+    ? new Date(lastIngest).toLocaleString()
+    : 'never';
+
+  tiles.innerHTML = `
+    <div class="m6-cov-tile">
+      <div class="lbl">Total ASINs</div>
+      <div class="val">${_m6Num(totalCatalog)}</div>
+      <div class="delta">${lastIngest ? 'last ingest ' + lastIngestStr : 'no ingest yet'}</div>
+    </div>
+    <div class="m6-cov-tile">
+      <div class="lbl">Active cohort</div>
+      <div class="val">${_m6Num(active)}</div>
+      <div class="delta">TTM units ≥1 OR sessions ≥50</div>
+    </div>
+    <div class="m6-cov-tile">
+      <div class="lbl">Dormant cohort</div>
+      <div class="val">${_m6Num(dormant)}</div>
+      <div class="delta">explicit no-sale signal</div>
+    </div>
+    <div class="m6-cov-tile">
+      <div class="lbl">Unknown</div>
+      <div class="val">${_m6Num(unknown)}</div>
+      <div class="delta">need BSR/inventory to classify</div>
+    </div>
+  `;
+
+  // Skipped rules (only from ingest response)
+  const skipped = d.skipped_rules || [];
+  const skipBox = document.getElementById('m6-skipped-list');
+  const skipRows = document.getElementById('m6-skipped-rows');
+  if (skipped.length && skipRows) {
+    skipBox.style.display = '';
+    skipRows.innerHTML = skipped.map(s => {
+      const name = typeof s === 'string' ? s : (s.rule_id || s.rule_key || s.rule || '');
+      const reason = typeof s === 'string' ? 'data column below 5% fill rate or connector missing'
+                                           : (s.reason || s.why || 'no connector');
+      return `
+        <div class="m6-skipped-row">
+          <span><b>${name}</b></span>
+          <span class="reason">${reason}</span>
+        </div>`;
+    }).join('');
+  } else if (skipBox) {
+    skipBox.style.display = 'none';
+  }
+}
+
+async function m6RefreshRuleCount() {
+  const workspaceId = _atlasGetWorkspaceCookie();
+  try {
+    const r = await fetch('/api/atlas/audit-rules?workspace_id=' + encodeURIComponent(workspaceId) + '&resolved=1');
+    const d = await r.json();
+    if (!d.ok) return;
+    const el = document.getElementById('cat-rules-count');
+    if (el) el.textContent = d.count;
+  } catch (e) {
+    console.warn('[m6] rules count fetch failed:', e);
+  }
+}
+
+// Boot the workspace chip on page load
+document.addEventListener('DOMContentLoaded', () => {
+  atlasRefreshWorkspaceChip();
+});
 
 // ══════════════ Atlas Inputs (Phase 1) ══════════════════════════════
 function showInputsPage() {
