@@ -6224,46 +6224,60 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
   </div>
 
   <nav class="sidebar-nav atlas-nav">
-    <div class="nav-item-atlas" id="nav-atlas" onclick="showAtlasPage()">
+    <div class="nav-item-atlas" id="nav-atlas" onclick="showAtlasPage()"
+         title="Atlas overview. Where you land. Live build status and the journey across the rest of the dashboard.">
       <span class="atlas-dot"></span> Home
     </div>
-    <div class="nav-item-atlas" id="nav-inputs" onclick="showInputsPage()">
+    <div class="nav-item-atlas" id="nav-inputs" onclick="showInputsPage()"
+         title="Raw operator inputs going into the system: target ACOS, MAP, regime defaults. Read by every other module.">
       <span class="atlas-dot"></span> Inputs
     </div>
-    <div class="nav-item-atlas" id="nav-memory" onclick="showMemoryPage()">
+    <div class="nav-item-atlas" id="nav-memory" onclick="showMemoryPage()"
+         title="Decision history across modules. What Atlas decided, when, and what happened after.">
       <span class="atlas-dot"></span> Memory
     </div>
-    <div class="nav-item-atlas" id="nav-marketing" onclick="showMarketingPage()">
+    <div class="nav-item-atlas" id="nav-marketing" onclick="showMarketingPage()"
+         title="Ad campaigns, budgets, ACOS/TACOS rollups. Substrate for the marketing decisions module.">
       <span class="atlas-dot"></span> Marketing
     </div>
-    <div class="nav-item-atlas" id="nav-brand-voice" onclick="showBrandVoicePage()">
+    <div class="nav-item-atlas" id="nav-brand-voice" onclick="showBrandVoicePage()"
+         title="Tone descriptors, hero adjectives, signature phrases, banned phrasings. Read by NIS on every generation.">
       <span class="atlas-dot"></span> Brand Voice
     </div>
-    <div class="nav-item-atlas" id="nav-unit-economics" onclick="showUnitEconomicsPage()">
+    <div class="nav-item-atlas" id="nav-unit-economics" onclick="showUnitEconomicsPage()"
+         title="Per-ASIN cost inputs, brand overhead, and the margin rollup (contribution / TACOS / net-after-ads).">
       <span class="atlas-dot"></span> Unit Economics
     </div>
-    <div class="nav-item-atlas" id="nav-cited-nis" onclick="showCitedNisPage()">
+    <div class="nav-item-atlas" id="nav-cited-nis" onclick="showCitedNisPage()"
+         title="Generate titles, bullets, descriptions, image briefs. Every output cites the substrate row that grounds each claim.">
       <span class="atlas-dot"></span> Cited NIS
     </div>
-    <div class="nav-item-atlas" id="nav-unknowns" onclick="showUnknownsPage()">
+    <div class="nav-item-atlas" id="nav-unknowns" onclick="showUnknownsPage()"
+         title="Things Atlas knows it doesn't know yet. Owner-routed queue. Resolving one can flag benchmarks for review.">
       <span class="atlas-dot"></span> Unknowns
     </div>
-    <div class="nav-item-atlas" id="nav-brand-position" onclick="showBrandPositionPage()">
+    <div class="nav-item-atlas" id="nav-brand-position" onclick="showBrandPositionPage()"
+         title="One row. Reviewed quarterly. Strategic position + competitor frame. Every generation reads it.">
       <span class="atlas-dot"></span> Brand Position
     </div>
-    <div class="nav-item-atlas" id="nav-operator-positions" onclick="showOperatorPositionsPage()">
+    <div class="nav-item-atlas" id="nav-operator-positions" onclick="showOperatorPositionsPage()"
+         title="Your beliefs and rules as substrate. Hard refusals always apply. More-specific scope wins over less-specific.">
       <span class="atlas-dot"></span> Operator Positions
     </div>
-    <div class="nav-item-atlas" id="nav-pricing" onclick="showPricingPage()">
+    <div class="nav-item-atlas" id="nav-pricing" onclick="showPricingPage()"
+         title="Operator-set floor and ceiling rules. Floor compute (variable contribution = 0). Pricing decisions journal.">
       <span class="atlas-dot"></span> Pricing
     </div>
-    <div class="nav-item-atlas" id="nav-velune-onboarding" onclick="showVeluneOnboardingPage()">
+    <div class="nav-item-atlas" id="nav-velune-onboarding" onclick="showVeluneOnboardingPage()"
+         title="One-time wizard: 2 parent ASINs → 40 children. Seeds the five starter operator positions.">
       <span class="atlas-dot"></span> Velune Onboarding
     </div>
-    <div class="nav-item-atlas" id="nav-recommendations" onclick="showRecommendationsPage()">
+    <div class="nav-item-atlas" id="nav-recommendations" onclick="showRecommendationsPage()"
+         title="Agency PDFs, vendor tool output, operator notes. Atlas evaluates each field; agencies respond via tokenized link.">
       <span class="atlas-dot"></span> Recommendations
     </div>
-    <div class="nav-item-atlas" id="nav-benchmarks" onclick="showBenchmarksPage()">
+    <div class="nav-item-atlas" id="nav-benchmarks" onclick="showBenchmarksPage()"
+         title="Approved generations locked as substrate. Future generations on sibling ASINs seed from them.">
       <span class="atlas-dot"></span> Benchmarks
     </div>
     <div class="nav-section-divider"></div>
