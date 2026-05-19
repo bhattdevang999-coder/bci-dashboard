@@ -415,11 +415,16 @@ try:
                 print(f"[atlas] seeded {_rules_seeded} audit rule(s)", flush=True)
         except Exception as _atlas_rules_exc:
             print(f"[atlas] audit rules seed skipped: {_atlas_rules_exc}", flush=True)
-        # M6: register the operator workspace (Novelle is the default).
+        # M6: register workspaces. Novelle is the operator brand; Roxy is
+        # audit-only (TLG client, used to validate the audit engine on a
+        # real 38k-ASIN catalog before pointing it at Novelle's smaller
+        # launch set).
         try:
             from substrate.brand_workspace import register_workspace
             register_workspace('novelle', display_name='Novelle',
                                brand_role='operator_brand')
+            register_workspace('roxy', display_name='Roxy',
+                               brand_role='audit_only')
         except Exception as _atlas_ws_exc:
             print(f"[atlas] workspace register skipped: {_atlas_ws_exc}", flush=True)
         # Migrate any surviving JSONL substrate files into Postgres.
