@@ -2815,63 +2815,102 @@
   white-space: nowrap;
 }
 
-/* ──────── M6: Workspace switcher chip ──────── */
+/* ════════ M6: dark-theme palette (catalog page lives on the atlas dark chrome) ════════
+   These colors are explicit (not tokens) because the global tokens are
+   the light-theme defaults; the catalog page is forced to dark via
+   body:has(#catalog-page[style*="block"]) in atlas-upload.css. Earlier
+   M6 CSS used var(--text-dim) which is undefined — text fell back to
+   inherit/black and was unreadable on the dark background.
+*/
+#m6-c   { } /* anchor for grep */
+
+/* Workspace switcher chip in topbar */
 .atlas-workspace-chip {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 6px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #0D1A26;
+  border: 1px solid #1C2D40;
   border-radius: 999px;
-  font-size: 12px; color: var(--text);
+  font-size: 12px; color: #E2E8F0;
   cursor: pointer;
   transition: border-color 120ms, background 120ms;
 }
 .atlas-workspace-chip:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft, rgba(94, 234, 212, 0.08));
+  border-color: #14B8A6;
+  background: #112436;
 }
 .atlas-workspace-chip-dot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: #5eead4;
+  background: #5EEAD4;
+  box-shadow: 0 0 6px rgba(94,234,212,0.6);
 }
 .atlas-workspace-chip-label { font-weight: 600; }
-.atlas-workspace-chip-caret { opacity: 0.6; font-size: 10px; }
+.atlas-workspace-chip-caret { opacity: 0.7; font-size: 10px; color: #94A3B8; }
 
 .atlas-workspace-popover {
   position: fixed; z-index: 9200;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
-  min-width: 280px;
-  padding: 6px;
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+  min-width: 320px;
+  padding: 0;
   display: none;
+  overflow: hidden;
 }
 .atlas-workspace-popover.open { display: block; }
+.atlas-workspace-popover-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #1C2D40;
+}
+.atlas-workspace-popover-title {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #94A3B8; font-weight: 600;
+}
+.atlas-workspace-popover-close {
+  background: transparent; border: none; cursor: pointer;
+  color: #94A3B8; font-size: 18px; line-height: 1; padding: 4px 6px;
+  border-radius: 4px;
+}
+.atlas-workspace-popover-close:hover { color: #E2E8F0; background: #14253A; }
+.atlas-workspace-popover-body { padding: 6px; }
 .atlas-workspace-row {
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px; color: var(--text);
+  font-size: 13px; color: #E2E8F0;
 }
-.atlas-workspace-row:hover { background: var(--bg); }
-.atlas-workspace-row.current { background: var(--accent-soft, rgba(94,234,212,0.08)); }
+.atlas-workspace-row:hover { background: #14253A; }
+.atlas-workspace-row.current { background: rgba(20,184,166,0.10); }
+.atlas-workspace-row.current::after {
+  content: '✓'; margin-left: 6px; color: #5EEAD4; font-size: 13px;
+}
 .atlas-workspace-row-name { font-weight: 600; }
-.atlas-workspace-row-meta { color: var(--text-dim); font-size: 11px; margin-left: auto; }
+.atlas-workspace-row-role {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 2px 6px; border-radius: 4px;
+  background: #14253A; color: #94A3B8;
+  margin-left: 6px;
+}
+.atlas-workspace-row-role[data-role="operator_brand"] {
+  background: rgba(20,184,166,0.12); color: #5EEAD4;
+}
+.atlas-workspace-row-meta { color: #94A3B8; font-size: 11px; margin-left: auto; }
 
-/* ──────── M6: Catalog sub-tabs (Ingest / Audit / Analytics / Rules) ──────── */
+/* ════════ Catalog sub-tabs (Ingest / Audit / Analytics / Rules) ════════ */
 .cat-subnav {
   display: flex; gap: 4px;
-  border-bottom: 1px solid var(--border);
-  margin: 0 0 20px 0;
+  border-bottom: 1px solid #1C2D40;
+  margin: 0 0 24px 0;
   padding: 0;
 }
 .cat-subnav-tab {
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: var(--text-dim);
+  color: #94A3B8;  /* readable on dark background */
   padding: 12px 18px;
   font-size: 13px;
   font-weight: 500;
@@ -2880,92 +2919,176 @@
   display: inline-flex; align-items: center; gap: 8px;
   letter-spacing: 0.01em;
 }
-.cat-subnav-tab:hover { color: var(--text); }
+.cat-subnav-tab:hover { color: #E2E8F0; }
 .cat-subnav-tab.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
+  color: #E2E8F0;
+  border-bottom-color: #14B8A6;
 }
 .cat-subnav-tab .count-pill {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: #0D1A26;
+  border: 1px solid #1C2D40;
   border-radius: 999px;
   padding: 1px 7px;
   font-size: 10px;
-  color: var(--text-dim);
+  color: #94A3B8;
   min-width: 18px; text-align: center;
 }
 .cat-subnav-tab.active .count-pill {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: #14B8A6;
+  color: #5EEAD4;
 }
 .cat-subpanel { display: none; }
 .cat-subpanel.active { display: block; }
 
-/* M6 Ingest panel */
+/* ════════ i-button (hover popover for inline explanation) ════════ */
+.m6-info {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 1px solid #2A3F58;
+  background: transparent;
+  color: #94A3B8;
+  font: 600 10px ui-monospace, Consolas, monospace;
+  cursor: help;
+  position: relative;
+  vertical-align: middle;
+  transition: border-color 120ms, color 120ms;
+}
+.m6-info:hover { border-color: #14B8A6; color: #5EEAD4; }
+.m6-info::before { content: 'i'; }
+.m6-info::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%);
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font: 400 11px 'Calibri', sans-serif;
+  color: #E2E8F0;
+  white-space: pre-line;
+  width: max-content;
+  max-width: 320px;
+  text-align: left;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  opacity: 0; pointer-events: none;
+  transition: opacity 120ms;
+  z-index: 9500;
+}
+.m6-info:hover::after { opacity: 1; }
+.m6-info[data-tip-align="right"]::after {
+  left: auto; right: 0; transform: none;
+}
+
+/* ════════ M6 Ingest panel cards ════════ */
 .m6-ingest-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #0D1A26;
+  border: 1px solid #1C2D40;
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 16px;
 }
 .m6-ingest-card h3 {
   font-size: 16px; font-weight: 600;
-  margin: 0 0 6px 0; color: var(--text);
+  margin: 0 0 6px 0; color: #E2E8F0;
+  display: inline-flex; align-items: center;
 }
 .m6-ingest-card .sub {
-  font-size: 12px; color: var(--text-dim);
-  margin-bottom: 18px;
+  font-size: 12px; color: #94A3B8;
+  margin-bottom: 18px; line-height: 1.55;
 }
 .m6-dropzone {
-  border: 2px dashed var(--border);
+  border: 2px dashed #2A3F58;
   border-radius: 10px;
   padding: 36px 24px;
   text-align: center;
   cursor: pointer;
   transition: border-color 120ms, background 120ms;
+  background: transparent;
 }
 .m6-dropzone:hover, .m6-dropzone.dragover {
-  border-color: var(--accent);
-  background: var(--accent-soft, rgba(94,234,212,0.05));
+  border-color: #14B8A6;
+  background: rgba(20,184,166,0.04);
 }
-.m6-dropzone-icon { font-size: 32px; opacity: 0.5; margin-bottom: 8px; }
-.m6-dropzone-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
-.m6-dropzone-sub { font-size: 12px; color: var(--text-dim); }
+.m6-dropzone-icon { font-size: 32px; opacity: 0.5; margin-bottom: 8px; color: #94A3B8; }
+.m6-dropzone-title { font-size: 14px; font-weight: 500; color: #E2E8F0; margin-bottom: 4px; }
+.m6-dropzone-sub { font-size: 12px; color: #94A3B8; }
+
 .m6-form-row {
   display: flex; gap: 12px; align-items: center;
   margin-top: 14px; flex-wrap: wrap;
 }
-.m6-form-row label {
-  font-size: 11px; color: var(--text-dim);
+.m6-form-row > label {
+  font-size: 11px; color: #94A3B8;
   text-transform: uppercase; letter-spacing: 0.05em;
+  display: inline-flex; align-items: center;
 }
 .m6-form-row input[type="text"], .m6-form-row select {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: #08111A;
+  border: 1px solid #1C2D40;
   border-radius: 6px;
   padding: 6px 10px;
-  color: var(--text);
+  color: #E2E8F0;
   font-size: 12px;
+  min-width: 160px;
 }
+.m6-form-row input[type="text"]:focus, .m6-form-row select:focus {
+  border-color: #14B8A6; outline: none;
+}
+
+.m6-checkbox-wrap {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; color: #94A3B8;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.m6-checkbox-wrap input[type="checkbox"] {
+  appearance: none;
+  width: 14px; height: 14px;
+  border: 1px solid #2A3F58;
+  background: #08111A;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+}
+.m6-checkbox-wrap input[type="checkbox"]:checked {
+  background: #14B8A6; border-color: #14B8A6;
+}
+.m6-checkbox-wrap input[type="checkbox"]:checked::after {
+  content: '✓'; position: absolute; top: -2px; left: 1px;
+  color: #0D1A26; font-size: 12px; font-weight: 700;
+}
+
 .m6-btn {
-  background: var(--accent);
-  color: var(--bg);
+  background: #14B8A6;
+  color: #0D1A26;
   border: none;
   border-radius: 6px;
   padding: 8px 16px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: opacity 120ms;
+  letter-spacing: 0.02em;
 }
-.m6-btn:hover { opacity: 0.85; }
-.m6-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.m6-btn:hover { opacity: 0.88; }
+.m6-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .m6-btn-secondary {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
+  background: #0D1A26;
+  color: #E2E8F0;
+  border: 1px solid #2A3F58;
 }
+
+.m6-status-line {
+  font-size: 11px; color: #94A3B8;
+  margin-top: 4px; flex-basis: 100%;
+}
+.m6-status-line.ok { color: #5EEAD4; }
+.m6-status-line.error { color: #F87171; }
 
 .m6-coverage {
   display: grid;
@@ -2974,55 +3097,57 @@
   margin-top: 18px;
 }
 .m6-cov-tile {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: #08111A;
+  border: 1px solid #1C2D40;
   border-radius: 8px;
   padding: 14px 16px;
 }
 .m6-cov-tile .lbl {
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--text-dim);
+  color: #94A3B8;
   margin-bottom: 6px;
+  display: inline-flex; align-items: center;
 }
 .m6-cov-tile .val {
-  font-size: 22px; font-weight: 600; color: var(--text);
+  font-size: 24px; font-weight: 700; color: #E2E8F0;
   font-variant-numeric: tabular-nums;
 }
 .m6-cov-tile .delta {
-  font-size: 11px; color: var(--text-dim); margin-top: 3px;
+  font-size: 11px; color: #94A3B8; margin-top: 3px;
 }
 .m6-skipped-list {
   margin-top: 16px;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: #08111A;
+  border: 1px solid #1C2D40;
   border-radius: 8px;
   padding: 14px 16px;
 }
 .m6-skipped-list h4 {
-  font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--text-dim); margin: 0 0 8px 0;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #94A3B8; margin: 0 0 8px 0;
+  display: inline-flex; align-items: center;
 }
 .m6-skipped-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 6px 0; border-top: 1px solid var(--border);
-  font-size: 12px;
+  padding: 8px 0; border-top: 1px solid #1C2D40;
+  font-size: 12px; color: #E2E8F0;
 }
 .m6-skipped-row:first-of-type { border-top: none; }
-.m6-skipped-row .reason { color: var(--text-dim); font-size: 11px; }
+.m6-skipped-row .reason { color: #94A3B8; font-size: 11px; }
 
 .m6-stub {
-  background: var(--surface);
-  border: 1px dashed var(--border);
+  background: #0D1A26;
+  border: 1px dashed #2A3F58;
   border-radius: 12px;
   padding: 48px 24px;
   text-align: center;
-  color: var(--text-dim);
+  color: #94A3B8;
 }
-.m6-stub h3 { color: var(--text); font-size: 15px; margin: 0 0 6px 0; }
-.m6-stub p { font-size: 12px; margin: 0; max-width: 480px; margin-left: auto; margin-right: auto; }
+.m6-stub h3 { color: #E2E8F0; font-size: 15px; margin: 0 0 6px 0; }
+.m6-stub p { font-size: 12px; margin: 0; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.6; }
 .m6-stub .eyebrow {
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--accent); margin-bottom: 10px;
+  color: #5EEAD4; margin-bottom: 10px;
 }
 
 .atlas-operator-modal {
@@ -8540,28 +8665,37 @@ Pocket Description: No Pocket
               role="tab" aria-selected="true"
               onclick="catSetSubtab('ingest')">
         Ingest
+        <span class="m6-info" data-tip="Drop your catalog XLSX. Atlas writes ASIN metadata, classifies each ASIN as active/dormant/unknown, and records what data the file is missing."></span>
       </button>
       <button class="cat-subnav-tab" id="cat-tab-audit"
               role="tab" aria-selected="false"
               onclick="catSetSubtab('audit')">
-        Audit <span class="count-pill" id="cat-audit-count">—</span>
+        Audit
+        <span class="count-pill" id="cat-audit-count" title="Findings from the most recent audit run">—</span>
+        <span class="m6-info" data-tip="Day 2: runs the rule library against ingested ASINs and produces findings ranked by revenue at risk. Stub for now."></span>
       </button>
       <button class="cat-subnav-tab" id="cat-tab-analytics"
               role="tab" aria-selected="false"
               onclick="catSetSubtab('analytics')">
         Analytics
+        <span class="m6-info" data-tip="Day 3: slice the catalog by cohort, family, brand, age. Greyed-out dimensions show which connectors aren't wired yet."></span>
       </button>
       <button class="cat-subnav-tab" id="cat-tab-rules"
               role="tab" aria-selected="false"
               onclick="catSetSubtab('rules')">
-        Rules <span class="count-pill" id="cat-rules-count">—</span>
+        Rules
+        <span class="count-pill" id="cat-rules-count" title="Active rules in this workspace (global + brand overrides)">—</span>
+        <span class="m6-info" data-tip="Day 4: edit rule thresholds inline, see live counterfactual ('if you change this, finding count drops from X to Y'), fork brand-specific overrides."></span>
       </button>
     </nav>
 
     <!-- ─────────── INGEST sub-panel ─────────── -->
     <div class="cat-subpanel active" id="cat-panel-ingest" role="tabpanel">
       <div class="m6-ingest-card">
-        <h3>Catalog ingest</h3>
+        <h3>
+          Catalog ingest
+          <span class="m6-info" data-tip="Atlas reads the XLSX once, writes one row per ASIN to asin_metadata, classifies each ASIN's cohort, and records every column that was below 5% fill rate so you know what rules can't fire yet."></span>
+        </h3>
         <div class="sub">
           Drop an Atlas catalog template (.xlsx). Atlas writes ASIN metadata,
           outcome events, and classifies the active/dormant cohort.
@@ -8585,25 +8719,34 @@ Pocket Description: No Pocket
         </div>
 
         <div class="m6-form-row">
-          <label>Workspace</label>
+          <label>
+            Workspace
+            <span class="m6-info" data-tip="Which brand's substrate to write into. Auto-filled from the topbar workspace chip. Override only if you need to point this ingest at a different brand."></span>
+          </label>
           <input type="text" id="m6-workspace-id" value="novelle"
                  placeholder="workspace_id">
-          <label style="margin-left:12px;">
+
+          <label class="m6-checkbox-wrap">
             <input type="checkbox" id="m6-preview-only">
-            Preview only (don't write substrate)
+            Preview only
+            <span class="m6-info" data-tip="Parses the file and computes the coverage report WITHOUT writing anything to the substrate. Use this the first time to confirm the file's structure looks right before committing."></span>
           </label>
+
           <button class="m6-btn" id="m6-run-ingest-btn"
                   onclick="m6RunIngest()" disabled>
             Run ingest
           </button>
-          <span id="m6-ingest-status"
-                style="font-size:11px;color:var(--text-dim);"></span>
+
+          <span id="m6-ingest-status" class="m6-status-line"></span>
         </div>
       </div>
 
       <!-- Coverage report (populated after ingest or page load) -->
       <div class="m6-ingest-card" id="m6-coverage-card">
-        <h3>Coverage report</h3>
+        <h3>
+          Coverage report
+          <span class="m6-info" data-tip="Cohort split of the substrate right now. Active = sold in the last 12 months. Dormant = explicitly zero sales. Unknown = no signal yet (we can't tell active vs dormant without BSR or inventory)."></span>
+        </h3>
         <div class="sub" id="m6-coverage-sub">
           Substrate state for the current workspace.
         </div>
@@ -8614,7 +8757,10 @@ Pocket Description: No Pocket
           </div>
         </div>
         <div class="m6-skipped-list" id="m6-skipped-list" style="display:none;">
-          <h4>Skipped rules</h4>
+          <h4>
+            Skipped rules
+            <span class="m6-info" data-tip="Rules that can't fire on this ingest. Either the column is &lt; 5% filled in your file, or the rule needs a connector (SP-API, Brand Analytics, inventory) that isn't wired yet."></span>
+          </h4>
           <div id="m6-skipped-rows"></div>
         </div>
       </div>
@@ -13785,10 +13931,9 @@ async function atlasRefreshWorkspaceChip() {
 }
 
 function atlasOpenWorkspacePicker() {
-  // Close existing popover
+  // Toggle: if already open, close.
   if (_atlasWorkspacePopover) {
-    _atlasWorkspacePopover.remove();
-    _atlasWorkspacePopover = null;
+    atlasCloseWorkspacePicker();
     return;
   }
   const chip = document.getElementById('atlas-workspace-chip');
@@ -13800,35 +13945,65 @@ function atlasOpenWorkspacePicker() {
   pop.style.right = (window.innerWidth - rect.right) + 'px';
 
   const current = _atlasGetWorkspaceCookie();
+  let body;
   if (!_atlasWorkspaces.length) {
-    pop.innerHTML = '<div class="atlas-workspace-row">'
-      + '<div>No workspaces registered.</div></div>';
+    body = '<div class="atlas-workspace-row">'
+      + '<span class="atlas-workspace-row-name">No workspaces registered.</span></div>';
   } else {
-    pop.innerHTML = _atlasWorkspaces.map(w => {
+    body = _atlasWorkspaces.map(w => {
       const cls = w.workspace_id === current ? 'atlas-workspace-row current' : 'atlas-workspace-row';
       const sz = w.catalog_size_asins
         ? `${w.catalog_size_asins.toLocaleString()} ASINs`
         : 'no ingest yet';
+      const roleAttr = w.brand_role || 'operator_brand';
+      const roleLabel = roleAttr === 'operator_brand' ? 'OPERATOR'
+                      : roleAttr === 'audit_only'     ? 'AUDIT'
+                      : roleAttr.toUpperCase();
+      const name = (w.display_name || w.workspace_id).replace(/[<>"]/g, '');
       return `<div class="${cls}" onclick="atlasSwitchWorkspace('${w.workspace_id}')">`
-        + `<span class="atlas-workspace-row-name">${w.display_name || w.workspace_id}</span>`
+        + `<span class="atlas-workspace-row-name">${name}</span>`
+        + `<span class="atlas-workspace-row-role" data-role="${roleAttr}">${roleLabel}</span>`
         + `<span class="atlas-workspace-row-meta">${sz}</span>`
         + `</div>`;
     }).join('');
   }
+
+  pop.innerHTML =
+    '<div class="atlas-workspace-popover-head">'
+    + '<span class="atlas-workspace-popover-title">Switch workspace</span>'
+    + '<button class="atlas-workspace-popover-close" type="button" '
+    +   'onclick="event.stopPropagation(); atlasCloseWorkspacePicker()" '
+    +   'aria-label="Close">×</button>'
+    + '</div>'
+    + '<div class="atlas-workspace-popover-body">' + body + '</div>';
+
   document.body.appendChild(pop);
   _atlasWorkspacePopover = pop;
-  // Click-away to close
+
+  // Bind close handlers AFTER popover is in the DOM.
   setTimeout(() => {
-    document.addEventListener('click', _atlasWorkspaceClickAway, { once: true });
+    document.addEventListener('mousedown', _atlasWorkspaceClickAway, true);
+    document.addEventListener('keydown', _atlasWorkspaceEscape);
   }, 0);
+}
+
+function atlasCloseWorkspacePicker() {
+  if (!_atlasWorkspacePopover) return;
+  _atlasWorkspacePopover.remove();
+  _atlasWorkspacePopover = null;
+  document.removeEventListener('mousedown', _atlasWorkspaceClickAway, true);
+  document.removeEventListener('keydown', _atlasWorkspaceEscape);
 }
 
 function _atlasWorkspaceClickAway(e) {
   if (!_atlasWorkspacePopover) return;
   if (_atlasWorkspacePopover.contains(e.target)) return;
   if (e.target.closest('#atlas-workspace-chip')) return;
-  _atlasWorkspacePopover.remove();
-  _atlasWorkspacePopover = null;
+  atlasCloseWorkspacePicker();
+}
+
+function _atlasWorkspaceEscape(e) {
+  if (e.key === 'Escape') atlasCloseWorkspacePicker();
 }
 
 async function atlasSwitchWorkspace(workspaceId) {
@@ -13843,10 +14018,7 @@ async function atlasSwitchWorkspace(workspaceId) {
       alert('Switch failed: ' + (d.error || 'unknown'));
       return;
     }
-    if (_atlasWorkspacePopover) {
-      _atlasWorkspacePopover.remove();
-      _atlasWorkspacePopover = null;
-    }
+    atlasCloseWorkspacePicker();
     // Reset the user-touched flag so the input picks up the new workspace
     const wsInput = document.getElementById('m6-workspace-id');
     if (wsInput) delete wsInput.dataset.userTouched;
@@ -13919,21 +14091,39 @@ async function m6RunIngest() {
   fd.append('workspace_id', workspaceId);
   if (previewOnly) fd.append('preview_only', '1');
 
+  status.classList.remove('ok', 'error');
   const t0 = performance.now();
   try {
     const r = await fetch('/api/atlas/catalog/ingest', { method: 'POST', body: fd });
+    // The server returns HTML on 5xx (e.g. Render 30s timeout). Detect that
+    // and surface a useful message instead of crashing the JSON parser.
+    const ct = (r.headers.get('content-type') || '').toLowerCase();
+    if (!ct.includes('application/json')) {
+      const txt = await r.text();
+      const dt = ((performance.now() - t0) / 1000).toFixed(1);
+      const hint = r.status === 500 && dt > 25
+        ? 'Likely Render\'s 30s HTTP timeout. Async ingest is the next ship.'
+        : `HTTP ${r.status}`;
+      status.textContent = `Server didn't return JSON after ${dt}s — ${hint}`;
+      status.classList.add('error');
+      btn.disabled = false;
+      return;
+    }
     const d = await r.json();
     const dt = ((performance.now() - t0) / 1000).toFixed(1);
     if (!d.ok && d.ok !== undefined) {
-      status.textContent = `Failed: ${d.error || 'unknown'} (${dt}s)`;
+      status.textContent = `Failed: ${d.error || (d.errors || []).join('; ') || 'unknown'} (${dt}s)`;
+      status.classList.add('error');
       btn.disabled = false;
       return;
     }
     status.textContent = `Done in ${dt}s. Substrate ${previewOnly ? 'preview' : 'written'}.`;
+    status.classList.add('ok');
     m6RenderCoverage(d);
     btn.disabled = false;
   } catch (e) {
     status.textContent = `Error: ${e}`;
+    status.classList.add('error');
     btn.disabled = false;
   }
 }
