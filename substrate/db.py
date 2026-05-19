@@ -180,7 +180,8 @@ def wipe_substrate_for_tests() -> None:
                     audit_sessions,
                     analytics_views,
                     audit_rules,
-                    brand_workspace
+                    brand_workspace,
+                    ingest_jobs
                 RESTART IDENTITY CASCADE
                 """
             )

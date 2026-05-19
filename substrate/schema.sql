@@ -1328,3 +1328,51 @@ CREATE INDEX IF NOT EXISTS idx_analytics_views_operator
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v10', 'M6 Day 1: catalog audit substrate (7 tables) + brand_workspace registry.')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v11 MIGRATION (M6 Day 1.5, 2026-05-19): async ingest jobs.
+--
+-- Render kills HTTP requests at ~30s. Real Roxy ingest takes ~30-45s
+-- on prod Postgres. Solution: ingest returns immediately with a job_id,
+-- a background thread does the work, the UI polls status.
+-- ===========================================================================
+
+CREATE TABLE IF NOT EXISTS ingest_jobs (
+    job_id            TEXT PRIMARY KEY,
+    workspace_id      TEXT NOT NULL,
+    job_type          TEXT NOT NULL DEFAULT 'catalog_ingest',
+                       -- 'catalog_ingest' for M6; future: 'sales_ingest', etc.
+
+    filepath          TEXT NOT NULL,
+    filename          TEXT,
+    file_size_bytes   BIGINT,
+    preview_only      BOOLEAN NOT NULL DEFAULT false,
+
+    status            TEXT NOT NULL DEFAULT 'queued',
+                       -- 'queued' | 'running' | 'done' | 'failed'
+    progress_pct      INTEGER DEFAULT 0,
+    progress_message  TEXT,
+
+    result_json       JSONB,
+                       -- the ingest_workbook return value when done
+    error             TEXT,
+
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    started_at        TIMESTAMPTZ,
+    completed_at      TIMESTAMPTZ,
+    duration_seconds  NUMERIC(8,2),
+
+    created_by        TEXT NOT NULL DEFAULT 'devang',
+    meta              JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_ingest_jobs_workspace
+    ON ingest_jobs (workspace_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_ingest_jobs_status
+    ON ingest_jobs (status, created_at DESC);
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v11', 'M6 Day 1.5: ingest_jobs table for async catalog ingest (Render 30s HTTP timeout workaround).')
+    ON CONFLICT (version) DO NOTHING;

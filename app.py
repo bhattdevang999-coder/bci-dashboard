@@ -15292,6 +15292,120 @@ def atlas_catalog_ingest():
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
 
 
+@app.route("/api/atlas/catalog/ingest-async", methods=["POST"])
+def atlas_catalog_ingest_async():
+    """Async ingest. Saves the file, creates a job row, spawns a worker
+    thread, and returns the job_id immediately. The UI polls
+    /api/atlas/catalog/ingest-status/<job_id> until status is done/failed.
+
+    Multipart form: file (XLSX), workspace_id, preview_only=1?
+    """
+    workspace_id = (
+        (request.form.get("workspace_id")
+         or (request.get_json(silent=True) or {}).get("workspace_id")
+         or request.args.get("workspace_id")
+         or "").strip()
+    )
+    if not workspace_id:
+        return jsonify({"ok": False, "error": "workspace_id required"}), 400
+
+    preview_only = (
+        request.form.get("preview_only") == "1"
+        or (request.get_json(silent=True) or {}).get("preview_only") is True
+    )
+
+    # Save the file
+    if "file" not in request.files:
+        return jsonify({"ok": False, "error": "file required"}), 400
+    upload = request.files["file"]
+    if not upload or not upload.filename:
+        return jsonify({"ok": False, "error": "empty file"}), 400
+
+    import os as _os
+    safe = _os.path.basename(upload.filename)
+    dest_dir = "/home/user/workspace/ingest_uploads"
+    try:
+        _os.makedirs(dest_dir, exist_ok=True)
+    except Exception:
+        dest_dir = "/tmp"  # Render fallback
+    # Prefix with a uuid so concurrent uploads of same filename don't clobber.
+    import uuid as _uuid
+    filepath = _os.path.join(dest_dir, f"{_uuid.uuid4().hex[:8]}_{safe}")
+    try:
+        upload.save(filepath)
+    except Exception as exc:
+        return jsonify({"ok": False,
+                        "error": f"upload save failed: {exc}"}), 500
+
+    file_size = None
+    try:
+        file_size = _os.path.getsize(filepath)
+    except Exception:
+        pass
+
+    try:
+        from substrate.ingest_jobs import create_job, spawn_worker
+        job_id = create_job(
+            workspace_id=workspace_id,
+            filepath=filepath,
+            filename=safe,
+            file_size_bytes=file_size,
+            preview_only=preview_only,
+            created_by=(request.cookies.get("atlas_operator_id") or "devang"),
+        )
+        if not job_id:
+            return jsonify({"ok": False,
+                            "error": "failed to enqueue job"}), 500
+        spawn_worker(job_id)
+        return jsonify({
+            "ok": True,
+            "job_id": job_id,
+            "status": "queued",
+            "workspace_id": workspace_id,
+            "filename": safe,
+            "file_size_bytes": file_size,
+        })
+    except Exception as exc:
+        print(f"[atlas] ingest-async failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/catalog/ingest-status/<job_id>", methods=["GET"])
+def atlas_catalog_ingest_status(job_id: str):
+    """Poll endpoint. Returns the current job row + result_json when done.
+
+    Status values: queued | running | done | failed.
+    Side effect: stale 'running' jobs (>5min old) auto-flip to 'failed'.
+    """
+    try:
+        from substrate.ingest_jobs import get_job
+        row = get_job(job_id)
+        if row is None:
+            return jsonify({"ok": False, "error": "job not found"}), 404
+        return jsonify({"ok": True, "job": row})
+    except Exception as exc:
+        print(f"[atlas] ingest-status failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/catalog/ingest-history", methods=["GET"])
+def atlas_catalog_ingest_history():
+    """Recent ingest jobs for a workspace, newest first."""
+    workspace_id = (
+        request.args.get("workspace_id")
+        or request.cookies.get("atlas_workspace_id")
+        or ""
+    ).strip() or None
+    limit = int(request.args.get("limit") or 20)
+    try:
+        from substrate.ingest_jobs import list_recent_jobs
+        rows = list_recent_jobs(workspace_id=workspace_id, limit=limit)
+        return jsonify({"ok": True, "rows": rows, "count": len(rows)})
+    except Exception as exc:
+        print(f"[atlas] ingest-history failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/atlas/catalog/coverage", methods=["GET"])
 def atlas_catalog_coverage():
     """Return current substrate stats for a workspace.

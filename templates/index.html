@@ -14074,6 +14074,8 @@ function m6WireDropzone() {
   }
 }
 
+let _m6PollHandle = null;
+
 async function m6RunIngest() {
   if (!_m6PickedFile) {
     alert('Pick an XLSX file first.');
@@ -14083,49 +14085,108 @@ async function m6RunIngest() {
   const previewOnly = document.getElementById('m6-preview-only').checked;
   const btn = document.getElementById('m6-run-ingest-btn');
   const status = document.getElementById('m6-ingest-status');
+  status.classList.remove('ok', 'error');
   btn.disabled = true;
-  status.textContent = `Ingesting ${_m6PickedFile.name}… (can take 30–60s for large files)`;
+  status.textContent = `Uploading ${_m6PickedFile.name}…`;
 
   const fd = new FormData();
   fd.append('file', _m6PickedFile);
   fd.append('workspace_id', workspaceId);
   if (previewOnly) fd.append('preview_only', '1');
 
-  status.classList.remove('ok', 'error');
-  const t0 = performance.now();
+  const tUpload = performance.now();
   try {
-    const r = await fetch('/api/atlas/catalog/ingest', { method: 'POST', body: fd });
-    // The server returns HTML on 5xx (e.g. Render 30s timeout). Detect that
-    // and surface a useful message instead of crashing the JSON parser.
+    const r = await fetch('/api/atlas/catalog/ingest-async', { method: 'POST', body: fd });
     const ct = (r.headers.get('content-type') || '').toLowerCase();
     if (!ct.includes('application/json')) {
-      const txt = await r.text();
-      const dt = ((performance.now() - t0) / 1000).toFixed(1);
-      const hint = r.status === 500 && dt > 25
-        ? 'Likely Render\'s 30s HTTP timeout. Async ingest is the next ship.'
-        : `HTTP ${r.status}`;
-      status.textContent = `Server didn't return JSON after ${dt}s — ${hint}`;
+      status.textContent = `Upload failed (HTTP ${r.status} — server didn't return JSON).`;
       status.classList.add('error');
       btn.disabled = false;
       return;
     }
     const d = await r.json();
-    const dt = ((performance.now() - t0) / 1000).toFixed(1);
-    if (!d.ok && d.ok !== undefined) {
-      status.textContent = `Failed: ${d.error || (d.errors || []).join('; ') || 'unknown'} (${dt}s)`;
+    if (!d.ok) {
+      status.textContent = `Failed: ${d.error || 'unknown'}`;
       status.classList.add('error');
       btn.disabled = false;
       return;
     }
-    status.textContent = `Done in ${dt}s. Substrate ${previewOnly ? 'preview' : 'written'}.`;
-    status.classList.add('ok');
-    m6RenderCoverage(d);
-    btn.disabled = false;
+    const uploadDt = ((performance.now() - tUpload) / 1000).toFixed(1);
+    status.textContent = `Uploaded in ${uploadDt}s — job queued. Processing in background…`;
+    m6StartPolling(d.job_id, previewOnly);
   } catch (e) {
-    status.textContent = `Error: ${e}`;
+    status.textContent = `Upload error: ${e}`;
     status.classList.add('error');
     btn.disabled = false;
   }
+}
+
+function m6StopPolling() {
+  if (_m6PollHandle) {
+    clearInterval(_m6PollHandle);
+    _m6PollHandle = null;
+  }
+}
+
+function m6StartPolling(jobId, previewOnly) {
+  m6StopPolling();
+  const status = document.getElementById('m6-ingest-status');
+  const btn = document.getElementById('m6-run-ingest-btn');
+  const t0 = performance.now();
+  let polls = 0;
+  _m6PollHandle = setInterval(async () => {
+    polls += 1;
+    try {
+      const r = await fetch(`/api/atlas/catalog/ingest-status/${encodeURIComponent(jobId)}`);
+      const d = await r.json();
+      if (!d.ok || !d.job) {
+        m6StopPolling();
+        status.textContent = `Status check failed: ${d.error || 'no job row'}`;
+        status.classList.add('error');
+        btn.disabled = false;
+        return;
+      }
+      const job = d.job;
+      const dt = ((performance.now() - t0) / 1000).toFixed(1);
+      const pctStr = job.progress_pct != null ? ` ${job.progress_pct}%` : '';
+      if (job.status === 'queued') {
+        status.textContent = `Queued… (${dt}s)`;
+      } else if (job.status === 'running') {
+        status.textContent = `Running:${pctStr} ${job.progress_message || ''} (${dt}s)`;
+      } else if (job.status === 'done') {
+        m6StopPolling();
+        const dur = job.duration_seconds != null
+          ? job.duration_seconds.toFixed(1)
+          : dt;
+        status.textContent = `Done in ${dur}s. Substrate ${previewOnly ? 'preview' : 'written'}.`;
+        status.classList.add('ok');
+        if (job.result_json) m6RenderCoverage(job.result_json);
+        m6RefreshCoverage();
+        m6RefreshRuleCount();
+        btn.disabled = false;
+      } else if (job.status === 'failed') {
+        m6StopPolling();
+        status.textContent = `Failed: ${job.error || 'unknown'}`;
+        status.classList.add('error');
+        btn.disabled = false;
+      }
+      // Safety net: if we've polled for >10 min, stop.
+      if (polls > 300) {
+        m6StopPolling();
+        status.textContent = `Gave up polling after 10 min. Check ingest history.`;
+        status.classList.add('error');
+        btn.disabled = false;
+      }
+    } catch (e) {
+      // Transient network blip — don't kill the poll loop on first error.
+      if (polls > 5) {
+        m6StopPolling();
+        status.textContent = `Poll error: ${e}`;
+        status.classList.add('error');
+        btn.disabled = false;
+      }
+    }
+  }, 2000);  // 2-second cadence
 }
 
 async function m6RefreshCoverage() {
