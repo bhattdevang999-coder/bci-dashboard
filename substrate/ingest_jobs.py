@@ -285,10 +285,17 @@ def _run_catalog_ingest(job_id: str) -> None:
                     progress_pct=25,
                     progress_message="Parsing rows + classifying cohorts…")
 
+        def _on_progress(pct: int, msg: str) -> None:
+            # Best-effort progress update. Don't let a DB hiccup kill the
+            # worker — _set_status already swallows its own errors.
+            _set_status(job_id, "running",
+                        progress_pct=pct, progress_message=msg)
+
         result = ingest_workbook(
             filepath, workspace_id,
             write_substrate=not preview_only,
             ingested_by=created_by or "devang",
+            progress_cb=_on_progress,
         )
 
         _set_status(job_id, "done",

@@ -228,6 +228,7 @@ def ingest_workbook(
     *,
     write_substrate: bool = True,
     ingested_by: str = "devang",
+    progress_cb: Optional[Any] = None,
 ) -> dict[str, Any]:
     """End-to-end ingest of a single workbook.
 
@@ -338,7 +339,15 @@ def ingest_workbook(
         from . import catalog_audit as ca
         from . import brand_workspace as bw
 
+        def _progress(pct: int, msg: str) -> None:
+            if progress_cb:
+                try:
+                    progress_cb(pct, msg)
+                except Exception:
+                    pass
+
         # Workspace registration (idempotent)
+        _progress(30, "Registering workspace…")
         bw.register_workspace(
             workspace_id,
             display_name=workspace_id.title(),
@@ -348,29 +357,25 @@ def ingest_workbook(
             catalog_size_asins=len(catalog_rows),
         )
 
-        # asin_metadata writes — bulk via individual inserts (existing
-        # writer takes one ASIN at a time; that's fine for now)
-        wrote_metadata = 0
-        for m in asin_to_metadata:
-            ok = am.set_asin_metadata(
-                workspace_id, m["asin"],
-                parent_asin=m["parent_asin"],
-                variation_family=None,
-                variation_axes=None,
-                ground_truth_fields=m["ground_truth_fields"],
-                set_by=ingested_by,
-                bump_revision=False,
-            )
-            if ok:
-                wrote_metadata += 1
+        # asin_metadata bulk write — one transaction, batched executemany.
+        # The old per-row path was ~5 min on Render's Postgres for 38k
+        # ASINs; bulk path is ~15-20s.
+        _progress(40, f"Writing {len(asin_to_metadata):,} ASIN metadata rows…")
+        wrote_metadata = am.set_asin_metadata_bulk(
+            workspace_id, asin_to_metadata,
+            set_by=ingested_by,
+            bump_revision=False,
+        )
 
         # cohort_classifications bulk
+        _progress(75, f"Classifying {len(cohort_rows):,} cohorts…")
         wrote_cohort = ca.classify_cohort_bulk(
             workspace_id, cohort_rows, classified_by="catalog_ingest",
         )
 
         # outcome_events: write directly to substrate_events table via
         # the existing unit_economics module if available; else skip
+        _progress(90, f"Writing {len(asin_to_outcomes):,} outcome events…")
         wrote_outcomes = _write_outcome_events(
             workspace_id, asin_to_outcomes,
         )
