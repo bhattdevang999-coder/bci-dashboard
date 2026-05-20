@@ -1376,3 +1376,17 @@ CREATE INDEX IF NOT EXISTS idx_ingest_jobs_status
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v11', 'M6 Day 1.5: ingest_jobs table for async catalog ingest (Render 30s HTTP timeout workaround).')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v12 MIGRATION (M6 Day 2.5, 2026-05-20): allow ingest_jobs for audit runs.
+--
+-- The ingest_jobs table now hosts catalog_audit jobs too. Audit jobs have no
+-- filepath (the audit reads existing substrate), so we relax the NOT NULL.
+-- ===========================================================================
+
+ALTER TABLE ingest_jobs ALTER COLUMN filepath DROP NOT NULL;
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v12', 'M6 Day 2.5: ingest_jobs.filepath nullable (for catalog_audit job type).')
+    ON CONFLICT (version) DO NOTHING;

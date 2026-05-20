@@ -39,7 +39,7 @@ _STALE_AFTER_SECONDS = 5 * 60  # 5 minutes
 
 def create_job(
     workspace_id: str,
-    filepath: str,
+    filepath: Optional[str] = None,
     *,
     filename: Optional[str] = None,
     file_size_bytes: Optional[int] = None,
@@ -312,12 +312,58 @@ def _run_catalog_ingest(job_id: str) -> None:
                     mark_completed=True)
 
 
+def _run_catalog_audit(job_id: str) -> None:
+    """Worker body for job_type='catalog_audit'. Runs the audit engine."""
+    job = get_job(job_id)
+    if not job:
+        logger.warning("audit worker: job %s not found", job_id)
+        return
+    if job["status"] in ("done", "failed"):
+        return
+
+    _set_status(job_id, "running", progress_pct=5,
+                progress_message="Resolving rule set…", mark_started=True)
+
+    try:
+        from substrate.catalog_audit_engine import run_audit
+        # The audit engine is fast (<20s on 38k Roxy) so we don't need
+        # fine-grained progress — just mark running until done.
+        _set_status(job_id, "running", progress_pct=30,
+                    progress_message="Evaluating rules…")
+        result = run_audit(
+            job["workspace_id"],
+            run_id=job_id,  # reuse the job_id as the audit_run_id
+            dry_run=False,
+        )
+        _set_status(job_id, "done", progress_pct=100,
+                    progress_message=(
+                        f"{result['total_findings']:,} findings written."
+                    ),
+                    result=result, mark_completed=True)
+    except Exception as exc:
+        tb = traceback.format_exc()
+        logger.warning("audit worker failed for %s: %s\n%s",
+                       job_id, exc, tb)
+        _set_status(job_id, "failed", error=f"{exc}", mark_completed=True)
+
+
 def spawn_worker(job_id: str) -> None:
-    """Spawn a daemon thread to run the job. Returns immediately."""
+    """Spawn a daemon thread to run the job. Returns immediately.
+
+    Worker target is chosen by job_type. Default is catalog_ingest for
+    backwards compatibility.
+    """
+    job = get_job(job_id)
+    job_type = (job or {}).get("job_type") or "catalog_ingest"
+    target = {
+        "catalog_ingest": _run_catalog_ingest,
+        "catalog_audit":  _run_catalog_audit,
+    }.get(job_type, _run_catalog_ingest)
+
     t = threading.Thread(
-        target=_run_catalog_ingest,
+        target=target,
         args=(job_id,),
-        name=f"ingest-worker-{job_id[:8]}",
+        name=f"{job_type}-worker-{job_id[:8]}",
         daemon=True,
     )
     t.start()

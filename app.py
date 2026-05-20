@@ -15406,6 +15406,343 @@ def atlas_catalog_ingest_history():
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
 
 
+# ─── M6 Day 2.5: Catalog Audit run + findings ──────────────────────────
+
+@app.route("/api/atlas/catalog/audit/run", methods=["POST"])
+def atlas_catalog_audit_run():
+    """Enqueue an audit run as a background job. Returns job_id.
+    Poll /api/atlas/catalog/ingest-status/<job_id> for progress (the
+    ingest_jobs table hosts both ingest and audit jobs).
+    """
+    payload = request.get_json(silent=True) or {}
+    workspace_id = (
+        payload.get("workspace_id")
+        or request.cookies.get("atlas_workspace_id")
+        or ""
+    ).strip()
+    if not workspace_id:
+        return jsonify({"ok": False, "error": "workspace_id required"}), 400
+
+    try:
+        from substrate.ingest_jobs import create_job, spawn_worker
+        job_id = create_job(
+            workspace_id=workspace_id,
+            filepath=None,
+            filename=None,
+            preview_only=False,
+            created_by=(request.cookies.get("atlas_operator_id") or "devang"),
+            job_type="catalog_audit",
+        )
+        if not job_id:
+            return jsonify({"ok": False,
+                            "error": "failed to enqueue audit"}), 500
+        spawn_worker(job_id)
+        return jsonify({
+            "ok": True,
+            "job_id": job_id,
+            "status": "queued",
+            "workspace_id": workspace_id,
+        })
+    except Exception as exc:
+        print(f"[atlas] audit/run failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/catalog/audit/summary", methods=["GET"])
+def atlas_catalog_audit_summary():
+    """Per-rule rollup for the most recent run in this workspace.
+    Dedups duplicate_style_group at the cluster level so the rollup isn't
+    multiplied by cluster size (see scripts/dump_audit_report.py for the
+    rationale).
+    """
+    workspace_id = (
+        request.args.get("workspace_id")
+        or request.cookies.get("atlas_workspace_id")
+        or ""
+    ).strip()
+    if not workspace_id:
+        return jsonify({"ok": False, "error": "workspace_id required"}), 400
+
+    try:
+        from substrate.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "no DB"}), 500
+
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                # Most recent run for this workspace
+                cur.execute(
+                    """
+                    SELECT audit_run_id, MAX(created_at)
+                      FROM catalog_audit_findings
+                     WHERE workspace_id = %s
+                     GROUP BY audit_run_id
+                     ORDER BY 2 DESC LIMIT 1
+                    """,
+                    (workspace_id,),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return jsonify({
+                        "ok": True,
+                        "has_run": False,
+                        "workspace_id": workspace_id,
+                    })
+                run_id, last_detected = row
+
+                # ASIN-level rules (dedup per ASIN per rule)
+                cur.execute(
+                    """
+                    WITH per_asin AS (
+                      SELECT rule_name, asin, MAX(revenue_exposure) AS rev,
+                             MAX(severity) AS sev, MAX(queue) AS queue
+                        FROM catalog_audit_findings
+                       WHERE workspace_id = %s AND audit_run_id = %s
+                         AND asin NOT LIKE '__group__:%%'
+                         AND rule_name <> 'duplicate_style_group'
+                       GROUP BY rule_name, asin
+                    )
+                    SELECT rule_name,
+                           COUNT(DISTINCT asin) AS unique_n,
+                           COALESCE(SUM(rev), 0) AS revenue_exposure,
+                           MAX(sev) AS severity, MAX(queue) AS queue
+                      FROM per_asin GROUP BY rule_name
+                    """,
+                    (workspace_id, run_id),
+                )
+                rule_rows = [
+                    {
+                        "rule_name": r[0], "unique_n": int(r[1]),
+                        "revenue_exposure": float(r[2] or 0),
+                        "severity": r[3], "queue": r[4], "unit": "asin",
+                    }
+                    for r in cur.fetchall()
+                ]
+
+                # duplicate_style_group: cluster-deduped
+                cur.execute(
+                    """
+                    WITH per_cluster AS (
+                      SELECT evidence->>'style_number' AS style,
+                             MAX(revenue_exposure) AS rev,
+                             COUNT(*) AS sz, MAX(severity) AS sev,
+                             MAX(queue) AS queue
+                        FROM catalog_audit_findings
+                       WHERE workspace_id = %s AND audit_run_id = %s
+                         AND rule_name = 'duplicate_style_group'
+                       GROUP BY evidence->>'style_number'
+                    )
+                    SELECT COUNT(*)::int, COALESCE(SUM(rev),0),
+                           SUM(sz)::int, MAX(sev), MAX(queue)
+                      FROM per_cluster
+                    """,
+                    (workspace_id, run_id),
+                )
+                dup = cur.fetchone()
+                if dup and dup[0]:
+                    rule_rows.append({
+                        "rule_name": "duplicate_style_group",
+                        "unique_n": int(dup[0]),
+                        "asin_n": int(dup[2]),
+                        "revenue_exposure": float(dup[1] or 0),
+                        "severity": dup[3], "queue": dup[4],
+                        "unit": "cluster",
+                    })
+
+                # Group rules (abandoned_subcategory)
+                cur.execute(
+                    """
+                    SELECT rule_name, COUNT(*), COALESCE(SUM(revenue_exposure),0),
+                           MAX(severity), MAX(queue)
+                      FROM catalog_audit_findings
+                     WHERE workspace_id = %s AND audit_run_id = %s
+                       AND asin LIKE '__group__:%%'
+                     GROUP BY rule_name
+                    """,
+                    (workspace_id, run_id),
+                )
+                for r in cur.fetchall():
+                    rule_rows.append({
+                        "rule_name": r[0], "unique_n": int(r[1]),
+                        "revenue_exposure": float(r[2] or 0),
+                        "severity": r[3], "queue": r[4], "unit": "group",
+                    })
+
+                rule_rows.sort(key=lambda r: r["revenue_exposure"],
+                               reverse=True)
+
+                # Totals
+                cur.execute(
+                    """
+                    SELECT COUNT(*) FROM catalog_audit_findings
+                     WHERE workspace_id = %s AND audit_run_id = %s
+                    """,
+                    (workspace_id, run_id),
+                )
+                total_findings = int(cur.fetchone()[0] or 0)
+
+        return jsonify({
+            "ok": True,
+            "has_run": True,
+            "workspace_id": workspace_id,
+            "run_id": run_id,
+            "last_detected": last_detected.isoformat() if last_detected else None,
+            "total_findings": total_findings,
+            "rules": rule_rows,
+        })
+    except Exception as exc:
+        import traceback
+        print(f"[atlas] audit/summary failed: {exc}\n{traceback.format_exc()}",
+              flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:300]}), 500
+
+
+@app.route("/api/atlas/catalog/audit/findings", methods=["GET"])
+def atlas_catalog_audit_findings():
+    """Paged findings list for the most recent run. Supports filters:
+      ?workspace_id, ?queue, ?severity, ?rule, ?limit, ?offset, ?collapse_clusters=1
+
+    When collapse_clusters=1, duplicate_style_group rows are collapsed to one
+    row per style cluster (label='cluster: <style>'). All other rows are
+    one-per-ASIN.
+    """
+    workspace_id = (
+        request.args.get("workspace_id")
+        or request.cookies.get("atlas_workspace_id")
+        or ""
+    ).strip()
+    if not workspace_id:
+        return jsonify({"ok": False, "error": "workspace_id required"}), 400
+
+    queue    = request.args.get("queue") or None
+    severity = request.args.get("severity") or None
+    rule     = request.args.get("rule") or None
+    collapse = request.args.get("collapse_clusters") == "1"
+    limit    = min(int(request.args.get("limit") or 50), 500)
+    offset   = int(request.args.get("offset") or 0)
+
+    try:
+        from substrate.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "no DB"}), 500
+
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT audit_run_id FROM catalog_audit_findings
+                     WHERE workspace_id = %s
+                     ORDER BY created_at DESC LIMIT 1
+                    """,
+                    (workspace_id,),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return jsonify({"ok": True, "rows": [],
+                                    "total": 0, "has_run": False})
+                run_id = row[0]
+
+                where = ["workspace_id = %s", "audit_run_id = %s"]
+                params: list = [workspace_id, run_id]
+                if queue:
+                    where.append("queue = %s"); params.append(queue)
+                if severity:
+                    where.append("severity = %s"); params.append(severity)
+                if rule:
+                    where.append("rule_name = %s"); params.append(rule)
+                wc = " AND ".join(where)
+
+                if collapse:
+                    # Collapse duplicate_style_group to one row per cluster.
+                    cur.execute(
+                        f"""
+                        WITH unioned AS (
+                          (
+                            SELECT 'cluster: ' || (evidence->>'style_number') AS label,
+                                   rule_name, severity,
+                                   MAX(revenue_exposure) AS revenue_exposure,
+                                   MAX(confidence) AS confidence,
+                                   MAX(queue) AS queue,
+                                   MAX(priority_score) AS priority_score,
+                                   jsonb_build_object(
+                                     'style_number', evidence->>'style_number',
+                                     'cluster_size', MAX(evidence->>'cluster_size')
+                                   ) AS evidence,
+                                   NULL::jsonb AS proposed_fix,
+                                   MAX(finding_id::text) AS finding_id
+                              FROM catalog_audit_findings
+                             WHERE {wc} AND rule_name = 'duplicate_style_group'
+                             GROUP BY rule_name, severity, evidence->>'style_number'
+                          )
+                          UNION ALL
+                          (
+                            SELECT asin AS label, rule_name, severity,
+                                   revenue_exposure, confidence, queue,
+                                   priority_score, evidence, proposed_fix,
+                                   finding_id::text
+                              FROM catalog_audit_findings
+                             WHERE {wc} AND rule_name <> 'duplicate_style_group'
+                          )
+                        )
+                        SELECT label, rule_name, severity, revenue_exposure,
+                               confidence, queue, priority_score, evidence,
+                               proposed_fix, finding_id,
+                               COUNT(*) OVER () AS total_count
+                          FROM unioned
+                         ORDER BY revenue_exposure DESC NULLS LAST,
+                                  priority_score DESC NULLS LAST
+                         LIMIT %s OFFSET %s
+                        """,
+                        tuple(params) * 2 + (limit, offset),
+                    )
+                else:
+                    cur.execute(
+                        f"""
+                        SELECT asin AS label, rule_name, severity,
+                               revenue_exposure, confidence, queue,
+                               priority_score, evidence, proposed_fix,
+                               finding_id::text,
+                               COUNT(*) OVER () AS total_count
+                          FROM catalog_audit_findings
+                         WHERE {wc}
+                         ORDER BY revenue_exposure DESC NULLS LAST,
+                                  priority_score DESC NULLS LAST
+                         LIMIT %s OFFSET %s
+                        """,
+                        tuple(params) + (limit, offset),
+                    )
+
+                rows = cur.fetchall()
+                total = int(rows[0][10]) if rows else 0
+                results = [
+                    {
+                        "label": r[0],
+                        "rule_name": r[1],
+                        "severity": r[2],
+                        "revenue_exposure": float(r[3] or 0),
+                        "confidence": float(r[4] or 0),
+                        "queue": r[5],
+                        "priority_score": float(r[6] or 0),
+                        "evidence": r[7],
+                        "proposed_fix": r[8],
+                        "finding_id": r[9],
+                    }
+                    for r in rows
+                ]
+        return jsonify({
+            "ok": True, "has_run": True, "run_id": run_id,
+            "rows": results, "total": total,
+            "limit": limit, "offset": offset,
+        })
+    except Exception as exc:
+        import traceback
+        print(f"[atlas] audit/findings failed: {exc}\n{traceback.format_exc()}",
+              flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:300]}), 500
+
+
 @app.route("/api/atlas/catalog/coverage", methods=["GET"])
 def atlas_catalog_coverage():
     """Return current substrate stats for a workspace.

@@ -3150,6 +3150,141 @@
   color: #5EEAD4; margin-bottom: 10px;
 }
 
+/* ════════ Audit table + chips + drawer ════════ */
+.m6-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 12px;
+}
+.m6-table th, .m6-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #1C2D40;
+  color: #E2E8F0;
+  vertical-align: middle;
+}
+.m6-table th {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: #94A3B8;
+  font-weight: 600;
+  background: #08111A;
+  position: sticky; top: 0;
+}
+.m6-table tr:hover td { background: #112436; }
+.m6-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.m6-table td.code {
+  font: 500 11px ui-monospace, Consolas, monospace;
+  color: #5EEAD4;
+}
+.m6-table .row-clickable { cursor: pointer; }
+
+/* Severity / queue badges */
+.m6-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.m6-badge[data-sev="critical"] { background: rgba(248,113,113,0.12); color: #FCA5A5; border-color: rgba(248,113,113,0.3); }
+.m6-badge[data-sev="high"]     { background: rgba(251,191,36,0.12); color: #FCD34D; border-color: rgba(251,191,36,0.3); }
+.m6-badge[data-sev="medium"]   { background: rgba(96,165,250,0.12); color: #93C5FD; border-color: rgba(96,165,250,0.3); }
+.m6-badge[data-sev="low"]      { background: rgba(148,163,184,0.12); color: #CBD5E1; border-color: rgba(148,163,184,0.3); }
+.m6-badge[data-sev="strategic"]{ background: rgba(167,139,250,0.12); color: #C4B5FD; border-color: rgba(167,139,250,0.3); }
+
+.m6-badge[data-queue="quick_win"]       { background: rgba(94,234,212,0.12); color: #5EEAD4; border-color: rgba(94,234,212,0.3); }
+.m6-badge[data-queue="content_quality"] { background: rgba(96,165,250,0.12); color: #93C5FD; border-color: rgba(96,165,250,0.3); }
+.m6-badge[data-queue="strategic"]       { background: rgba(167,139,250,0.12); color: #C4B5FD; border-color: rgba(167,139,250,0.3); }
+.m6-badge[data-queue="manual_review"]   { background: rgba(148,163,184,0.12); color: #CBD5E1; border-color: rgba(148,163,184,0.3); }
+
+/* Filter chips */
+.m6-audit-filters {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin: 14px 0 6px 0;
+}
+.m6-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  background: #0D1A26;
+  border: 1px solid #1C2D40;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #94A3B8;
+  cursor: pointer;
+  transition: border-color 120ms, color 120ms;
+}
+.m6-chip:hover { border-color: #14B8A6; color: #E2E8F0; }
+.m6-chip.active {
+  background: rgba(20,184,166,0.15);
+  border-color: #14B8A6;
+  color: #5EEAD4;
+}
+.m6-chip .chip-n {
+  font-size: 10px; color: #94A3B8;
+  padding-left: 4px;
+}
+.m6-chip.active .chip-n { color: #5EEAD4; }
+
+/* Pager */
+#m6-findings-pager { justify-content: space-between; }
+#m6-findings-pager .pager-info { font-size: 11px; color: #94A3B8; }
+#m6-findings-pager .pager-btns { display: flex; gap: 6px; }
+
+/* Drawer (Day 2.6 hook — not yet implemented) */
+.m6-drawer {
+  position: fixed; right: 0; top: 0; height: 100vh;
+  width: 420px; max-width: 90vw;
+  background: #0D1A26;
+  border-left: 1px solid #1C2D40;
+  box-shadow: -16px 0 40px rgba(0,0,0,0.5);
+  z-index: 9300;
+  transform: translateX(100%);
+  transition: transform 220ms ease-out;
+  overflow-y: auto;
+}
+.m6-drawer.open { transform: translateX(0); }
+.m6-drawer-head {
+  position: sticky; top: 0;
+  background: #0D1A26;
+  border-bottom: 1px solid #1C2D40;
+  padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.m6-drawer-title { font-size: 14px; font-weight: 600; color: #E2E8F0; }
+.m6-drawer-close {
+  background: transparent; border: none; cursor: pointer;
+  color: #94A3B8; font-size: 20px; line-height: 1;
+  padding: 4px 8px; border-radius: 4px;
+}
+.m6-drawer-close:hover { background: #14253A; color: #E2E8F0; }
+.m6-drawer-body { padding: 20px; }
+.m6-drawer-section { margin-bottom: 20px; }
+.m6-drawer-section h4 {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #94A3B8; margin: 0 0 8px 0; font-weight: 600;
+}
+.m6-kv { display: grid; grid-template-columns: 120px 1fr; gap: 4px 12px; font-size: 12px; }
+.m6-kv dt { color: #94A3B8; }
+.m6-kv dd { color: #E2E8F0; margin: 0; font-variant-numeric: tabular-nums; }
+.m6-evidence-json {
+  font: 500 11px ui-monospace, Consolas, monospace;
+  background: #08111A;
+  border: 1px solid #1C2D40;
+  border-radius: 6px;
+  padding: 12px;
+  color: #E2E8F0;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 .atlas-operator-modal {
   position: fixed;
   inset: 0;
@@ -8766,23 +8901,78 @@ Pocket Description: No Pocket
       </div>
     </div>
 
-    <!-- ─────────── AUDIT sub-panel (Day 2) ─────────── -->
+    <!-- ─────────── AUDIT sub-panel (Day 2.5) ─────────── -->
     <div class="cat-subpanel" id="cat-panel-audit" role="tabpanel">
-      <div class="m6-stub">
-        <div class="eyebrow">// M6 · DAY 2</div>
-        <h3>Audit run + findings table</h3>
-        <p>
-          Day 2 ships the audit engine that runs the resolved ruleset against
-          the current substrate, writes findings with revenue-at-risk, and
-          surfaces the operator decision trail (accept · reject · edit rule).
-          Until then, the legacy Catalog Health uploader below remains live.
-        </p>
+
+      <!-- Run audit + status -->
+      <div class="m6-ingest-card">
+        <h3>
+          Audit run
+          <span class="m6-info" data-tip="Runs every active rule in the resolved ruleset against the current substrate. ~15-30s on a 38k-ASIN catalog. Writes one finding per (rule, offending ASIN-or-cluster) to catalog_audit_findings."></span>
+        </h3>
+        <div class="sub">
+          Evaluates the workspace's resolved ruleset against the current
+          substrate. Findings are ranked by revenue exposure. This engine
+          does NOT predict lift — the `expected_lift_pct` field is null on
+          purpose until Loop 2 (decision posterior) lands.
+        </div>
+        <div class="m6-form-row">
+          <button class="m6-btn" id="m6-run-audit-btn"
+                  onclick="m6RunAudit()">
+            Run audit
+          </button>
+          <button class="m6-btn m6-btn-secondary"
+                  onclick="m6RefreshAudit()">
+            Refresh
+          </button>
+          <span id="m6-audit-status" class="m6-status-line"></span>
+        </div>
+      </div>
+
+      <!-- Summary tiles + rule rollup -->
+      <div class="m6-ingest-card" id="m6-audit-summary-card" style="display:none;">
+        <h3>
+          Findings summary
+          <span class="m6-info" data-tip="Per-rule rollup. Revenue is deduped at ASIN-per-rule (or cluster-per-rule for duplicate_style_group). Total revenue can exceed catalog total because the same ASIN is flagged by multiple rules."></span>
+        </h3>
+        <div class="sub" id="m6-audit-meta">—</div>
+
+        <!-- KPI tiles -->
+        <div class="m6-coverage" id="m6-audit-tiles"></div>
+
+        <!-- Queue filter chips -->
+        <div class="m6-audit-filters" id="m6-audit-filters"></div>
+
+        <!-- Rule rollup -->
+        <table class="m6-table" id="m6-rule-rollup"></table>
+      </div>
+
+      <!-- Findings table -->
+      <div class="m6-ingest-card" id="m6-audit-findings-card" style="display:none;">
+        <h3>
+          Findings
+          <span class="m6-info" data-tip="All offending ASINs ranked by revenue exposure. Duplicate-style-group rows are collapsed to one row per cluster by default. Click a row to see evidence and the proposed fix."></span>
+        </h3>
+        <div class="m6-form-row">
+          <label class="m6-checkbox-wrap">
+            <input type="checkbox" id="m6-audit-collapse" checked
+                   onchange="m6RefreshFindingsTable()">
+            Collapse duplicate clusters
+          </label>
+          <span id="m6-audit-active-filter"
+                style="font-size:11px;color:#94A3B8;"></span>
+          <button class="m6-btn m6-btn-secondary" id="m6-audit-clear-filter"
+                  onclick="m6ClearAuditFilters()"
+                  style="display:none;">Clear filters</button>
+        </div>
+        <table class="m6-table" id="m6-findings-table"></table>
+        <div class="m6-form-row" id="m6-findings-pager"></div>
       </div>
 
       <!-- Tutorial: How does Catalog Health work? -->
       <details style="margin-top:24px;">
-        <summary style="cursor:pointer;font-size:12px;color:var(--text-dim);padding:8px 0;">
-          Legacy Catalog Health UI (will be retired after M6 Day 2)
+        <summary style="cursor:pointer;font-size:12px;color:#94A3B8;padding:8px 0;">
+          Legacy Catalog Health UI (will be retired)
         </summary>
         <div id="catalog-legacy-wrapper">
     <div class="tutorial-box" id="catalog-tutorial">
@@ -9470,6 +9660,16 @@ Pocket Description: No Pocket
     </div><!-- /cat-panel-rules -->
 
   </div><!-- /catalog-page -->
+
+  <!-- Audit finding drawer (Day 2.5) -->
+  <div class="m6-drawer" id="m6-finding-drawer" aria-hidden="true">
+    <div class="m6-drawer-head">
+      <span class="m6-drawer-title" id="m6-drawer-title">Finding</span>
+      <button class="m6-drawer-close" type="button"
+              onclick="m6CloseFindingDrawer()" aria-label="Close">×</button>
+    </div>
+    <div class="m6-drawer-body" id="m6-drawer-body"></div>
+  </div>
 
   <!-- ═══════════════════════ MERGE LISTINGS PAGE ═══════════════════════ -->
   <div id="merge-page" class="content">
@@ -14287,6 +14487,367 @@ async function m6RefreshRuleCount() {
 document.addEventListener('DOMContentLoaded', () => {
   atlasRefreshWorkspaceChip();
 });
+
+// ══════════ M6 Day 2.5: Audit tab ══════════
+
+let _m6AuditFilters = { queue: null, severity: null, rule: null };
+let _m6AuditOffset = 0;
+let _m6AuditLimit = 25;
+let _m6AuditPollHandle = null;
+let _m6AuditTotalRev = 0;
+
+function _m6FmtMoney(n) {
+  if (n == null) return '—';
+  if (n >= 1e6) return `$${(n/1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `$${(n/1e3).toFixed(1)}k`;
+  return `$${Number(n).toLocaleString()}`;
+}
+function _m6FmtPct(n) {
+  if (n == null) return '—';
+  return `${(n*100).toFixed(0)}%`;
+}
+function _m6FmtNum(n) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString();
+}
+
+async function m6RunAudit() {
+  const btn = document.getElementById('m6-run-audit-btn');
+  const status = document.getElementById('m6-audit-status');
+  const workspaceId = _atlasGetWorkspaceCookie();
+  btn.disabled = true;
+  status.classList.remove('ok', 'error');
+  status.textContent = 'Queueing audit…';
+  try {
+    const r = await fetch('/api/atlas/catalog/audit/run', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({workspace_id: workspaceId}),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      status.textContent = `Failed: ${d.error || 'unknown'}`;
+      status.classList.add('error');
+      btn.disabled = false;
+      return;
+    }
+    status.textContent = `Job ${d.job_id.slice(0,8)} queued. Polling…`;
+    m6StartAuditPolling(d.job_id);
+  } catch (e) {
+    status.textContent = `Run error: ${e}`;
+    status.classList.add('error');
+    btn.disabled = false;
+  }
+}
+
+function m6StopAuditPolling() {
+  if (_m6AuditPollHandle) {
+    clearInterval(_m6AuditPollHandle);
+    _m6AuditPollHandle = null;
+  }
+}
+
+function m6StartAuditPolling(jobId) {
+  m6StopAuditPolling();
+  const status = document.getElementById('m6-audit-status');
+  const btn = document.getElementById('m6-run-audit-btn');
+  const t0 = performance.now();
+  let polls = 0;
+  _m6AuditPollHandle = setInterval(async () => {
+    polls += 1;
+    try {
+      const r = await fetch(`/api/atlas/catalog/ingest-status/${encodeURIComponent(jobId)}`);
+      const d = await r.json();
+      if (!d.ok || !d.job) {
+        m6StopAuditPolling();
+        status.textContent = `Status check failed: ${d.error || 'no job'}`;
+        status.classList.add('error');
+        btn.disabled = false;
+        return;
+      }
+      const job = d.job;
+      const dt = ((performance.now() - t0)/1000).toFixed(1);
+      if (job.status === 'queued' || job.status === 'running') {
+        status.textContent = `${job.status === 'queued' ? 'Queued' : 'Running'}: ${job.progress_message || ''} (${dt}s)`;
+      } else if (job.status === 'done') {
+        m6StopAuditPolling();
+        const dur = job.duration_seconds != null ? job.duration_seconds.toFixed(1) : dt;
+        const totalFindings = (job.result_json || {}).total_findings || 0;
+        status.textContent = `Audit done in ${dur}s. ${totalFindings.toLocaleString()} findings.`;
+        status.classList.add('ok');
+        btn.disabled = false;
+        m6RefreshAudit();
+      } else if (job.status === 'failed') {
+        m6StopAuditPolling();
+        status.textContent = `Failed: ${job.error || 'unknown'}`;
+        status.classList.add('error');
+        btn.disabled = false;
+      }
+      if (polls > 300) { m6StopAuditPolling(); btn.disabled = false; }
+    } catch (e) {
+      if (polls > 5) {
+        m6StopAuditPolling();
+        status.textContent = `Poll error: ${e}`;
+        status.classList.add('error');
+        btn.disabled = false;
+      }
+    }
+  }, 2000);
+}
+
+async function m6RefreshAudit() {
+  const workspaceId = _atlasGetWorkspaceCookie();
+  try {
+    const r = await fetch(`/api/atlas/catalog/audit/summary?workspace_id=${encodeURIComponent(workspaceId)}`);
+    const d = await r.json();
+    if (!d.ok) return;
+    if (!d.has_run) {
+      document.getElementById('m6-audit-summary-card').style.display = 'none';
+      document.getElementById('m6-audit-findings-card').style.display = 'none';
+      return;
+    }
+    m6RenderAuditSummary(d);
+    document.getElementById('m6-audit-summary-card').style.display = '';
+    document.getElementById('m6-audit-findings-card').style.display = '';
+    m6RefreshFindingsTable();
+    // Update Audit tab pill count in the sub-nav
+    const cntEl = document.getElementById('cat-audit-count');
+    if (cntEl) cntEl.textContent = d.total_findings.toLocaleString();
+  } catch (e) {
+    console.warn('[m6] audit summary fetch failed:', e);
+  }
+}
+
+function m6RenderAuditSummary(d) {
+  const meta = document.getElementById('m6-audit-meta');
+  meta.innerHTML = `Run <code style="color:#5EEAD4;">${(d.run_id||'').slice(0,8)}</code> · ${new Date(d.last_detected).toLocaleString()} · <b>${d.total_findings.toLocaleString()}</b> raw findings across <b>${d.rules.length}</b> rules.`;
+
+  // KPI tiles: by queue (asin-max within queue, cluster-deduped)
+  const queueAgg = {};
+  d.rules.forEach(r => {
+    const q = r.queue || 'manual_review';
+    if (!queueAgg[q]) queueAgg[q] = {n: 0, rev: 0};
+    queueAgg[q].n += r.unique_n;
+    queueAgg[q].rev += r.revenue_exposure;
+  });
+  const queueOrder = ['quick_win', 'content_quality', 'strategic', 'manual_review'];
+  const queueLabel = {
+    quick_win: 'Quick wins',
+    content_quality: 'Content quality',
+    strategic: 'Strategic',
+    manual_review: 'Manual review',
+  };
+  const queueDesc = {
+    quick_win: 'one-click DRAFT in NIS',
+    content_quality: 'writer / photographer work',
+    strategic: 'operator decision needed',
+    manual_review: 'no clear queue',
+  };
+  const tiles = document.getElementById('m6-audit-tiles');
+  tiles.innerHTML = queueOrder.filter(q => queueAgg[q]).map(q => `
+    <div class="m6-cov-tile">
+      <div class="lbl">${queueLabel[q]}</div>
+      <div class="val">${_m6FmtMoney(queueAgg[q].rev)}</div>
+      <div class="delta">${_m6FmtNum(queueAgg[q].n)} units · ${queueDesc[q]}</div>
+    </div>
+  `).join('');
+
+  _m6AuditTotalRev = d.rules.reduce((s, r) => s + r.revenue_exposure, 0);
+
+  // Filter chips: queue
+  const filters = document.getElementById('m6-audit-filters');
+  const queueChips = queueOrder.filter(q => queueAgg[q]).map(q => `
+    <span class="m6-chip ${_m6AuditFilters.queue === q ? 'active' : ''}"
+          data-queue="${q}"
+          onclick="m6ToggleQueueFilter('${q}')">
+      ${queueLabel[q]} <span class="chip-n">${_m6FmtNum(queueAgg[q].n)}</span>
+    </span>
+  `).join('');
+  filters.innerHTML = queueChips;
+
+  // Rule rollup table
+  const tbl = document.getElementById('m6-rule-rollup');
+  tbl.innerHTML = `
+    <thead><tr>
+      <th>Rule</th><th>Severity</th><th>Queue</th>
+      <th class="num">Findings</th><th class="num">Revenue exposure</th>
+    </tr></thead>
+    <tbody>${d.rules.map(r => `
+      <tr class="row-clickable" onclick="m6SetRuleFilter('${r.rule_name}')">
+        <td class="code">${r.rule_name}</td>
+        <td><span class="m6-badge" data-sev="${r.severity}">${r.severity}</span></td>
+        <td><span class="m6-badge" data-queue="${r.queue}">${(r.queue||'').replace('_',' ')}</span></td>
+        <td class="num">${_m6FmtNum(r.unique_n)}${r.unit === 'cluster' ? ` clusters<br><span style="color:#94A3B8;font-size:10px;">${_m6FmtNum(r.asin_n)} ASINs</span>` : ''}</td>
+        <td class="num"><b>${_m6FmtMoney(r.revenue_exposure)}</b></td>
+      </tr>
+    `).join('')}</tbody>
+  `;
+}
+
+function m6ToggleQueueFilter(q) {
+  _m6AuditFilters.queue = _m6AuditFilters.queue === q ? null : q;
+  _m6AuditOffset = 0;
+  // Refresh chips visual
+  document.querySelectorAll('#m6-audit-filters .m6-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.queue === _m6AuditFilters.queue);
+  });
+  m6RefreshFindingsTable();
+}
+
+function m6SetRuleFilter(rule) {
+  _m6AuditFilters.rule = _m6AuditFilters.rule === rule ? null : rule;
+  _m6AuditOffset = 0;
+  m6RefreshFindingsTable();
+}
+
+function m6ClearAuditFilters() {
+  _m6AuditFilters = {queue: null, severity: null, rule: null};
+  _m6AuditOffset = 0;
+  document.querySelectorAll('#m6-audit-filters .m6-chip').forEach(el => {
+    el.classList.remove('active');
+  });
+  m6RefreshFindingsTable();
+}
+
+async function m6RefreshFindingsTable() {
+  const workspaceId = _atlasGetWorkspaceCookie();
+  const collapse = document.getElementById('m6-audit-collapse').checked;
+  const qs = new URLSearchParams({
+    workspace_id: workspaceId,
+    limit: _m6AuditLimit,
+    offset: _m6AuditOffset,
+  });
+  if (collapse) qs.set('collapse_clusters', '1');
+  if (_m6AuditFilters.queue) qs.set('queue', _m6AuditFilters.queue);
+  if (_m6AuditFilters.severity) qs.set('severity', _m6AuditFilters.severity);
+  if (_m6AuditFilters.rule) qs.set('rule', _m6AuditFilters.rule);
+
+  try {
+    const r = await fetch(`/api/atlas/catalog/audit/findings?${qs.toString()}`);
+    const d = await r.json();
+    if (!d.ok) return;
+
+    // Active filter label
+    const activeBits = [];
+    if (_m6AuditFilters.queue)    activeBits.push(`queue=${_m6AuditFilters.queue}`);
+    if (_m6AuditFilters.severity) activeBits.push(`severity=${_m6AuditFilters.severity}`);
+    if (_m6AuditFilters.rule)     activeBits.push(`rule=${_m6AuditFilters.rule}`);
+    const filterEl = document.getElementById('m6-audit-active-filter');
+    filterEl.textContent = activeBits.length
+      ? `Filtered: ${activeBits.join(' · ')} — ${_m6FmtNum(d.total)} matching`
+      : `${_m6FmtNum(d.total)} total`;
+    document.getElementById('m6-audit-clear-filter').style.display =
+      activeBits.length ? '' : 'none';
+
+    // Table
+    const tbl = document.getElementById('m6-findings-table');
+    if (!d.rows.length) {
+      tbl.innerHTML = `<tbody><tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:32px;">No findings match these filters.</td></tr></tbody>`;
+    } else {
+      tbl.innerHTML = `
+        <thead><tr>
+          <th>#</th><th>Label</th><th>Rule</th><th>Severity</th>
+          <th>Queue</th><th class="num">Revenue (TTM)</th>
+        </tr></thead>
+        <tbody>${d.rows.map((f, i) => {
+          const isCluster = (f.label || '').startsWith('cluster: ');
+          const labelDisplay = isCluster
+            ? `<span class="code">${(f.label.slice(9))}</span> <span style="color:#94A3B8;font-size:10px;">cluster${f.evidence && f.evidence.cluster_size ? ` of ${f.evidence.cluster_size}` : ''}</span>`
+            : `<span class="code">${f.label}</span>`;
+          return `
+            <tr class="row-clickable" onclick='m6OpenFindingDrawer(${JSON.stringify(JSON.stringify(f))})'>
+              <td class="num" style="color:#94A3B8;">${_m6AuditOffset + i + 1}</td>
+              <td>${labelDisplay}</td>
+              <td class="code" style="color:#94A3B8;">${f.rule_name}</td>
+              <td><span class="m6-badge" data-sev="${f.severity}">${f.severity}</span></td>
+              <td><span class="m6-badge" data-queue="${f.queue}">${(f.queue||'').replace('_',' ')}</span></td>
+              <td class="num"><b>${_m6FmtMoney(f.revenue_exposure)}</b></td>
+            </tr>
+          `;
+        }).join('')}</tbody>
+      `;
+    }
+
+    // Pager
+    const pager = document.getElementById('m6-findings-pager');
+    const start = d.rows.length ? _m6AuditOffset + 1 : 0;
+    const end = _m6AuditOffset + d.rows.length;
+    pager.innerHTML = `
+      <span class="pager-info">Showing ${start}–${end} of ${_m6FmtNum(d.total)}</span>
+      <span class="pager-btns">
+        <button class="m6-btn m6-btn-secondary" ${_m6AuditOffset === 0 ? 'disabled' : ''}
+                onclick="m6AuditPage(-1)">← Prev</button>
+        <button class="m6-btn m6-btn-secondary" ${end >= d.total ? 'disabled' : ''}
+                onclick="m6AuditPage(1)">Next →</button>
+      </span>
+    `;
+  } catch (e) {
+    console.warn('[m6] findings fetch failed:', e);
+  }
+}
+
+function m6AuditPage(direction) {
+  _m6AuditOffset = Math.max(0, _m6AuditOffset + direction * _m6AuditLimit);
+  m6RefreshFindingsTable();
+}
+
+function m6OpenFindingDrawer(jsonStr) {
+  let f;
+  try { f = JSON.parse(jsonStr); } catch (e) { return; }
+  const drawer = document.getElementById('m6-finding-drawer');
+  const title = document.getElementById('m6-drawer-title');
+  const body = document.getElementById('m6-drawer-body');
+  title.textContent = (f.label || '').slice(0, 60);
+  body.innerHTML = `
+    <div class="m6-drawer-section">
+      <h4>Finding</h4>
+      <dl class="m6-kv">
+        <dt>Rule</dt><dd><code style="color:#5EEAD4;">${f.rule_name}</code></dd>
+        <dt>Severity</dt><dd><span class="m6-badge" data-sev="${f.severity}">${f.severity}</span></dd>
+        <dt>Queue</dt><dd><span class="m6-badge" data-queue="${f.queue}">${(f.queue||'').replace('_',' ')}</span></dd>
+        <dt>Revenue (TTM)</dt><dd>${_m6FmtMoney(f.revenue_exposure)}</dd>
+        <dt>Confidence</dt><dd>${_m6FmtPct(f.confidence)} (rule prior)</dd>
+        <dt>Priority</dt><dd>${(f.priority_score || 0).toFixed(2)}</dd>
+      </dl>
+    </div>
+    <div class="m6-drawer-section">
+      <h4>Evidence</h4>
+      <pre class="m6-evidence-json">${JSON.stringify(f.evidence || {}, null, 2)}</pre>
+    </div>
+    ${f.proposed_fix ? `
+    <div class="m6-drawer-section">
+      <h4>Proposed fix</h4>
+      <pre class="m6-evidence-json">${JSON.stringify(f.proposed_fix, null, 2)}</pre>
+    </div>` : ''}
+    <div class="m6-drawer-section">
+      <h4>Decision (Day 2.6 — not yet wired)</h4>
+      <p style="font-size:11px;color:#94A3B8;line-height:1.55;">Accept / Reject / Edit-rule buttons will write to audit_decisions in the next pass. For now this drawer is read-only.</p>
+    </div>
+  `;
+  drawer.classList.add('open');
+  drawer.setAttribute('aria-hidden', 'false');
+  document.addEventListener('keydown', _m6DrawerEsc);
+}
+
+function m6CloseFindingDrawer() {
+  const drawer = document.getElementById('m6-finding-drawer');
+  drawer.classList.remove('open');
+  drawer.setAttribute('aria-hidden', 'true');
+  document.removeEventListener('keydown', _m6DrawerEsc);
+}
+
+function _m6DrawerEsc(e) {
+  if (e.key === 'Escape') m6CloseFindingDrawer();
+}
+
+// Auto-refresh audit summary when the Audit sub-tab becomes active.
+const _origCatSetSubtab = window.catSetSubtab;
+window.catSetSubtab = function(name) {
+  _origCatSetSubtab(name);
+  if (name === 'audit') {
+    m6RefreshAudit();
+  }
+};
 
 // ══════════════ Atlas Inputs (Phase 1) ══════════════════════════════
 function showInputsPage() {
