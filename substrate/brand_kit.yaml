@@ -1,0 +1,228 @@
+# Atlas Brand Kit — Novelle
+# Authoritative source for brand-system values used by the Creative Studio
+# (M7) generator templates, PDP composer, caption library, and any future
+# auto-styled output. Editing this file is a substrate change — bump
+# substrate_schema_version notes.
+#
+# Single-brand (Novelle) for now. Multi-brand support deferred until brand 2
+# onboards (per CONTINUOUS_LEARNING_ARCHITECTURE.md Loop 3 gating).
+
+novelle:
+  name: Novelle
+  workspace_id: novelle
+  registered_brand: true   # Amazon Brand Registry status — operator confirms
+
+  # ---------------------------------------------------------------------
+  # Color system. All hex values are sampled from approved assets, not
+  # eyeballed. Source: novelle_dims_diagram.png + novelle_price_proof_v3.png.
+  # ---------------------------------------------------------------------
+  palette:
+    cream:        "#F8F5EC"   # primary background — paper
+    ink:          "#1A2E1F"   # primary type — dark forest green
+    ink_muted:    "#4A5A4E"   # secondary type
+    accent:       "#8B7355"   # warm tan — eyebrows, dashes, callouts
+    hairline:     "#D2CDB8"   # dividers
+    white:        "#FFFFFF"   # Amazon main-image background (mandatory)
+
+  colorways:
+    - name: Black
+      hex:  "#0A0A0A"
+      one_liner: "The foundation"
+    - name: Charcoal
+      hex:  "#3A3A3D"
+      one_liner: "The understated one"
+    - name: Dark Navy
+      hex:  "#1B2237"
+      one_liner: "Quiet confidence"
+    - name: Deep Olive
+      hex:  "#3A4127"
+      one_liner: "The one that surprises you"
+
+  # ---------------------------------------------------------------------
+  # Typography. Two faces total. PDF + web embed both.
+  # ---------------------------------------------------------------------
+  fonts:
+    display:
+      family: "Cormorant Garamond"
+      role: "headlines, editorial pull-quotes, italic display"
+      weights: [400, 500]
+      web_url: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&display=swap"
+    body:
+      family: "Inter"
+      role: "body copy, eyebrows (tracked uppercase), captions, UI"
+      weights: [400, 500, 600, 700]
+      web_url: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+
+  # ---------------------------------------------------------------------
+  # Voice lines. Authoritative source = novelle_pdp_copy_paste_ready-6.md.
+  # Used as headline candidates by the Generator and tagged on every
+  # generated image so the preference model can learn which line + image
+  # combinations work.
+  # ---------------------------------------------------------------------
+  voice_lines:
+    hero:
+      - "She doesn't explain herself."
+    closer:
+      - "Come to me."
+    fabric:
+      - "79% Nylon. 21% Spandex. 100% deliberate."
+      - "Buttery soft. Second skin."
+    pocket:
+      - "Phone. Keys. Cards. Nothing falls out."
+      - "Side pockets that hold. Phones that don't fall out."
+    fit:
+      - "Engineered for movement."
+    proof:
+      - "$98 fabric. $26.99 price."
+      - "Same factory. Same fabric. Honest price."
+    ny:
+      - "From mat to Manhattan."
+      - "Built in New York."
+    bend_test:
+      - "Squat-proof. Full depth."
+
+  # ---------------------------------------------------------------------
+  # Logo lockups. File paths are workspace-relative; resolve via the
+  # asset library on use.
+  # ---------------------------------------------------------------------
+  logo:
+    primary_dark:        "novelle-amazon-pdp/img/logo_horiz_dark.png"
+    primary_light:       "novelle_logo_ink.png"
+    monogram_only:       "novelle_n_monogram.png"
+    white_transparent:   "novelle-pdp-v2/img/logo_white_clean.png"
+    ig_profile_square:   "novelle_ig_profile_logo.png"
+
+  # ---------------------------------------------------------------------
+  # Destination presets — aspect, cropping rules, max byte budget per
+  # surface. Generator picks one of these per output. Kept here (not in
+  # the generator) so a future destination doesn't require a code change.
+  # ---------------------------------------------------------------------
+  destinations:
+    amazon_main_white:
+      aspect: "1:1"
+      width:  2000
+      height: 2000
+      bg_required: "#FFFFFF"
+      product_fill_pct: 85
+      notes: "Amazon policy: pure white, no text, no graphics, ~85% fill"
+
+    amazon_gallery_lifestyle:
+      aspect: "1:1"
+      width:  2000
+      height: 2000
+      bg_required: null
+      notes: "Slots 2-9. Lifestyle, infographic, or model-on-white all allowed"
+
+    amazon_aplus_module:
+      aspect: "16:9"
+      width:  3000
+      height: 1688
+      max_bytes: 5_000_000
+      notes: "A+ premium content module"
+
+    ig_feed:
+      aspect: "4:5"
+      width:  1080
+      height: 1350
+      notes: "Pinned editorial post — vertical for max grid real estate"
+
+    ig_story:
+      aspect: "9:16"
+      width:  1080
+      height: 1920
+      notes: "Daily stories, 24h ephemeral unless added to highlight"
+
+    ig_reel_cover:
+      aspect: "9:16"
+      width:  1080
+      height: 1920
+      notes: "Reel cover frame — what shows on the grid"
+
+    highlight_cover:
+      aspect: "1:1"
+      width:  1080
+      height: 1080
+      bg_required: "#F8F5EC"
+      notes: "Cream + ink label + N badge, see novelle_ig_day1/highlight_*.png"
+
+    pdp_gallery:
+      aspect: "1:1"
+      width:  2000
+      height: 2000
+      notes: "PDP gallery slot, post-Amazon-policy crop"
+
+  # ---------------------------------------------------------------------
+  # Brand voice generator hints — used by the Generator UI to nudge
+  # prompt templates toward Novelle's editorial-but-honest voice.
+  # ---------------------------------------------------------------------
+  voice_traits:
+    primary:
+      - "editorial, not utilitarian"
+      - "confident, not loud"
+      - "premium, not luxury-coded"
+      - "honest about the price gap, not apologetic"
+    avoid:
+      - "wellness clichés (e.g. 'self-care', 'main character')"
+      - "girlboss copy ('she's that girl', 'unapologetic')"
+      - "performance-bro tone ('crush it', 'beast mode')"
+      - "Lululemon mimicry"
+
+  # ---------------------------------------------------------------------
+  # Standing prompts for the Generator's pre-built templates. The
+  # Generator UI (Day 6) reads from here and injects palette + voice.
+  # Initial seed; expanded as we learn which prompts convert.
+  # ---------------------------------------------------------------------
+  prompt_templates:
+    hero_rooftop_ny:
+      destination: ig_feed
+      prompt: |
+        Cinematic editorial fashion photograph for a premium activewear brand.
+        Confident woman, athletic build, wearing matte black high-waist yoga
+        leggings and a cream cropped tank, walking across a New York rooftop
+        at golden hour. Empire State Building visible in soft background.
+        50mm, shallow depth of field. Warm directional light raking across
+        the leggings. Composition with negative space on the left for
+        editorial type. Subtle film grain. No visible logos.
+      negative_terms: ["stock photography", "bright daylight", "studio backdrop"]
+
+    flatlay_colorways_linen:
+      destination: ig_feed
+      prompt: |
+        Premium activewear flatlay. Four pairs of folded matte high-waist yoga
+        leggings laid in a row on a linen-textured cream surface, in colors:
+        Black, Charcoal, Dark Navy, Deep Olive. Eucalyptus sprig in upper-left
+        corner. Soft side light, warm shadows. Editorial catalog quality.
+
+    model_white_bg:
+      destination: amazon_main_white
+      prompt: |
+        Amazon best-seller activewear product photograph. Female model,
+        athletic build, photographed straight-on from the front, full body,
+        wearing matte black high-waist yoga leggings with visible deep side
+        pocket on right thigh, 4-inch waistband, 7/8 length. Pure white
+        seamless background (RGB 255,255,255, no shadow, no gradient). Model
+        fills 85% of vertical frame. Sharp focus, neutral catalog lighting.
+
+    infographic_proof:
+      destination: amazon_gallery_lifestyle
+      prompt: |
+        Editorial activewear infographic. Top 60% of frame: photographic
+        product detail. Bottom 40%: cream panel (#F8F5EC) with dark forest
+        green Cormorant Garamond headline, tracked Inter eyebrow in tan
+        accent (#8B7355), three short Inter body proof points in columns.
+        Hairline divider in tan. Magazine-grade composition.
+
+    story_pocket_test:
+      destination: ig_story
+      prompt: |
+        9:16 portrait. Top 65% of frame: macro product shot of a hand
+        sliding [object: phone | keys | AirPods] into the deep side pocket
+        of matte black high-waist yoga leggings. Bottom 35% cream panel
+        (#F8F5EC) with Cormorant Garamond headline + Inter eyebrow.
+
+    reel_cover_fabric:
+      destination: ig_reel_cover
+      prompt: |
+        9:16 portrait. Macro of two hands stretching matte black nylon-spandex
+        fabric horizontally. Top fade to dark, bottom fade to dark with white
+        Cormorant Garamond headline.
