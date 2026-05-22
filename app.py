@@ -17140,6 +17140,680 @@ def _template_path_for_pt(pt):
     return str(p) if p.exists() else None
 
 
+
+# ====================================================================
+# M7 — Atlas Creative Studio routes
+# ====================================================================
+# Brand asset library + generator + PDP studio. Per CONTINUOUS_LEARNING
+# _ARCHITECTURE.md v1.2. Wraps substrate/asset_ingest.py (Day 2) over
+# the v13 schema (image_library + image_surfaces + image_tags +
+# caption_library + pdp_variants).
+#
+# All routes are workspace-scoped via cookie or query param, mirroring
+# the catalog/audit endpoints. Single-user (Devang) scope; no auth
+# beyond the existing operator cookie.
+
+import os as _studio_os
+import json as _studio_json
+import uuid as _studio_uuid
+import subprocess as _studio_subprocess
+from pathlib import Path as _StudioPath
+
+
+@app.route("/api/atlas/studio/brand_kit", methods=["GET"])
+def atlas_studio_brand_kit():
+    """Return the Novelle brand kit as JSON. UI uses this to render the
+    palette swatch, font picker, voice-line dropdown, and to seed the
+    generator's prompt templates."""
+    try:
+        import yaml
+    except ImportError:
+        return jsonify({"ok": False, "error": "pyyaml not installed"}), 500
+    try:
+        path = _StudioPath(__file__).parent / "substrate" / "brand_kit.yaml"
+        with open(path) as f:
+            data = yaml.safe_load(f)
+        return jsonify({"ok": True, "brand_kit": data})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/studio/templates", methods=["GET"])
+def atlas_studio_templates():
+    """Return just the generator prompt templates (subset of brand_kit)."""
+    try:
+        import yaml
+        path = _StudioPath(__file__).parent / "substrate" / "brand_kit.yaml"
+        with open(path) as f:
+            data = yaml.safe_load(f)
+        brand = (request.args.get("brand") or "novelle").lower()
+        templates = (data.get(brand) or {}).get("prompt_templates", {})
+        return jsonify({"ok": True, "templates": templates, "brand": brand})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/studio/assets", methods=["GET"])
+def atlas_studio_assets_list():
+    """List + filter the image_library for a workspace.
+
+    Query params:
+      workspace_id: required (cookie fallback)
+      asset_type:   optional filter (hero|model|infographic|...)
+      status:       optional filter (draft|approved|archived). Default: not archived.
+      surface_type: optional (ig_feed|pdp_gallery|aplus_module|...)
+      starred:      optional bool ('true'/'false')
+      tag_key + tag_value: optional pair (e.g. subject_place=brooklyn-bridge)
+      q:            free-text search over file_name
+      limit:        default 200, max 1000
+      offset:       default 0
+    """
+    workspace_id = (request.args.get("workspace_id")
+                    or request.cookies.get("atlas_workspace_id")
+                    or "novelle").strip()
+    asset_type = (request.args.get("asset_type") or "").strip().lower()
+    status_filter = (request.args.get("status") or "").strip().lower()
+    surface_type = (request.args.get("surface_type") or "").strip().lower()
+    starred_str = (request.args.get("starred") or "").strip().lower()
+    tag_key = (request.args.get("tag_key") or "").strip()
+    tag_value = (request.args.get("tag_value") or "").strip()
+    q = (request.args.get("q") or "").strip()
+    try:
+        limit = min(int(request.args.get("limit") or 200), 1000)
+        offset = max(int(request.args.get("offset") or 0), 0)
+    except ValueError:
+        return jsonify({"ok": False, "error": "limit/offset must be ints"}), 400
+
+    try:
+        from substrate.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "no DB"}), 500
+
+        where = ["i.workspace_id = %s"]
+        args: list = [workspace_id]
+
+        if asset_type:
+            where.append("i.asset_type = %s")
+            args.append(asset_type)
+        if status_filter:
+            where.append("i.status = %s")
+            args.append(status_filter)
+        else:
+            # Default: hide archived
+            where.append("i.status <> 'archived'")
+        if starred_str in ("true", "1", "yes"):
+            where.append("i.starred = TRUE")
+        if surface_type:
+            where.append("""EXISTS (
+                SELECT 1 FROM image_surfaces s
+                WHERE s.image_id = i.image_id AND s.surface_type = %s
+            )""")
+            args.append(surface_type)
+        if tag_key and tag_value:
+            where.append("""EXISTS (
+                SELECT 1 FROM image_tags t
+                WHERE t.image_id = i.image_id
+                  AND t.tag_key = %s AND t.tag_value = %s
+            )""")
+            args.extend([tag_key, tag_value])
+        if q:
+            where.append("LOWER(i.file_name) LIKE %s")
+            args.append(f"%{q.lower()}%")
+
+        sql = f"""
+            SELECT i.image_id, i.file_name, i.asset_type, i.status, i.starred,
+                   i.brand_voice_line, i.ai_generated, i.generation_model,
+                   i.bytes, i.width, i.height, i.storage_url, i.uploaded_at,
+                   i.parent_image_id,
+                   (SELECT COUNT(*) FROM image_surfaces s WHERE s.image_id = i.image_id) AS surface_count,
+                   (SELECT COUNT(*) FROM image_tags t WHERE t.image_id = i.image_id) AS tag_count
+            FROM image_library i
+            WHERE {" AND ".join(where)}
+            ORDER BY i.uploaded_at DESC
+            LIMIT %s OFFSET %s
+        """
+        args.extend([limit, offset])
+
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, args)
+                rows = cur.fetchall()
+                cols = [d[0] for d in cur.description]
+                assets = [dict(zip(cols, r)) for r in rows]
+
+                # Total count (without limit)
+                count_sql = f"SELECT COUNT(*) FROM image_library i WHERE {' AND '.join(where[:-0] if False else where)}"
+                cur.execute(count_sql, args[:-2])
+                total = cur.fetchone()[0]
+
+        # JSON-serialize datetimes / UUIDs
+        for a in assets:
+            for k in ("image_id", "parent_image_id"):
+                if a.get(k) is not None:
+                    a[k] = str(a[k])
+            if a.get("uploaded_at"):
+                a["uploaded_at"] = a["uploaded_at"].isoformat()
+
+        return jsonify({
+            "ok": True,
+            "assets": assets,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "workspace_id": workspace_id,
+        })
+    except Exception as exc:
+        print(f"[atlas] studio/assets list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/studio/assets/<image_id>", methods=["GET"])
+def atlas_studio_asset_detail(image_id):
+    """Full detail for one asset: tags, surfaces, version chain."""
+    workspace_id = (request.args.get("workspace_id")
+                    or request.cookies.get("atlas_workspace_id")
+                    or "novelle").strip()
+    try:
+        from substrate.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "no DB"}), 500
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT image_id, workspace_id, file_name, asset_type, status,
+                           starred, brand_voice_line, ai_generated, generation_model,
+                           generation_prompt, generation_params, bytes, width, height,
+                           storage_url, uploaded_at, parent_image_id, meta
+                    FROM image_library
+                    WHERE image_id = %s AND workspace_id = %s
+                """, (image_id, workspace_id))
+                row = cur.fetchone()
+                if not row:
+                    return jsonify({"ok": False, "error": "not found"}), 404
+                cols = [d[0] for d in cur.description]
+                asset = dict(zip(cols, row))
+
+                cur.execute("""
+                    SELECT tag_key, tag_value FROM image_tags
+                    WHERE image_id = %s
+                """, (image_id,))
+                tags: dict = {}
+                for k, v in cur.fetchall():
+                    tags.setdefault(k, []).append(v)
+
+                cur.execute("""
+                    SELECT surface_type, surface_ref, surface_status, first_used
+                    FROM image_surfaces
+                    WHERE image_id = %s AND workspace_id = %s
+                    ORDER BY first_used DESC
+                """, (image_id, workspace_id))
+                surfaces = [
+                    {"surface_type": r[0], "surface_ref": r[1],
+                     "surface_status": r[2],
+                     "first_used": r[3].isoformat() if r[3] else None}
+                    for r in cur.fetchall()
+                ]
+
+                # Version chain: parent + siblings + children
+                versions: dict = {"parent": None, "siblings": [], "children": []}
+                if asset.get("parent_image_id"):
+                    cur.execute("""
+                        SELECT image_id, file_name, asset_type, status
+                        FROM image_library
+                        WHERE image_id = %s
+                    """, (asset["parent_image_id"],))
+                    p = cur.fetchone()
+                    if p:
+                        versions["parent"] = {
+                            "image_id": str(p[0]), "file_name": p[1],
+                            "asset_type": p[2], "status": p[3],
+                        }
+                cur.execute("""
+                    SELECT image_id, file_name, asset_type, status
+                    FROM image_library
+                    WHERE parent_image_id = %s AND image_id <> %s
+                """, (image_id, image_id))
+                versions["children"] = [
+                    {"image_id": str(r[0]), "file_name": r[1],
+                     "asset_type": r[2], "status": r[3]}
+                    for r in cur.fetchall()
+                ]
+
+        for k in ("image_id", "parent_image_id"):
+            if asset.get(k) is not None:
+                asset[k] = str(asset[k])
+        if asset.get("uploaded_at"):
+            asset["uploaded_at"] = asset["uploaded_at"].isoformat()
+        # meta and generation_params are jsonb
+        for k in ("meta", "generation_params"):
+            if asset.get(k) and not isinstance(asset[k], dict):
+                try:
+                    asset[k] = _studio_json.loads(asset[k])
+                except Exception:
+                    pass
+
+        return jsonify({
+            "ok": True,
+            "asset": asset,
+            "tags": tags,
+            "surfaces": surfaces,
+            "versions": versions,
+        })
+    except Exception as exc:
+        print(f"[atlas] studio/asset detail failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/studio/assets/<image_id>", methods=["PATCH"])
+def atlas_studio_asset_patch(image_id):
+    """Mutate asset: status, starred, asset_type, brand_voice_line,
+    add/remove tags, add/remove surface links.
+
+    Payload (all optional):
+      status: 'draft'|'approved'|'archived'
+      starred: bool
+      asset_type: str
+      brand_voice_line: str|null
+      add_tags:    [[key, value], ...]
+      remove_tags: [[key, value], ...]
+      add_surfaces:    [[surface_type, surface_ref], ...]
+      remove_surfaces: [[surface_type, surface_ref], ...]
+    """
+    workspace_id = (request.cookies.get("atlas_workspace_id") or "novelle").strip()
+    payload = request.get_json(silent=True) or {}
+
+    try:
+        from substrate.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "no DB"}), 500
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                # Build update SQL only for fields actually provided
+                set_parts: list = []
+                args: list = []
+                for col in ("status", "starred", "asset_type", "brand_voice_line"):
+                    if col in payload:
+                        set_parts.append(f"{col} = %s")
+                        args.append(payload[col])
+                if set_parts:
+                    args.extend([image_id, workspace_id])
+                    cur.execute(
+                        f"UPDATE image_library SET {', '.join(set_parts)} "
+                        "WHERE image_id = %s AND workspace_id = %s",
+                        args,
+                    )
+
+                for k, v in (payload.get("add_tags") or []):
+                    cur.execute(
+                        "INSERT INTO image_tags (image_id, tag_key, tag_value) "
+                        "VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
+                        (image_id, k, v),
+                    )
+                for k, v in (payload.get("remove_tags") or []):
+                    cur.execute(
+                        "DELETE FROM image_tags WHERE image_id = %s "
+                        "AND tag_key = %s AND tag_value = %s",
+                        (image_id, k, v),
+                    )
+
+                for stype, sref in (payload.get("add_surfaces") or []):
+                    cur.execute(
+                        "INSERT INTO image_surfaces "
+                        "(image_id, workspace_id, surface_type, surface_ref, surface_status) "
+                        "VALUES (%s, %s, %s, %s, 'live') ON CONFLICT DO NOTHING",
+                        (image_id, workspace_id, stype, sref),
+                    )
+                for stype, sref in (payload.get("remove_surfaces") or []):
+                    cur.execute(
+                        "DELETE FROM image_surfaces WHERE image_id = %s "
+                        "AND surface_type = %s AND surface_ref = %s",
+                        (image_id, stype, sref),
+                    )
+
+                conn.commit()
+
+        return jsonify({"ok": True, "image_id": image_id})
+    except Exception as exc:
+        print(f"[atlas] studio/asset patch failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/studio/assets/ingest/scan", methods=["POST"])
+def atlas_studio_assets_ingest_scan():
+    """Re-runnable scan of the workspace. Idempotent — upserts by file_hash.
+
+    Payload:
+      workspace_id: 'novelle' (default)
+      workspace_root: '/home/user/workspace' (default)
+      dry_run: bool. If true, returns classification report without writing.
+    """
+    payload = request.get_json(silent=True) or {}
+    workspace_id = payload.get("workspace_id") or "novelle"
+    workspace_root = payload.get("workspace_root") or "/home/user/workspace"
+    dry_run = bool(payload.get("dry_run"))
+
+    try:
+        from substrate.asset_ingest import (
+            classify_workspace, apply_to_substrate, to_json_records,
+        )
+        records = classify_workspace(workspace_root, workspace_id=workspace_id)
+        if dry_run:
+            from collections import Counter
+            return jsonify({
+                "ok": True,
+                "dry_run": True,
+                "total": len(records),
+                "by_type": dict(Counter(r.asset_type for r in records)),
+                "by_status": dict(Counter(r.status for r in records)),
+            })
+        summary = apply_to_substrate(records, workspace_id=workspace_id)
+        return jsonify({
+            "ok": True,
+            "dry_run": False,
+            "total": len(records),
+            "summary": summary,
+            "workspace_id": workspace_id,
+        })
+    except Exception as exc:
+        print(f"[atlas] studio/ingest scan failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/studio/generate", methods=["POST"])
+def atlas_studio_generate():
+    """Generate 1-4 image variants via asi-generate-image.
+
+    Payload:
+      workspace_id: 'novelle' (default)
+      template_id:  optional — pulls prompt from brand_kit prompt_templates
+      prompt:       free-form prompt (overrides template)
+      asset_type:   the type tag to apply on save
+      aspect_ratio: '1:1'|'4:5'|'9:16'|'16:9'|'3:4'
+      n:            number of variants, 1-4
+      model:        default 'gpt_image_2'
+      brand_voice_line: optional — pairs the assets to this headline
+      reference_image_ids: optional — image_ids to use as visual references
+      save_to_library: bool, default true
+      status_on_save:  'draft' default
+    Returns:
+      ok, variants=[{image_id?, file_path, prompt, model, cost_cents}, ...]
+    """
+    payload = request.get_json(silent=True) or {}
+    workspace_id = payload.get("workspace_id") or "novelle"
+    n = max(1, min(int(payload.get("n") or 1), 4))
+    model = payload.get("model") or "gpt_image_2"
+    aspect = payload.get("aspect_ratio") or "1:1"
+    asset_type = payload.get("asset_type") or "unknown"
+    brand_voice_line = payload.get("brand_voice_line")
+    save_to_library = bool(payload.get("save_to_library", True))
+    status_on_save = payload.get("status_on_save") or "draft"
+
+    # Resolve prompt
+    prompt = (payload.get("prompt") or "").strip()
+    template_id = payload.get("template_id")
+    if template_id and not prompt:
+        try:
+            import yaml
+            path = _StudioPath(__file__).parent / "substrate" / "brand_kit.yaml"
+            with open(path) as f:
+                kit = yaml.safe_load(f)
+            templates = (kit.get("novelle") or {}).get("prompt_templates", {})
+            tpl = templates.get(template_id)
+            if not tpl:
+                return jsonify({"ok": False, "error": f"unknown template_id: {template_id}"}), 400
+            prompt = tpl["prompt"]
+            # If the template specifies a destination, infer aspect_ratio
+            dest = tpl.get("destination")
+            if dest:
+                dests = (kit.get("novelle") or {}).get("destinations", {})
+                dest_cfg = dests.get(dest, {})
+                if dest_cfg.get("aspect") and not payload.get("aspect_ratio"):
+                    aspect = dest_cfg["aspect"]
+        except Exception as exc:
+            return jsonify({"ok": False, "error": f"template lookup: {exc}"}), 500
+
+    if not prompt:
+        return jsonify({"ok": False, "error": "prompt or template_id required"}), 400
+
+    # Generate n variants via asi-generate-image subprocess.
+    # NOTE: requires the sandbox-side CLI (asi-generate-image) to be on PATH
+    # AND the runtime to have credentials for `llm-api:image`. On Render,
+    # this will fail — returns explicit error so the operator knows.
+    if _studio_subprocess.run(["which", "asi-generate-image"],
+                              capture_output=True).returncode != 0:
+        return jsonify({
+            "ok": False,
+            "error": "asi-generate-image CLI not on PATH in this environment. "
+                     "Image generation runs in the dev sandbox only for now. "
+                     "Use the operator chat to generate; the saved variant will "
+                     "appear in the library on next /assets/ingest/scan.",
+        }), 503
+
+    out_dir = _StudioPath("/home/user/workspace") / "studio_generated"
+    out_dir.mkdir(exist_ok=True)
+    variants = []
+    for i in range(n):
+        filename = f"gen_{_studio_uuid.uuid4().hex[:12]}"
+        args_json = _studio_json.dumps({
+            "prompt": prompt,
+            "filename": filename,
+            "aspect_ratio": aspect,
+            "model": model,
+        })
+        try:
+            res = _studio_subprocess.run(
+                ["asi-generate-image", args_json],
+                capture_output=True, text=True, timeout=180,
+                env={**_studio_os.environ, "PPLX_API_CREDENTIALS": "llm-api:image"},
+            )
+            if res.returncode != 0:
+                variants.append({
+                    "ok": False, "error": (res.stderr or res.stdout)[:200],
+                    "prompt": prompt, "model": model,
+                })
+                continue
+            # Output written to /home/user/workspace/<filename>.png by default
+            generated_path = _StudioPath("/home/user/workspace") / f"{filename}.png"
+            variant = {
+                "ok": True,
+                "file_path": str(generated_path) if generated_path.exists() else None,
+                "filename": filename,
+                "prompt": prompt,
+                "model": model,
+                "aspect_ratio": aspect,
+            }
+            # Save to library if requested
+            if save_to_library and generated_path.exists():
+                try:
+                    from substrate.asset_ingest import (
+                        classify_one, apply_to_substrate, AssetRecord,
+                    )
+                    rec = classify_one(generated_path,
+                                       _StudioPath("/home/user/workspace"),
+                                       workspace_id=workspace_id)
+                    # Override fields based on payload
+                    rec.asset_type = asset_type
+                    rec.status = status_on_save
+                    rec.ai_generated = True
+                    rec.generation_model = model
+                    rec.generation_prompt = prompt
+                    if brand_voice_line:
+                        rec.brand_voice_line = brand_voice_line
+                    summary = apply_to_substrate([rec], workspace_id=workspace_id)
+                    variant["saved_to_library"] = True
+                    variant["library_summary"] = summary
+                except Exception as exc:
+                    variant["saved_to_library"] = False
+                    variant["library_error"] = str(exc)[:200]
+            variants.append(variant)
+        except _studio_subprocess.TimeoutExpired:
+            variants.append({"ok": False, "error": "generation timeout (>180s)"})
+        except Exception as exc:
+            variants.append({"ok": False, "error": str(exc)[:200]})
+
+    return jsonify({
+        "ok": True,
+        "variants": variants,
+        "prompt": prompt,
+        "model": model,
+        "aspect_ratio": aspect,
+        "n": n,
+    })
+
+
+@app.route("/api/atlas/studio/pdps", methods=["GET"])
+def atlas_studio_pdps_list():
+    """List saved PDP variants for a workspace."""
+    workspace_id = (request.args.get("workspace_id")
+                    or request.cookies.get("atlas_workspace_id")
+                    or "novelle").strip()
+    try:
+        from substrate.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "no DB"}), 500
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT variant_id, name, base_pdp_path, slot_map, starred,
+                           status, notes, created_at, created_by
+                    FROM pdp_variants
+                    WHERE workspace_id = %s AND status <> 'archived'
+                    ORDER BY starred DESC, created_at DESC
+                """, (workspace_id,))
+                rows = cur.fetchall()
+                cols = [d[0] for d in cur.description]
+                variants = [dict(zip(cols, r)) for r in rows]
+
+        for v in variants:
+            v["variant_id"] = str(v["variant_id"])
+            if v.get("created_at"):
+                v["created_at"] = v["created_at"].isoformat()
+            if v.get("slot_map") and not isinstance(v["slot_map"], dict):
+                try:
+                    v["slot_map"] = _studio_json.loads(v["slot_map"])
+                except Exception:
+                    pass
+
+        return jsonify({"ok": True, "variants": variants, "workspace_id": workspace_id})
+    except Exception as exc:
+        print(f"[atlas] studio/pdps list failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/studio/pdps", methods=["POST"])
+def atlas_studio_pdps_create():
+    """Create a PDP variant. Payload: name, base_pdp_path, slot_map (dict)."""
+    workspace_id = (request.cookies.get("atlas_workspace_id") or "novelle").strip()
+    payload = request.get_json(silent=True) or {}
+
+    name = (payload.get("name") or "").strip()
+    base = (payload.get("base_pdp_path") or "").strip()
+    slot_map = payload.get("slot_map") or {}
+    notes = payload.get("notes")
+
+    if not name or not base:
+        return jsonify({"ok": False, "error": "name and base_pdp_path required"}), 400
+
+    try:
+        from substrate.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "no DB"}), 500
+        variant_id = str(_studio_uuid.uuid4())
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO pdp_variants
+                        (variant_id, workspace_id, name, base_pdp_path, slot_map,
+                         notes, created_by)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    variant_id, workspace_id, name, base,
+                    _studio_json.dumps(slot_map), notes,
+                    request.cookies.get("atlas_operator_id") or "devang",
+                ))
+                conn.commit()
+        return jsonify({"ok": True, "variant_id": variant_id})
+    except Exception as exc:
+        print(f"[atlas] studio/pdps create failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/atlas/studio/pdps/<variant_id>", methods=["GET"])
+def atlas_studio_pdp_detail(variant_id):
+    """Render a single PDP variant — returns slot_map + asset metadata for
+    each slot's image_id so the UI can compose the preview."""
+    workspace_id = (request.args.get("workspace_id")
+                    or request.cookies.get("atlas_workspace_id")
+                    or "novelle").strip()
+    try:
+        from substrate.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "no DB"}), 500
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT variant_id, name, base_pdp_path, slot_map, starred,
+                           status, notes, created_at
+                    FROM pdp_variants
+                    WHERE variant_id = %s AND workspace_id = %s
+                """, (variant_id, workspace_id))
+                row = cur.fetchone()
+                if not row:
+                    return jsonify({"ok": False, "error": "not found"}), 404
+                cols = [d[0] for d in cur.description]
+                variant = dict(zip(cols, row))
+
+                # Resolve each slot's image_id to file metadata
+                slot_map = variant["slot_map"]
+                if not isinstance(slot_map, dict):
+                    try:
+                        slot_map = _studio_json.loads(slot_map)
+                    except Exception:
+                        slot_map = {}
+
+                slot_assets = {}
+                if slot_map:
+                    image_ids = list(set(v for v in slot_map.values() if v))
+                    if image_ids:
+                        placeholders = ",".join(["%s"] * len(image_ids))
+                        cur.execute(
+                            f"""SELECT image_id, file_name, asset_type, storage_url
+                                FROM image_library
+                                WHERE image_id IN ({placeholders})""",
+                            image_ids,
+                        )
+                        by_id = {str(r[0]): {
+                            "file_name": r[1], "asset_type": r[2],
+                            "storage_url": r[3],
+                        } for r in cur.fetchall()}
+                        for slot, iid in slot_map.items():
+                            slot_assets[slot] = by_id.get(str(iid))
+
+        variant["variant_id"] = str(variant["variant_id"])
+        if variant.get("created_at"):
+            variant["created_at"] = variant["created_at"].isoformat()
+        variant["slot_map"] = slot_map
+
+        return jsonify({
+            "ok": True,
+            "variant": variant,
+            "slot_assets": slot_assets,
+        })
+    except Exception as exc:
+        print(f"[atlas] studio/pdp detail failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ====================================================================
+# End M7 — Atlas Creative Studio routes
+# ====================================================================
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))

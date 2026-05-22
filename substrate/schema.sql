@@ -1390,3 +1390,142 @@ ALTER TABLE ingest_jobs ALTER COLUMN filepath DROP NOT NULL;
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v12', 'M6 Day 2.5: ingest_jobs.filepath nullable (for catalog_audit job type).')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ===========================================================================
+-- v13 MIGRATION (M7 Day 1, 2026-05-22): Creative Studio substrate.
+--
+-- M7 = Atlas Creative Studio: brand asset library + generator + PDP studio.
+-- Single-brand (Novelle), single-user (Devang) scope. Extends the existing
+-- image_library / image_asin_links Phase 1 substrate rather than creating
+-- parallel tables. Adds:
+--   - status / starred / parent_image_id / asset_type / brand_voice_line on image_library
+--   - image_surfaces  -- non-ASIN destinations (IG posts, A+ modules, story frames)
+--   - image_tags      -- flexible attributes (subject_person, subject_place, style)
+--   - caption_library -- first-class text assets (caption + hashtags + alt)
+--   - pdp_variants    -- operator-saved PDP slot compositions for side-by-side compare
+--
+-- All M7 tables are workspace-scoped so multi-brand is a v2 schema change,
+-- not a rewrite. No analytics consumers; conversion data arrives in M11.
+-- ===========================================================================
+
+ALTER TABLE image_library
+    ADD COLUMN IF NOT EXISTS status            TEXT    DEFAULT 'draft',
+    ADD COLUMN IF NOT EXISTS starred           BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS parent_image_id   UUID    REFERENCES image_library(image_id),
+    ADD COLUMN IF NOT EXISTS asset_type        TEXT,
+    ADD COLUMN IF NOT EXISTS brand_voice_line  TEXT;
+
+-- status valid values (enforced in app layer, not DB): draft | approved | archived
+-- asset_type valid values: hero | flatlay | infographic | model | city | logo |
+--                          video | story_frame | reel_cover | size_guide |
+--                          aplus_module | pdp_gallery | colorways | construction
+
+CREATE INDEX IF NOT EXISTS idx_image_library_status
+    ON image_library (workspace_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_image_library_asset_type
+    ON image_library (workspace_id, asset_type)
+    WHERE asset_type IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_image_library_starred
+    ON image_library (workspace_id, starred)
+    WHERE starred = TRUE;
+
+
+-- image_surfaces: where this image lives across non-ASIN destinations.
+-- Examples:
+--   surface_type='ig_feed',     surface_ref='day1_pinned'
+--   surface_type='ig_story',    surface_ref='day2_pocket_test_01'
+--   surface_type='ig_reel',     surface_ref='day3_fabric_demo'
+--   surface_type='aplus_module',surface_ref='m0_brand_statement'
+--   surface_type='pdp_gallery', surface_ref='slot_1'
+--   surface_type='highlight_cover', surface_ref='shop'
+CREATE TABLE IF NOT EXISTS image_surfaces (
+    image_id        UUID        NOT NULL REFERENCES image_library(image_id) ON DELETE CASCADE,
+    workspace_id    TEXT        NOT NULL,
+    surface_type    TEXT        NOT NULL,
+    surface_ref     TEXT        NOT NULL,
+    surface_status  TEXT        DEFAULT 'planned',     -- planned | live | retired
+    first_used      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (image_id, surface_type, surface_ref)
+);
+
+CREATE INDEX IF NOT EXISTS idx_image_surfaces_lookup
+    ON image_surfaces (workspace_id, surface_type, surface_status);
+
+
+-- image_tags: flexible attribute tagging. Many-to-many.
+-- Examples:
+--   ('subject_person', 'model_v1_brunette')
+--   ('subject_place',  'rooftop_empire_state')
+--   ('style',          'editorial_warm')
+--   ('mood',           'aspirational')
+--   ('palette',        'cream_forest_green')
+CREATE TABLE IF NOT EXISTS image_tags (
+    image_id     UUID    NOT NULL REFERENCES image_library(image_id) ON DELETE CASCADE,
+    tag_key      TEXT    NOT NULL,
+    tag_value    TEXT    NOT NULL,
+    PRIMARY KEY (image_id, tag_key, tag_value)
+);
+
+CREATE INDEX IF NOT EXISTS idx_image_tags_kv
+    ON image_tags (tag_key, tag_value);
+
+
+-- caption_library: first-class text assets. Caption body + hashtags + alt text.
+-- Linked to image_id when paired. Standalone when general (e.g. a hashtag pool).
+CREATE TABLE IF NOT EXISTS caption_library (
+    caption_id      UUID        PRIMARY KEY,
+    workspace_id    TEXT        NOT NULL,
+    body            TEXT        NOT NULL,
+    hashtags        TEXT[],
+    alt_text        TEXT,
+    voice_line      TEXT,                              -- e.g. "She doesn't explain herself."
+    status          TEXT        DEFAULT 'draft',
+    starred         BOOLEAN     DEFAULT FALSE,
+    linked_image_id UUID        REFERENCES image_library(image_id) ON DELETE SET NULL,
+    surface_type    TEXT,                              -- intended destination if known
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by      TEXT        DEFAULT 'devang'
+);
+
+CREATE INDEX IF NOT EXISTS idx_captions_workspace_status
+    ON caption_library (workspace_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_captions_linked_image
+    ON caption_library (linked_image_id)
+    WHERE linked_image_id IS NOT NULL;
+
+
+-- pdp_variants: operator-saved PDP compositions for side-by-side compare.
+-- slot_map is a JSON object mapping slot identifiers to image_ids, e.g.
+--   {
+--     "gallery_1": "uuid", "gallery_2": "uuid", ...,
+--     "aplus_m0": "uuid", "aplus_m1": "uuid", ...
+--   }
+-- base_pdp_path is the HTML template the slot_map applies to.
+CREATE TABLE IF NOT EXISTS pdp_variants (
+    variant_id      UUID        PRIMARY KEY,
+    workspace_id    TEXT        NOT NULL,
+    name            TEXT        NOT NULL,
+    base_pdp_path   TEXT        NOT NULL,
+    slot_map        JSONB       NOT NULL DEFAULT '{}'::jsonb,
+    starred         BOOLEAN     DEFAULT FALSE,
+    status          TEXT        DEFAULT 'draft',       -- draft | approved | archived
+    notes           TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by      TEXT        DEFAULT 'devang'
+);
+
+CREATE INDEX IF NOT EXISTS idx_pdp_variants_workspace
+    ON pdp_variants (workspace_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_pdp_variants_starred
+    ON pdp_variants (workspace_id, starred)
+    WHERE starred = TRUE;
+
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v13', 'M7 Day 1: Creative Studio substrate — image_library M7 columns + image_surfaces + image_tags + caption_library + pdp_variants.')
+    ON CONFLICT (version) DO NOTHING;

@@ -1,0 +1,4725 @@
+[
+  {
+    "file_path": "/home/user/workspace/novelle_hero_ny.png",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_hero_ny.png",
+    "file_hash": "4ab102590b3dfdc059dd4f2838420d30433ac537c9df3de6c8ef570ac19a367b",
+    "bytes_size": 2483083,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "style": [
+        "editorial-warm"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_classic_hero_front.png",
+    "workspace_id": "novelle",
+    "asset_type": "hero",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_classic_hero_front.png",
+    "file_hash": "407241d659f8b6caed4074cc57aff0bf2b162a496d2e5d2dc0233d25192ea6c1",
+    "bytes_size": 1923980,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_classic_clean_line_detail.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_classic_clean_line_detail.png",
+    "file_hash": "cf4262b70d445e1f398f6460c585e887f7653fe45a21700cf7091eea88abaed9",
+    "bytes_size": 2139406,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "clean-white-bg"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_classic_versatility_street.png",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_classic_versatility_street.png",
+    "file_hash": "5189559ec040664478ce9266dc9198406d35c60b24d1f2df68c437145c7804b2",
+    "bytes_size": 2389245,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_classic_4color_flatlay.png",
+    "workspace_id": "novelle",
+    "asset_type": "colorways",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_classic_4color_flatlay.png",
+    "file_hash": "264c71b97b241624eb08ad2df5d1a6eb68bff5e0efac78e73baa9b189c489c2e",
+    "bytes_size": 3022258,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_size_guide_v3.png",
+    "workspace_id": "novelle",
+    "asset_type": "size_guide",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_size_guide_v3.png",
+    "file_hash": "7eda00ffe82497469582bf31ca23d51d39c9d0164e8e2f88f0cd99bb702a22b4",
+    "bytes_size": 68294,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_hero_1.png",
+    "workspace_id": "novelle",
+    "asset_type": "hero",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_hero_1.png",
+    "file_hash": "83c2b7e843f4225bd90fa31310d5da22ab5fccfeb4d9b81042c35343c09a69d7",
+    "bytes_size": 2328089,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_front_full.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_front_full.png",
+    "file_hash": "a76b97f08273df4879b3fc1d7585bfb6301e185dd012cd9ec18b21aa6a3b74f9",
+    "bytes_size": 2649427,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_back.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_back.png",
+    "file_hash": "dfb43c1fccb47410f0c9fd60fc57ce63435243435afe9a008f396341861acdbf",
+    "bytes_size": 2498144,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_fabric_detail.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_fabric_detail.png",
+    "file_hash": "c4105a3732b0bc9250ee10c7879c76292311d1fe892c314aeb6d6e269af7cf59",
+    "bytes_size": 3177339,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_yoga_lifestyle.png",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_yoga_lifestyle.png",
+    "file_hash": "de4ed996ebacd657932ec1a6472bd7e6706b5a0cc518091e2177048162eabb63",
+    "bytes_size": 2374908,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_hero_night_nyc.png",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_hero_night_nyc.png",
+    "file_hash": "4cea0a2c4356874888ee38ec6cc4b923397f42ccdc4bdcad38654ea26d785525",
+    "bytes_size": 6631116,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "style": [
+        "editorial-warm"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_lifestyle_6am.png",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_lifestyle_6am.png",
+    "file_hash": "183601b437e7b019a9862f3764ce3174ab250061dd9cc2f3d57f4b3966e21554",
+    "bytes_size": 6579172,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6am-morning"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_lifestyle_12pm.png",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_lifestyle_12pm.png",
+    "file_hash": "09d3f3d7142347cc1568cf29793d5b57de568a66e1112582d7825f9836adee06",
+    "bytes_size": 6341956,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "12pm-midday"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_lifestyle_6pm.png",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_lifestyle_6pm.png",
+    "file_hash": "f2d07b53075562148b9c7285390bf6821871064034f1f15fd6d142d6beb3ab91",
+    "bytes_size": 6549500,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6pm-evening"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_lifestyle_9pm.png",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_lifestyle_9pm.png",
+    "file_hash": "39d75ee28eb09f7228145a1ed9e8f679db7e0572aa3495f96c63db3c7973e64c",
+    "bytes_size": 6741598,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "9pm-night"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_aplus_banner.png",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_aplus_banner.png",
+    "file_hash": "4443607077e56e7fb3155423cdedd24b5ebd71ee70bc4bd232c0a61af0b6e86b",
+    "bytes_size": 6125548,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "style": [
+        "editorial-warm"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_dims_diagram.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_dims_diagram.png",
+    "file_hash": "798e420ed028db58231298dc4b7dc7084a71705858d5f27ab2482e81dbc8c3f4",
+    "bytes_size": 4884191,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Engineered for movement.",
+    "tags": {
+      "subject_object": [
+        "construction-dims"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_stretch_diagram.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_stretch_diagram.png",
+    "file_hash": "4f00e0d6059ad1df4f02bbfd37638d07991465ada5f6ca5cbb0b3f3db907a42a",
+    "bytes_size": 5153717,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Buttery soft. Second skin.",
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_price_proof.png",
+    "workspace_id": "novelle",
+    "asset_type": "infographic",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_price_proof.png",
+    "file_hash": "c30b17503ad3a46b25561e8315072fae0e1219688e9a931cda698d49cfd6bb6b",
+    "bytes_size": 5146143,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "$98 fabric. $26.99 price.",
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_price_proof_v2.png",
+    "workspace_id": "novelle",
+    "asset_type": "infographic",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_price_proof_v2.png",
+    "file_hash": "2c5d2b816c9c61ba44aefd89755a4bcebaf13280efa95134ece5df70fff152df",
+    "bytes_size": 4858493,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "$98 fabric. $26.99 price.",
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_price_proof_v3.png",
+    "workspace_id": "novelle",
+    "asset_type": "infographic",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_price_proof_v3.png",
+    "file_hash": "105eff3c3dbc90203220813d04d8199dc1562b118145f4f5c84c0f34c2580af4",
+    "bytes_size": 4178394,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "$98 fabric. $26.99 price.",
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_fabric_stretch.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_fabric_stretch.png",
+    "file_hash": "1540412dc1a5713447389c786b86514212fef3e647a1e0567d396b56499a49e4",
+    "bytes_size": 6684098,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Buttery soft. Second skin.",
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_back_onmodel.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_back_onmodel.png",
+    "file_hash": "e53dd3ad6629884711a3c884d564018fcf05f18d6b1729315b37fab2efb2342e",
+    "bytes_size": 4601772,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_waistband_detail.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_waistband_detail.png",
+    "file_hash": "40ee0907e331a05f3c9a8d3ee6a973d972569ae0cf515da062ec93b2023ec0a4",
+    "bytes_size": 5464770,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "waistband"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_side_onmodel.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_side_onmodel.png",
+    "file_hash": "787f1fea6f400d187db4e74de3120f528661ad09020ecc09e5a8b13d12e09c97",
+    "bytes_size": 4737919,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_squat_25lb_v2.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_squat_25lb_v2.png",
+    "file_hash": "019450dcc5469581651674d0a788b95fe882f99bc20c9f69ecf38586f54b3bfd",
+    "bytes_size": 6503936,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Squat-proof. Full depth.",
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ],
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_squat_bodyweight.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_squat_bodyweight.png",
+    "file_hash": "380456e06db4af63f6a7bfd5a47a94b0c2f915caa111ea919c6a4283ed153b3a",
+    "bytes_size": 6630019,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_fabric_stretch_v2.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_fabric_stretch_v2.png",
+    "file_hash": "26b0911244098d49216f7ffb1708497d24e18f45850bd6b63f5b220980ad0482",
+    "bytes_size": 6058724,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Buttery soft. Second skin.",
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ],
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_side_profile_v2.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_side_profile_v2.png",
+    "file_hash": "e9949fef6af94cb44b5aece7c92c783130ee10213f747e679a1102d707acf0e6",
+    "bytes_size": 4484320,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_bodyweight_squat_v2.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_bodyweight_squat_v2.png",
+    "file_hash": "988ab5e3ae96a736351d77a89cee972038dfe35145492ae3fea2842688517f3f",
+    "bytes_size": 6537468,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Squat-proof. Full depth.",
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ],
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_back_walking_v2.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_back_walking_v2.png",
+    "file_hash": "ab092e1366bc863a47f0313977b4cd0a9fb2176408d871f51d1d529ce8a79310",
+    "bytes_size": 4620126,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_true_side_v3.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_true_side_v3.png",
+    "file_hash": "28396e4b5b17ac7f05943de59e8a66c3b0319e9c4c898b7f5dc68fae2c0ff92b",
+    "bytes_size": 4631582,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_kettlebell_squat.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_kettlebell_squat.png",
+    "file_hash": "56affa927fb39faa3259438b798df6cca027fa678a77a48595e47c129fe6857f",
+    "bytes_size": 5632203,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_jpocket_detail.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_jpocket_detail.png",
+    "file_hash": "2a7364584eef27c2db9d7c7b5ec6151581d59a00383ab53a99544e5652a4e2fc",
+    "bytes_size": 5134601,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Phone. Keys. Cards. Nothing falls out.",
+    "tags": {
+      "subject_object": [
+        "pocket-iphone"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_price_proof_flat.png",
+    "workspace_id": "novelle",
+    "asset_type": "infographic",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_price_proof_flat.png",
+    "file_hash": "e3367adf19121d91a673287427e90f91ab502bdd7e23f162b61b9c0436b14549",
+    "bytes_size": 4741894,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "$98 fabric. $26.99 price.",
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_size_guide_v4.png",
+    "workspace_id": "novelle",
+    "asset_type": "size_guide",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_size_guide_v4.png",
+    "file_hash": "b467d2489a01a023a39bbbe72a7c8a5b289d2aa7f78272036eca8f765528b8a8",
+    "bytes_size": 1541372,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_slot5_essential.png",
+    "workspace_id": "novelle",
+    "asset_type": "pdp_gallery",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_slot5_essential.png",
+    "file_hash": "aa0233cfcd5352447a707da4c641fb79e1432b45f108e9da1ad835f5bb7eedec",
+    "bytes_size": 1004334,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_slot5_classic.png",
+    "workspace_id": "novelle",
+    "asset_type": "pdp_gallery",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_slot5_classic.png",
+    "file_hash": "448eac04c17e4a7ee323567520a02c4ed98fedb897e3f67c10e55d42a7c05e77",
+    "bytes_size": 1002907,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_hero_chip_essential.png",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_hero_chip_essential.png",
+    "file_hash": "61860f3ea80cce2c955b039dc5f6ec86fd8a3e73a83c331af4fbc5c476430a67",
+    "bytes_size": 136274,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_hero_chip_classic.png",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_hero_chip_classic.png",
+    "file_hash": "3d37021d0e04bb732a3b9b28f6db0ae971ab3366fbdaef9f513779e5a2d82305",
+    "bytes_size": 155041,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_hero_mockup_essential.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_hero_mockup_essential.png",
+    "file_hash": "afc338e99bdc2662b706c1a204b224cb364c322c7c44176969dcb65cc17f83c9",
+    "bytes_size": 135185,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_hero_mockup_classic.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_hero_mockup_classic.png",
+    "file_hash": "24a4a87c1de83afca3cf8025ecedd2bdbbdfddb3555f0106ba52b96a9582753a",
+    "bytes_size": 78379,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_logo_on_green.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_logo_on_green.png",
+    "file_hash": "bedaa8aba252314570473ce3a6c673f8674f6d5329cf026e8477a1053b8f6c2e",
+    "bytes_size": 40329,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "dark-forest-green"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_logo_on_green_tight.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_logo_on_green_tight.png",
+    "file_hash": "1bc3f09f13aeaf07b7d600aa6c33a147f33cabf335558895ac2fff7835cc37f3",
+    "bytes_size": 39418,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "dark-forest-green"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_logo_ink.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_logo_ink.png",
+    "file_hash": "158f04e41439841adf6657b9ac7393b37e482df6337cd3cb1ac7fce04b4d0378",
+    "bytes_size": 37050,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_fabric_detail.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_fabric_detail.png",
+    "file_hash": "0ae4ba1a2c3b12f530fcece39cc165941f73c2259e90e30766c317b164130945",
+    "bytes_size": 2907162,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_yoga_studio.png",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_yoga_studio.png",
+    "file_hash": "a51ebc717914cefa0f83e766ec1413994db70f8fd255d71a7eb26867a52b3df4",
+    "bytes_size": 2069688,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_place": [
+        "brooklyn-yoga-studio"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_soho_street.png",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_soho_street.png",
+    "file_hash": "2c34035f3a2c74b9d0b0251c3741703432068be2d29709266bb79c1b6255a075",
+    "bytes_size": 2415420,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_place": [
+        "soho"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pocket_detail.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pocket_detail.png",
+    "file_hash": "47b8c006a67eae1cd8a31e9da89b3136c972f8708f9daab9ff432606627a6ec9",
+    "bytes_size": 1789525,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Phone. Keys. Cards. Nothing falls out.",
+    "tags": {
+      "subject_object": [
+        "pocket-iphone"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_colorways_flatlay.png",
+    "workspace_id": "novelle",
+    "asset_type": "colorways",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_colorways_flatlay.png",
+    "file_hash": "cae8c6ab69c991c4c107403ba91e6e1bbc309bf04e323fe14bbb12f978a62bfc",
+    "bytes_size": 3011783,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "colorways-4"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_morning_coffee.png",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_morning_coffee.png",
+    "file_hash": "ca39e643465cf7eb397da581f5e7d933a342c9c24ee1b02816b45a04bd6cb8a4",
+    "bytes_size": 2154033,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_place": [
+        "west-village-coffee"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_brooklyn_bridge.png",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_brooklyn_bridge.png",
+    "file_hash": "0b7d186d2348afff66a5b4f8fcd3cfeb5b68bd179dc2b295d4ab5e16933f9020",
+    "bytes_size": 2143321,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "From mat to Manhattan.",
+    "tags": {
+      "subject_place": [
+        "brooklyn-bridge"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_LIVE_full.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_LIVE_full.png",
+    "file_hash": "5bf76d08c17d8d6d703c586d4d72fdda1021da78b231809f1078cf874edaccfe",
+    "bytes_size": 3336064,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_LIVE_slice_0.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_LIVE_slice_0.png",
+    "file_hash": "26df0c4e24ea166104f65dd1648f5df360662fbd2bcc59f482ef3292474ce1e9",
+    "bytes_size": 1810781,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_LIVE_slice_1.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_LIVE_slice_1.png",
+    "file_hash": "4da95b178cc7d82e4b24f8921cb647d4d4d211d70344f42ba9c4d0c452df77b3",
+    "bytes_size": 1248212,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_LIVE_slice_2.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_LIVE_slice_2.png",
+    "file_hash": "8369811bc33b0a28bbe0a9000c43e5600df6c8d3ef2f9620fd3cae106fabb7df",
+    "bytes_size": 19243,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_LIVE_slice_3.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_LIVE_slice_3.png",
+    "file_hash": "51d19a2405820969d62a9106e0eb899a3ca7e34cd2e8befc81911461c82a35b8",
+    "bytes_size": 19378,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_LIVE_slice_4.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_LIVE_slice_4.png",
+    "file_hash": "bcc03b7af18fbdb0997cbb1f4a65500a9091237cb59076e62d941384368e6e51",
+    "bytes_size": 162949,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_LIVE_slice_5.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_LIVE_slice_5.png",
+    "file_hash": "4be7164acf673d1db4ae46576b8eaf2b04c8217d9578c4a94bcd1a39b449315d",
+    "bytes_size": 70174,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pdp_LIVE_v2.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pdp_LIVE_v2.png",
+    "file_hash": "347e516ad4a47378bf563f201574cbcde0e9a0e5976eb6afe65a66f2627f5a4f",
+    "bytes_size": 9757815,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_v2_s0.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_v2_s0.png",
+    "file_hash": "81a8b94a813f763b0c4b7e1b2c171b9bb38b29179d2fb936f2925a1fac3e667e",
+    "bytes_size": 2190366,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_v2_s1.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_v2_s1.png",
+    "file_hash": "ff9b7f0228ad4fbf48d7600fc2eccde9bcf43cc05f46179447b550c42bdcc9a9",
+    "bytes_size": 2688413,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_v2_s2.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_v2_s2.png",
+    "file_hash": "2340246b7a9830cc2f8b87dc1802db5dfae2c368137697b59fda030362ee615d",
+    "bytes_size": 3942839,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_v2_s3.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_v2_s3.png",
+    "file_hash": "29f4d0f867da1312c5504708e27819c5e8539e969546b561563c26f8e134b1ad",
+    "bytes_size": 578631,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_v2_s4.png",
+    "workspace_id": "novelle",
+    "asset_type": "screenshot",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_v2_s4.png",
+    "file_hash": "158569e045415ccb5ea9d29c5cfd94c06c0d63603a0b81018ff647ad4e5290cb",
+    "bytes_size": 282726,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_size_guide_cream.png",
+    "workspace_id": "novelle",
+    "asset_type": "size_guide",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_size_guide_cream.png",
+    "file_hash": "176f132b83e72b9707e6d4e2d86b5d364dd2bb03f2215c411ffe9d90433bd871",
+    "bytes_size": 148554,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "cream-paper"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_logo_official_dark.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_logo_official_dark.png",
+    "file_hash": "7b1e14f9021228c4ccff330b6e5c1f36e19c596737b735024651ae46561f45d0",
+    "bytes_size": 36967,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_logo_official_dark_transparent.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_logo_official_dark_transparent.png",
+    "file_hash": "7b1e14f9021228c4ccff330b6e5c1f36e19c596737b735024651ae46561f45d0",
+    "bytes_size": 36967,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_size_guide_v5.png",
+    "workspace_id": "novelle",
+    "asset_type": "size_guide",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_size_guide_v5.png",
+    "file_hash": "dcd39933922e0472763ac2430723df307e41ad4d40b4c8c0054957f7562878db",
+    "bytes_size": 150386,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_slot1_white_bg.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_slot1_white_bg.png",
+    "file_hash": "409ace618dd5a42661d5218b4233d61119d4175526a28df89aca7b45b75b214a",
+    "bytes_size": 1253507,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "clean-white-bg"
+      ],
+      "palette": [
+        "pure-white"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ny_hero_premium.png",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_ny_hero_premium.png",
+    "file_hash": "7478399217422c509cc08624f2ad96f9d26b73cebbd6ee15068365bdc2926d59",
+    "bytes_size": 1993332,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "style": [
+        "editorial-warm"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_slot1_white_clean.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_slot1_white_clean.png",
+    "file_hash": "c1f67e7db980fe5a9eb9018a0eeaca2b55b9b64f493b4f02b0644dd196c5c6d3",
+    "bytes_size": 835722,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "clean-white-bg"
+      ],
+      "palette": [
+        "pure-white"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_slot1_model_white.png",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_slot1_model_white.png",
+    "file_hash": "c76d4a9a85e46edcd927b934a01266e88cca76148f7c17a71e66ffb3ca8e4002",
+    "bytes_size": 972599,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "pure-white"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_profile_logo.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_ig_profile_logo.png",
+    "file_hash": "734b7550b95f61f6f424ade17ab357cc3827127333631f6d5a27918e17a94a74",
+    "bytes_size": 77756,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_n_monogram.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_n_monogram.png",
+    "file_hash": "8f4681bb0985fec834d74c3b3f4c5cd92aeceed561595010c495768a6e07a8f7",
+    "bytes_size": 16840,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pocket_keys.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pocket_keys.png",
+    "file_hash": "d09b5f53adf0d82e8b8a8d71c279acf7c12db04743a4ccdd8f7d8a61f635a0e2",
+    "bytes_size": 2120707,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "Phone. Keys. Cards. Nothing falls out.",
+    "tags": {
+      "subject_object": [
+        "pocket-keys"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_pocket_airpods.png",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_pocket_airpods.png",
+    "file_hash": "40ed12ecbbce303d1b398a5d7a3594ebc69f39f733ca245233bbf2c9d4e542ad",
+    "bytes_size": 2205717,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "Phone. Keys. Cards. Nothing falls out.",
+    "tags": {
+      "subject_object": [
+        "pocket-airpods"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_price_proof.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "infographic",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_price_proof.jpg",
+    "file_hash": "4361fbb19e854823718323b29be4c2d8601dca9e50ed2ac1d58195b2f3add086",
+    "bytes_size": 362894,
+    "mime_type": "image/jpeg",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "$98 fabric. $26.99 price.",
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_colorways_flatlay-4.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "colorways",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_colorways_flatlay-4.jpg",
+    "file_hash": "0063bfc98543b9b716f3e080393505f3df5812f59c6afd36d31af0b1c7a6ec65",
+    "bytes_size": 843564,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "colorways-4"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_slot1_model_white.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_slot1_model_white.jpg",
+    "file_hash": "b566ff132b987bc5e898bada7521020f61f4c246d8557ce0cdd384843293218e",
+    "bytes_size": 93252,
+    "mime_type": "image/jpeg",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "pure-white"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_squat_loop.mp4",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_squat_loop.mp4",
+    "file_hash": "7aa2a28199d523fa5523b527662019c1c9ebe7c9c5409a2c3f7d541a4d91ac1d",
+    "bytes_size": 2931504,
+    "mime_type": "video/mp4",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_squat_loop_v2.mp4",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_squat_loop_v2.mp4",
+    "file_hash": "2646626d8d58065c0c29c201bb5174e04e8ef0a48167633d14e090e51a0fd1c0",
+    "bytes_size": 2477158,
+    "mime_type": "video/mp4",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ],
+      "style": [
+        "versioned"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_fabric_demo.mp4",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "draft",
+    "starred": false,
+    "file_name": "novelle_fabric_demo.mp4",
+    "file_hash": "8d632db7137fb529686c3ec463f97a13903d95fcde70e387b4d5515d90d8fdc4",
+    "bytes_size": 3451700,
+    "mime_type": "video/mp4",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {},
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/02_side.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "approved",
+    "starred": false,
+    "file_name": "02_side.jpg",
+    "file_hash": "32801d116e6c668637209194f06cc22a192ca9a0015c274e5653aba315fde9b2",
+    "bytes_size": 139084,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_2"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/03_back.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "approved",
+    "starred": false,
+    "file_name": "03_back.jpg",
+    "file_hash": "a17947c5bb6b1aad5734357271dfadf501cf086863ac5e3f0ea6482fb3dfa107",
+    "bytes_size": 163138,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_3"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/04_pocket.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "approved",
+    "starred": false,
+    "file_name": "04_pocket.jpg",
+    "file_hash": "4144c65dc03a3bdc22d16e82ac0901bc267a8acd4cbb44b96b4c540816eab91f",
+    "bytes_size": 186834,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_4"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/05_waistband.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "approved",
+    "starred": false,
+    "file_name": "05_waistband.jpg",
+    "file_hash": "9d875d1edb1f12a6367a60ef9c6b2feba188ae63cdc87c9920cead8288c111f8",
+    "bytes_size": 223630,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "waistband"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_5"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/07_squat.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "approved",
+    "starred": false,
+    "file_name": "07_squat.jpg",
+    "file_hash": "c7eaed53cafb7fc0f1d23c56fedae186733b336fda5f3431cdcea29f690a957b",
+    "bytes_size": 240610,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_7"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_ny_hero.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_ny_hero.jpg",
+    "file_hash": "1e7ef30807974d1dd293609721148965528ca5ee6766246f633a021fc0066c17",
+    "bytes_size": 194237,
+    "mime_type": "image/jpeg",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_ny_hero"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_stretch.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_stretch.jpg",
+    "file_hash": "6ac9a728d6a2fb8641739cb212b282cd56a42e7069e068105ac3ae7e4939a69d",
+    "bytes_size": 257750,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_stretch"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/08_colorways.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "colorways",
+    "status": "approved",
+    "starred": false,
+    "file_name": "08_colorways.jpg",
+    "file_hash": "109047523fae30562b4b39a3af67f8415b18618294ee0786de3c19c568a42f72",
+    "bytes_size": 337722,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "colorways-4"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_8"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/09_size_guide.png",
+    "workspace_id": "novelle",
+    "asset_type": "size_guide",
+    "status": "approved",
+    "starred": false,
+    "file_name": "09_size_guide.png",
+    "file_hash": "dcd39933922e0472763ac2430723df307e41ad4d40b4c8c0054957f7562878db",
+    "bytes_size": 150386,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_9"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_fabric.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_fabric.jpg",
+    "file_hash": "848f466282391480f5117dc75ec9c215d0bd06e156e679e63d308000fd99ecaf",
+    "bytes_size": 337171,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_fabric"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_brooklyn.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_brooklyn.jpg",
+    "file_hash": "ea6dbe190d724514583cfa7798b2fe0f5b33ee3a4aabc3f1d927bf11537464a8",
+    "bytes_size": 278780,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "From mat to Manhattan.",
+    "tags": {
+      "subject_place": [
+        "brooklyn-bridge"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_brooklyn"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_pocket.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_pocket.jpg",
+    "file_hash": "4144c65dc03a3bdc22d16e82ac0901bc267a8acd4cbb44b96b4c540816eab91f",
+    "bytes_size": 186834,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "pocket-iphone"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_pocket"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_dims.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_dims.jpg",
+    "file_hash": "ab180d46b0d2166d291c76dc991926fcddffdbe55cab4a6fa75768bc90169962",
+    "bytes_size": 195424,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Engineered for movement.",
+    "tags": {
+      "subject_object": [
+        "construction-dims"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_dims"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_yoga.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_yoga.jpg",
+    "file_hash": "3972ebf59b8b45f87e1b4c472e78e8124785f443ee5b4488d737728362cf9ff8",
+    "bytes_size": 238372,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_place": [
+        "brooklyn-yoga-studio"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_yoga"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_soho.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_soho.jpg",
+    "file_hash": "c88e5289e136d053defc35e6b6719f93466bd5d5fba1f9691558a81b35981e31",
+    "bytes_size": 307929,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_place": [
+        "soho"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_soho"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_coffee.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_coffee.jpg",
+    "file_hash": "6aff105d24c663c28acdc450410149c78b3ed5162fd465994b9b1033fdbc83f4",
+    "bytes_size": 220334,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_place": [
+        "west-village-coffee"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_coffee"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_closer.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_closer.jpg",
+    "file_hash": "00da1c80ccd4d3e3ebd383daade92a904f276fd0c632c224707a0d685ea7f7ca",
+    "bytes_size": 198153,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Come to me.",
+    "tags": {
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_closer"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/logo_white_clean.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "approved",
+    "starred": false,
+    "file_name": "logo_white_clean.png",
+    "file_hash": "f33de1e0dcb0b0ae8d0c0e3fb22389a84ef22609592bd2223d39e3693c35b9d6",
+    "bytes_size": 36628,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "style": [
+        "clean-white-bg"
+      ],
+      "palette": [
+        "pure-white"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "brand_logo",
+        "velune_v3_logo_white_clean"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/aplus_colorways.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "colorways",
+    "status": "approved",
+    "starred": false,
+    "file_name": "aplus_colorways.jpg",
+    "file_hash": "109047523fae30562b4b39a3af67f8415b18618294ee0786de3c19c568a42f72",
+    "bytes_size": 337722,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "colorways-4"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_v3_colorways"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/logo_dark.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "approved",
+    "starred": false,
+    "file_name": "logo_dark.png",
+    "file_hash": "e990038933b1d13f143e82c7eb934acef599cdbec0dbdb5bae4cd2f37fba9305",
+    "bytes_size": 39400,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "brand_logo",
+        "velune_v3_logo_dark"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/logo_white.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "approved",
+    "starred": false,
+    "file_name": "logo_white.png",
+    "file_hash": "7f1972c066431fb33d33d475477d229604a9e77f3f7639076516be95a0026616",
+    "bytes_size": 39299,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "brand_logo",
+        "velune_v3_logo_white"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/logo_pink.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "approved",
+    "starred": false,
+    "file_name": "logo_pink.png",
+    "file_hash": "2a5f134980cd821b5fd2ab9a7edba1bcf36d3fc9be87c9808a10c7b3c114af38",
+    "bytes_size": 39380,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "brand_logo",
+        "velune_v3_logo_pink"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/01_front_white.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "approved",
+    "starred": false,
+    "file_name": "01_front_white.jpg",
+    "file_hash": "b566ff132b987bc5e898bada7521020f61f4c246d8557ce0cdd384843293218e",
+    "bytes_size": 93252,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "pure-white"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_1"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/06_fabric_stretch.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "approved",
+    "starred": false,
+    "file_name": "06_fabric_stretch.jpg",
+    "file_hash": "848f466282391480f5117dc75ec9c215d0bd06e156e679e63d308000fd99ecaf",
+    "bytes_size": 337171,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Buttery soft. Second skin.",
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_6"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/10_infographic_fabric.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "infographic",
+    "status": "approved",
+    "starred": false,
+    "file_name": "10_infographic_fabric.jpg",
+    "file_hash": "e95b2ad41305736439499a7a8c42be2d75989763f252d25281d5e671435a8c2d",
+    "bytes_size": 650585,
+    "mime_type": "image/jpeg",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "Buttery soft. Second skin.",
+    "tags": {
+      "style": [
+        "editorial-infographic"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_10"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/11_infographic_pocket.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "infographic",
+    "status": "approved",
+    "starred": false,
+    "file_name": "11_infographic_pocket.jpg",
+    "file_hash": "428e9746eb27a2077edf6b46a911529804bdfed99119235b98d621ac99b690cd",
+    "bytes_size": 338459,
+    "mime_type": "image/jpeg",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "Phone. Keys. Cards. Nothing falls out.",
+    "tags": {
+      "style": [
+        "editorial-infographic"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_11"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/12_infographic_squat.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "infographic",
+    "status": "approved",
+    "starred": false,
+    "file_name": "12_infographic_squat.jpg",
+    "file_hash": "cd6cb433323722cb851755a388d34942156d9e23c2f5dd4e699f8bfd49c703f4",
+    "bytes_size": 526830,
+    "mime_type": "image/jpeg",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": "Squat-proof. Full depth.",
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ],
+      "style": [
+        "editorial-infographic"
+      ],
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_v3_slot_12"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-pdp-v2/img/product_video.mp4",
+    "workspace_id": "novelle",
+    "asset_type": "video",
+    "status": "approved",
+    "starred": false,
+    "file_name": "product_video.mp4",
+    "file_hash": "8d632db7137fb529686c3ec463f97a13903d95fcde70e387b4d5515d90d8fdc4",
+    "bytes_size": 3451700,
+    "mime_type": "video/mp4",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_v3_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_video",
+        "velune_v3"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/02_side.webp",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "02_side.webp",
+    "file_hash": "c75bf6298bef4ed96c3be500591b7a1fee39e039893ca423454a8748392cffdb",
+    "bytes_size": 34522,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_02_side"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/squat_loop.mp4",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "squat_loop.mp4",
+    "file_hash": "2646626d8d58065c0c29c201bb5174e04e8ef0a48167633d14e090e51a0fd1c0",
+    "bytes_size": 2477158,
+    "mime_type": "video/mp4",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/hero_chip.png",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "archived",
+    "starred": false,
+    "file_name": "hero_chip.png",
+    "file_hash": "61860f3ea80cce2c955b039dc5f6ec86fd8a3e73a83c331af4fbc5c476430a67",
+    "bytes_size": 136274,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/logo_horiz_pink.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "archived",
+    "starred": false,
+    "file_name": "logo_horiz_pink.png",
+    "file_hash": "2a5f134980cd821b5fd2ab9a7edba1bcf36d3fc9be87c9808a10c7b3c114af38",
+    "bytes_size": 39380,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "brand_logo",
+        "velune_legacy_logo_horiz_pink"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/logo_horiz_white.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "archived",
+    "starred": false,
+    "file_name": "logo_horiz_white.png",
+    "file_hash": "7f1972c066431fb33d33d475477d229604a9e77f3f7639076516be95a0026616",
+    "bytes_size": 39299,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "brand_logo",
+        "velune_legacy_logo_horiz_white"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/logo_horiz_dark.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "archived",
+    "starred": false,
+    "file_name": "logo_horiz_dark.png",
+    "file_hash": "e990038933b1d13f143e82c7eb934acef599cdbec0dbdb5bae4cd2f37fba9305",
+    "bytes_size": 39400,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "brand_logo",
+        "velune_legacy_logo_horiz_dark"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/01_front.webp",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "01_front.webp",
+    "file_hash": "846355cb7fa4779a21565a2a053ec8b928bc942fcc0142a5ac891813a0b90f7d",
+    "bytes_size": 63626,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_01_front"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/size_guide.webp",
+    "workspace_id": "novelle",
+    "asset_type": "size_guide",
+    "status": "archived",
+    "starred": false,
+    "file_name": "size_guide.webp",
+    "file_hash": "d1beb932e5bb2d327f353322c4d1a92538aff4d706de79b13b1bf48cc2b2a93b",
+    "bytes_size": 86282,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/life_6am.webp",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_6am.webp",
+    "file_hash": "a062c24307c131eb8f83e4fc00ad6ee4d53afe689945cb67331eeeb261f4097e",
+    "bytes_size": 82822,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6am-morning"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_life_6am"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/04_waistband.webp",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "archived",
+    "starred": false,
+    "file_name": "04_waistband.webp",
+    "file_hash": "432c39368994156dde7ae12727d56b3307cab66bee35dad2aa8d90504807f4e3",
+    "bytes_size": 242448,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "waistband"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_04_waistband"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/09_size_gallery.webp",
+    "workspace_id": "novelle",
+    "asset_type": "size_guide",
+    "status": "archived",
+    "starred": false,
+    "file_name": "09_size_gallery.webp",
+    "file_hash": "d1beb932e5bb2d327f353322c4d1a92538aff4d706de79b13b1bf48cc2b2a93b",
+    "bytes_size": 86282,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_09_size_gallery"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/04_jpocket.webp",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "archived",
+    "starred": false,
+    "file_name": "04_jpocket.webp",
+    "file_hash": "432c39368994156dde7ae12727d56b3307cab66bee35dad2aa8d90504807f4e3",
+    "bytes_size": 242448,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Phone. Keys. Cards. Nothing falls out.",
+    "tags": {
+      "subject_object": [
+        "pocket-iphone"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_04_jpocket"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/aplus_banner.webp",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "archived",
+    "starred": false,
+    "file_name": "aplus_banner.webp",
+    "file_hash": "256a19bbc987a8b90d418e986f3f57a5528532894e228abe8b127feac6de3573",
+    "bytes_size": 62266,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "style": [
+        "editorial-warm"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_aplus_banner"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/aplus_night.webp",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "archived",
+    "starred": false,
+    "file_name": "aplus_night.webp",
+    "file_hash": "256a19bbc987a8b90d418e986f3f57a5528532894e228abe8b127feac6de3573",
+    "bytes_size": 62266,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_aplus_night"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/aplus_9pm.webp",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "aplus_9pm.webp",
+    "file_hash": "4ba685f420eacb39d413850498bd5f407e37136b6df517b712b83d76ecea74e5",
+    "bytes_size": 88088,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "9pm-night"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_aplus_9pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/aplus_6pm.webp",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "aplus_6pm.webp",
+    "file_hash": "0a2a901758de0a9bec6fc40ed59391331233927605e626635f6d092c532b2acb",
+    "bytes_size": 62422,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6pm-evening"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_aplus_6pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/aplus_fabric.webp",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "archived",
+    "starred": false,
+    "file_name": "aplus_fabric.webp",
+    "file_hash": "6c4ec7d0f7f9a7005a6af9aae51b05694d575626b66ce6db6c2e9c7f2e5050d1",
+    "bytes_size": 276966,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_aplus_fabric"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/05_squat.webp",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "05_squat.webp",
+    "file_hash": "378f5a81cc1524029755869ff0a09ee1c5271387e4c0f6fc4425a7c969746c1f",
+    "bytes_size": 32502,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_05_squat"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/06_fabric.webp",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "archived",
+    "starred": false,
+    "file_name": "06_fabric.webp",
+    "file_hash": "9be58811156548fea6584a56444340b89eefe4026452b33c57fa005951bcd3bb",
+    "bytes_size": 326902,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_06_fabric"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/07_flatlay.webp",
+    "workspace_id": "novelle",
+    "asset_type": "pdp_gallery",
+    "status": "archived",
+    "starred": false,
+    "file_name": "07_flatlay.webp",
+    "file_hash": "780f219de1c4f0ee93e09467487e0438144c303a3ac17d62a5cf944ee135c066",
+    "bytes_size": 199142,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_07_flatlay"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/08_back.webp",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "08_back.webp",
+    "file_hash": "3a3f6ce962c80955bf54d35fa83514086c828485eebb2f04b5981d2e4cc3a837",
+    "bytes_size": 34006,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_08_back"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/05_features.webp",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "05_features.webp",
+    "file_hash": "b233e2865046373622c38d097f22e30d8be50b823683cc9be9af83049e467a7d",
+    "bytes_size": 65498,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_05_features"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/aplus_dims.webp",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "archived",
+    "starred": false,
+    "file_name": "aplus_dims.webp",
+    "file_hash": "d76088d8294837a4ed125625e783e339fee75dd8a012957f5cc3638453418076",
+    "bytes_size": 43266,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Engineered for movement.",
+    "tags": {
+      "subject_object": [
+        "construction-dims"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_aplus_dims"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/aplus_stretch.webp",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "archived",
+    "starred": false,
+    "file_name": "aplus_stretch.webp",
+    "file_hash": "f4b2c7045d2d4de4b036fd616ce022b08fcb97080b52f4b6ea272fa2190aaf7d",
+    "bytes_size": 96162,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_aplus_stretch"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/09_aplus_bend.webp",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "09_aplus_bend.webp",
+    "file_hash": "378f5a81cc1524029755869ff0a09ee1c5271387e4c0f6fc4425a7c969746c1f",
+    "bytes_size": 32502,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Squat-proof. Full depth.",
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_09_aplus_bend"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/life_9am.webp",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_9am.webp",
+    "file_hash": "2fcd0c9ff8242db05f6167a1d9a32372b2bc7625a4e2396632ea50253db27788",
+    "bytes_size": 79270,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "9am-coffee"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_life_9am"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/life_6pm.webp",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_6pm.webp",
+    "file_hash": "0a2a901758de0a9bec6fc40ed59391331233927605e626635f6d092c532b2acb",
+    "bytes_size": 62422,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6pm-evening"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_life_6pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/life_9pm.webp",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_9pm.webp",
+    "file_hash": "4ba685f420eacb39d413850498bd5f407e37136b6df517b712b83d76ecea74e5",
+    "bytes_size": 88088,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "9pm-night"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_life_9pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/hero_night_nyc.webp",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "archived",
+    "starred": false,
+    "file_name": "hero_night_nyc.webp",
+    "file_hash": "256a19bbc987a8b90d418e986f3f57a5528532894e228abe8b127feac6de3573",
+    "bytes_size": 62266,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "style": [
+        "editorial-warm"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/05_features_photo.webp",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "05_features_photo.webp",
+    "file_hash": "e734e2b490c6ee2f84d392c4470ca375533ba9913b0564232467c2882fddf897",
+    "bytes_size": 56872,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "pdp_gallery",
+        "velune_legacy_05_features_photo"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/aplus_6am.webp",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "aplus_6am.webp",
+    "file_hash": "a062c24307c131eb8f83e4fc00ad6ee4d53afe689945cb67331eeeb261f4097e",
+    "bytes_size": 82822,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6am-morning"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_aplus_6am"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-amazon-pdp/img/aplus_9am.webp",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "aplus_9am.webp",
+    "file_hash": "2fcd0c9ff8242db05f6167a1d9a32372b2bc7625a4e2396632ea50253db27788",
+    "bytes_size": 79270,
+    "mime_type": "image/webp",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "9am-coffee"
+      ],
+      "source_folder": [
+        "velune_legacy_pdp"
+      ]
+    },
+    "surfaces": [
+      [
+        "aplus_module",
+        "velune_legacy_aplus_9am"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/hero_night_nyc.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "archived",
+    "starred": false,
+    "file_name": "hero_night_nyc.jpg",
+    "file_hash": "4cea0a2c4356874888ee38ec6cc4b923397f42ccdc4bdcad38654ea26d785525",
+    "bytes_size": 6631116,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "style": [
+        "editorial-warm"
+      ],
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "hero_night_nyc"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/life_6am.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_6am.jpg",
+    "file_hash": "183601b437e7b019a9862f3764ce3174ab250061dd9cc2f3d57f4b3966e21554",
+    "bytes_size": 6579172,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6am-morning"
+      ],
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "life_6am"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/life_12pm.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_12pm.jpg",
+    "file_hash": "09d3f3d7142347cc1568cf29793d5b57de568a66e1112582d7825f9836adee06",
+    "bytes_size": 6341956,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "12pm-midday"
+      ],
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "life_12pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/life_6pm.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_6pm.jpg",
+    "file_hash": "f2d07b53075562148b9c7285390bf6821871064034f1f15fd6d142d6beb3ab91",
+    "bytes_size": 6549500,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6pm-evening"
+      ],
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "life_6pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/life_9pm.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_9pm.jpg",
+    "file_hash": "39d75ee28eb09f7228145a1ed9e8f679db7e0572aa3495f96c63db3c7973e64c",
+    "bytes_size": 6741598,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "9pm-night"
+      ],
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "life_9pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/product_front.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "product_front.jpg",
+    "file_hash": "01319e5a155f1bc78df6b947a7c1d0c5eedaf18554652a0dc763672c0179847f",
+    "bytes_size": 73508,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "product_front"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/product_back.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "product_back.jpg",
+    "file_hash": "019ce0ee93c39647462c8dea0ffa0f3295f2b57620fb4233f39575da4e2e0288",
+    "bytes_size": 61880,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "product_back"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/size_guide.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "size_guide",
+    "status": "archived",
+    "starred": false,
+    "file_name": "size_guide.jpg",
+    "file_hash": "97d02e1d7a082a3de69d3e97a80b7f7c48637dd34a3cc2433e1b0fc5bd3d5ea5",
+    "bytes_size": 67208,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "size_guide"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/flatlay_4color.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "colorways",
+    "status": "archived",
+    "starred": false,
+    "file_name": "flatlay_4color.jpg",
+    "file_hash": "d7f79e522ca805f9a7b9df62c500bc43cd17009fe4d7de61ef37cf43c57c2065",
+    "bytes_size": 155989,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "colorways-4"
+      ],
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "flatlay_4color"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/fabric_detail.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "construction",
+    "status": "archived",
+    "starred": false,
+    "file_name": "fabric_detail.jpg",
+    "file_hash": "c4105a3732b0bc9250ee10c7879c76292311d1fe892c314aeb6d6e269af7cf59",
+    "bytes_size": 3177339,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "fabric-stretch"
+      ],
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "fabric_detail"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/logo_horiz.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "archived",
+    "starred": false,
+    "file_name": "logo_horiz.jpg",
+    "file_hash": "d1ae5f15ca559897c1fa72b1ece1582684af88741cd22291f13d0c49099eb5cb",
+    "bytes_size": 37415,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "logo_horiz"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-pdp/img/logo_stacked.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "archived",
+    "starred": false,
+    "file_name": "logo_stacked.jpg",
+    "file_hash": "dd08bda299f2393e21be992c06fac630a99e7de4e57beb8bb51fb628340f63cf",
+    "bytes_size": 71361,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_pdp_old"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_pdp",
+        "logo_stacked"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-storefront/img/hero_night_nyc.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "city",
+    "status": "archived",
+    "starred": false,
+    "file_name": "hero_night_nyc.jpg",
+    "file_hash": "4cea0a2c4356874888ee38ec6cc4b923397f42ccdc4bdcad38654ea26d785525",
+    "bytes_size": 6631116,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "subject_place": [
+        "manhattan-rooftop"
+      ],
+      "style": [
+        "editorial-warm"
+      ],
+      "source_folder": [
+        "velune_storefront"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_storefront",
+        "hero_night_nyc"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-storefront/img/life_6am.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_6am.jpg",
+    "file_hash": "183601b437e7b019a9862f3764ce3174ab250061dd9cc2f3d57f4b3966e21554",
+    "bytes_size": 6579172,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6am-morning"
+      ],
+      "source_folder": [
+        "velune_storefront"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_storefront",
+        "life_6am"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-storefront/img/life_12pm.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_12pm.jpg",
+    "file_hash": "09d3f3d7142347cc1568cf29793d5b57de568a66e1112582d7825f9836adee06",
+    "bytes_size": 6341956,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "12pm-midday"
+      ],
+      "source_folder": [
+        "velune_storefront"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_storefront",
+        "life_12pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-storefront/img/life_6pm.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_6pm.jpg",
+    "file_hash": "f2d07b53075562148b9c7285390bf6821871064034f1f15fd6d142d6beb3ab91",
+    "bytes_size": 6549500,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "6pm-evening"
+      ],
+      "source_folder": [
+        "velune_storefront"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_storefront",
+        "life_6pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-storefront/img/life_9pm.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "lifestyle",
+    "status": "archived",
+    "starred": false,
+    "file_name": "life_9pm.jpg",
+    "file_hash": "39d75ee28eb09f7228145a1ed9e8f679db7e0572aa3495f96c63db3c7973e64c",
+    "bytes_size": 6741598,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "time_of_day": [
+        "9pm-night"
+      ],
+      "source_folder": [
+        "velune_storefront"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_storefront",
+        "life_9pm"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-storefront/img/product_front.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "model",
+    "status": "archived",
+    "starred": false,
+    "file_name": "product_front.jpg",
+    "file_hash": "01319e5a155f1bc78df6b947a7c1d0c5eedaf18554652a0dc763672c0179847f",
+    "bytes_size": 73508,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_storefront"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_storefront",
+        "product_front"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-storefront/img/flatlay_4color.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "colorways",
+    "status": "archived",
+    "starred": false,
+    "file_name": "flatlay_4color.jpg",
+    "file_hash": "d7f79e522ca805f9a7b9df62c500bc43cd17009fe4d7de61ef37cf43c57c2065",
+    "bytes_size": 155989,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "colorways-4"
+      ],
+      "source_folder": [
+        "velune_storefront"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_storefront",
+        "flatlay_4color"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-storefront/img/logo_horiz.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "archived",
+    "starred": false,
+    "file_name": "logo_horiz.jpg",
+    "file_hash": "d1ae5f15ca559897c1fa72b1ece1582684af88741cd22291f13d0c49099eb5cb",
+    "bytes_size": 37415,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_storefront"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_storefront",
+        "logo_horiz"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle-velune-storefront/img/logo_stacked.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "archived",
+    "starred": false,
+    "file_name": "logo_stacked.jpg",
+    "file_hash": "dd08bda299f2393e21be992c06fac630a99e7de4e57beb8bb51fb628340f63cf",
+    "bytes_size": 71361,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "velune_storefront"
+      ]
+    },
+    "surfaces": [
+      [
+        "velune_storefront",
+        "logo_stacked"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/highlight_1_the_pocket.png",
+    "workspace_id": "novelle",
+    "asset_type": "highlight_cover",
+    "status": "approved",
+    "starred": false,
+    "file_name": "highlight_1_the_pocket.png",
+    "file_hash": "73c8bb2de4ebde1856f71b6a592ee680af0d6f572e441ad7ded0fcad01e067c7",
+    "bytes_size": 38266,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "cream-paper"
+      ],
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "highlight_cover",
+        "1_the_pocket"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/highlight_2_built_in.png",
+    "workspace_id": "novelle",
+    "asset_type": "highlight_cover",
+    "status": "approved",
+    "starred": false,
+    "file_name": "highlight_2_built_in.png",
+    "file_hash": "945f4e200bb0df966990a3a1e6e909f04e806d1e6c454723e801ce2cfc92872c",
+    "bytes_size": 41519,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "cream-paper"
+      ],
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "highlight_cover",
+        "2_built_in"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/highlight_3_the_fabric.png",
+    "workspace_id": "novelle",
+    "asset_type": "highlight_cover",
+    "status": "approved",
+    "starred": false,
+    "file_name": "highlight_3_the_fabric.png",
+    "file_hash": "6d609013e4e677562be09af330ab89aa1dcac58d7833ab151e227549eed062f7",
+    "bytes_size": 33893,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "cream-paper"
+      ],
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "highlight_cover",
+        "3_the_fabric"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/highlight_4_real_women.png",
+    "workspace_id": "novelle",
+    "asset_type": "highlight_cover",
+    "status": "approved",
+    "starred": false,
+    "file_name": "highlight_4_real_women.png",
+    "file_hash": "08354211bc403f42dc7c345105d951c5072ca6823de908e5b5660c2850ebebc3",
+    "bytes_size": 38548,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "cream-paper"
+      ],
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "highlight_cover",
+        "4_real_women"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/highlight_5_shop.png",
+    "workspace_id": "novelle",
+    "asset_type": "highlight_cover",
+    "status": "approved",
+    "starred": false,
+    "file_name": "highlight_5_shop.png",
+    "file_hash": "40f91aaa083a1226bee96dcaf3a7d085df82e800e4921768db32abbbaf194734",
+    "bytes_size": 32771,
+    "mime_type": "image/png",
+    "ai_generated": true,
+    "generation_model": "gpt_image_2",
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "palette": [
+        "cream-paper"
+      ],
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "highlight_cover",
+        "5_shop"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/day1_post_hero.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "hero",
+    "status": "approved",
+    "starred": false,
+    "file_name": "day1_post_hero.jpg",
+    "file_hash": "33a5bbc2261c35eef55a4e584ac96f162bd96df4432e8790606f2eade626fc12",
+    "bytes_size": 229711,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_feed",
+        "day1_pinned_hero"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/story1_shes_here.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "story_frame",
+    "status": "approved",
+    "starred": false,
+    "file_name": "story1_shes_here.jpg",
+    "file_hash": "369880e2a88c62f1034e6761380dcee2d6b16c54ba8851a82f7cd922ca206534",
+    "bytes_size": 263053,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "She doesn't explain herself.",
+    "tags": {
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_story",
+        "day1_story_1"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/story2_tag_woman.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "story_frame",
+    "status": "approved",
+    "starred": false,
+    "file_name": "story2_tag_woman.jpg",
+    "file_hash": "d5968b9e0fb3d78f85242379a7ab630515d0946a3879720336560f0449ab1b0e",
+    "bytes_size": 62379,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_story",
+        "day1_story_2"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/story3_shop_now.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "story_frame",
+    "status": "approved",
+    "starred": false,
+    "file_name": "story3_shop_now.jpg",
+    "file_hash": "1de63d49b8e5b79b8f9e323dde7fc3f674fb5a095e30a90190035e4e80e8d48d",
+    "bytes_size": 347259,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": "Come to me.",
+    "tags": {
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_story",
+        "day1_story_3"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day1/00_profile_logo.png",
+    "workspace_id": "novelle",
+    "asset_type": "logo",
+    "status": "approved",
+    "starred": false,
+    "file_name": "00_profile_logo.png",
+    "file_hash": "734b7550b95f61f6f424ade17ab357cc3827127333631f6d5a27918e17a94a74",
+    "bytes_size": 77756,
+    "mime_type": "image/png",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "ig_day1"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_profile_photo",
+        "current"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day2/story1_phone.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "story_frame",
+    "status": "approved",
+    "starred": false,
+    "file_name": "story1_phone.jpg",
+    "file_hash": "951c02a753a571e10707f860a4be75f35b2d053db0da24464778255465ee8374",
+    "bytes_size": 254642,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "ig_day2"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_story",
+        "day2_story_1"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day2/story2_keys.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "story_frame",
+    "status": "approved",
+    "starred": false,
+    "file_name": "story2_keys.jpg",
+    "file_hash": "d0f72dc1c5c515b808aa0c6b2654801c7752002052d8deb382edae91dc9499b1",
+    "bytes_size": 241294,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "ig_day2"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_story",
+        "day2_story_2"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day2/story3_airpods.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "story_frame",
+    "status": "approved",
+    "starred": false,
+    "file_name": "story3_airpods.jpg",
+    "file_hash": "121c1522a6805fb14fcb20311d54c36f37d4861c6e3f17e402e1641648890a5c",
+    "bytes_size": 264384,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "ig_day2"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_story",
+        "day2_story_3"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day2/story4_squat.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "story_frame",
+    "status": "approved",
+    "starred": false,
+    "file_name": "story4_squat.jpg",
+    "file_hash": "e8e7d01c3774dc20024c7ecc5cf5eea2f0d26022bd2f364df02e75c88905d7b0",
+    "bytes_size": 310479,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "subject_object": [
+        "squat-action"
+      ],
+      "source_folder": [
+        "ig_day2"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_story",
+        "day2_story_4"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day3/reel_cover.jpg",
+    "workspace_id": "novelle",
+    "asset_type": "reel_cover",
+    "status": "approved",
+    "starred": false,
+    "file_name": "reel_cover.jpg",
+    "file_hash": "ad2efdbd11565fed853cd5778ce12927da1e7eadf0a6ee50ef9667f0b2afa3c6",
+    "bytes_size": 430949,
+    "mime_type": "image/jpeg",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "ig_day3"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_reel_cover",
+        "day3_fabric_demo"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  },
+  {
+    "file_path": "/home/user/workspace/novelle_ig_day3/reel_video.mp4",
+    "workspace_id": "novelle",
+    "asset_type": "reel_cover",
+    "status": "approved",
+    "starred": false,
+    "file_name": "reel_video.mp4",
+    "file_hash": "8d632db7137fb529686c3ec463f97a13903d95fcde70e387b4d5515d90d8fdc4",
+    "bytes_size": 3451700,
+    "mime_type": "video/mp4",
+    "ai_generated": false,
+    "generation_model": null,
+    "generation_prompt": null,
+    "brand_voice_line": null,
+    "tags": {
+      "source_folder": [
+        "ig_day3"
+      ]
+    },
+    "surfaces": [
+      [
+        "ig_reel_video",
+        "day3_fabric_demo"
+      ]
+    ],
+    "parent_image_id": null,
+    "notes": ""
+  }
+]
