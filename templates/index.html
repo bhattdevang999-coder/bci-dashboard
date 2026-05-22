@@ -6776,6 +6776,10 @@ a.atlas-source-btn-secondary.lab-tpl-btn:hover {
       <span class="nav-module-num">02</span> Monitor
       <span class="nav-status nav-status-30">Building</span>
     </div>
+    <div class="nav-item-catalog" id="nav-studio" onclick="showStudioPage()"
+         title="Brand asset library, generator, and PDP composer. M7 sprint.">
+      <span class="nav-dot live"></span> Studio
+    </div>
     <div class="nav-item-catalog" id="nav-catalog" onclick="showCatalogPage()">
       <span class="nav-dot live"></span> Catalog Health
     </div>
@@ -9660,6 +9664,303 @@ Pocket Description: No Pocket
     </div><!-- /cat-panel-rules -->
 
   </div><!-- /catalog-page -->
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- M7: Creative Studio page — Library + Generator + PDP Studio       -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<style>
+  /* Studio page shell */
+  #studio-page { padding-bottom: 80px; }
+  .studio-stats {
+    display: flex; gap: 24px; padding: 14px 24px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface); margin-bottom: 18px; font-size: 13px;
+  }
+  .studio-stat { display: flex; flex-direction: column; }
+  .studio-stat .num { font-size: 22px; font-weight: 600; color: var(--text); line-height: 1; }
+  .studio-stat .lbl { color: var(--text-muted); margin-top: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .studio-stat.warn .num { color: #d97706; }
+  .studio-stat.ok .num { color: #059669; }
+
+  /* Sub-tabs */
+  .studio-subtabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .studio-subtab {
+    background: transparent; border: 0; padding: 10px 18px; cursor: pointer;
+    font-size: 14px; color: var(--text-muted); border-bottom: 2px solid transparent;
+    margin-bottom: -1px; font-family: inherit;
+  }
+  .studio-subtab:hover { color: var(--text); }
+  .studio-subtab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 500; }
+  .studio-subtab[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+  .studio-soon {
+    padding: 80px 40px; text-align: center; color: var(--text-muted);
+    background: var(--surface); border: 1px dashed var(--border); border-radius: 8px;
+  }
+  .studio-soon h3 { color: var(--text); margin-bottom: 8px; font-size: 18px; }
+
+  /* Library filters */
+  .lib-filters {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    padding: 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 16px;
+  }
+  .lib-search { flex: 0 0 280px; }
+  .lib-search input {
+    width: 100%; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 13px;
+  }
+  .lib-filter-group { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .lib-filter-group .lbl {
+    font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.06em; margin-right: 4px;
+  }
+  .lib-chip {
+    padding: 4px 10px; border-radius: 999px; background: var(--bg);
+    border: 1px solid var(--border); cursor: pointer; font-size: 12px;
+    color: var(--text-muted); user-select: none;
+  }
+  .lib-chip:hover { color: var(--text); border-color: var(--accent); }
+  .lib-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .lib-clear {
+    background: transparent; border: 0; color: var(--text-muted); cursor: pointer;
+    font-size: 12px; text-decoration: underline;
+  }
+  .lib-clear:hover { color: var(--text); }
+
+  /* Grid */
+  .lib-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  .lib-card {
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    background: var(--surface); cursor: pointer; transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .lib-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .lib-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,153,0,0.25); }
+  .lib-thumb {
+    width: 100%; aspect-ratio: 1; background: #f5f5ef;
+    background-image: linear-gradient(135deg, #f5f5ef 25%, #efeee8 50%, #f5f5ef 75%);
+    display: flex; align-items: center; justify-content: center;
+    color: #b8b6a8; font-size: 32px;
+  }
+  .lib-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lib-card-body { padding: 8px 10px; }
+  .lib-card-name {
+    font-size: 11px; color: var(--text); line-height: 1.3;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;
+  }
+  .lib-card-meta { display: flex; justify-content: space-between; align-items: center; }
+  .lib-type-chip {
+    font-size: 9px; padding: 2px 6px; border-radius: 999px;
+    background: var(--bg); color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .lib-type-chip.t-model { background: #e0e7ff; color: #3730a3; }
+  .lib-type-chip.t-hero { background: #fed7aa; color: #9a3412; }
+  .lib-type-chip.t-logo { background: #d1fae5; color: #065f46; }
+  .lib-type-chip.t-infographic { background: #fce7f3; color: #9d174d; }
+  .lib-type-chip.t-construction { background: #e0e7ff; color: #1e3a8a; }
+  .lib-type-chip.t-lifestyle { background: #fef3c7; color: #92400e; }
+  .lib-type-chip.t-city { background: #cffafe; color: #155e75; }
+  .lib-type-chip.t-colorways { background: #f3e8ff; color: #6b21a8; }
+  .lib-type-chip.t-size_guide { background: #e5e7eb; color: #374151; }
+  .lib-type-chip.t-story_frame { background: #ffe4e6; color: #9f1239; }
+  .lib-type-chip.t-highlight_cover { background: #fae8ff; color: #86198f; }
+  .lib-type-chip.t-pdp_gallery { background: #ddd6fe; color: #5b21b6; }
+  .lib-type-chip.t-reel_cover { background: #fee2e2; color: #991b1b; }
+  .lib-type-chip.t-video { background: #1f2937; color: #f9fafb; }
+  .lib-type-chip.t-screenshot { background: #e5e7eb; color: #4b5563; }
+  .lib-status-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+  }
+  .lib-status-dot.approved { background: #10b981; }
+  .lib-status-dot.draft { background: #f59e0b; }
+  .lib-status-dot.archived { background: #6b7280; }
+  .lib-star {
+    position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.5);
+    border: 0; color: #ffd700; cursor: pointer; font-size: 16px;
+    width: 26px; height: 26px; border-radius: 50%; line-height: 1;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .lib-card:hover .lib-star { opacity: 1; }
+  .lib-card.starred .lib-star { opacity: 1; }
+  .lib-star.starred { color: #fbbf24; background: rgba(0,0,0,0.7); }
+
+  .lib-empty {
+    padding: 60px; text-align: center; color: var(--text-muted);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .lib-pagination {
+    display: flex; justify-content: center; align-items: center; gap: 12px;
+    margin-top: 24px; color: var(--text-muted); font-size: 13px;
+  }
+  .lib-pagination button {
+    padding: 6px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; cursor: pointer; color: var(--text); font-family: inherit;
+  }
+  .lib-pagination button:hover:not([disabled]) { border-color: var(--accent); }
+  .lib-pagination button[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+  /* Drawer */
+  .lib-drawer-overlay {
+    position: fixed; top: 0; right: -100%; width: 480px; max-width: 100vw;
+    height: 100vh; background: var(--surface); border-left: 1px solid var(--border);
+    z-index: 10000; transition: right 0.25s ease; overflow-y: auto;
+    box-shadow: -8px 0 32px rgba(0,0,0,0.15);
+  }
+  .lib-drawer-overlay.open { right: 0; }
+  .lib-drawer-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+  }
+  .lib-drawer-head h3 {
+    font-size: 14px; color: var(--text); word-break: break-all; line-height: 1.3;
+    margin: 0; padding-right: 12px;
+  }
+  .lib-drawer-close {
+    background: transparent; border: 0; color: var(--text-muted); font-size: 22px;
+    cursor: pointer; padding: 4px 8px;
+  }
+  .lib-drawer-body { padding: 20px; }
+  .lib-drawer-thumb {
+    width: 100%; aspect-ratio: 1; background: #f5f5ef; border-radius: 6px;
+    margin-bottom: 16px; display: flex; align-items: center; justify-content: center;
+    color: #b8b6a8; font-size: 48px; overflow: hidden;
+  }
+  .lib-drawer-thumb img { width: 100%; height: 100%; object-fit: contain; }
+  .lib-drawer-row {
+    display: grid; grid-template-columns: 110px 1fr; gap: 8px; padding: 8px 0;
+    font-size: 13px; border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .lib-drawer-row .k { color: var(--text-muted); text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; padding-top: 2px; }
+  .lib-drawer-row .v { color: var(--text); word-break: break-word; }
+  .lib-drawer-row .v.italic { font-style: italic; color: var(--text-muted); }
+  .lib-drawer-tag {
+    display: inline-block; padding: 2px 8px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 999px; font-size: 11px;
+    margin: 2px 4px 2px 0; color: var(--text-muted);
+  }
+  .lib-drawer-surface {
+    display: inline-block; padding: 3px 10px; background: var(--accent);
+    color: white; border-radius: 4px; font-size: 11px; margin: 2px 4px 2px 0;
+  }
+  .lib-drawer-actions {
+    padding: 16px 20px; border-top: 1px solid var(--border);
+    display: flex; gap: 8px; position: sticky; bottom: 0; background: var(--surface);
+  }
+  .lib-drawer-actions button {
+    flex: 1; padding: 8px 12px; border: 1px solid var(--border);
+    background: var(--bg); border-radius: 6px; cursor: pointer; font-size: 13px;
+    color: var(--text); font-family: inherit;
+  }
+  .lib-drawer-actions button:hover { border-color: var(--accent); }
+  .lib-drawer-actions button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .lib-drawer-actions button.danger { color: #b91c1c; }
+</style>
+
+<div id="studio-page" class="content content-wide" style="display:none;">
+  <div class="page-hero">
+    <h1 class="page-hero-title">Studio</h1>
+    <div class="page-hero-sub">Brand asset library, generator, and PDP composer. Every Novelle asset, tagged and queryable. Per CONTINUOUS_LEARNING_ARCHITECTURE.md v1.2.</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="studio-stats" id="studio-stats">
+    <div class="studio-stat"><div class="num" id="stat-total">—</div><div class="lbl">Assets</div></div>
+    <div class="studio-stat ok"><div class="num" id="stat-approved">—</div><div class="lbl">Approved</div></div>
+    <div class="studio-stat warn"><div class="num" id="stat-draft">—</div><div class="lbl">Draft</div></div>
+    <div class="studio-stat"><div class="num" id="stat-archived">—</div><div class="lbl">Archived</div></div>
+    <div class="studio-stat"><div class="num" id="stat-starred">—</div><div class="lbl">Starred</div></div>
+    <div class="studio-stat"><div class="num" id="stat-ai">—</div><div class="lbl">AI-generated</div></div>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div class="studio-subtabs">
+    <button id="studio-tab-library" class="studio-subtab active" onclick="studioSetSubtab('library')">Library</button>
+    <button id="studio-tab-generator" class="studio-subtab" onclick="studioSetSubtab('generator')">Generator</button>
+    <button id="studio-tab-pdp" class="studio-subtab" onclick="studioSetSubtab('pdp')">PDP Studio</button>
+  </div>
+
+  <!-- LIBRARY panel -->
+  <div id="studio-panel-library">
+    <div class="lib-filters">
+      <div class="lib-search">
+        <input id="lib-q" type="text" placeholder="Search filename…"
+               oninput="libDebouncedSearch(this.value)">
+      </div>
+      <div class="lib-filter-group">
+        <span class="lbl">Type</span>
+        <span id="lib-type-chips"></span>
+      </div>
+      <div class="lib-filter-group">
+        <span class="lbl">Status</span>
+        <span class="lib-chip active" data-status="" onclick="libSetStatus('')">All</span>
+        <span class="lib-chip" data-status="approved" onclick="libSetStatus('approved')">Approved</span>
+        <span class="lib-chip" data-status="draft" onclick="libSetStatus('draft')">Draft</span>
+        <span class="lib-chip" data-status="archived" onclick="libSetStatus('archived')">Archived</span>
+      </div>
+      <div class="lib-filter-group">
+        <span class="lbl">Surface</span>
+        <span id="lib-surface-chips"></span>
+      </div>
+      <button class="lib-clear" onclick="libClearFilters()">clear all</button>
+    </div>
+
+    <div id="lib-grid" class="lib-grid"></div>
+    <div id="lib-empty" class="lib-empty" style="display:none;">No assets match these filters.</div>
+
+    <div class="lib-pagination" id="lib-pagination">
+      <button id="lib-prev" onclick="libPage(-1)">←</button>
+      <span id="lib-page-info">—</span>
+      <button id="lib-next" onclick="libPage(1)">→</button>
+    </div>
+  </div>
+
+  <!-- GENERATOR placeholder -->
+  <div id="studio-panel-generator" style="display:none;">
+    <div class="studio-soon">
+      <h3>Generator — coming Day 6</h3>
+      <p>Pre-filled prompt templates with brand-kit injection (Novelle palette, fonts, voice lines). Generate 4 variants per run, cost previewed, save winners to library.</p>
+      <p style="margin-top:14px; font-size:12px;">Backend endpoint <code>POST /api/atlas/studio/generate</code> already live — generation runs in dev sandbox only until production credentials are wired.</p>
+    </div>
+  </div>
+
+  <!-- PDP STUDIO placeholder -->
+  <div id="studio-panel-pdp" style="display:none;">
+    <div class="studio-soon">
+      <h3>PDP Studio — coming Day 7</h3>
+      <p>Side-by-side renders of saved PDP variants. Click any slot to swap assets from the Library. Star the winner — operator picks become preference signal for Loop 1.</p>
+    </div>
+  </div>
+</div>
+
+<!-- LIBRARY DRAWER -->
+<div class="lib-drawer-overlay" id="lib-drawer" aria-hidden="true">
+  <div class="lib-drawer-head">
+    <h3 id="lib-drawer-name">—</h3>
+    <button class="lib-drawer-close" onclick="libCloseDrawer()" aria-label="Close">×</button>
+  </div>
+  <div class="lib-drawer-body">
+    <div class="lib-drawer-thumb" id="lib-drawer-thumb"></div>
+    <div class="lib-drawer-row"><div class="k">Type</div><div class="v" id="lib-drawer-type">—</div></div>
+    <div class="lib-drawer-row"><div class="k">Status</div><div class="v" id="lib-drawer-status">—</div></div>
+    <div class="lib-drawer-row"><div class="k">Voice line</div><div class="v italic" id="lib-drawer-voice">—</div></div>
+    <div class="lib-drawer-row"><div class="k">AI-gen</div><div class="v" id="lib-drawer-aigen">—</div></div>
+    <div class="lib-drawer-row"><div class="k">Model</div><div class="v" id="lib-drawer-model">—</div></div>
+    <div class="lib-drawer-row"><div class="k">Surfaces</div><div class="v" id="lib-drawer-surfaces">—</div></div>
+    <div class="lib-drawer-row"><div class="k">Tags</div><div class="v" id="lib-drawer-tags">—</div></div>
+    <div class="lib-drawer-row"><div class="k">File path</div><div class="v" id="lib-drawer-path" style="font-family:monospace; font-size:11px;">—</div></div>
+    <div class="lib-drawer-row"><div class="k">Hash</div><div class="v" id="lib-drawer-hash" style="font-family:monospace; font-size:11px;">—</div></div>
+  </div>
+  <div class="lib-drawer-actions">
+    <button id="lib-drawer-star" onclick="libToggleStar()">☆ Star</button>
+    <button id="lib-drawer-approve" onclick="libSetDrawerStatus('approved')">Approve</button>
+    <button id="lib-drawer-archive" class="danger" onclick="libSetDrawerStatus('archived')">Archive</button>
+  </div>
+</div>
+
 
   <!-- Audit finding drawer (Day 2.5) -->
   <div class="m6-drawer" id="m6-finding-drawer" aria-hidden="true">
@@ -25079,5 +25380,369 @@ async function atlasSubmitSessionSummary() {
 
 
 </script>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// M7 — Atlas Creative Studio frontend
+// Library list, filters, drawer, star/approve/archive mutations.
+// ════════════════════════════════════════════════════════════════
+
+const STUDIO_TYPES = [
+  'model', 'hero', 'lifestyle', 'city', 'logo', 'infographic',
+  'construction', 'colorways', 'size_guide', 'story_frame',
+  'highlight_cover', 'pdp_gallery', 'reel_cover', 'video', 'screenshot',
+];
+const STUDIO_SURFACES = [
+  'ig_feed', 'ig_story', 'ig_reel_cover', 'highlight_cover',
+  'pdp_gallery', 'aplus_module', 'brand_logo',
+];
+
+// Filter state
+const _libState = {
+  q: '',
+  asset_type: '',
+  status: '',
+  surface_type: '',
+  starred: '',
+  limit: 50,
+  offset: 0,
+  selected: null,    // currently-open drawer image_id
+};
+
+let _libDebounceTimer = null;
+function libDebouncedSearch(v) {
+  if (_libDebounceTimer) clearTimeout(_libDebounceTimer);
+  _libDebounceTimer = setTimeout(() => {
+    _libState.q = v;
+    _libState.offset = 0;
+    libRefresh();
+  }, 250);
+}
+
+function showStudioPage() {
+  _showPage('studio-page', 'Atlas · Studio',
+    'Brand asset library, generator, and PDP composer.');
+  document.getElementById('nav-studio').classList.add('active');
+  studioSetSubtab(localStorage.getItem('studio_subtab') || 'library');
+  studioRefreshStats();
+  libBuildFilterChips();
+  libRefresh();
+}
+
+function studioSetSubtab(name) {
+  const valid = ['library', 'generator', 'pdp'];
+  if (!valid.includes(name)) name = 'library';
+  localStorage.setItem('studio_subtab', name);
+  valid.forEach(n => {
+    const tab = document.getElementById('studio-tab-' + n);
+    const panel = document.getElementById('studio-panel-' + n);
+    if (tab) tab.classList.toggle('active', n === name);
+    if (panel) panel.style.display = (n === name) ? 'block' : 'none';
+  });
+}
+
+async function studioRefreshStats() {
+  try {
+    // Total/approved/draft/archived = 4 separate counts via the limit=1 trick.
+    const fetch1 = (params) => fetch('/api/atlas/studio/assets?' + params + '&limit=1')
+      .then(r => r.json()).then(d => d.total || 0);
+
+    const [total, approved, draft, archived, starred] = await Promise.all([
+      fetch1('workspace_id=novelle'),
+      fetch1('workspace_id=novelle&status=approved'),
+      fetch1('workspace_id=novelle&status=draft'),
+      fetch1('workspace_id=novelle&status=archived'),
+      fetch1('workspace_id=novelle&starred=true'),
+    ]);
+    document.getElementById('stat-total').textContent = total + archived; // total includes archived
+    document.getElementById('stat-approved').textContent = approved;
+    document.getElementById('stat-draft').textContent = draft;
+    document.getElementById('stat-archived').textContent = archived;
+    document.getElementById('stat-starred').textContent = starred;
+    // AI-gen — separate query is wasteful; we'll approximate as needed
+    document.getElementById('stat-ai').textContent = '—';
+  } catch (e) {
+    console.error('studio stats:', e);
+  }
+}
+
+function libBuildFilterChips() {
+  // Asset type chips
+  const tEl = document.getElementById('lib-type-chips');
+  if (tEl && !tEl.dataset.built) {
+    tEl.innerHTML = '<span class="lib-chip active" data-type="" onclick="libSetType(\'\')">All</span>'
+      + STUDIO_TYPES.map(t =>
+          `<span class="lib-chip" data-type="${t}" onclick="libSetType('${t}')">${t.replace(/_/g,' ')}</span>`
+        ).join('');
+    tEl.dataset.built = '1';
+  }
+
+  // Surface chips
+  const sEl = document.getElementById('lib-surface-chips');
+  if (sEl && !sEl.dataset.built) {
+    sEl.innerHTML = '<span class="lib-chip active" data-surface="" onclick="libSetSurface(\'\')">All</span>'
+      + STUDIO_SURFACES.map(s =>
+          `<span class="lib-chip" data-surface="${s}" onclick="libSetSurface('${s}')">${s.replace(/_/g,' ')}</span>`
+        ).join('');
+    sEl.dataset.built = '1';
+  }
+}
+
+function libSetType(t) {
+  _libState.asset_type = t;
+  _libState.offset = 0;
+  document.querySelectorAll('#lib-type-chips .lib-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.type === t));
+  libRefresh();
+}
+function libSetStatus(s) {
+  _libState.status = s;
+  _libState.offset = 0;
+  document.querySelectorAll('.lib-filters [data-status]').forEach(c =>
+    c.classList.toggle('active', c.dataset.status === s));
+  libRefresh();
+}
+function libSetSurface(s) {
+  _libState.surface_type = s;
+  _libState.offset = 0;
+  document.querySelectorAll('#lib-surface-chips .lib-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.surface === s));
+  libRefresh();
+}
+function libClearFilters() {
+  _libState.q = '';
+  _libState.asset_type = '';
+  _libState.status = '';
+  _libState.surface_type = '';
+  _libState.offset = 0;
+  document.getElementById('lib-q').value = '';
+  document.querySelectorAll('.lib-chip').forEach(c => {
+    const isAll = (c.dataset.type === '' || c.dataset.status === '' || c.dataset.surface === '');
+    c.classList.toggle('active', isAll);
+  });
+  libRefresh();
+}
+function libPage(d) {
+  const newOff = _libState.offset + d * _libState.limit;
+  if (newOff < 0) return;
+  _libState.offset = newOff;
+  libRefresh();
+}
+
+async function libRefresh() {
+  const params = new URLSearchParams({ workspace_id: 'novelle' });
+  params.set('limit', _libState.limit);
+  params.set('offset', _libState.offset);
+  if (_libState.q) params.set('q', _libState.q);
+  if (_libState.asset_type) params.set('asset_type', _libState.asset_type);
+  if (_libState.status) params.set('status', _libState.status);
+  if (_libState.surface_type) params.set('surface_type', _libState.surface_type);
+
+  const grid = document.getElementById('lib-grid');
+  const empty = document.getElementById('lib-empty');
+  if (grid) grid.style.opacity = '0.5';
+
+  try {
+    const r = await fetch('/api/atlas/studio/assets?' + params);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'load failed');
+
+    const assets = d.assets || [];
+    grid.innerHTML = '';
+    if (!assets.length) {
+      grid.style.display = 'none';
+      empty.style.display = 'block';
+    } else {
+      grid.style.display = 'grid';
+      empty.style.display = 'none';
+      assets.forEach(a => grid.appendChild(libRenderCard(a)));
+    }
+
+    // Pagination
+    const start = _libState.offset + 1;
+    const end = Math.min(_libState.offset + _libState.limit, d.total);
+    document.getElementById('lib-page-info').textContent =
+      d.total ? `${start}–${end} of ${d.total}` : '0 results';
+    document.getElementById('lib-prev').disabled = (_libState.offset === 0);
+    document.getElementById('lib-next').disabled = (end >= d.total);
+  } catch (e) {
+    console.error('libRefresh:', e);
+    grid.innerHTML = `<div class="lib-empty">Error: ${e.message}</div>`;
+  } finally {
+    grid.style.opacity = '1';
+  }
+}
+
+function libRenderCard(a) {
+  const card = document.createElement('div');
+  card.className = 'lib-card' + (a.starred ? ' starred' : '') + (a.image_id === _libState.selected ? ' selected' : '');
+  card.dataset.imageId = a.image_id;
+  card.onclick = () => libOpenDrawer(a.image_id);
+
+  // Thumbnail — try the storage_url; if it's a local path, build the served URL
+  const thumbUrl = libThumbUrl(a);
+  const thumbHtml = thumbUrl
+    ? `<img src="${thumbUrl}" alt="${escapeHtml(a.file_name)}" loading="lazy" onerror="this.parentNode.innerHTML='—'">`
+    : '—';
+
+  card.innerHTML = `
+    <div class="lib-thumb">${thumbHtml}</div>
+    <button class="lib-star ${a.starred ? 'starred' : ''}"
+            onclick="event.stopPropagation(); libToggleStarById('${a.image_id}', ${!a.starred})"
+            title="Star">${a.starred ? '★' : '☆'}</button>
+    <div class="lib-card-body">
+      <div class="lib-card-name" title="${escapeHtml(a.file_name)}">${escapeHtml(a.file_name)}</div>
+      <div class="lib-card-meta">
+        <span class="lib-type-chip t-${a.asset_type || 'unknown'}">${a.asset_type || '?'}</span>
+        <span class="lib-status-dot ${a.status}" title="${a.status}"></span>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+function libThumbUrl(a) {
+  // Strategy: assets are served from /static/studio/library/<filename>
+  // Files copied into static dir on deploy. Fallback: storage_url path.
+  if (!a.file_name) return null;
+  return `/static/studio/library/${encodeURIComponent(a.file_name)}`;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// ─── Drawer ──────────────────────────────────────────────────────
+
+async function libOpenDrawer(imageId) {
+  _libState.selected = imageId;
+  document.querySelectorAll('.lib-card').forEach(c =>
+    c.classList.toggle('selected', c.dataset.imageId === imageId));
+  const drawer = document.getElementById('lib-drawer');
+  drawer.classList.add('open');
+  drawer.setAttribute('aria-hidden', 'false');
+
+  // Show loading
+  document.getElementById('lib-drawer-name').textContent = 'Loading…';
+
+  try {
+    const r = await fetch(`/api/atlas/studio/assets/${imageId}?workspace_id=novelle`);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'load failed');
+    libRenderDrawer(d);
+  } catch (e) {
+    document.getElementById('lib-drawer-name').textContent = `Error: ${e.message}`;
+  }
+}
+
+function libRenderDrawer(d) {
+  const a = d.asset;
+  document.getElementById('lib-drawer-name').textContent = a.file_name || '(no name)';
+
+  // Thumbnail
+  const thumbEl = document.getElementById('lib-drawer-thumb');
+  const url = libThumbUrl(a);
+  thumbEl.innerHTML = url
+    ? `<img src="${url}" alt="${escapeHtml(a.file_name)}" onerror="this.parentNode.innerHTML='—'">`
+    : '—';
+
+  document.getElementById('lib-drawer-type').textContent = a.asset_type || '—';
+  document.getElementById('lib-drawer-status').innerHTML =
+    `<span class="lib-status-dot ${a.status}"></span> ${a.status}`;
+  document.getElementById('lib-drawer-voice').textContent = a.brand_voice_line || '—';
+  document.getElementById('lib-drawer-aigen').textContent = a.ai_generated ? 'Yes' : 'No';
+  document.getElementById('lib-drawer-model').textContent = a.generation_model || '—';
+
+  // Surfaces
+  const sEl = document.getElementById('lib-drawer-surfaces');
+  if (d.surfaces && d.surfaces.length) {
+    sEl.innerHTML = d.surfaces.map(s =>
+      `<span class="lib-drawer-surface">${escapeHtml(s.surface_type)} · ${escapeHtml(s.surface_ref)}</span>`
+    ).join('');
+  } else {
+    sEl.textContent = '—';
+  }
+
+  // Tags
+  const tEl = document.getElementById('lib-drawer-tags');
+  const tagItems = [];
+  Object.entries(d.tags || {}).forEach(([k, vs]) => {
+    vs.forEach(v => tagItems.push(`<span class="lib-drawer-tag">${escapeHtml(k)}: ${escapeHtml(v)}</span>`));
+  });
+  tEl.innerHTML = tagItems.length ? tagItems.join('') : '—';
+
+  document.getElementById('lib-drawer-path').textContent = a.storage_url || '—';
+  document.getElementById('lib-drawer-hash').textContent =
+    (a.image_id || '').substring(0, 8) + '…';
+
+  // Star button state
+  const starBtn = document.getElementById('lib-drawer-star');
+  starBtn.textContent = a.starred ? '★ Starred' : '☆ Star';
+  starBtn.dataset.starred = a.starred ? '1' : '';
+}
+
+function libCloseDrawer() {
+  const drawer = document.getElementById('lib-drawer');
+  drawer.classList.remove('open');
+  drawer.setAttribute('aria-hidden', 'true');
+  _libState.selected = null;
+  document.querySelectorAll('.lib-card.selected').forEach(c => c.classList.remove('selected'));
+}
+
+// ─── Mutations ───────────────────────────────────────────────────
+
+async function libPatch(imageId, patch) {
+  try {
+    const r = await fetch(`/api/atlas/studio/assets/${imageId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'patch failed');
+    return true;
+  } catch (e) {
+    console.error('libPatch:', e);
+    alert('Update failed: ' + e.message);
+    return false;
+  }
+}
+
+async function libToggleStar() {
+  if (!_libState.selected) return;
+  const btn = document.getElementById('lib-drawer-star');
+  const newVal = !btn.dataset.starred;
+  if (await libPatch(_libState.selected, { starred: newVal })) {
+    btn.textContent = newVal ? '★ Starred' : '☆ Star';
+    btn.dataset.starred = newVal ? '1' : '';
+    libRefresh();          // refresh grid
+    studioRefreshStats();
+  }
+}
+
+async function libToggleStarById(imageId, newVal) {
+  if (await libPatch(imageId, { starred: newVal })) {
+    libRefresh();
+    studioRefreshStats();
+  }
+}
+
+async function libSetDrawerStatus(newStatus) {
+  if (!_libState.selected) return;
+  if (!confirm(`Set status to "${newStatus}"?`)) return;
+  if (await libPatch(_libState.selected, { status: newStatus })) {
+    libRefresh();
+    studioRefreshStats();
+    // Re-fetch the drawer
+    libOpenDrawer(_libState.selected);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// End M7 — Studio frontend
+// ════════════════════════════════════════════════════════════════
+</script>
+
 </body>
 </html>
