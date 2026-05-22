@@ -17481,6 +17481,84 @@ def atlas_studio_asset_patch(image_id):
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
 
 
+@app.route("/api/atlas/studio/assets/ingest/records", methods=["POST"])
+def atlas_studio_assets_ingest_records():
+    """Ingest pre-classified records (avoids re-scanning the filesystem).
+
+    Used when the source files live on a different host than the substrate
+    (e.g. records classified locally, posted to production).
+
+    Payload:
+      workspace_id: 'novelle' (default)
+      records: list of dicts matching AssetRecord shape — file_path,
+               asset_type, status, file_hash, file_name, mime_type,
+               bytes_size, ai_generated, generation_model, generation_prompt,
+               brand_voice_line, tags (dict), surfaces (list of [type,ref]).
+               This matches the JSON output of asset_ingest.classify_workspace.
+      dry_run: bool. If true, returns counts without writing.
+    """
+    payload = request.get_json(silent=True) or {}
+    workspace_id = payload.get("workspace_id") or "novelle"
+    raw_records = payload.get("records") or []
+    dry_run = bool(payload.get("dry_run"))
+
+    if not isinstance(raw_records, list) or not raw_records:
+        return jsonify({"ok": False, "error": "records[] required"}), 400
+
+    try:
+        from substrate.asset_ingest import AssetRecord, apply_to_substrate
+
+        # Hydrate dicts back to AssetRecord dataclasses (tolerant of
+        # missing fields).
+        records = []
+        for d in raw_records:
+            try:
+                surfaces = [tuple(s) for s in (d.get("surfaces") or []) if len(s) == 2]
+                tags = d.get("tags") or {}
+                rec = AssetRecord(
+                    file_path=d.get("file_path") or d.get("file_name") or "",
+                    workspace_id=d.get("workspace_id") or workspace_id,
+                    asset_type=d.get("asset_type") or "unknown",
+                    status=d.get("status") or "draft",
+                    starred=bool(d.get("starred")),
+                    file_name=d.get("file_name") or "",
+                    file_hash=d.get("file_hash") or "",
+                    bytes_size=int(d.get("bytes_size") or 0),
+                    mime_type=d.get("mime_type") or "",
+                    ai_generated=bool(d.get("ai_generated")),
+                    generation_model=d.get("generation_model"),
+                    generation_prompt=d.get("generation_prompt"),
+                    brand_voice_line=d.get("brand_voice_line"),
+                    tags=tags,
+                    surfaces=surfaces,
+                )
+                records.append(rec)
+            except Exception as exc:
+                print(f"[atlas] studio/ingest records: skipping bad record: {exc}", flush=True)
+
+        if dry_run:
+            from collections import Counter
+            return jsonify({
+                "ok": True,
+                "dry_run": True,
+                "total": len(records),
+                "by_type": dict(Counter(r.asset_type for r in records)),
+                "by_status": dict(Counter(r.status for r in records)),
+            })
+
+        summary = apply_to_substrate(records, workspace_id=workspace_id)
+        return jsonify({
+            "ok": True,
+            "dry_run": False,
+            "total": len(records),
+            "summary": summary,
+            "workspace_id": workspace_id,
+        })
+    except Exception as exc:
+        print(f"[atlas] studio/ingest records failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/atlas/studio/assets/ingest/scan", methods=["POST"])
 def atlas_studio_assets_ingest_scan():
     """Re-runnable scan of the workspace. Idempotent — upserts by file_hash.
