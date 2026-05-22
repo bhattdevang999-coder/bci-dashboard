@@ -17160,6 +17160,52 @@ import subprocess as _studio_subprocess
 from pathlib import Path as _StudioPath
 
 
+@app.route("/api/_diag/db", methods=["GET"])
+def _diag_db():
+    """Diagnostic: probe the DB directly (no pool) and report actual error.
+    Also reports pool stats. Honest, blunt, for ops triage only."""
+    import os, time, traceback
+    out = {"ok": True, "steps": []}
+    # 1. env
+    url = os.environ.get("ATLAS_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    out["env_url_present"] = bool(url)
+    out["env_url_host"] = (url.split("@")[-1].split("/")[0] if url else None)
+    # 2. direct connect (no pool)
+    t0 = time.time()
+    try:
+        import psycopg
+        conn = psycopg.connect(url, connect_timeout=5)
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+            cur.fetchone()
+        conn.close()
+        out["direct_connect"] = {"ok": True, "seconds": round(time.time()-t0, 3)}
+    except Exception as e:
+        out["ok"] = False
+        out["direct_connect"] = {
+            "ok": False,
+            "seconds": round(time.time()-t0, 3),
+            "error_type": type(e).__name__,
+            "error": str(e)[:500],
+        }
+    # 3. pool stats
+    try:
+        from substrate.db import get_pool
+        p = get_pool()
+        if p is None:
+            out["pool"] = None
+        else:
+            stats = p.get_stats() if hasattr(p, "get_stats") else {}
+            out["pool"] = {
+                "min_size": getattr(p, "min_size", None),
+                "max_size": getattr(p, "max_size", None),
+                "stats": {k: v for k, v in stats.items()},
+            }
+    except Exception as e:
+        out["pool_error"] = f"{type(e).__name__}: {str(e)[:300]}"
+    return jsonify(out), (200 if out["ok"] else 503)
+
+
 @app.route("/api/atlas/studio/brand_kit", methods=["GET"])
 def atlas_studio_brand_kit():
     """Return the Novelle brand kit as JSON. UI uses this to render the
