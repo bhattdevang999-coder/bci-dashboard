@@ -533,25 +533,98 @@ def test_pass4_scope_brand_always_reads_through():
 # PASS 5 — cosmetic
 # ============================================================================
 
-@case("5", "item_6", "Style blocks render without hover-only blackout")
+@case("5", "item_6", "Style blocks have explicit opacity:1 + background defaults")
 def test_pass5_item6_style_block_visible():
-    raise AssertionError("PENDING — Pass 5 not started")
+    # The agency's L-confidence "blacked out unless hovered" report could
+    # not be reproduced from their description (no :not(:hover) opacity rule
+    # exists in this codebase). Pass 5 lands a defensive CSS guard. This
+    # test verifies the guard is in place — if a future regression dims the
+    # inactive state, this assertion fails on the build, not in production.
+    html = _load_index_html()
+    # Find the .ws-style-row rule block + verify explicit defaults
+    start = html.find(".ws-style-row {")
+    assert_truthy(start >= 0, ".ws-style-row CSS rule not found")
+    block = html[start:start + 800]
+    assert_in("opacity: 1", block,
+              ".ws-style-row should set opacity: 1 explicitly")
+    assert_in("defensive guard", block,
+              "Pass 5 defensive-guard comment should document why")
+    # ws-fields-table rows should also have the guard
+    table_start = html.find(".ws-fields-table tr,\n.ws-fields-table tr td")
+    assert_truthy(table_start >= 0,
+                  ".ws-fields-table opacity guard rule should exist")
 
 
-@case("5", "item_7", "Bullet formatter does not add ALLCAPS+dash when ALLCAPS+colon present")
+@case("5", "item_7", "Bullet formatter preserves ALLCAPS+colon, no double-headlining")
 def test_pass5_item7_bullet_colon_separator():
-    # When this lands, the assertion will look like:
-    #   from nis_engine.content_rules import format_bullet
-    #   out = format_bullet("ELEVATED WARMTH: The quilted puffer construction...")
-    #   assert_truthy(out.startswith("ELEVATED WARMTH:"))
-    #   assert_not_in("ELEVATED WARMTH: THE —", out)
-    #   assert_not_in("ELEVATED WARMTH —", out)
-    raise AssertionError("PENDING — Pass 5 not started")
+    from nis_engine.content_rules import normalize_bullet
+
+    # 1. The exact agency case: ALLCAPS headline + colon + body should pass
+    #    through with the colon intact, no em-dash injected.
+    out = normalize_bullet("ELEVATED WARMTH: The quilted puffer construction traps heat.")
+    assert_truthy(out.startswith("ELEVATED WARMTH:"),
+                  f"colon headline should be preserved, got: {out!r}")
+    assert_not_in("ELEVATED WARMTH: THE \u2014", out,
+                  "must NOT add ALLCAPS+em-dash after the existing colon")
+    assert_not_in("ELEVATED WARMTH \u2014 The", out,
+                  "must NOT replace the colon with em-dash mid-text")
+    # The body should remain in its original case (not uppercased)
+    assert_in("The quilted puffer", out,
+              "body must remain in original case, not uppercased")
+
+    # 2. Non-ALLCAPS headline + colon → promote head to caps AND keep colon
+    #    (operator chose the colon; we respect house style by uppercasing
+    #    the head but only when it wasn't already caps).
+    out2 = normalize_bullet("premium warmth: down-fill construction")
+    # head was lowercase → we uppercase it; sep_str was ':' which doesn't
+    # qualify for the preserve-colon branch (head_was_caps == False), so we
+    # promote to em-dash for consistency.
+    assert_in("PREMIUM WARMTH", out2,
+              "non-caps head should be uppercased")
+
+    # 3. Em-dash input still works (existing behavior unchanged)
+    out3 = normalize_bullet("PREMIUM FEEL \u2014 silk-touch lining")
+    assert_in("PREMIUM FEEL \u2014 silk-touch lining", out3)
+
+    # 4. No separator at all — derive headline from first words
+    out4 = normalize_bullet("warm quilted construction with detachable hood")
+    assert_in(" \u2014 ", out4,
+              "no-separator input should get em-dash injected")
+    assert_truthy(out4.split(" \u2014 ")[0].isupper(),
+                  "derived headline should be ALL CAPS")
+
+    # 5. qa_check accepts colon-separated bullets without a warning
+    from nis_engine.content_rules import qa_check
+    issues = qa_check({
+        "title": "Test",
+        "bullets": ["ELEVATED WARMTH: The quilted puffer construction."] * 5,
+        "description": "x", "backend_keywords": "x",
+    })
+    bullet_warns = [i for i in issues if i["field"].startswith("bullet_")]
+    assert_eq(bullet_warns, [],
+              f"colon-bulleted content should not warn, got: {bullet_warns}")
 
 
-@case("5", "item_12", "All Fields > Content reads operator-edited value, not original (or removed)")
+@case("5", "item_12", "All Fields > Content section removed (no desync with Content tab)")
 def test_pass5_item12_content_tab_sync():
-    raise AssertionError("PENDING — Pass 5 not started")
+    # Agency recommended deletion over fixing the reader — the section
+    # duplicated the Content tab and the desync was symptomatic of the
+    # duplication. Verify the 'Content' group is gone from wsRenderFieldGroups.
+    html = _load_index_html()
+    start = html.find("function wsRenderFieldGroups(panel, data, styleNum)")
+    assert_truthy(start >= 0, "wsRenderFieldGroups not found")
+    body = html[start:start + 4000]
+    # The Content group line is gone from the GROUPS array
+    assert_not_in("label: 'Content', icon:", body,
+                  "All Fields 'Content' group should be removed")
+    # Other groups should still exist
+    assert_in("label: 'Identity & Structure'", body)
+    assert_in("label: 'Attributes'", body)
+    assert_in("label: 'Pricing'", body)
+    # The Pass 5 explanation comment should be there to prevent
+    # accidental re-addition by a future hand
+    assert_in("Pass 5 fix (agency R0 item 12)", body,
+              "removal should be documented in-place")
 
 
 # ============================================================================

@@ -203,27 +203,50 @@ def slot_topics() -> List[str]:
 
 
 def normalize_bullet(text: str, max_len: int = 256) -> str:
-    """Ensure each bullet has an ALL-CAPS headline + em-dash + body.
+    """Ensure each bullet has an ALL-CAPS headline + separator + body.
 
     If `text` already has the pattern, leave it alone. If not, derive a
     headline from the first 3-4 words, uppercase them, and inject an em-dash.
+
+    Pass 5 fix (agency R0 item 7): the original detector recognized em-dash
+    and hyphen-dash separators but missed colon. Inputs like
+    'ELEVATED WARMTH: The quilted puffer construction...' fell through to
+    the 'derive a headline' branch and got double-headlined as
+    'ELEVATED WARMTH: THE — quilted puffer construction...'. Colon is now
+    treated as a first-class separator — if the head is already ALL CAPS,
+    we leave the colon in place; otherwise we promote to em-dash for
+    house-style consistency. The detector also recognizes en-dash (–).
     """
     if not text:
         return ""
     s = str(text).strip()
     if not s:
         return ""
-    # Already has em-dash separator?
-    if " — " in s or " - " in s:
-        head, sep, rest = s.partition(" — ")
-        if not sep:
-            head, sep, rest = s.partition(" - ")
+
+    # Pass 5: detect any of em-dash, en-dash, hyphen-dash, or colon as the
+    # headline separator. First match wins.
+    sep_str = None
+    for candidate in (" — ", " – ", " - ", ": ", ":"):
+        if candidate in s:
+            sep_str = candidate
+            break
+
+    if sep_str:
+        head, _, rest = s.partition(sep_str)
         head = head.strip()
         rest = rest.strip()
-        # If the headline isn't already ALL CAPS, uppercase it
-        if not head.isupper():
+        head_was_caps = head.isupper()
+        if not head_was_caps:
             head = head.upper()
-        s = f"{head} — {rest}" if rest else head
+        # If the source already used a colon AND the head was already ALL CAPS
+        # (the agency's exact pattern), preserve the colon — don't promote to
+        # em-dash. That's the house style the operator chose. Only convert to
+        # em-dash when we had to promote the head ourselves.
+        if sep_str.startswith(":") and head_was_caps:
+            out_sep = ": "
+        else:
+            out_sep = " — "
+        s = f"{head}{out_sep}{rest}" if rest else head
     else:
         # Derive a headline from first few words
         words = s.split()
@@ -332,9 +355,13 @@ def qa_check(content: dict) -> List[dict]:
         if len(b) > cap_b:
             issues.append({"field": f"bullet_{i}", "severity": "error",
                            "msg": f"Bullet {i} exceeds {cap_b} chars ({len(b)})."})
-        if " — " not in b and " - " not in b:
+        # Pass 5 (item 7): accept colon as a valid headline separator too,
+        # not just em-dash / hyphen-dash. Operator-supplied bullets often
+        # use 'HEADLINE: rest' — that's a valid Amazon-style format.
+        if (" — " not in b and " - " not in b
+                and ": " not in b and " – " not in b):
             issues.append({"field": f"bullet_{i}", "severity": "warning",
-                           "msg": f"Bullet {i} missing ALL-CAPS headline + em-dash format."})
+                           "msg": f"Bullet {i} missing ALL-CAPS headline + separator format."})
     desc = (content.get("description") or "")
     cap_d = rules.get("description", {}).get("max_length", 2000)
     if len(desc) > cap_d:

@@ -2299,13 +2299,37 @@
   transition: background 0.1s;
   user-select: none;
 }
+.ws-style-row {
+  /* Pass 5 fix (agency R0 item 6): defensive guard. Agency reported style
+     blocks rendered "blacked out unless hovered" — root cause not
+     reproduced from their description (no :not(:hover) opacity rule found
+     in this codebase). Adding explicit defaults so any leaked theme rule
+     can't dim the inactive state below readability. */
+  background: var(--card-bg, #fff);
+  opacity: 1;
+  color: var(--text, #1e293b);
+}
 .ws-style-row:hover {
   background: var(--bg);
+  opacity: 1;
 }
 .ws-style-row.active {
   background: var(--accent-lt);
   border-left: 2px solid var(--accent);
   padding-left: 14px;
+  opacity: 1;
+}
+/* Pass 5: same defensive guard on the per-style upload-summary table rows */
+.ws-fields-table tr,
+.ws-fields-table tr td {
+  opacity: 1;
+}
+.ws-fields-table tr#pt-row-,
+.ws-fields-table tr[id^="pt-row-"] {
+  background: var(--card-bg, #fff);
+}
+.ws-fields-table tr[id^="pt-row-"] td {
+  background: inherit;
 }
 
 .ws-style-dot {
@@ -21849,10 +21873,20 @@ function wsRenderFieldGroups(panel, data, styleNum) {
   const filledCount = fields.filter(f => f.status === 'filled' || f.status === 'locked').length;
   const isApproved = reqEmpty === 0;
 
-  // Group fields by section
+  // Group fields by section.
+  //
+  // Pass 5 fix (agency R0 item 12): the 'Content' group used to render here
+  // and showed the ORIGINAL Atlas-generated value rather than the
+  // operator-edited value from the Content tab. Two reasons it was wrong:
+  //   1. data source: /api/preview-nis received state.generatedContent
+  //      (the original) instead of operator_response.final_value (the edit).
+  //   2. duplication: title/bullets/description already have their own
+  //      first-class editor in the Content tab. Showing them again in
+  //      All Fields invited the desync.
+  // Agency explicitly suggested removing this duplicate section. Done.
+  // Content fields (cols 30-35, 67) are still reachable via the Content tab.
   const GROUPS = [
     { label: 'Identity & Structure', icon: '🔑', test: f => f.col <= 20 },
-    { label: 'Content', icon: '📝', test: f => f.col >= 30 && f.col <= 35 || f.col === 67 },
     { label: 'Attributes', icon: '🏷', test: f => f.col > 40 && f.col <= 140 && f.col !== 67 },
     { label: 'Pricing', icon: '💰', test: f => f.col >= 149 && f.col <= 155 },
     { label: 'Shipping & Compliance', icon: '📦', test: f => f.col > 155 || (f.col >= 20 && f.col <= 29) },
