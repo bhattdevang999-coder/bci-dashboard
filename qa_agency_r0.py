@@ -255,29 +255,114 @@ def test_pass1_item13_sleeve_length():
 # PASS 2 — taxonomy unsticking (placeholders)
 # ============================================================================
 
-@case("2", "item_1", "ITK dropdown does not retain swimwear options after PT switch to COAT")
+_INDEX_HTML_CACHE = None
+def _load_index_html():
+    global _INDEX_HTML_CACHE
+    if _INDEX_HTML_CACHE is None:
+        _INDEX_HTML_CACHE = (ROOT / "templates" / "index.html").read_text(encoding="utf-8")
+    return _INDEX_HTML_CACHE
+
+
+@case("2", "item_1", "ITK datalist is PT-aware; no hardcoded swimwear list")
 def test_pass2_item1_itk_dropdown_reset():
-    raise AssertionError("PENDING — Pass 2 not started")
+    # Indirect frontend check: the previously hardcoded swimwear array
+    # ['rash-guards','swim-trunks',...] must no longer appear inside
+    # taxonomyEnsureITKDatalist. The replacement reads from
+    # taxonomyState.universe[pt].item_type_keywords_by_cat_sub at call time.
+    html = _load_index_html()
+    # The hardcoded list literal is removed
+    assert_not_in("'rash-guards','swim-trunks','board-shorts'", html,
+                  "hardcoded swim ITK list should be removed from taxonomyEnsureITKDatalist")
+    # The new function takes a PT arg and reads from the universe
+    assert_in("function taxonomyEnsureITKDatalist(pt)", html,
+              "taxonomyEnsureITKDatalist should accept a PT argument")
+    assert_in("item_type_keywords_by_cat_sub", html,
+              "datalist builder should pull from item_type_keywords_by_cat_sub")
+    # Caller passes PT through
+    assert_in("taxonomyEnsureITKDatalist(pt);", html,
+              "taxonomyRenderForStyle should call taxonomyEnsureITKDatalist(pt)")
 
 
 @case("2", "item_2", "Manual PT selection on UNKNOWN row repopulates Cat/Subcat/ITK cascade")
 def test_pass2_item2_unknown_recovery():
-    raise AssertionError("PENDING — Pass 2 not started")
+    # wsStylePTChanged must now update taxonomyState.styleMeta[styleNum] and
+    # trigger taxonomyRenderForStyle so the cascade rebuilds from universe[newPT].
+    html = _load_index_html()
+    # Find the function body
+    start = html.find("function wsStylePTChanged(styleNum, newPT)")
+    assert_truthy(start >= 0, "wsStylePTChanged function not found")
+    body = html[start:start + 3000]
+    assert_in("taxonomyState.styleMeta[styleNum]", body,
+              "wsStylePTChanged should sync taxonomyState.styleMeta")
+    assert_in("taxonomyRenderForStyle(styleNum)", body,
+              "wsStylePTChanged should re-render the taxonomy panel")
+    assert_in("meta.product_type = newPT", body,
+              "wsStylePTChanged should overwrite meta.product_type with newPT")
 
 
 @case("2", "item_3", "Bulk-taxonomy view: UNKNOWN PT manual choice flows taxonomy options")
 def test_pass2_item3_bulk_taxonomy_unknown():
-    raise AssertionError("PENDING — Pass 2 not started")
+    # Bulk modal must expose an inline PT picker for UNKNOWN buckets via
+    # taxonomyBulkOnPTChange that propagates to wsState + per-style meta.
+    html = _load_index_html()
+    assert_in("function taxonomyBulkOnPTChange(i, newPT)", html,
+              "bulk modal needs a taxonomyBulkOnPTChange handler")
+    start = html.find("function taxonomyBulkOnPTChange(i, newPT)")
+    body = html[start:start + 2500]
+    assert_in("wsState.styleProductTypes", body,
+              "taxonomyBulkOnPTChange should propagate PT to wsState")
+    assert_in("taxonomyBuildBulkModalHTML", body,
+              "taxonomyBulkOnPTChange should re-render the bulk modal")
+    # And the row renderer should expose the picker when PT is UNKNOWN
+    assert_in("isUnknownPT", html,
+              "bulk modal row renderer should branch on UNKNOWN PT")
 
 
 @case("2", "item_10", "Item Length Description default reflects current PT, not previous PT")
 def test_pass2_item10_item_length_pt_aware():
-    raise AssertionError("PENDING — Pass 2 not started")
+    # Direct backend assertion: _derive_item_length must return PT-appropriate
+    # vocabulary, not 'Knee-Length' for COAT.
+    sys.path.insert(0, str(ROOT))
+    import importlib
+    # app.py is huge; import lazily and only what we need
+    import app as _app
+    importlib.reload(_app) if "_derive_item_length" not in dir(_app) else None
+    fn = _app._derive_item_length
+    # COAT with no length hint → Standard Length, NOT Knee-Length (the old bug)
+    assert_eq(fn("", "Vera Quilted Puffer", product_type="COAT"),
+              "Standard Length",
+              "COAT default should be 'Standard Length' (was leaking 'Knee-Length' from DRESSES)")
+    # PANTS/SHIRT/BLAZER/SHORTS all use the same 'X Length' vocabulary
+    assert_eq(fn("", "Slim Stretch Pant", product_type="PANTS"), "Standard Length")
+    assert_eq(fn("", "Oxford Shirt", product_type="SHIRT"), "Standard Length")
+    # DRESS keeps the old adjective vocabulary
+    assert_eq(fn("", "Linen Maxi Dress", product_type="DRESS"), "Maxi")
+    assert_eq(fn("", "Midi Wrap Dress", product_type="DRESS"), "Midi")
+    assert_eq(fn("", "Solid Sheath Dress", product_type="DRESS"), "Knee-Length")
+    # SWIMWEAR stays blank
+    assert_eq(fn("", "Rashguard Set", product_type="SWIMWEAR"), "")
+    # UNKNOWN PT → blank (don't guess across vocabularies)
+    assert_eq(fn("", "Mystery Item", product_type=""), "")
+    # Cropped hint on COAT → Short Length
+    assert_eq(fn("", "Cropped Bomber", product_type="COAT"), "Short Length")
 
 
 @case("2", "item_14", "UNKNOWN taxonomy editable from style-level AND bulk views")
 def test_pass2_item14_unknown_editable():
-    raise AssertionError("PENDING — Pass 2 not started")
+    # Per-style panel must show a helper instead of locked empty selects
+    # when PT is UNKNOWN. Bulk modal must offer the PT recovery picker.
+    html = _load_index_html()
+    # Find the taxonomyRenderForStyle function
+    start = html.find("function taxonomyRenderForStyle(styleNum)")
+    assert_truthy(start >= 0, "taxonomyRenderForStyle not found")
+    body = html[start:start + 6000]
+    assert_in("pt === 'UNKNOWN'", body,
+              "taxonomyRenderForStyle should branch on UNKNOWN PT")
+    assert_in("Set Product Type first", body,
+              "taxonomyRenderForStyle should show an honest UNKNOWN-PT helper")
+    # Bulk-modal side: covered by item 3 picker (already asserted there)
+    assert_in("function taxonomyBulkOnPTChange(i, newPT)", html,
+              "bulk modal needs its own PT recovery path")
 
 
 # ============================================================================

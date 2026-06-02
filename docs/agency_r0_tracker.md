@@ -4,7 +4,7 @@
 > Fixtures checked in at `data/fixtures/tahari_r0_*.xlsx`.
 > Regression harness: `qa_agency_r0.py`.
 >
-> Status: **Pass 0** — repro + root-cause map. No code changed yet.
+> Status: **Pass 2 landed.** Passes 0 + 1 + 2 complete. Items 1, 2, 3, 5, 8, 9, 10, 11(a), 13, 14 fixed. QA harness: 14 pass, 0 fail, 8 pending (Passes 3-6).
 
 ---
 

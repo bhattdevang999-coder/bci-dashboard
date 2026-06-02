@@ -4691,24 +4691,53 @@ def _derive_item_type_name(sub_class, product_type="", gender="", style_name="")
 
 def _derive_item_length(sub_subclass, style_name, product_type="", sub_class=""):
     """Derive item length description from sub_subclass / style name.
-    SWIMWEAR: return blank (field isn't on the Swimwear template; rashguards are torso
-    garments, not leg garments, and Amazon's 'Knee-Length' value doesn't apply).
-    DRESS/SKIRT: use MAXI/MINI/MIDI detection; default Knee-Length.
+
+    Vocabularies differ per PT:
+      - SWIMWEAR: blank (field not on template; rashguards are torso garments).
+      - DRESS / SKIRT: 'Mini' / 'Knee-Length' / 'Midi' / 'Maxi' style adjectives.
+      - COAT / BLAZER / SHIRT / SHORTS / PANTS / SWEATSHIRT / SNOW_PANT / SNOWSUIT:
+        'Extra Short Length' / 'Short Length' / 'Standard Length' / 'Long Length' /
+        'Extra Long Length' (Amazon's torso/leg garment vocabulary).
+
+    Pass 2 fix (agency R0 item 10): previously defaulted any non-swim PT to
+    'Knee-Length', which is valid for DRESS only. For COAT this leaked a
+    DRESSES default into the engine view and looked like a stuck-from-prior-
+    project bug. Default now picks the right vocabulary per PT.
     """
-    # Swimwear items don't have a meaningful item_length_description
-    if (product_type or "").upper() == "SWIMWEAR" or sub_class in (
+    pt = (product_type or "").upper()
+
+    # Swimwear: no meaningful length descriptor
+    if pt == "SWIMWEAR" or sub_class in (
             "Rashguard","Rash Guard","Trunk","Swim Trunk","Bikini Top","Bikini Bottom",
             "Swim Bottom","One Piece Swim","Tankini","Short","Swim Set 2 pcs","Swim Set",
             "Board Short","Boardshort","Boardshorts","Cover Up","Swim Shirt"):
         return ""
+
     combined = f"{sub_subclass or ''} {style_name or ''}".upper()
-    if "MAXI" in combined:
-        return "Long"
-    if "MINI" in combined:
-        return "Short"
-    if "MIDI" in combined:
-        return "Mid-Calf"
-    return "Knee-Length"
+
+    # DRESS / SKIRT vocabulary — adjective form
+    if pt in ("DRESS", "SKIRT"):
+        if "MAXI" in combined:
+            return "Maxi"
+        if "MINI" in combined:
+            return "Mini"
+        if "MIDI" in combined:
+            return "Midi"
+        return "Knee-Length"
+
+    # COAT / BLAZER / SHIRT / SHORTS / PANTS / SWEATSHIRT / SNOW_PANT / SNOWSUIT
+    # — 'X Length' vocabulary. Hint words only point at extremes; default to
+    # Standard Length, which is what Amazon expects when length isn't specified.
+    if pt in ("COAT", "BLAZER", "SHIRT", "SHORTS", "PANTS",
+              "SWEATSHIRT", "SNOW_PANT", "SNOWSUIT"):
+        if "EXTRA LONG" in combined or "LONGLINE" in combined:
+            return "Long Length"
+        if "EXTRA SHORT" in combined or "CROPPED" in combined or "CROP" in combined:
+            return "Short Length"
+        return "Standard Length"
+
+    # Unknown PT — don't guess. Operator picks.
+    return ""
 
 def _derive_swim_product_subcategory(sub_class, gender="", style_name="", product_category=""):
     """Derive the correct Amazon product_subcategory value for a SWIMWEAR style.

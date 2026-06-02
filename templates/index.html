@@ -20220,6 +20220,26 @@ async function showStyleSummary(data) {
 
 function wsStylePTChanged(styleNum, newPT) {
   wsState.styleProductTypes[styleNum] = newPT;
+
+  // Pass 2 fix (agency R0 items 2 & 3): syncing PT in wsState alone left the
+  // taxonomy panel's per-style state (taxonomyState.styleMeta) pointing at the
+  // old PT — typically UNKNOWN. Cascade kept reading universe[UNKNOWN] = empty,
+  // operator saw the panel as locked even after picking COAT. Now: re-seed
+  // the per-style meta + key from the new PT, recompute confirmed-flag
+  // against the new override key, and trigger a panel re-render so the
+  // cascade rebuilds from universe[newPT].
+  if (window.taxonomyState && taxonomyState.styleMeta && taxonomyState.styleMeta[styleNum]) {
+    const meta = taxonomyState.styleMeta[styleNum];
+    meta.product_type = newPT;
+    meta.key = newPT + '|' + (meta.sub_class || '') + '|' + (meta.gender_bucket || '');
+    const ov = (taxonomyState.overrides || {})[meta.key];
+    meta.confirmed = !!(ov && ov.source === 'manual');
+    // Re-render the panel if it's currently mounted (brief row expanded).
+    if (document.getElementById('tax-body-' + styleNum)) {
+      try { taxonomyRenderForStyle(styleNum); } catch(e) { console.error('taxonomy re-render', e); }
+    }
+  }
+
   const breakdown = wsState.categoryBreakdown || [];
   const isTrained = breakdown.some(c => c.product_type === newPT && c.trained);
   
@@ -24752,6 +24772,29 @@ function taxonomyRenderForStyle(styleNum) {
   if (!meta) { bodyEl.textContent = 'No taxonomy metadata for this style.'; return; }
 
   const pt = meta.product_type;
+
+  // Pass 2 fix (agency R0 item 14): when PT is UNKNOWN (or unset), the taxonomy
+  // universe has no entries to populate the cascade with. Previously this
+  // rendered four empty selects with only '— pick —' options + an enabled Save
+  // button that would fail validation server-side. Operators read that as "the
+  // form is locked". Now: render an honest helper that tells them to set the
+  // PT above first, and hide the empty cascade.
+  if (!pt || pt === 'UNKNOWN') {
+    if (badgeEl) {
+      badgeEl.textContent = '\u26a0 PT not set';
+      badgeEl.style.background = '#fef3c7';
+      badgeEl.style.color = '#78350f';
+    }
+    bodyEl.innerHTML =
+      '<div style="font-size:12px; color:#475569; padding:10px 12px; background:#fff7ed; border:1px dashed #fdba74; border-radius:6px; line-height:1.5;">' +
+      '<strong style="color:#9a3412;">Set Product Type first.</strong> ' +
+      'The Item-Type taxonomy (Category / Subcategory / Item Type Keyword) comes from Amazon\u2019s PT-specific list. ' +
+      'Until a PT is assigned, none of these dropdowns have valid values. ' +
+      'Use the <strong>Product Type</strong> dropdown above to pick one \u2014 this panel will populate the moment you do.' +
+      '</div>';
+    return;
+  }
+
   const u = (taxonomyState.universe || {})[pt] || {};
   const cats = u.product_categories || [];
   const itns = u.item_type_names || [];
@@ -24857,18 +24900,35 @@ function taxonomyRenderForStyle(styleNum) {
   h += '</div>';
 
   bodyEl.innerHTML = h;
-  // Also seed the suggestion datalist once
-  taxonomyEnsureITKDatalist();
+  // Rebuild the ITK suggestion datalist for the current PT (item 1 fix).
+  taxonomyEnsureITKDatalist(pt);
 }
 
-function taxonomyEnsureITKDatalist() {
-  if (document.getElementById('tax-itk-suggest')) return;
-  const dl = document.createElement('datalist');
-  dl.id = 'tax-itk-suggest';
-  ['rash-guards','swim-trunks','board-shorts','bikini-tops','bikini-bottoms','one-piece-swimsuits','tankini-swimsuits','bikini-sets','rash-guard-sets','swim-sets','swim-shorts','fashion-swimwear-cover-ups'].forEach(v => {
+function taxonomyEnsureITKDatalist(pt) {
+  // Pass 2 fix (agency R0 item 1): previously hardcoded swimwear ITKs into a
+  // global <datalist>, created once and never rebuilt. After a Tahari
+  // outerwear upload, operators saw rash-guards/swim-trunks/etc. suggestions
+  // on every free-text ITK input. Now: rebuild per PT from
+  // taxonomyState.universe[PT].item_type_keywords_by_cat_sub on every render.
+  let dl = document.getElementById('tax-itk-suggest');
+  if (!dl) {
+    dl = document.createElement('datalist');
+    dl.id = 'tax-itk-suggest';
+    document.body.appendChild(dl);
+  }
+  dl.innerHTML = '';
+  const u = (taxonomyState.universe || {})[pt || ''] || {};
+  const itkByCatSub = u.item_type_keywords_by_cat_sub || {};
+  const seen = new Set();
+  Object.values(itkByCatSub).forEach(subMap => {
+    Object.values(subMap || {}).forEach(list => {
+      (list || []).forEach(v => { if (v && !seen.has(v)) seen.add(v); });
+    });
+  });
+  // Sort for stable display, cap at 50 so the suggest popup stays usable
+  Array.from(seen).sort().slice(0, 50).forEach(v => {
     const o = document.createElement('option'); o.value = v; dl.appendChild(o);
   });
-  document.body.appendChild(dl);
 }
 
 function taxonomyOnChange(styleNum) {
@@ -25046,6 +25106,7 @@ function taxonomyBuildBulkModalHTML() {
     const override = taxonomyState.overrides[b.key];
     const ad = (override && override.source === 'manual') ? override : (b.auto_derived || {});
     const pt = b.product_type || '';
+    const isUnknownPT = !pt || pt === 'UNKNOWN';
     const u = (taxonomyState.universe || {})[pt] || {};
     const cats = u.product_categories || [];
     const itnsFlat = u.item_type_names || [];
@@ -25059,7 +25120,22 @@ function taxonomyBuildBulkModalHTML() {
     h += '<td style="padding:8px; vertical-align:top;">';
     h += '  ' + (confirmed ? '<span style="color:#059669;">\u2713</span>' : '<span style="color:#b45309;">\u26a0</span>') + ' ';
     h += '  <strong>' + escHtml(b.sub_class || '') + '</strong><br/>';
-    h += '  <span style="font-size:11px; color:#64748b;">' + escHtml(pt) + ' / ' + escHtml(b.gender_bucket || '') + '</span><br/>';
+    // Pass 2 fix (agency R0 item 3): when PT is UNKNOWN, render an inline
+    // PT picker right next to the bucket so the operator can recover
+    // without leaving the modal. Picking a PT rebuilds the row + propagates
+    // the change to every style in that bucket.
+    if (isUnknownPT) {
+      const allPTs = (window.ALL_PRODUCT_TYPES_FE || []);
+      h += '  <span style="font-size:11px; color:#b45309;">PT: UNKNOWN</span>';
+      h += '  <select onchange="taxonomyBulkOnPTChange(' + i + ', this.value)" '
+         + 'style="width:100%; font-size:11px; padding:3px; margin-top:4px; border:1px solid #fbbf24; background:#fffbeb;">'
+         + '<option value="">\u2014 set PT \u2014</option>'
+         + allPTs.map(p => '<option value="' + escHtml(p.id) + '">' + escHtml(p.label || p.id) + '</option>').join('')
+         + '</select><br/>';
+      h += '  <span style="font-size:11px; color:#64748b;">' + escHtml(b.gender_bucket || '') + '</span><br/>';
+    } else {
+      h += '  <span style="font-size:11px; color:#64748b;">' + escHtml(pt) + ' / ' + escHtml(b.gender_bucket || '') + '</span><br/>';
+    }
     h += '  <span style="font-size:11px; color:#64748b;">' + (b.style_count || 0) + ' styles</span>';
     h += '</td>';
     h += '<td style="padding:8px; vertical-align:top;"><select id="bulk-cat-' + i + '" onchange="taxonomyBulkOnChange(' + i + ', \'' + escHtml(pt) + '\')" style="width:100%; font-size:11px; padding:4px;">'
@@ -25125,7 +25201,50 @@ function taxonomyBuildBulkModalHTML() {
   return h;
 }
 
+function taxonomyBulkOnPTChange(i, newPT) {
+  // Pass 2 fix (agency R0 item 3): bulk-modal recovery from UNKNOWN PT.
+  // Mutate the bucket + every style in it, re-render the modal so the row
+  // now reads from universe[newPT]. Also propagate to wsState.styleProductTypes
+  // so the upload-summary table and /generate payload see the change.
+  if (!newPT) return;
+  const buckets = window.__taxonomyBulkBuckets || taxonomyState.buckets || [];
+  const b = buckets[i];
+  if (!b) return;
+  const styleNums = b.style_nums || [];
+  // Update wsState + per-style taxonomyState.styleMeta for every style in bucket
+  styleNums.forEach(sn => {
+    if (window.wsState && window.wsState.styleProductTypes) {
+      wsState.styleProductTypes[sn] = newPT;
+    }
+    if (taxonomyState.styleMeta && taxonomyState.styleMeta[sn]) {
+      const m = taxonomyState.styleMeta[sn];
+      m.product_type = newPT;
+      m.key = newPT + '|' + (m.sub_class || '') + '|' + (m.gender_bucket || '');
+      const ov = (taxonomyState.overrides || {})[m.key];
+      m.confirmed = !!(ov && ov.source === 'manual');
+    }
+    // Also update the upload-summary <select> + status badge so the operator
+    // sees the change reflected if they close the modal.
+    const selEl = document.getElementById('pt-select-' + sn);
+    if (selEl && selEl.value !== newPT) selEl.value = newPT;
+  });
+  // Mutate the bucket itself + rekey so the row redraws against the new PT
+  b.product_type = newPT;
+  b.key = newPT + '|' + (b.sub_class || '') + '|' + (b.gender_bucket || '');
+  b.auto_derived = {}; // clear stale auto-derive from old PT
+  b.confirmed = !!((taxonomyState.overrides || {})[b.key] || {}).source;
+  // Re-render the bulk modal with the new bucket state
+  const modal = document.getElementById('tax-bulk-modal');
+  if (modal) modal.innerHTML = taxonomyBuildBulkModalHTML();
+  showToast('PT set to ' + newPT + ' for ' + styleNums.length + ' style(s). Pick Category + Subcategory next.', 'info');
+}
+
 function taxonomyBulkOnChange(i, pt) {
+  // If the row's PT changed since the cell was rendered, re-read it from the bucket
+  const buckets = window.__taxonomyBulkBuckets || [];
+  if (buckets[i] && buckets[i].product_type && buckets[i].product_type !== pt) {
+    pt = buckets[i].product_type;
+  }
   const catEl = document.getElementById('bulk-cat-' + i);
   const subEl = document.getElementById('bulk-sub-' + i);
   if (!catEl || !subEl) return;
