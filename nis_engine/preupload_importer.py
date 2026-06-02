@@ -87,6 +87,22 @@ _HEADER_ALIASES = {
     "length":          ["centerbacklengthcbl", "length", "cbl"],
     "pockets":         ["numberofpockets"],
     "hood":            ["removablehood"],
+    # Pass 1 (agency R0 item 13) — Sleeve Type / Length, Neck, Fit, UPF all
+    # exist in the Tahari template but were never mapped to state.
+    "sleeve_type":     ["sleevetype"],
+    "sleeve_length":   ["sleevelength", "sleevelengthdescription"],
+    "neck":            ["necktype", "neckline", "necklinestyle"],
+    "fit":             ["fittype", "fit"],
+    "upf":             ["upfrating", "upf"],
+    # Pass 1 (agency R0 item 5) — the 5 per-bullet columns were unmapped, so
+    # the parser never read template-supplied bullets and the verdict reported
+    # "Bullet Points missing". The fifth alias variant covers the Sage/Volcom
+    # plus the Tahari header conventions.
+    "bullet_1":        ["keyfeaturesbullet1", "bullet1", "keyfeatures1"],
+    "bullet_2":        ["keyfeaturesbullet2", "bullet2", "keyfeatures2"],
+    "bullet_3":        ["keyfeaturesbullet3", "bullet3", "keyfeatures3"],
+    "bullet_4":        ["keyfeaturesbullet4", "bullet4", "keyfeatures4"],
+    "bullet_5":        ["keyfeaturesbullet5", "bullet5", "keyfeatures5"],
     "addl":            ["additionaldetailsstandoutscalloutsfeatures",
                         "additionaldetails", "standouts"],
 }
@@ -152,12 +168,24 @@ def parse_preupload(xlsx_path: str, brand_hint: Optional[str] = None) -> Dict[st
     inferred_brand = brand_hint
     errors: List[str] = []
 
+    # Pass 1 (agency R0 follow-on) — template's row 2 (REQUIRED/OPTIONAL labels)
+    # and row 3 (column descriptions like "Style number — must be unique...")
+    # were being parsed as real styles. Skip rows whose STYLE# is one of the
+    # annotation sentinels or is clearly sentence text rather than an ID.
+    _SENTINEL_STYLES = {"REQUIRED", "OPTIONAL", "IMPORTANT", "CONDITIONALLY REQUIRED", "RECOMMENDED"}
+
     for r in range(2, target_ws.max_row + 1):
         sn_raw = target_ws.cell(row=r, column=cmap["style"]).value
         if not sn_raw:
             continue
         sn = str(sn_raw).strip()
         if not sn:
+            continue
+        # Skip template-annotation rows
+        if sn.upper() in _SENTINEL_STYLES:
+            continue
+        if " " in sn or len(sn) > 14 or len(sn) < 4:
+            # Real style numbers are short alphanumeric IDs; descriptions are sentence-shaped
             continue
 
         # Extract every known field for this row
@@ -194,6 +222,11 @@ def parse_preupload(xlsx_path: str, brand_hint: Optional[str] = None) -> Dict[st
                 "care":       row_data.get("care"),
                 "fabric":     row_data.get("fabric"),
                 "closure":    row_data.get("closure"),
+                "sleeve_type":   row_data.get("sleeve_type"),
+                "sleeve_length": row_data.get("sleeve_length"),
+                "neck":          row_data.get("neck"),
+                "fit":           row_data.get("fit"),
+                "upf":           row_data.get("upf"),
                 "length":     row_data.get("length"),
                 "list_price": row_data.get("list_price"),
                 "amazon_cost":row_data.get("amazon_cost"),
@@ -201,6 +234,14 @@ def parse_preupload(xlsx_path: str, brand_hint: Optional[str] = None) -> Dict[st
                 "keywords":   row_data.get("keywords"),
                 "due_date":   row_data.get("due_date"),
                 "type_jacket":row_data.get("type_jacket"),
+                # 5 bullets (each may be None if the operator didn't fill one)
+                "bullets":    [
+                    row_data.get("bullet_1"),
+                    row_data.get("bullet_2"),
+                    row_data.get("bullet_3"),
+                    row_data.get("bullet_4"),
+                    row_data.get("bullet_5"),
+                ],
                 "raw":        dict(row_data),
                 "colors":     set(),
                 "sizes":      set(),
@@ -226,6 +267,35 @@ def parse_preupload(xlsx_path: str, brand_hint: Optional[str] = None) -> Dict[st
         "styles": styles,
         "errors": errors,
     }
+
+
+def _split_fabric_into_materials(fabric: str) -> tuple[list[str], str]:
+    """Split a fabric/composition string into (material_names, composition_string).
+
+    Examples:
+        "100% Polyester"             -> (["Polyester"], "100% Polyester")
+        "95% Polyester, 5% Spandex"  -> (["Polyester", "Spandex"], "95% Polyester, 5% Spandex")
+        "Polyester"                  -> (["Polyester"], "Polyester")
+        ""                            -> ([], "")
+
+    Always returns the original string as the composition; only the names list is parsed.
+    """
+    s = (fabric or "").strip()
+    if not s:
+        return [], ""
+    # Pull out every "<num>% <Name>" group, fall back to bare names if no %
+    names: list[str] = []
+    for chunk in re.split(r"[,/&;|]\s*|\s+and\s+", s):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        m = re.match(r"^\d+\.?\d*\s*%\s*(.+)$", chunk)
+        name = m.group(1).strip() if m else chunk
+        # Strip trailing punctuation and any leftover digits
+        name = re.sub(r"^[\d.%\s]+", "", name).strip(" .,;:")
+        if name and name not in names:
+            names.append(name)
+    return names, s
 
 
 def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
@@ -259,13 +329,34 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
     vendor_code = _BRAND_VENDOR_CODES.get(brand, "")
 
     pockets_val = s.get("raw", {}).get("pockets")
+
+    # Pass 1 (agency R0 item 11) — split fabric string into material names
+    # (parsed list) vs. the original composition string. Material slot gets
+    # the names; fabric_type slot keeps the percentage composition.
+    material_names, fabric_composition = _split_fabric_into_materials(s.get("fabric") or "")
+
+    # Pass 1 (agency R0 item 5) — 5 per-bullet columns now flow through.
+    # Fall back to legacy "addl" only when no per-bullet content was supplied.
+    template_bullets = s.get("bullets") or []
+    template_bullets = [str(b).strip() for b in template_bullets if b]
+    addl_text = (s.get("addl") or "").strip()
+    if not template_bullets and addl_text:
+        # Legacy behavior: synthesize bullet#1 from addl when no bullet cols
+        template_bullets = [addl_text[:200]]
+
+    # Pass 1 (title gendering case bug) — gender_word's old comparison was
+    # case-sensitive: `dept == "womens"` failed when dept was "Womens", so
+    # titles came out as "<Brand> Men's ..." even for women's product. Use
+    # case-insensitive comparison.
+    gw = "Women's" if dept.lower() == "womens" else "Men's"
+
     state = {
         "rtip_vendor_code#1.value":      vendor_code,
         "vendor_sku#1.value":            str(s.get("model") or s.get("style") or ""),
         "product_type#1.value":          "COAT",
         "parentage_level#1.value":       "Parent",
         "item_name#1.value":             (
-            f"{brand} {gender_word(dept)} {s.get('name') or ''}"
+            f"{brand} {gw} {s.get('name') or ''}"
         ).strip(),
         "brand#1.value":                 brand,
         "external_product_id#1.type":    "UPC",
@@ -282,12 +373,25 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
         "color#1.value":                 color_value,
         "color#1.standardized_values#1": color_map,
         "care_instructions#1.value":     s.get("care") or "",
-        "material#1.value":              s.get("fabric") or "",
-        "fabric_type#1.value":           s.get("fabric") or "",
+        # Material now holds the parsed first material name; Fabric Type keeps
+        # the full composition string. Pass 3 will extend Material to multi.
+        "material#1.value":              material_names[0] if material_names else "",
+        "fabric_type#1.value":           fabric_composition,
         "closure#1.type#1.value":        s.get("closure") or "",
-        "fit_type#1.value":              "Regular",
+        # Pass 1 (agency R0 item 13) — Sleeve Type / Length now mapped.
+        "sleeve#1.type#1.value":         s.get("sleeve_type") or "",
+        "sleeve#1.length_description#1.value": s.get("sleeve_length") or "",
+        # Other newly-mapped optional structured attributes.
+        "neck#1.value":                  s.get("neck") or "",
+        "fit_type#1.value":              s.get("fit") or "Regular",
+        "upf_rating#1.value":            s.get("upf") or "",
         "apparel_size#1.size":           primary_size,
-        "bullet_point#1.value":          ((s.get("addl") or "")[:200]).strip(),
+        # Pass 1 (agency R0 item 5) — all 5 bullets mapped per column.
+        "bullet_point#1.value":          (template_bullets[0] if len(template_bullets) > 0 else "")[:200],
+        "bullet_point#2.value":          (template_bullets[1] if len(template_bullets) > 1 else "")[:200],
+        "bullet_point#3.value":          (template_bullets[2] if len(template_bullets) > 2 else "")[:200],
+        "bullet_point#4.value":          (template_bullets[3] if len(template_bullets) > 3 else "")[:200],
+        "bullet_point#5.value":          (template_bullets[4] if len(template_bullets) > 4 else "")[:200],
         "rtip_product_description#1.value":
             ((s.get("addl") or "") + " " + (s.get("keywords") or "")).strip(),
         "list_price#1.value":            str(s.get("list_price") or ""),
@@ -295,6 +399,11 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
         "item_length_description#1.value":
             f"{s.get('length')}-inch" if s.get("length") else "",
     }
+    # Pass 3 (multi-value) groundwork: stash additional material names as #2/#3
+    # so the engine bundle's BE/BF/BG columns are populated end-to-end. UI
+    # exposure of multi-input comes in Pass 3 — but the data path is wired now.
+    for idx, name in enumerate(material_names[1:3], start=2):
+        state[f"material#{idx}.value"] = name
     # Wire cost price + ship/booking date from pre-upload (previously unmapped)
     due = s.get("due_date")
     if due is not None:
