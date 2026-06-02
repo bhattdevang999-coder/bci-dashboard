@@ -4,7 +4,7 @@
 > Fixtures checked in at `data/fixtures/tahari_r0_*.xlsx`.
 > Regression harness: `qa_agency_r0.py`.
 >
-> Status: **Pass 5 landed.** Passes 0-5 complete. All 15 numbered items + Strategic 1. Item 6 shipped as defensive guard (root cause not reproducible from agency report — flagged in pass5 trace). QA harness: 20 pass, 0 fail, 2 pending (Pass 6 only).
+> Status: **SPRINT COMPLETE.** All 6 passes done (0-6). All 15 numbered items + both strategic asks. Item 6 shipped as defensive guard (root cause not reproducible from agency report — documented in pass5 trace). QA harness: **23 pass, 0 fail, 0 pending.**
 
 ---
 

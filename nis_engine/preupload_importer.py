@@ -100,6 +100,12 @@ _HEADER_ALIASES = {
     "neck":            ["necktype", "neckline", "necklinestyle"],
     "fit":             ["fittype", "fit"],
     "upf":             ["upfrating", "upf"],
+    # Pass 6 (agency R0 strategic 2) — v2 template ships Amazon-attribute-
+    # shaped columns directly instead of inferring from TLG-internal cols.
+    # These aliases are no-op on v1 ingest, populated on v2 ingest.
+    "age_range":             ["agerange", "agerangedescription"],
+    "target_gender":         ["targetgender"],
+    "item_length_description":["itemlengthdescription", "itemlength"],
     # Pass 1 (agency R0 item 5) — the 5 per-bullet columns were unmapped, so
     # the parser never read template-supplied bullets and the verdict reported
     # "Bullet Points missing". The fifth alias variant covers the Sage/Volcom
@@ -239,6 +245,10 @@ def parse_preupload(xlsx_path: str, brand_hint: Optional[str] = None) -> Dict[st
                 # parses that. v2 will ship explicit Material 2/3 columns.
                 "material_2": row_data.get("material_2"),
                 "material_3": row_data.get("material_3"),
+                # Pass 6 (strategic 2) — v2 template explicit Amazon attrs.
+                "age_range":              row_data.get("age_range"),
+                "target_gender_v2":       row_data.get("target_gender"),
+                "item_length_description_v2": row_data.get("item_length_description"),
                 "sleeve_type":   row_data.get("sleeve_type"),
                 "sleeve_length": row_data.get("sleeve_length"),
                 "neck":          row_data.get("neck"),
@@ -284,6 +294,37 @@ def parse_preupload(xlsx_path: str, brand_hint: Optional[str] = None) -> Dict[st
         "styles": styles,
         "errors": errors,
     }
+
+
+# Pass 6 (agency R0 strategic 2) — template version detection.
+# v1 is the legacy TLG-internal template (Tahari/Volcom). v2 is the
+# Amazon-attribute-shaped template that drops TLGDIV/MODEL/SKU and adds
+# Department/Age Range/Target Gender/Item Length/Sleeve Length/Material 2/3/
+# Closure Type 2. Both parse through the same code path — the importer's
+# header aliases accept either set. detect_template_version is exposed for
+# the UI so it can label which format is being ingested.
+_V2_SIGNAL_HEADERS = {"material2", "materialcomposition2", "closuretype2",
+                      "closure2", "agerange", "agerangedescription",
+                      "targetgender"}
+_V1_SIGNAL_HEADERS = {"tlgdivname", "tlgstyledesc", "modelnumber", "sku"}
+
+
+def detect_template_version(header_row: List[Any]) -> str:
+    """Return 'v2' if the header row carries any v2-only column,
+    'v1' if it carries v1-only columns, 'unknown' otherwise.
+
+    A header row with BOTH a v2 signal and v1 columns still resolves to 'v2'
+    — the v2 ingest path is a superset of v1 (extra Amazon columns; legacy
+    TLG columns are just ignored).
+    """
+    normed = {_norm_header(h) for h in header_row if h is not None}
+    has_v2 = bool(normed & _V2_SIGNAL_HEADERS)
+    has_v1 = bool(normed & _V1_SIGNAL_HEADERS)
+    if has_v2:
+        return "v2"
+    if has_v1:
+        return "v1"
+    return "unknown"
 
 
 def _split_closures(closure_raw: str, closure_2_raw: str = "") -> list[str]:
@@ -369,6 +410,18 @@ def style_to_form_state(
     dept = "Womens" if "women" in dept_raw.lower() else (
            "Mens"   if "men"   in dept_raw.lower() else "Womens")
     gender = "Female" if dept.lower() == "womens" else "Male"
+
+    # Pass 6 (strategic 2): v2 template ships Target Gender as an explicit
+    # Amazon-validated column. When present, it wins over the inferred value.
+    # Accepted Amazon values: Female / Male / Unisex.
+    target_gender_v2 = (s.get("target_gender_v2") or "").strip()
+    if target_gender_v2:
+        if target_gender_v2.lower() in ("female", "male", "unisex"):
+            gender = target_gender_v2.title()
+
+    # v2 also ships Age Range. Default 'Adult' when absent (matches v1 behavior
+    # since v1 had no age column and apparel_defaults filled it in).
+    age_range = (s.get("age_range") or "").strip() or "Adult"
 
     primary_color = s["colors"][0] if s.get("colors") else ""
     color_value = primary_color.title()
@@ -473,8 +526,16 @@ def style_to_form_state(
             ((s.get("addl") or "") + " " + (s.get("keywords") or "")).strip(),
         "list_price#1.value":            str(s.get("list_price") or ""),
         "list_price#1.currency":         "USD",
-        "item_length_description#1.value":
-            f"{s.get('length')}-inch" if s.get("length") else "",
+        # Pass 6 (strategic 2): v2 has an explicit Item Length Description
+        # column with valid Amazon vocabulary ('Standard Length' etc). When
+        # present, it wins over the v1 derivation (which used CBL inches).
+        "item_length_description#1.value": (
+            (s.get("item_length_description_v2") or "").strip() or
+            (f"{s.get('length')}-inch" if s.get("length") else "")
+        ),
+        # Pass 6 (strategic 2): v2 ships Age Range as an explicit column.
+        # Defaults to 'Adult' when absent.
+        "age_range_description#1.value": age_range,
     }
     # Pass 3 (item 11b): expose secondary + tertiary materials. Engine bundle
     # for COAT validates material#1/2/3.value — all three slots flow now.

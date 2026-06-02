@@ -631,14 +631,115 @@ def test_pass5_item12_content_tab_sync():
 # PASS 6 — template v2
 # ============================================================================
 
+_V2_FIXTURE = FIXTURES / "preupload_template_v2_2026_06_02.xlsx"
+
+
+@case("6", "strategic_2", "v2 template fixture present and version-detects as v2")
+def test_pass6_template_v2_fixture_present():
+    assert_truthy(_V2_FIXTURE.exists(),
+                  f"v2 template fixture missing: {_V2_FIXTURE}. Run scripts/build_v2_template.py.")
+    from openpyxl import load_workbook
+    from nis_engine.preupload_importer import detect_template_version
+    wb = load_workbook(str(_V2_FIXTURE), data_only=True)
+    ws = wb[wb.sheetnames[0]]
+    headers = [c.value for c in ws[1]]
+    version = detect_template_version(headers)
+    assert_eq(version, "v2",
+              f"v2 fixture should detect as v2, got: {version}")
+    # v2-specific columns must be present
+    norm = {h.lower().replace(" ", "").replace("#", "") for h in headers if h}
+    for needed in ("material1", "material2", "material3", "closuretype2",
+                   "agerange", "targetgender", "sleevelength",
+                   "itemlengthdescription", "department"):
+        assert_in(needed, norm, f"v2 must expose {needed}")
+    # v1-internal columns must NOT be present
+    for absent in ("tlgdivname", "modelnumber", "sku", "tlgstyledesc", "childasin"):
+        assert_not_in(absent, norm,
+                      f"v2 must NOT carry TLG-internal column {absent}")
+
+
 @case("6", "strategic_2", "v2 template parses cleanly with new Amazon-attribute columns")
 def test_pass6_template_v2_parse():
-    raise AssertionError("PENDING — Pass 6 not started")
+    from nis_engine.preupload_importer import parse_preupload, style_to_form_state
+    parsed = parse_preupload(str(_V2_FIXTURE))
+    styles = parsed.get("styles", {})
+    assert_truthy(len(styles) >= 1,
+                  f"v2 example row should parse to >=1 style, got {len(styles)}")
+    sample = next(iter(styles.values()))
+    # Verify v2 explicit columns landed in the parsed style
+    assert_eq(sample.get("age_range"), "Adult")
+    assert_eq(sample.get("target_gender_v2"), "Female")
+    assert_eq(sample.get("item_length_description_v2"), "Long Length")
+    assert_eq(sample.get("material_2"), "Down")
+    # Closure 2 (Snap) should be in the secondary closure slot
+    assert_eq(sample.get("closure_2"), "Snap")
+
+    # Convert to state — verify v2 fields override correctly
+    state = style_to_form_state(sample, "Tahari")
+    assert_eq(state.get("target_gender#1.value"), "Female",
+              "v2 Target Gender column should populate state")
+    assert_eq(state.get("age_range_description#1.value"), "Adult",
+              "v2 Age Range column should populate state")
+    assert_eq(state.get("item_length_description#1.value"), "Long Length",
+              "v2 Item Length Description should win over CBL derivation")
+    # Multi-material from explicit columns + fabric percentage
+    assert_eq(state.get("material#1.value"), "Polyester")
+    assert_eq(state.get("material#2.value"), "Down",
+              "v2 explicit Material 2 column should populate material#2")
+    # Multi-closure: primary=Zipper, secondary=Snap
+    assert_eq(state.get("closure#1.type#1.value"), "Zipper")
+    assert_eq(state.get("closure#1.type#2.value"), "Snap",
+              "v2 explicit Closure Type 2 column should populate type#2")
 
 
 @case("6", "strategic_2", "v1 template still parses via mapping layer with no data loss")
 def test_pass6_template_v1_mapping_lossless():
-    raise AssertionError("PENDING — Pass 6 not started")
+    # Regression: the Tahari v1 fixture from Pass 0 must continue to parse
+    # exactly as before. v2-aware aliases must be no-ops on v1 ingest.
+    from nis_engine.preupload_importer import (
+        parse_preupload, style_to_form_state, detect_template_version,
+    )
+    from openpyxl import load_workbook
+    wb = load_workbook(str(TEMPLATE_FIXTURE), data_only=True)
+    ws = wb[wb.sheetnames[0]]
+    headers = [c.value for c in ws[1]]
+    version = detect_template_version(headers)
+    assert_eq(version, "v1",
+              f"Tahari v1 fixture should detect as v1, got: {version}")
+
+    parsed = parse_preupload(str(TEMPLATE_FIXTURE))
+    styles = parsed.get("styles", {})
+    assert_truthy(len(styles) >= 20,
+                  f"v1 Tahari fixture should still produce ~23 styles, got {len(styles)}")
+
+    # Pick the same Tahari sample as Pass 1's _load_tahari_sample helper
+    sample = None
+    for s in styles.values():
+        if "TAHARI" in (s.get("tlgdiv") or "").upper() and s.get("fabric") and s.get("closure"):
+            sample = s
+            break
+    assert_truthy(sample, "v1 sample with fabric + closure should still parse")
+
+    # v2-only fields should be None on v1 ingest (no column → no value)
+    assert_truthy(sample.get("age_range") in (None, ""),
+                  "v1 ingest must not invent an age_range value")
+    assert_truthy(sample.get("target_gender_v2") in (None, ""),
+                  "v1 ingest must not invent a target_gender_v2 value")
+    assert_truthy(sample.get("closure_2") in (None, ""),
+                  "v1 ingest must not invent a closure_2 value")
+
+    # And the v1 fields all still flow as before (regression on Pass 1-3 work)
+    state = style_to_form_state(sample, "Tahari")
+    assert_truthy(state.get("bullet_point#1.value"),
+                  "v1 bullets must still flow (Pass 1 regression)")
+    assert_truthy(state.get("closure#1.type#1.value"),
+                  "v1 closure must still flow (Pass 1 regression)")
+    assert_truthy(state.get("sleeve#1.type#1.value"),
+                  "v1 sleeve type must still flow (Pass 1 regression)")
+    # Age Range defaults to 'Adult' even on v1 ingest (because v1 has no
+    # age column — the importer's default fills in).
+    assert_eq(state.get("age_range_description#1.value"), "Adult",
+              "v1 ingest should default age_range to 'Adult'")
 
 
 # ============================================================================
@@ -666,6 +767,7 @@ ALL_CASES = [
     test_pass5_item6_style_block_visible,
     test_pass5_item7_bullet_colon_separator,
     test_pass5_item12_content_tab_sync,
+    test_pass6_template_v2_fixture_present,
     test_pass6_template_v2_parse,
     test_pass6_template_v1_mapping_lossless,
 ]
