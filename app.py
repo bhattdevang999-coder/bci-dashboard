@@ -5904,8 +5904,13 @@ def do_xlsm_surgery(template_path, brand, brand_cfg, vendor_code, style, content
         write_cell(row_idx, "sleeve#1.length_description#1.value", sleeve_len)
         if sleeve_type:
             write_cell(row_idx, "sleeve#1.type#1.value",        sleeve_type)
-        # closure — left blank unless from data/override
+        # closure — Pass 3 (agency R0 item 15) supports multi. Primary from
+        # content/style/brand; secondary from style state if the importer parsed
+        # a multi-value cell ('Zipper, Snap' → type#1=Zipper, type#2=Snap).
         write_cell(row_idx, "closure#1.type#1.value",             content.get("closure_type", "") or style.get("closure_type", "") or brand_cfg.get("default_closure", ""))
+        _closure_2 = style.get("closure_type_2", "") or style.get("state", {}).get("closure#1.type#2.value", "")
+        if _closure_2:
+            write_cell(row_idx, "closure#1.type#2.value",        _closure_2)
         # number of pockets — from pre-upload (Sage feedback: was missing on template)
         _pockets_v = content.get("pockets", "") or style.get("pockets", "")
         if _pockets_v not in (None, "", 0):
@@ -6336,8 +6341,14 @@ def _generate_category_file(cat_styles, content_map, template_path, brand, brand
             if _sleeve:
                 wc(r, "sleeve#1.type#1.value",        _sleeve, style_num=_sn)
             # closure — from data/override (Sage feedback: closure flow now also reads style)
+            # Pass 3 (agency R0 item 15): multi-closure. Secondary value lives
+            # on the style's parsed state (closure#1.type#2.value) when the
+            # source cell was comma-encoded.
             _closure_v = _content.get("closure_type", "") or _style.get("closure_type", "") or brand_cfg.get("default_closure", "")
             wc(r, "closure#1.type#1.value",             _closure_v, style_num=_sn)
+            _closure_v_2 = _style.get("closure_type_2", "") or _style.get("state", {}).get("closure#1.type#2.value", "")
+            if _closure_v_2:
+                wc(r, "closure#1.type#2.value",         _closure_v_2, style_num=_sn)
             # number of pockets — from pre-upload
             _pockets_v = _content.get("pockets", "") or _style.get("pockets", "")
             if _pockets_v not in (None, "", 0):

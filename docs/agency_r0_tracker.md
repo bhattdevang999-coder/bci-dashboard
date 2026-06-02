@@ -4,7 +4,7 @@
 > Fixtures checked in at `data/fixtures/tahari_r0_*.xlsx`.
 > Regression harness: `qa_agency_r0.py`.
 >
-> Status: **Pass 2 landed.** Passes 0 + 1 + 2 complete. Items 1, 2, 3, 5, 8, 9, 10, 11(a), 13, 14 fixed. QA harness: 14 pass, 0 fail, 8 pending (Passes 3-6).
+> Status: **Pass 3 landed.** Passes 0 + 1 + 2 + 3 complete. Items 1-3, 5, 8-11, 13-15 fixed. QA harness: 16 pass, 0 fail, 6 pending (Passes 4-6).
 
 ---
 

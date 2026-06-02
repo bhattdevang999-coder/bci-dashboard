@@ -83,7 +83,13 @@ _HEADER_ALIASES = {
     "coo":             ["coo", "countryoforigin"],
     "care":            ["careinstructions", "care"],
     "fabric":          ["fabriccontentpercentage", "fabric", "fabriccontent"],
-    "closure":         ["closuretype", "closure"],
+    "closure":         ["closuretype", "closure", "closuretype1", "closure1"],
+    # Pass 3 (agency R0 items 11, 15) — v2 template will ship explicit
+    # Material 2/3 and Closure Type 2 columns. v1 template doesn't have them;
+    # these aliases are no-ops on v1 ingest but unblock v2 once Pass 6 ships.
+    "material_2":      ["material2", "materialcomposition2", "secondarymaterial"],
+    "material_3":      ["material3", "materialcomposition3", "tertiarymaterial"],
+    "closure_2":       ["closuretype2", "closure2", "secondaryclosure"],
     "length":          ["centerbacklengthcbl", "length", "cbl"],
     "pockets":         ["numberofpockets"],
     "hood":            ["removablehood"],
@@ -222,6 +228,17 @@ def parse_preupload(xlsx_path: str, brand_hint: Optional[str] = None) -> Dict[st
                 "care":       row_data.get("care"),
                 "fabric":     row_data.get("fabric"),
                 "closure":    row_data.get("closure"),
+                # Pass 3 (item 15) — multi-closure source columns. v1 template
+                # doesn't have closure_2, so this will be None on Tahari/Volcom
+                # ingests today; the operator's comma-encoded multi in 'closure'
+                # is what _split_closures parses. Forward-compat for v2.
+                "closure_2":  row_data.get("closure_2"),
+                # Pass 3 (item 11b) — same idea for materials. v1 template
+                # encodes multi-material via the single fabric percentage
+                # string ('95% Polyester, 5% Spandex'); _split_fabric_into_materials
+                # parses that. v2 will ship explicit Material 2/3 columns.
+                "material_2": row_data.get("material_2"),
+                "material_3": row_data.get("material_3"),
                 "sleeve_type":   row_data.get("sleeve_type"),
                 "sleeve_length": row_data.get("sleeve_length"),
                 "neck":          row_data.get("neck"),
@@ -267,6 +284,36 @@ def parse_preupload(xlsx_path: str, brand_hint: Optional[str] = None) -> Dict[st
         "styles": styles,
         "errors": errors,
     }
+
+
+def _split_closures(closure_raw: str, closure_2_raw: str = "") -> list[str]:
+    """Pass 3 (agency R0 item 15): Closure Type can be multi-valued.
+
+    Two sources:
+      1. v2 template ships a dedicated 'Closure Type 2' column → closure_2_raw.
+      2. v1 template only has one column — operators today encode multi by
+         comma-separating in the single cell: 'Zipper, Snap', 'Zip/Hook & Eye'.
+         Split on comma, slash, ampersand, '+'.
+
+    Returns an ordered list of de-duped closure names (already title-cased
+    where the original was). Up to 5 — the COAT bundle bundle only validates
+    closure#1.type#1 and #2, so #3+ are kept for forward-compat.
+    """
+    out: list[str] = []
+    raws = [closure_raw, closure_2_raw]
+    for r in raws:
+        s = (r or "").strip()
+        if not s:
+            continue
+        # Split on common multi-value separators; preserve 'Hook & Eye' as a
+        # single value by only splitting on ' & ' when surrounded by non-letter
+        # context. The safe approach: split on comma, slash, semicolon, '+',
+        # and the word ' and ' — NOT on '&', because closure names contain it.
+        for chunk in re.split(r"[,/;+]\s*|\s+and\s+", s):
+            name = chunk.strip(" .,;:")
+            if name and name not in out:
+                out.append(name)
+    return out[:5]
 
 
 def _split_fabric_into_materials(fabric: str) -> tuple[list[str], str]:
@@ -334,6 +381,19 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
     # (parsed list) vs. the original composition string. Material slot gets
     # the names; fabric_type slot keeps the percentage composition.
     material_names, fabric_composition = _split_fabric_into_materials(s.get("fabric") or "")
+    # Pass 3 (item 11b): if v2 template supplied explicit Material 2/3 columns,
+    # append them ahead of any duplicates already parsed from fabric. Source-of-
+    # truth precedence: explicit columns win; the fabric percentage string fills
+    # remaining slots.
+    for explicit in (s.get("material_2"), s.get("material_3")):
+        if explicit:
+            ename = str(explicit).strip()
+            if ename and ename not in material_names:
+                material_names.append(ename)
+
+    # Pass 3 (item 15): parse multi-closure. v1 source = comma-encoded in the
+    # single Closure Type cell. v2 source = explicit Closure Type 2 column.
+    closure_list = _split_closures(s.get("closure") or "", s.get("closure_2") or "")
 
     # Pass 1 (agency R0 item 5) — 5 per-bullet columns now flow through.
     # Fall back to legacy "addl" only when no per-bullet content was supplied.
@@ -377,7 +437,10 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
         # the full composition string. Pass 3 will extend Material to multi.
         "material#1.value":              material_names[0] if material_names else "",
         "fabric_type#1.value":           fabric_composition,
-        "closure#1.type#1.value":        s.get("closure") or "",
+        # Pass 3 (item 15) — closure is now multi-valued. The COAT bundle
+        # validates closure#1.type#1.value and closure#1.type#2.value. If the
+        # operator only supplied one value, only the first slot is populated.
+        "closure#1.type#1.value":        (closure_list[0] if closure_list else (s.get("closure") or "")),
         # Pass 1 (agency R0 item 13) — Sleeve Type / Length now mapped.
         "sleeve#1.type#1.value":         s.get("sleeve_type") or "",
         "sleeve#1.length_description#1.value": s.get("sleeve_length") or "",
@@ -399,11 +462,13 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
         "item_length_description#1.value":
             f"{s.get('length')}-inch" if s.get("length") else "",
     }
-    # Pass 3 (multi-value) groundwork: stash additional material names as #2/#3
-    # so the engine bundle's BE/BF/BG columns are populated end-to-end. UI
-    # exposure of multi-input comes in Pass 3 — but the data path is wired now.
+    # Pass 3 (item 11b): expose secondary + tertiary materials. Engine bundle
+    # for COAT validates material#1/2/3.value — all three slots flow now.
     for idx, name in enumerate(material_names[1:3], start=2):
         state[f"material#{idx}.value"] = name
+    # Pass 3 (item 15): expose secondary closure when present.
+    if len(closure_list) >= 2:
+        state["closure#1.type#2.value"] = closure_list[1]
     # Wire cost price + ship/booking date from pre-upload (previously unmapped)
     due = s.get("due_date")
     if due is not None:

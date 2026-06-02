@@ -371,12 +371,88 @@ def test_pass2_item14_unknown_editable():
 
 @case("3", "item_11_b", "Material parses to ordered array; multi-material round-trips")
 def test_pass3_item11_material_multi():
-    raise AssertionError("PENDING — Pass 3 not started")
+    from nis_engine.preupload_importer import style_to_form_state, _split_fabric_into_materials
+    # 1. Single fabric cell with three materials → material#1/2/3 all populated
+    fake_row = {
+        "style": "M3TEST", "name": "Tri-blend Puffer",
+        "sub_class": "Puffer",
+        "fabric": "80% Polyester, 15% Cotton, 5% Spandex",
+        "closure": "Zipper",
+    }
+    state = style_to_form_state(fake_row, "Tahari")
+    assert_eq(state.get("material#1.value"), "Polyester",
+              "material#1 should be first parsed name")
+    assert_eq(state.get("material#2.value"), "Cotton",
+              "material#2 should be second parsed name")
+    assert_eq(state.get("material#3.value"), "Spandex",
+              "material#3 should be third parsed name")
+    assert_eq(state.get("fabric_type#1.value"), "80% Polyester, 15% Cotton, 5% Spandex",
+              "fabric_type#1 should keep the original composition string")
+
+    # 2. v2 template with explicit Material 2/3 columns — explicit wins
+    fake_v2 = {
+        "style": "M3V2", "name": "v2 Test", "sub_class": "Puffer",
+        "fabric": "100% Polyester",
+        "material_2": "Wool",
+        "material_3": "Cashmere",
+        "closure": "Zipper",
+    }
+    state_v2 = style_to_form_state(fake_v2, "Tahari")
+    assert_eq(state_v2.get("material#1.value"), "Polyester")
+    assert_eq(state_v2.get("material#2.value"), "Wool",
+              "v2 explicit Material 2 column should populate material#2")
+    assert_eq(state_v2.get("material#3.value"), "Cashmere",
+              "v2 explicit Material 3 column should populate material#3")
+
+    # 3. Parser direct test on tougher inputs
+    names, comp = _split_fabric_into_materials("65%Cotton/30%Polyester/5%Spandex")
+    assert_eq(names, ["Cotton", "Polyester", "Spandex"],
+              "slash-separated multi should parse")
+    assert_eq(comp, "65%Cotton/30%Polyester/5%Spandex")
 
 
 @case("3", "item_15", "Closure Type accepts and persists multiple values")
 def test_pass3_item15_closure_multi():
-    raise AssertionError("PENDING — Pass 3 not started")
+    from nis_engine.preupload_importer import style_to_form_state, _split_closures
+
+    # 1. v1 template encoding: comma-separated multi in single Closure Type cell
+    fake_v1 = {
+        "style": "C2TEST", "name": "Multi-Closure Puffer",
+        "sub_class": "Puffer",
+        "fabric": "100% Polyester",
+        "closure": "Zipper, Snap",
+    }
+    state = style_to_form_state(fake_v1, "Tahari")
+    assert_eq(state.get("closure#1.type#1.value"), "Zipper",
+              "comma-encoded multi should put first value into type#1")
+    assert_eq(state.get("closure#1.type#2.value"), "Snap",
+              "comma-encoded multi should put second value into type#2")
+
+    # 2. v2 template with explicit Closure Type 2 column
+    fake_v2 = {
+        "style": "C2V2", "name": "v2 Closure Test",
+        "sub_class": "Puffer",
+        "fabric": "100% Polyester",
+        "closure": "Zipper",
+        "closure_2": "Hook & Eye",
+    }
+    state_v2 = style_to_form_state(fake_v2, "Tahari")
+    assert_eq(state_v2.get("closure#1.type#1.value"), "Zipper")
+    assert_eq(state_v2.get("closure#1.type#2.value"), "Hook & Eye",
+              "v2 explicit Closure Type 2 should populate type#2")
+
+    # 3. Hook & Eye must NOT split on '&' — it's a single Amazon value
+    out = _split_closures("Hook & Eye, Snap")
+    assert_eq(out, ["Hook & Eye", "Snap"],
+              "_split_closures must preserve 'Hook & Eye' as one value")
+
+    # 4. Single value stays single
+    fake_single = {"style": "C1", "name": "X", "sub_class": "Puffer",
+                   "fabric": "100% Polyester", "closure": "Zipper"}
+    s_single = style_to_form_state(fake_single, "Tahari")
+    assert_eq(s_single.get("closure#1.type#1.value"), "Zipper")
+    assert_truthy(s_single.get("closure#1.type#2.value") in (None, ""),
+                  "closure#1.type#2 must not be set when source has one value")
 
 
 # ============================================================================
