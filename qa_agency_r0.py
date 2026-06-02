@@ -461,7 +461,72 @@ def test_pass3_item15_closure_multi():
 
 @case("4", "strategic_1", "scope=brand_always edit on style #1 propagates to style #2")
 def test_pass4_scope_brand_always_reads_through():
-    raise AssertionError("PENDING — Pass 4 not started")
+    # The substrate enum already exists; what Pass 4 ships is read-through:
+    # an edit on style #1 with scope=brand_always must surface as a default
+    # on style #2 when style_to_form_state runs in the same session.
+    from nis_engine.preupload_importer import style_to_form_state
+
+    style_1 = {
+        "style": "S1", "name": "Style One", "sub_class": "Puffer",
+        "fabric": "100% Polyester",
+        "closure": "Zipper",  # template value for style 1
+    }
+    style_2 = {
+        "style": "S2", "name": "Style Two", "sub_class": "Puffer",
+        "fabric": "100% Polyester",
+        # NOTE: no closure in source row — simulates a row where Tahari left
+        # the column blank, expecting the brand-default to fill in.
+    }
+
+    # Operator edits style 1's department to 'Womens' with scope=brand_always.
+    # The wizard endpoint stores this in session_data['scope_overrides'][brand].
+    # Simulate that store directly:
+    brand_overrides = {
+        "department#1.value": "Womens",
+        "target_gender#1.value": "Female",
+        "closure#1.type#1.value": "Snap",   # operator says "Tahari uses Snap, not Zipper"
+    }
+
+    # Style 1 with overrides applied. brand_always should WIN over the
+    # template value (Zipper) — operator's choice is more authoritative.
+    state_1 = style_to_form_state(style_1, "Tahari", scope_overrides=brand_overrides)
+    assert_eq(state_1.get("closure#1.type#1.value"), "Snap",
+              "brand_always override should win over template-supplied value")
+    assert_eq(state_1.get("department#1.value"), "Womens")
+
+    # Style 2: source row HAS no closure. The brand_always override must
+    # populate it as the default. This is the read-through that Strategic 1
+    # is asking for.
+    state_2 = style_to_form_state(style_2, "Tahari", scope_overrides=brand_overrides)
+    assert_eq(state_2.get("closure#1.type#1.value"), "Snap",
+              "brand_always on style 1 must read through to style 2")
+    assert_eq(state_2.get("department#1.value"), "Womens")
+    assert_eq(state_2.get("target_gender#1.value"), "Female")
+
+    # Batch scope: same behavior, different store. Verify both stores can
+    # coexist without one clobbering the other.
+    state_3 = style_to_form_state(
+        style_2, "Tahari",
+        scope_overrides={"closure#1.type#1.value": "Snap"},
+        batch_overrides={"fit_type#1.value": "Slim"},
+    )
+    assert_eq(state_3.get("closure#1.type#1.value"), "Snap",
+              "brand_always layer must apply")
+    assert_eq(state_3.get("fit_type#1.value"), "Slim",
+              "batch layer must apply alongside brand_always")
+
+    # Empty / None overrides must NOT clobber valid template content.
+    style_with_closure = {
+        "style": "S3", "name": "Style Three", "sub_class": "Puffer",
+        "fabric": "100% Polyester",
+        "closure": "Zipper",
+    }
+    state_4 = style_to_form_state(
+        style_with_closure, "Tahari",
+        scope_overrides={"closure#1.type#1.value": ""},  # empty must be ignored
+    )
+    assert_eq(state_4.get("closure#1.type#1.value"), "Zipper",
+              "empty override must not clobber valid template content")
 
 
 # ============================================================================

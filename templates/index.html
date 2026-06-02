@@ -19399,6 +19399,143 @@ function showToast(msg, type = 'info') {
   toastTimeout = setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.style.display = 'none', 300); }, 3500);
 }
 
+// ═══════════════════════ PASS 4: SCOPE PICKER ══════════════════
+// Reusable scope-aware edit chip. Renders a small dropdown after every
+// editable structured-attribute input. Edit submission posts to
+// /api/atlas/field-edit-scoped which writes to session_data; the next style
+// rendered will inherit the value through style_to_form_state's
+// scope_overrides param.
+//
+// Agency R0 Strategic 1: the substrate's operator_response.scope enum already
+// exists (just_this / batch / brand_always / propose_rule). Pass 4 surfaces
+// it in the UI for every editable field, not just NIS bullet corrections.
+//
+// Usage: scopePickerHTML('closure_type', currentValue, styleNum, fieldKey)
+//        returns the chip HTML to inline next to an <input>.
+window.scopePickerHTML = function(label, currentValue, styleNum, fieldKey) {
+  const safeKey = String(fieldKey).replace(/[^a-zA-Z0-9_]/g, '_');
+  const id = 'scope-pick-' + safeKey + '-' + (styleNum || 'g');
+  return [
+    '<span class="scope-picker" data-field-key="', escHtml(fieldKey),
+    '" data-style-num="', escHtml(styleNum || ''), '" style="display:inline-flex; align-items:center; gap:4px; margin-left:6px;">',
+    '<select id="', id, '" class="scope-picker-select" ',
+    'onchange="scopePickerOnChange(this)" ',
+    'style="font-size:10px; padding:2px 4px; border:1px solid #cbd5e1; border-radius:4px; background:#f8fafc; color:#475569; cursor:pointer;" ',
+    'title="How should this edit apply?">',
+    '<option value="just_this" selected>just this style</option>',
+    '<option value="batch">this session</option>',
+    '<option value="brand_always">brand always</option>',
+    '<option value="propose_rule">propose as rule</option>',
+    '</select>',
+    '</span>'
+  ].join('');
+};
+
+window.scopePickerOnChange = async function(selectEl) {
+  // The chip itself doesn't fire the edit; it just remembers the scope until
+  // the operator commits (blur on the paired input). We attach to the picker
+  // via dataset so the paired input handler reads it.
+  const wrap = selectEl.closest('.scope-picker');
+  if (wrap) wrap.dataset.selectedScope = selectEl.value;
+};
+
+// Commit a scoped field edit. Call this from the paired input's onchange/onblur.
+// fieldKey: 'closure#1.type#1.value', value: new value, styleNum: style id, scopeEl: the select element next to the input.
+window.scopePickerCommit = async function(fieldKey, value, styleNum, scopeEl) {
+  const scope = (scopeEl && scopeEl.value) || 'just_this';
+  const brand = (window.state && window.state.brand) || (window.wsState && window.wsState.brand) || '';
+  if (scope === 'brand_always' && !brand) {
+    showToast('Pick a brand first \u2014 brand_always needs a brand context', 'warning');
+    return { ok: false, error: 'no brand' };
+  }
+  try {
+    const r = await fetch('/api/atlas/field-edit-scoped', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brand, field_key: fieldKey, value, scope, style_num: styleNum }),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      showToast('Edit failed: ' + (d.error || 'unknown'), 'error');
+      return d;
+    }
+    if (scope === 'brand_always') {
+      showToast('Saved \u2014 will read through to all ' + d.affected_styles + ' ' + brand + ' styles', 'success');
+    } else if (scope === 'batch') {
+      showToast('Saved for this session \u2014 ' + d.affected_styles + ' styles', 'success');
+    } else if (scope === 'propose_rule') {
+      showToast('Proposed as a rule \u2014 will surface in Loop 1 review', 'info');
+    }
+    return d;
+  } catch (e) {
+    showToast('Edit failed: ' + e.message, 'error');
+    return { ok: false, error: e.message };
+  }
+};
+
+// Chip-style multi-input for Material / Closure (Pass 3 carried forward).
+// Renders an ordered chip strip with an "+" button. Each chip is removable;
+// each "+" opens a small dropdown of valid values from the PT bundle.
+window.multiChipHTML = function(label, values, fieldKeyPrefix, validValues, styleNum) {
+  values = (values || []).filter(v => v);
+  const id = 'chip-strip-' + fieldKeyPrefix.replace(/[^a-zA-Z0-9_]/g, '_') + '-' + (styleNum || 'g');
+  let h = '<div class="multi-chip" id="' + id + '" data-field-prefix="' + escHtml(fieldKeyPrefix) +
+          '" data-style-num="' + escHtml(styleNum || '') + '" style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">';
+  values.forEach((v, i) => {
+    h += '<span class="chip" style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:#eef2ff; border:1px solid #c7d2fe; border-radius:12px; font-size:11px;">';
+    h += escHtml(v);
+    h += '<button onclick="multiChipRemove(\'' + id + '\', ' + i + ')" style="background:none; border:none; color:#6366f1; cursor:pointer; padding:0 0 0 2px; font-size:12px; line-height:1;">\u00d7</button>';
+    h += '</span>';
+  });
+  // Plus button + valid-values select
+  if (values.length < 3 && validValues && validValues.length > 0) {
+    h += '<select onchange="multiChipAdd(\'' + id + '\', this)" style="font-size:11px; padding:3px 6px; border:1px solid #cbd5e1; border-radius:4px;">';
+    h += '<option value="">+ add</option>';
+    validValues.forEach(v => {
+      if (!values.includes(v)) h += '<option value="' + escHtml(v) + '">' + escHtml(v) + '</option>';
+    });
+    h += '</select>';
+  }
+  h += '</div>';
+  return h;
+};
+
+window.multiChipAdd = function(stripId, selectEl) {
+  const value = selectEl.value;
+  if (!value) return;
+  const strip = document.getElementById(stripId);
+  if (!strip) return;
+  const prefix = strip.dataset.fieldPrefix;
+  const styleNum = strip.dataset.styleNum;
+  // Pull current values out of the chips already rendered
+  const currentValues = Array.from(strip.querySelectorAll('.chip')).map(c => c.childNodes[0].nodeValue.trim());
+  if (currentValues.includes(value)) { selectEl.value = ''; return; }
+  currentValues.push(value);
+  // Commit each slot to session via scope-aware endpoint (default just_this)
+  const fieldKey = prefix.replace(/#N/, '#' + currentValues.length);
+  scopePickerCommit(fieldKey, value, styleNum, null);
+  // Re-render the strip in-place
+  // (Caller is responsible for passing the new validValues set on next render.)
+  // Quick refresh: just append the new chip + clear selector
+  selectEl.value = '';
+  // Force the surrounding form to re-fetch state next render
+};
+
+window.multiChipRemove = function(stripId, idx) {
+  const strip = document.getElementById(stripId);
+  if (!strip) return;
+  const chips = strip.querySelectorAll('.chip');
+  if (!chips[idx]) return;
+  chips[idx].remove();
+  // Note: removing a slot is destructive — we commit a blank to the slot via
+  // just_this so the next render reflects it. Production rollout (post-Pass 4)
+  // will need a /api/atlas/field-clear endpoint for explicit clears.
+  const prefix = strip.dataset.fieldPrefix;
+  const styleNum = strip.dataset.styleNum;
+  const fieldKey = prefix.replace(/#N/, '#' + (idx + 1));
+  scopePickerCommit(fieldKey, '', styleNum, null);
+};
+
 // ═══════════════════════ INIT ═══════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
   // Splash: fade out once the dashboard is ready. Plays once per page load.

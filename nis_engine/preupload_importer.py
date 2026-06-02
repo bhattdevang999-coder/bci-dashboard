@@ -345,8 +345,22 @@ def _split_fabric_into_materials(fabric: str) -> tuple[list[str], str]:
     return names, s
 
 
-def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
-    """Convert one parsed pre-upload style row into an NIS form_state dict."""
+def style_to_form_state(
+    style: Dict[str, Any],
+    brand: str,
+    scope_overrides: Optional[Dict[str, Any]] = None,
+    batch_overrides: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Convert one parsed pre-upload style row into an NIS form_state dict.
+
+    Pass 4 (agency R0 strategic 1) — scope-aware editing.
+    `scope_overrides` is a flat dict of {field_key: value} that should win over
+    any value derived from the template/brand defaults. Source is the operator's
+    brand_always edits earlier in the session. Empty / None values do not
+    override (would clobber valid template content).
+    `batch_overrides` is the session-scoped equivalent — same precedence rules.
+    Both default to empty for backward compatibility.
+    """
     s = style
     dept_raw = (s.get("department") or "").strip()
     # Amazon validates titlecase 'Womens'/'Mens' for COAT/SHIRT/SWIMWEAR/PANTS dropdowns
@@ -488,6 +502,18 @@ def style_to_form_state(style: Dict[str, Any], brand: str) -> Dict[str, Any]:
             state["number_of_pockets#1.value"] = int(pockets_val)
         except (ValueError, TypeError):
             state["number_of_pockets#1.value"] = str(pockets_val)
+    # Pass 4 (strategic 1): apply scope overrides AFTER the template-derived
+    # state is built. Precedence: brand_always wins over batch wins over
+    # template/auto-derive. Empty/None overrides are ignored so they don't
+    # clobber real template content.
+    for ov_map in (batch_overrides, scope_overrides):
+        if not ov_map:
+            continue
+        for k, v in ov_map.items():
+            if v in (None, "", " "):
+                continue
+            state[k] = v
+
     # Clean blanks
     return {k: v for k, v in state.items() if v not in (None, "", " ")}
 

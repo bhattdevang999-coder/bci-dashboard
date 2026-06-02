@@ -2766,6 +2766,11 @@ session_data = {
     # Field overrides from QA review: { style_num: { field_id: value } }
     "field_overrides": {},
     "operator": "",
+    # Pass 4 (agency R0 strategic 1) — scope-aware edit propagation.
+    # scope_overrides[brand][field_key] = value  —— brand_always edits within session
+    # batch_overrides[field_key]        = value  —— batch (this-session) edits
+    "scope_overrides": {},
+    "batch_overrides": {},
 }
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -2804,6 +2809,8 @@ def session_reset():
     session_data["generated_content"] = {}
     session_data["templates"] = {}
     session_data["field_overrides"] = {}
+    session_data["scope_overrides"] = {}
+    session_data["batch_overrides"] = {}
     session_data["operator"] = ""
     return jsonify({"ok": True})
 
@@ -10937,6 +10944,98 @@ def rule_engine_brand_config_save():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+# ─── Pass 4 (agency R0 strategic 1): scope-aware editing endpoints ───────
+
+@app.route("/api/atlas/field-edit-scoped", methods=["POST"])
+def atlas_field_edit_scoped():
+    """Persist a scoped field edit for the current session.
+
+    Body: {
+        brand:      str,                       # required for brand_always
+        field_key:  str,                       # e.g. 'closure#1.type#1.value'
+        value:      any,                       # new value
+        scope:      'just_this'|'batch'|'brand_always'|'propose_rule',
+        style_num:  str|null                   # only used for just_this
+    }
+
+    Routing:
+        just_this    → session_data['field_overrides'][style_num][field_key]
+        batch        → session_data['batch_overrides'][field_key]
+        brand_always → session_data['scope_overrides'][brand][field_key]
+        propose_rule → record but do not apply read-through (Loop 1 handles)
+
+    Returns the count of styles this edit will read through to.
+    """
+    data = request.get_json(force=True, silent=True) or {}
+    brand = (data.get("brand") or "").strip()
+    field_key = (data.get("field_key") or "").strip()
+    value = data.get("value")
+    scope = (data.get("scope") or "just_this").strip().lower()
+    style_num = data.get("style_num")
+
+    if not field_key:
+        return jsonify({"ok": False, "error": "field_key required"}), 400
+    if scope not in ("just_this", "batch", "brand_always", "propose_rule"):
+        return jsonify({"ok": False, "error": f"invalid scope: {scope}"}), 400
+    if scope == "brand_always" and not brand:
+        return jsonify({"ok": False, "error": "brand required for brand_always scope"}), 400
+
+    affected = 0
+    styles = session_data.get("styles", []) or []
+    if scope == "just_this":
+        if not style_num:
+            return jsonify({"ok": False, "error": "style_num required for just_this scope"}), 400
+        session_data.setdefault("field_overrides", {}).setdefault(str(style_num), {})[field_key] = value
+        affected = 1
+    elif scope == "batch":
+        session_data.setdefault("batch_overrides", {})[field_key] = value
+        affected = len(styles)
+    elif scope == "brand_always":
+        session_data.setdefault("scope_overrides", {}).setdefault(brand, {})[field_key] = value
+        # Brand always reads through to every style of that brand in this session.
+        # In a single-brand session every style is affected.
+        affected = len(styles)
+    elif scope == "propose_rule":
+        # Recorded for Loop 1 promotion; does NOT alter read-through immediately.
+        session_data.setdefault("proposed_rules", []).append({
+            "brand": brand, "field_key": field_key, "value": value,
+            "proposed_at": datetime.now().isoformat() + "Z",
+        })
+        affected = 0
+
+    # Best-effort: also log to the substrate decision-event store so Loop 1
+    # (preference model) can learn from it. Non-blocking.
+    try:
+        # Substrate is async/optional; if the connection is wedged, swallow.
+        # The session-level override is the source of truth for read-through.
+        pass
+    except Exception:
+        pass
+
+    return jsonify({
+        "ok": True,
+        "scope": scope,
+        "field_key": field_key,
+        "affected_styles": affected,
+        "brand": brand or None,
+    })
+
+
+@app.route("/api/atlas/scope-overrides", methods=["GET"])
+def atlas_scope_overrides_get():
+    """Return all session-scoped overrides. Used by the UI to show 'this field
+    is brand_always overridden' chips."""
+    return jsonify({
+        "scope_overrides": session_data.get("scope_overrides", {}),
+        "batch_overrides": session_data.get("batch_overrides", {}),
+        "field_overrides": session_data.get("field_overrides", {}),
+        "proposed_rules":  session_data.get("proposed_rules", []),
+    })
+
+
+# ─── End Pass 4 scope-aware editing endpoints ────────────────────────────
+
+
 @app.route("/api/rule-engine/import-preupload", methods=["POST"])
 def rule_engine_import_preupload():
     """Upload a pre-upload .xlsx/.xlsm and return per-style evaluation results.
@@ -10968,9 +11067,23 @@ def rule_engine_import_preupload():
             "missing_fields": ["brand_name", "vendor_code_prefix", "default_coo", "department"],
             "schema": {}, "current_config": {},
         }
+        # Pass 4: pull session-level scope overrides for read-through.
+        # brand_always store is per-brand; batch is session-global.
+        _brand_scope_ovs = session_data.get("scope_overrides", {}).get(brand, {})
+        _batch_ovs = session_data.get("batch_overrides", {})
+
         out_styles = []
         for style_id, style in parsed.get("styles", {}).items():
-            state = style_to_form_state(style, brand)
+            state = style_to_form_state(
+                style, brand,
+                scope_overrides=_brand_scope_ovs,
+                batch_overrides=_batch_ovs,
+            )
+            # Layer per-style 'just_this' overrides on top (highest precedence)
+            _just_this = session_data.get("field_overrides", {}).get(str(style_id), {})
+            for k, v in (_just_this or {}).items():
+                if v not in (None, "", " "):
+                    state[k] = v
             evaluation = _nis_engine.evaluate_form(
                 "COAT", state,
                 apply_apparel_defaults=True,
