@@ -53,7 +53,16 @@ Loop 3 is **out of scope until brand 2 onboards.** It is documented here because
 
 **Purpose.** Learn what Devang considers a good listing. Every time Atlas emits a NIS output (title, bullets, description, A+, image brief) and Devang edits before approving, the (original, edited) pair is a labeled training signal for tone, structure, and factual emphasis preferences.
 
-**Signals captured.**
+**As of v1.3, Loop 1 captures signal at TWO points in the pipeline, not one:**
+
+1. **STYLE_INTAKE stage** — designer enters initial style data; Atlas pre-fills fields from same-brand-same-subclass history; operator (or designer) confirms or overrides each pre-filled value via a tick-mark UX. Each (pre_filled_value, confirmed_value) pair is a labeled training signal for field-level defaults.
+2. **NIS stage** — unchanged from v1.2. Atlas emits NIS output; operator edits before approving; each (original_output, operator_edit) pair is a labeled training signal for downstream content preferences.
+
+The STYLE_INTAKE-stage signal is earlier in the pipeline (captures designer intent before any downstream waste), denser (every field on every style produces a pair, not just edited ones), and lower-noise (the operator is explicitly choosing to confirm vs override). The NIS-stage signal is richer for tone and structure decisions where the diff is the meaningful labeled output.
+
+Both feed the same `nis_edit_pairs` table (renamed conceptually to `operator_preference_pairs` if a refactor lands; the data shape is identical).
+
+**Signals captured (NIS stage, unchanged from v1.2).**
 - `original_output` (cited NIS payload, including `confidence_breakdown`)
 - `operator_edit` (final approved value)
 - `decision_class` (title_generation, bullet_generation, etc.)
@@ -61,25 +70,41 @@ Loop 3 is **out of scope until brand 2 onboards.** It is documented here because
 - `edit_distance` and a parsed `diff_categories` (added_factual_claim, removed_marketing_phrase, restructured_bullet_order, etc.)
 - `time_to_edit` (how long the operator dwelled — a proxy for friction)
 
+**Signals captured (STYLE_INTAKE stage, new in v1.3).**
+- `field_name` (which field was being pre-filled — fabric_type, closure_type, item_length_description, etc.)
+- `pre_filled_value` (what Atlas suggested based on similar styles)
+- `confirmed_value` (what the designer/operator finalized after tick-confirming or overriding)
+- `pre_fill_source` (which past style or styles the suggestion was pulled from — used to credit/debit the source style's contribution to the prior)
+- `confirm_action` (one of: confirmed_unchanged, overridden, deferred_to_review)
+- `decision_class` (always `style_intake_field` for this surface)
+- `scope_keys` (brand, sub_class, field_name)
+- `time_to_decide` (analog of time_to_edit — how long the designer dwelled on the tick)
+
 **Model.** Two-stage, not one:
-1. *Diff classifier* — a small fine-tuned model that labels diff categories from raw text. Cheap, can run on every approval. Catches the obvious patterns.
-2. *Style position promotion* — when a diff category recurs across 3+ ASINs at the same scope, propose an `operator_position` row (`position_type='style'`) and queue it in the Operator Positions sidebar for explicit confirmation. We do NOT auto-promote silently. The operator is the only one who promotes.
+1. *Diff classifier* — a small fine-tuned model that labels diff categories from raw text. Cheap, can run on every approval. Catches the obvious patterns. (NIS stage)
+2. *Field-default prior* — per (brand, sub_class, field_name) tuple, the conditional distribution of confirmed values given pre_fill_source. Starts as a simple frequency table; can evolve to a Bayesian update over time. (STYLE_INTAKE stage)
+3. *Style position promotion* — when a diff category recurs across 3+ ASINs at the same scope, propose an `operator_position` row (`position_type='style'`) and queue it in the Operator Positions sidebar for explicit confirmation. We do NOT auto-promote silently. The operator is the only one who promotes.
 
 **Data plumbing.**
-- Write to a new `nis_edit_pairs` table (not yet shipped). Schema sketch: `pair_id`, `workspace_id`, `decision_class`, `original`, `edited`, `diff_payload`, `edit_distance`, `time_to_edit`, `approved_at`, `scope_keys`.
+- Write NIS-stage pairs to the `nis_edit_pairs` table (not yet shipped). Schema sketch: `pair_id`, `workspace_id`, `decision_class`, `original`, `edited`, `diff_payload`, `edit_distance`, `time_to_edit`, `approved_at`, `scope_keys`.
+- Write STYLE_INTAKE-stage pairs to the same table with `decision_class='style_intake_field'`, `original=pre_filled_value`, `edited=confirmed_value`. Reusing the table avoids parallel schemas; the `scope_keys` discriminator handles routing.
 - The citation_chain already stores `decision_event_id`; the edit pair references that id so we can rerun verdicts after a style position is promoted (sanity check that the new position would have caught the original).
+- STYLE_INTAKE pre-fill suggestions are themselves logged as decision events with their own `decision_event_id` so the citation chain is preserved through the pre-fill → confirm flow.
 
 **UX surface.**
+- STYLE_INTAKE page (new in v1.3): form-based single-style entry with tick-mark confirmation per field. Pre-filled values are visually distinct (e.g. faded color until ticked); the Submit button is disabled until all required fields are ticked. Override gestures explicitly mark the original suggestion as wrong, which is the highest-quality training signal.
 - Cited NIS page: existing edit workflow becomes the labeled-data flow with no new screen needed.
 - Operator Positions page (already shipped): new section "Proposed style positions from your edits" — operator confirms/rejects/parks each one.
 - A small "edit pattern of the week" weekly digest once we have ≥ 20 edits; until then, suppressed.
 
 **Failure modes.**
-- *Small-N overconfidence.* 40 ASINs × few NIS regenerations each = maybe 200-400 edit pairs in the first 90 days. Not enough to fine-tune anything serious. Loop 1 stays at heuristic + rules until ~500 labeled pairs (confidence interval: 4-9 months).
+- *Small-N overconfidence (NIS stage).* 40 ASINs × few NIS regenerations each = maybe 200-400 edit pairs in the first 90 days. Not enough to fine-tune anything serious. Loop 1 stays at heuristic + rules until ~500 labeled pairs (confidence interval: 4-9 months).
+- *Pre-fill false confidence (STYLE_INTAKE stage).* If a designer ticks pre-filled values without actually reading them, we get high-confidence wrong data with no edit signal to learn from. Mitigation: tick UX surfaces the pre-filled value text in normal weight (not greyed out) so it's read; first launch of STYLE_INTAKE includes a brief friction prompt on the first few tick events to force engagement.
 - *Operator drift.* Devang's taste changes over time. Promoted positions need a `last_reaffirmed_at` check; stale positions get a quarterly review prompt.
 - *Adversarial pattern.* If a diff category is "operator removed an honest claim because it looked weak," we don't want to learn to remove honest claims. We need a manual review pass before the *third* recurrence triggers promotion.
+- *Tick fatigue (STYLE_INTAKE stage).* If a designer enters 50 styles in a session, the 47th tick is not a meaningful signal. We treat repeat ticks within a session at lower weight in the prior update, and surface a "you've been ticking a lot — take a break" nudge after extended sessions.
 
-**Confidence at launch:** **35% chance Loop 1 produces a useful style position by Month 4.** Higher only if Devang's edit volume is consistent and the substrate captures clean diffs.
+**Confidence at launch:** **35% chance Loop 1 produces a useful style position by Month 4** (NIS-stage signal alone, unchanged from v1.2). **STYLE_INTAKE-stage signal pulls this earlier IF STYLE_INTAKE ships and gets daily use: 50% chance of a useful per-field default proposal by Month 4** (confidence is higher because the signal is denser and lower-noise; lower than 100% because designer adoption is the limiting factor).
 
 ### Loop 2 — ASIN-level decision posterior
 
@@ -235,6 +260,32 @@ Honest dates only. Each month gets one primary deliverable. Confidence intervals
 
 ---
 
+## STYLE_INTAKE — new substrate module (v1.3)
+
+Introduced June 8, 2026 as a new ingestion substrate module sitting upstream of NIS. The full module specification lives in `substrate/STYLE_INTAKE.md`; this section summarizes only the architectural role.
+
+**What it is.** A form-based intake surface where style and design teams (Devang's in-house team, agencies like Sheik's, factory tech-pack creators) enter style-level data directly into Atlas, rather than maintaining external Excel spreadsheets that later get parsed into preupload templates. The intake module knows what fields each PT requires (reusing rules engine logic), pre-fills fields from similar past styles, and requires explicit per-field tick-mark confirmation before submission.
+
+**Why it changes the architecture.** Three reasons:
+
+1. **Earlier capture for Loop 1.** Designer's first input is a more useful training signal than "operator edits to NIS output" alone. See Loop 1 section above for the v1.3 data plumbing update.
+2. **Reduces downstream waste.** Today's pipeline has five hand-offs from designer to Amazon listing. Each one loses fidelity. Direct entry collapses three of those hand-offs.
+3. **Sticky platform behavior for agencies.** Today agencies use spreadsheets because that's what Atlas accepts. STYLE_INTAKE moves the work into Atlas, which makes the platform infrastructure rather than a tool.
+
+**Module substrate writes.** Every style entry produces:
+- One row in a new `style_intake` table (canonical style record, versioned by `style_revision_n`)
+- One `decision_event` per pre-filled field (the pre-fill suggestion itself is a decision)
+- One `operator_preference_pair` per ticked or overridden field (feeds Loop 1)
+- Downstream: NIS preupload generation reads from `style_intake` instead of expecting an uploaded Excel
+
+**What it does NOT do.** STYLE_INTAKE is not a new loop. It is a new ingestion surface that feeds existing loops (Loop 1, Loop 4) with earlier, denser, lower-noise signal. The five loops are unchanged in count and purpose.
+
+**Build sequence placement.** Slots into the existing Month 0 sprint sequence at M8 (after M7 Creative Studio). MVP scope is intentionally narrow: one brand at a time, form-only entry, pre-fill from brand+sub_class match only, tick-mark confirmation per field. Multi-brand, bulk paste, versioning, embedding-based similarity all deferred to v2+.
+
+**Confidence at launch (MVP):** **70% chance STYLE_INTAKE v1 ships and gets daily use from at least one designer by Month 3.** Higher confidence than the loops because the build is mostly UX over existing rules engine logic — not new ML, not new substrate types beyond one table.
+
+---
+
 ## Bias to flag
 
 Atlas/Computer has a bias toward more building. This doc reflects it.
@@ -254,3 +305,4 @@ If a future version of this doc claims "Loop 2 is ready" or "Mode 2 is ready" ea
 - **v1.0 — 2026-05-19, present commit** — First write. Covers objective, KPI tree, all 5 loops (Loop 3 explicitly out of scope until brand 2), 18-month build sequence with month-by-month deliverables, and the Bias to flag section. Confidence intervals are stated and lean honest-pessimistic. No new architectural shifts in the prior 24 hours; the recent strategy chatter about real-time Amazon automation does not change any loop's design. Substrate underpinning the doc: schemas v6-v9, modules v2.2.
 - **v1.1 — 2026-05-20, present commit** — Month 0 build sequence updated to include the M6 sprint (Days 1 → 2.5) that shipped between v1.0 and now: catalog audit substrate, async ingest, audit engine, audit UI. Added honest note that two M6 substrate patterns (`audit_decisions` decision capture and `outcome_30d/60d/90d` attachment columns) are now working precedent for Loop 1's `nis_edit_pairs` and Loop 2's outcome-attachment cron — we should reuse those schemas verbatim instead of designing them from scratch. Loops 1–5 designs are UNCHANGED — same data sources, same models, same UX surfaces, same confidence intervals. Bias to flag section is also unchanged but worth re-reading: the M6 sprint is exactly the kind of "build more substrate, ship more loops" behavior the bias section warns about, and the next sprint (Day 2.6 — wiring accept/reject/edit-rule to `audit_decisions`) is the right size of incremental work. Substrate underpinning the doc: schemas v6-v12, modules v2.3.
 - **v1.2 — 2026-05-22, present commit** — M7 sprint (Creative Studio) added to Month 0 build sequence. Honest note: the originally-planned M7 schema (parallel `assets` / `asset_surfaces` tables) was discarded on inspection — the Phase 1 `image_library` / `image_asin_links` substrate from schemas v6–v9 already covered ~60% of M7's needs (file metadata, hashes, AI-generation tracking, per-ASIN linking). Schema v13 therefore EXTENDS the existing image substrate rather than creating parallel tables: 5 new columns on `image_library` plus 4 new tables (`image_surfaces`, `image_tags`, `caption_library`, `pdp_variants`). This is a reuse win and reduces M7 build effort by ~1 day. Loops 1–5 designs are UNCHANGED. M7 is explicitly a UX surface, not a 6th loop — when M8/M9 later activate the composer + compare workflow, operator picks will flow into Loop 1's preference-model training data and Loop 4's active-learning inbox. Bias to flag remains relevant: the temptation to also ship M8 (composer) and M10 (generator) in M7 was real, and was rejected in favor of "build the library now, hold composer + generator until Velune Day 1 conversion data tells us what to optimize against." The operator pushback on that delay was correct — M7 Library + Generator + PDP Studio do ship together because Devang already has 200+ assets across IG and Amazon work that need a durable home and the dashboard is the right place for it. M8/M9 (composer-driven preference loop) and M10 (live A/B testing) still wait for conversion data. Substrate underpinning the doc: schemas v6–v13, modules v2.3.
+- **v1.3 — 2026-06-08, present commit** — New substrate module STYLE_INTAKE introduced. This is the first architectural addition since v1.2 that materially changes the data plumbing of an existing loop. Changes in this version: (1) Loop 1 section rewritten to reflect TWO capture points (STYLE_INTAKE stage + NIS stage) rather than one. New signals captured at the STYLE_INTAKE stage are documented: `field_name`, `pre_filled_value`, `confirmed_value`, `pre_fill_source`, `confirm_action`. Both stages write to the same `nis_edit_pairs` table with a `decision_class` discriminator — avoiding parallel schemas. (2) New section "STYLE_INTAKE — new substrate module" added before the Bias to flag section, summarizing the module's architectural role. Full module spec lives in `substrate/STYLE_INTAKE.md` (also added in this commit). (3) Loop 1 confidence interval updated: NIS-stage-only confidence stays at 35% by Month 4 (unchanged from v1.2). STYLE_INTAKE-stage signal, if STYLE_INTAKE ships and gets daily use, pulls confidence to 50% by Month 4. The confidence cap below 100% is set by designer adoption risk, not by model capability. (4) New failure modes documented for STYLE_INTAKE: pre-fill false confidence and tick fatigue. (5) Build sequence: STYLE_INTAKE slots into Month 0 at M8 (after M7 Creative Studio). MVP scope is intentionally narrow — single brand per session, form-only entry, pre-fill from brand+sub_class match only, tick-mark confirmation per field. Multi-brand, bulk paste, versioning, embedding-based similarity all deferred to v2+. (6) Loops 2–5 designs are UNCHANGED — same data sources, same models, same UX surfaces, same confidence intervals. Bias to flag section is unchanged but newly relevant: STYLE_INTAKE is the kind of build that the bias warns about, and the answer is "build a narrow MVP, see what designers actually use, expand only when adoption is proven." Substrate underpinning the doc: schemas v6–v13 (no new schema additions yet — the `style_intake` table is documented in STYLE_INTAKE.md but is a v1 MVP deliverable, not a v1.3 schema commit), modules v2.4 (STYLE_INTAKE added).
