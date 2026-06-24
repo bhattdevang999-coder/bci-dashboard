@@ -18422,6 +18422,131 @@ def listing_manager_matrix(parent_asin):
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
 
 
+@app.route("/api/listing-manager/issues", methods=["GET"])
+def listing_manager_issues():
+    """All Catalog Health findings for the active workspace, with family context.
+
+    Returns:
+      {
+        ok: true,
+        workspace_id,
+        totals: {critical, high, medium, low, strategic, total},
+        issues: [
+          {finding_id, asin, parent_asin, style_label, color, size,
+           rule_name, severity, priority_score, proposed_fix, evidence}
+        ]   # sorted by priority_score DESC
+      }
+    """
+    workspace_id = _lm_active_workspace_id()
+    limit = int(request.args.get("limit") or 200)
+    try:
+        from substrate.catalog_audit import list_findings
+        from substrate.db import get_pool
+
+        findings = list_findings(workspace_id, limit=limit) or []
+        if not findings:
+            return jsonify({
+                "ok": True, "workspace_id": workspace_id,
+                "totals": {"critical": 0, "high": 0, "medium": 0,
+                           "low": 0, "strategic": 0, "total": 0},
+                "issues": [],
+            })
+
+        # Build totals
+        totals = {"critical": 0, "high": 0, "medium": 0,
+                  "low": 0, "strategic": 0, "total": 0}
+        for f in findings:
+            sev = f.get("severity")
+            if sev in totals:
+                totals[sev] += 1
+            totals["total"] += 1
+
+        # Batch lookup parent + variation axes for all affected ASINs
+        asins = list({f["asin"] for f in findings if f.get("asin")})
+        meta_map = {}  # asin -> {parent_asin, color, size, style_label}
+        pool = get_pool()
+        if pool is not None and asins:
+            with pool.connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT asin, parent_asin, variation_axes,
+                               ground_truth_fields
+                        FROM asin_metadata
+                        WHERE workspace_id = %s AND asin = ANY(%s)
+                        """,
+                        (workspace_id, asins),
+                    )
+                    raw = {}
+                    for r in cur.fetchall():
+                        raw[r[0]] = {
+                            "parent_asin": r[1],
+                            "variation_axes": r[2] or {},
+                            "ground_truth_fields": r[3] or {},
+                        }
+                    # Resolve style_label for each via its parent
+                    parent_asins = list({
+                        r["parent_asin"]
+                        for r in raw.values() if r.get("parent_asin")
+                    })
+                    parent_labels = {}
+                    if parent_asins:
+                        cur.execute(
+                            """
+                            SELECT asin, ground_truth_fields
+                            FROM asin_metadata
+                            WHERE workspace_id = %s AND asin = ANY(%s)
+                            """,
+                            (workspace_id, parent_asins),
+                        )
+                        for r in cur.fetchall():
+                            g = r[1] or {}
+                            parent_labels[r[0]] = (
+                                g.get("model_name")
+                                or g.get("title")
+                                or r[0]
+                            )
+                    for asin, r in raw.items():
+                        meta_map[asin] = {
+                            "parent_asin": r["parent_asin"],
+                            "color": (r["variation_axes"] or {}).get("color_name"),
+                            "size": (r["variation_axes"] or {}).get("size"),
+                            "style_label": (
+                                parent_labels.get(r["parent_asin"])
+                                or r["parent_asin"]
+                                or "(no parent)"
+                            )[:60],
+                        }
+
+        issues = []
+        for f in findings:
+            asin = f.get("asin")
+            meta = meta_map.get(asin) or {}
+            issues.append({
+                "finding_id": f.get("finding_id"),
+                "asin": asin,
+                "parent_asin": meta.get("parent_asin"),
+                "style_label": meta.get("style_label") or "",
+                "color": meta.get("color"),
+                "size": meta.get("size"),
+                "rule_name": f.get("rule_name"),
+                "severity": f.get("severity"),
+                "priority_score": f.get("priority_score"),
+                "proposed_fix": f.get("proposed_fix"),
+                "queue": f.get("queue"),
+            })
+
+        return jsonify({
+            "ok": True,
+            "workspace_id": workspace_id,
+            "totals": totals,
+            "issues": issues,
+        })
+    except Exception as exc:
+        print(f"[atlas] listing-manager/issues failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/listing-manager/asin/<asin>", methods=["GET"])
 def listing_manager_asin(asin):
     """Single-ASIN read for the workspace placeholder.

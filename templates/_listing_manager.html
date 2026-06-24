@@ -388,11 +388,247 @@
   line-height: 1.6;
 }
 .lm-empty-tree strong { color: #94A3B8; display: block; margin-bottom: 6px; }
+
+/* ── Listing-Manager topbar (above root) ── */
+.lm-topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 8px 16px;
+  background: #08111A;
+  border-bottom: 1px solid #1C2D40;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+}
+.lm-topbar-tally {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94A3B8;
+}
+.lm-topbar-tally .dot { font-size: 10px; }
+.lm-topbar-trigger {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #EF4444;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  font-weight: 700;
+}
+.lm-topbar-trigger:hover { background: rgba(239,68,68,0.16); }
+.lm-topbar-trigger.lm-trigger-clean {
+  background: rgba(94,234,212,0.06);
+  border-color: rgba(94,234,212,0.3);
+  color: #5EEAD4;
+}
+.lm-topbar-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px;
+  background: #EF4444;
+  color: #fff;
+  border-radius: 9px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+}
+.lm-trigger-clean .lm-topbar-badge { background: #5EEAD4; color: #08111A; }
+
+/* ── Review Issues drawer ── */
+.lm-drawer {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  background: #0E1A26;
+  border-bottom: 2px solid #EF4444;
+  z-index: 50;
+  display: flex; flex-direction: column;
+  max-height: calc(100vh - 80px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+  transform: translateY(-100%);
+  transition: transform 220ms ease;
+}
+.lm-drawer.lm-drawer-open { transform: translateY(0); }
+.lm-drawer-head {
+  display: flex; align-items: center; gap: 18px;
+  padding: 12px 18px;
+  background: #08111A;
+  border-bottom: 1px solid #1C2D40;
+}
+.lm-drawer-title-block { display: flex; flex-direction: column; gap: 2px; }
+.lm-drawer-eyebrow {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #5EEAD4;
+}
+.lm-drawer-title {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #E2E8F0;
+}
+.lm-drawer-tallies {
+  display: flex; gap: 14px; margin-left: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.lm-drawer-tally { display: inline-flex; align-items: center; gap: 5px; color: #94A3B8; }
+.lm-drawer-close {
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.lm-drawer-close:hover { color: #fff; }
+
+.lm-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+  background: #0E1A26;
+}
+.lm-drawer-section { margin-bottom: 18px; }
+.lm-drawer-section-head {
+  display: flex; align-items: center; gap: 8px;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #1C2D40;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94A3B8;
+}
+.lm-issue {
+  background: #08111A;
+  border: 1px solid #1C2D40;
+  border-left: 3px solid #475569;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  display: flex; flex-direction: column; gap: 6px;
+  cursor: pointer;
+  transition: border-color 80ms, background 80ms;
+}
+.lm-issue:hover { background: #13212F; }
+.lm-issue-critical { border-left-color: #EF4444; }
+.lm-issue-high     { border-left-color: #EF4444; }
+.lm-issue-medium   { border-left-color: #F59E0B; }
+.lm-issue-low      { border-left-color: #94A3B8; }
+.lm-issue-strategic{ border-left-color: #A78BFA; }
+
+.lm-issue-row {
+  display: flex; align-items: center; gap: 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+}
+.lm-issue-sev {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.lm-sev-critical, .lm-sev-high { color: #EF4444; }
+.lm-sev-medium { color: #F59E0B; }
+.lm-sev-low { color: #94A3B8; }
+.lm-sev-strategic { color: #A78BFA; }
+.lm-issue-path {
+  flex: 1;
+  color: #E2E8F0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lm-issue-path-style { color: #94A3B8; }
+.lm-issue-path-arrow { color: #475569; margin: 0 4px; }
+.lm-issue-path-asin { color: #5EEAD4; }
+.lm-issue-jump {
+  background: transparent;
+  border: 1px solid #1C2D40;
+  color: #5EEAD4;
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.lm-issue-jump:hover { background: rgba(94,234,212,0.08); }
+.lm-issue-rule {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #94A3B8;
+}
+.lm-issue-fix {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #94A3B8;
+  background: rgba(94,234,212,0.04);
+  border-left: 2px solid rgba(94,234,212,0.3);
+  padding: 4px 8px;
+  margin-top: 2px;
+}
+.lm-issue-fix-tag {
+  font-size: 8px;
+  color: #5EEAD4;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-right: 6px;
+}
+.lm-drawer-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #475569;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+.lm-drawer-empty strong { color: #5EEAD4; display: block; margin-bottom: 8px; font-size: 14px; }
 </style>
 
 <div class="content" id="listing-manager-page" style="display:none; padding:0;">
 
-  <div class="lm-root" id="lm-root">
+  <!-- Listing-Manager topbar -->
+  <div class="lm-topbar">
+    <span class="lm-topbar-tally" id="lm-tally-asins"><span class="dot" style="color:#5EEAD4;">●</span> 0 ASINs</span>
+    <span class="lm-topbar-tally" id="lm-tally-families">0 families</span>
+    <button class="lm-topbar-trigger lm-trigger-clean" id="lm-issues-trigger" onclick="lmToggleDrawer()">
+      REVIEW ISSUES
+      <span class="lm-topbar-badge" id="lm-issues-badge">0</span>
+    </button>
+  </div>
+
+  <!-- Review Issues drawer (slides down) -->
+  <div class="lm-drawer" id="lm-drawer">
+    <header class="lm-drawer-head">
+      <div class="lm-drawer-title-block">
+        <span class="lm-drawer-eyebrow">REVIEW ISSUES · CATALOG HEALTH</span>
+        <span class="lm-drawer-title" id="lm-drawer-title">—</span>
+      </div>
+      <div class="lm-drawer-tallies" id="lm-drawer-tallies"></div>
+      <button class="lm-drawer-close" onclick="lmToggleDrawer(false)">✕</button>
+    </header>
+    <div class="lm-drawer-body" id="lm-drawer-body">
+      <div class="lm-drawer-empty">
+        <strong>loading findings…</strong>
+        fetching from catalog_audit_findings
+      </div>
+    </div>
+  </div>
+
+  <div class="lm-root" id="lm-root" style="position:relative; height: calc(100vh - 168px);">
 
     <!-- LEFT PANE: Catalog tree -->
     <aside class="lm-pane">
@@ -792,9 +1028,145 @@ function lmRenderMatrix() {
   return html;
 }
 
+// ============== Review Issues drawer ==============
+let LM_ISSUES = null;
+let LM_DRAWER_OPEN = false;
+
+async function lmLoadIssues() {
+  try {
+    const r = await fetch('/api/listing-manager/issues');
+    const d = await r.json();
+    if (!d.ok) {
+      document.getElementById('lm-drawer-body').innerHTML =
+        '<div class="lm-drawer-empty"><strong>could not load</strong>' + (d.error || '') + '</div>';
+      return;
+    }
+    LM_ISSUES = d;
+    lmUpdateIssuesBadge();
+    lmRenderDrawer();
+  } catch (e) {
+    document.getElementById('lm-drawer-body').innerHTML =
+      '<div class="lm-drawer-empty"><strong>error</strong>' + String(e) + '</div>';
+  }
+}
+
+function lmUpdateIssuesBadge() {
+  if (!LM_ISSUES) return;
+  const t = LM_ISSUES.totals || {};
+  const critCount = (t.critical || 0) + (t.high || 0);
+  const badge = document.getElementById('lm-issues-badge');
+  const trig = document.getElementById('lm-issues-trigger');
+  if (critCount > 0) {
+    badge.textContent = critCount;
+    trig.classList.remove('lm-trigger-clean');
+  } else if (t.medium > 0) {
+    badge.textContent = t.medium;
+    trig.classList.remove('lm-trigger-clean');
+    trig.style.background = 'rgba(245,158,11,0.08)';
+    trig.style.borderColor = 'rgba(245,158,11,0.4)';
+    trig.style.color = '#F59E0B';
+    badge.style.background = '#F59E0B';
+  } else {
+    badge.textContent = t.total || 0;
+    trig.classList.add('lm-trigger-clean');
+  }
+}
+
+function lmToggleDrawer(force) {
+  LM_DRAWER_OPEN = (force === undefined) ? !LM_DRAWER_OPEN : !!force;
+  const drawer = document.getElementById('lm-drawer');
+  drawer.classList.toggle('lm-drawer-open', LM_DRAWER_OPEN);
+  if (LM_DRAWER_OPEN && !LM_ISSUES) lmLoadIssues();
+  if (LM_DRAWER_OPEN && LM_ISSUES) lmRenderDrawer();
+}
+
+function lmRenderDrawer() {
+  if (!LM_ISSUES) return;
+  const t = LM_ISSUES.totals || {};
+  document.getElementById('lm-drawer-title').textContent =
+    (t.total || 0) + ' findings across the catalog';
+  document.getElementById('lm-drawer-tallies').innerHTML =
+    '<span class="lm-drawer-tally"><span class="lm-sev-critical">●</span> ' + (t.critical || 0) + ' critical</span>' +
+    '<span class="lm-drawer-tally"><span class="lm-sev-high">●</span> ' + (t.high || 0) + ' high</span>' +
+    '<span class="lm-drawer-tally"><span class="lm-sev-medium">●</span> ' + (t.medium || 0) + ' medium</span>' +
+    '<span class="lm-drawer-tally"><span class="lm-sev-low">●</span> ' + (t.low || 0) + ' low</span>';
+
+  const body = document.getElementById('lm-drawer-body');
+  const issues = LM_ISSUES.issues || [];
+  if (issues.length === 0) {
+    body.innerHTML = '<div class="lm-drawer-empty"><strong>clean catalog</strong>no findings on file for this workspace. run a Catalog Health audit if you expect issues.</div>';
+    return;
+  }
+
+  // Group by severity
+  const groups = { critical: [], high: [], medium: [], low: [], strategic: [] };
+  for (const it of issues) {
+    const sev = groups[it.severity] ? it.severity : 'low';
+    groups[sev].push(it);
+  }
+
+  let html = '';
+  const sections = [
+    ['critical', 'CRITICAL — listing cannot publish until resolved', groups.critical],
+    ['high',     'HIGH — strong impact on rank or conversion',         groups.high],
+    ['medium',   'MEDIUM — will publish but flagged',                   groups.medium],
+    ['low',      'LOW — informational',                                 groups.low],
+    ['strategic',  'STRATEGIC',                                          groups.strategic],
+  ];
+  for (const [sev, label, list] of sections) {
+    if (!list.length) continue;
+    html += '<div class="lm-drawer-section">';
+    html += '<div class="lm-drawer-section-head">' + label + ' <span style="color:#475569; margin-left:auto;">(' + list.length + ')</span></div>';
+    for (const it of list) {
+      const colorSize = (it.color || '—') + ' / ' + (it.size || '—');
+      html += '<div class="lm-issue lm-issue-' + sev + '" onclick="lmJumpToIssue(\'' + it.asin + '\')">';
+      html += '<div class="lm-issue-row">';
+      html += '<span class="lm-issue-sev lm-sev-' + sev + '">' + sev + '</span>';
+      html += '<span class="lm-issue-path">';
+      html += '<span class="lm-issue-path-style">' + (it.style_label || '—') + '</span>';
+      html += '<span class="lm-issue-path-arrow">/</span>';
+      html += '<span>' + colorSize + '</span>';
+      html += '<span class="lm-issue-path-arrow">→</span>';
+      html += '<span class="lm-issue-path-asin">' + it.asin + '</span>';
+      html += '</span>';
+      html += '<button class="lm-issue-jump" onclick="event.stopPropagation(); lmJumpToIssue(\'' + it.asin + '\')">jump →</button>';
+      html += '</div>';
+      if (it.rule_name) {
+        html += '<div class="lm-issue-rule">' + it.rule_name.replace(/_/g, ' ') + '</div>';
+      }
+      if (it.proposed_fix) {
+        html += '<div class="lm-issue-fix"><span class="lm-issue-fix-tag">fix</span>' + it.proposed_fix + '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  body.innerHTML = html;
+}
+
+function lmJumpToIssue(asin) {
+  lmToggleDrawer(false);
+  lmSelectAsin(asin);
+}
+
+// Update tree-load handler so tally numbers update
+const _lmLoadTreeOrig = lmLoadTree;
+lmLoadTree = async function() {
+  await _lmLoadTreeOrig();
+  if (LM_TREE) {
+    const totalAsins = (LM_TREE.families || []).reduce((s, f) => s + (f.children || []).length, 0);
+    document.getElementById('lm-tally-asins').innerHTML =
+      '<span class="dot" style="color:#5EEAD4;">●</span> ' + totalAsins + ' ASINs';
+    document.getElementById('lm-tally-families').textContent =
+      (LM_TREE.families || []).length + ' families';
+  }
+  // Eagerly fetch issues so the badge updates without waiting for drawer-open
+  lmLoadIssues();
+};
+
 function showListingManagerPage() {
   _showPage('listing-manager-page', 'Atlas · Listing Manager',
-    'Hierarchical catalog editor — port of styleintake wireframe (Pass 1, vertical slice 1)');
+    'Hierarchical catalog editor — catalog tree + variations matrix + Catalog Health');
   lmLoadTree();
 }
 
