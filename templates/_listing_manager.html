@@ -113,13 +113,169 @@
 }
 .lm-legend-row { display: flex; gap: 6px; padding: 1px 0; }
 
-/* ── Workspace pane (placeholder for v2) ─────────────────── */
+/* ── Workspace pane ─────────────────── */
 .lm-workspace-header {
   padding: 10px 16px;
   height: auto;
   align-items: flex-start;
   flex-direction: column;
   gap: 4px;
+}
+
+.lm-tabs {
+  display: flex;
+  height: 36px;
+  border-bottom: 1px solid #1C2D40;
+  background: #08111A;
+  padding: 0 8px;
+}
+.lm-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0 14px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  cursor: pointer;
+  height: 36px;
+}
+.lm-tab:hover { color: #94A3B8; }
+.lm-tab.lm-tab-active {
+  color: #5EEAD4;
+  border-bottom-color: #5EEAD4;
+}
+
+/* ── Variations matrix ─────────────── */
+.lm-matrix-wrap {
+  padding: 16px;
+  background: #08111A;
+}
+.lm-matrix-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 14px;
+}
+.lm-matrix-eyebrow {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #5EEAD4;
+  display: block;
+  margin-bottom: 2px;
+}
+.lm-matrix-title {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #E2E8F0;
+}
+.lm-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #1C2D40;
+  background: #0E1A26;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+}
+.lm-matrix-table th, .lm-matrix-table td {
+  border: 1px solid #1C2D40;
+  padding: 0;
+}
+.lm-matrix-th-corner {
+  background: #08111A;
+  width: 130px;
+}
+.lm-matrix-th-col, .lm-matrix-th-row {
+  background: #08111A;
+  padding: 10px 12px !important;
+  text-align: left;
+  font-weight: 700;
+  color: #94A3B8;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.lm-matrix-th-col { text-align: center; }
+.lm-matrix-th-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.lm-swatch {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 1px solid #1C2D40;
+  flex-shrink: 0;
+}
+.lm-cell {
+  height: 88px;
+  padding: 10px 8px !important;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background: #0E1A26;
+  transition: background 80ms;
+  position: relative;
+}
+.lm-cell:hover { background: #13212F; }
+.lm-cell-dot {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.lm-cell-meta {
+  font-size: 10px;
+  color: #E2E8F0;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+.lm-cell-sub {
+  font-size: 9px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.lm-cell-current {
+  box-shadow: inset 0 0 0 2px #5EEAD4;
+  background: rgba(94,234,212,0.08) !important;
+}
+.lm-cell-current::before {
+  content: 'CURRENT';
+  position: absolute;
+  top: 4px; left: 6px;
+  font-size: 8px;
+  color: #5EEAD4;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+.lm-cell-complete { background: rgba(94,234,212,0.04); }
+.lm-cell-progress .lm-cell-dot { color: #F59E0B; }
+.lm-cell-notstarted .lm-cell-dot { color: #475569; }
+.lm-cell-empty {
+  background: repeating-linear-gradient(
+    45deg,
+    #0E1A26,
+    #0E1A26 4px,
+    #08111A 4px,
+    #08111A 8px
+  );
+  color: #475569;
+}
+.lm-cell-empty-plus {
+  font-size: 24px;
+  color: #1C2D40;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.lm-cell-empty:hover .lm-cell-empty-plus { color: #5EEAD4; }
+.lm-cell-empty:hover { background: rgba(94,234,212,0.06); }
+
+.lm-matrix-legend {
+  display: flex; gap: 18px; flex-wrap: wrap;
+  margin-top: 12px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #475569;
 }
 .lm-workspace-eyebrow {
   font-family: ui-monospace, monospace;
@@ -215,7 +371,7 @@
 
 <div class="content" id="listing-manager-page" style="display:none; padding:0;">
 
-  <div class="lm-root">
+  <div class="lm-root" id="lm-root">
 
     <!-- LEFT PANE: Catalog tree -->
     <aside class="lm-pane">
@@ -247,12 +403,19 @@
         <span class="lm-workspace-title" id="lm-workspace-title">[ select an ASIN from the catalog tree ]</span>
         <span class="lm-workspace-lineage" id="lm-workspace-lineage">—</span>
       </div>
-      <div class="lm-workspace-body">
+      <nav class="lm-tabs">
+        <button class="lm-tab" data-lmtab="content" onclick="lmSwitchTab('content')">Content</button>
+        <button class="lm-tab" data-lmtab="attributes" onclick="lmSwitchTab('attributes')">Attributes</button>
+        <button class="lm-tab lm-tab-active" data-lmtab="variations" onclick="lmSwitchTab('variations')">Variations</button>
+        <button class="lm-tab" data-lmtab="images" onclick="lmSwitchTab('images')">Images</button>
+        <button class="lm-tab" data-lmtab="compliance" onclick="lmSwitchTab('compliance')">Compliance</button>
+        <button class="lm-tab" data-lmtab="activity" onclick="lmSwitchTab('activity')">Activity</button>
+      </nav>
+      <div class="lm-workspace-body" id="lm-workspace-body">
         <div class="lm-placeholder" id="lm-workspace-placeholder">
-          <strong>Workspace · v2</strong>
-          The Content / Attributes / Variations / Images / Compliance / Activity tabs ship here.
-          Currently this is read-only — click any ASIN on the left to see what the workspace will load.
-          <div class="lm-placeholder-sub">Design locked · Pass 2.1 + Pass 5 · implementation pending</div>
+          <strong>Select a STYLE or VARIANT</strong>
+          Click a parent ASIN to see the variations matrix. Click a variant to see its content.
+          <div class="lm-placeholder-sub">v0.2 · matrix live · editable workspace ships next</div>
         </div>
       </div>
     </section>
@@ -289,6 +452,37 @@
 
 let LM_TREE = null;       // {workspace, families: [{parent, children, variation_axes}]}
 let LM_SELECTED_ASIN = null;
+let LM_SELECTED_PARENT = null;
+let LM_ACTIVE_TAB = 'variations';
+let LM_MATRIX_DATA = null;
+
+// Hand-tuned color name → hex map for swatches. Fallback hashes unknown colors.
+const LM_COLOR_MAP = {
+  black: '#111', navy: '#1c2a4e', white: '#f5f5f5', ivory: '#f2eee4',
+  cream: '#f1e8d6', sage: '#9aa898', olive: '#6b7a3e',
+  gray: '#888', grey: '#888', charcoal: '#36393f', stone: '#a8a29e',
+  beige: '#d6c9a8', tan: '#c9a883', taupe: '#967e69',
+  red: '#b03a2e', burgundy: '#5e1f2a', rose: '#c97b7b', pink: '#e8a5a5',
+  blue: '#2c5282', teal: '#01696f', mint: '#a8d8c8',
+  green: '#446e3a', forest: '#2a4a2a', emerald: '#1f7a4a',
+  yellow: '#e8c547', mustard: '#b59330', gold: '#c9a14a',
+  brown: '#5d4037', chocolate: '#4a3225', camel: '#b58a5a',
+  purple: '#6b3fa0', lavender: '#c8a8e0',
+  orange: '#d97742', coral: '#e88565',
+};
+function lmColorHex(name) {
+  if (!name) return '#1C2D40';
+  const n = String(name).toLowerCase().trim();
+  if (LM_COLOR_MAP[n]) return LM_COLOR_MAP[n];
+  for (const k of Object.keys(LM_COLOR_MAP)) {
+    if (n.includes(k)) return LM_COLOR_MAP[k];
+  }
+  // Hash fallback
+  let h = 0;
+  for (let i = 0; i < n.length; i++) h = ((h << 5) - h) + n.charCodeAt(i);
+  const hue = Math.abs(h) % 360;
+  return `hsl(${hue}, 30%, 45%)`;
+}
 
 async function lmLoadTree() {
   const body = document.getElementById('lm-tree-body');
@@ -325,7 +519,10 @@ function lmRenderTree() {
     const matches = !q || (styleLabel + ' ' + (fam.parent_asin || '') + ' ' +
                            (fam.children || []).map(c => c.asin + ' ' + (c.color || '') + ' ' + (c.size || '')).join(' ')).toLowerCase().includes(q);
     if (!matches) return;
-    html += '<div class="lm-tree-node lm-l1"><span class="lm-tree-toggle">▾</span>' +
+    const styleSel = (LM_SELECTED_PARENT === fam.parent_asin && !LM_SELECTED_ASIN) ? ' lm-selected' : '';
+    const styleClick = fam.parent_asin ? ' onclick="lmSelectStyle(\'' + fam.parent_asin + '\')"' : '';
+    html += '<div class="lm-tree-node lm-l1' + styleSel + '"' + styleClick + '>' +
+            '<span class="lm-tree-toggle">▾</span>' +
             '<span class="lm-tree-label">' + styleLabel + '</span>' +
             '<span class="lm-status-progress lm-tree-status">●</span></div>';
     (fam.children || []).forEach(c => {
@@ -342,9 +539,42 @@ function lmRenderTree() {
   body.innerHTML = html || '<div class="lm-empty-tree">no matches</div>';
 }
 
+function lmSwitchTab(tab) {
+  LM_ACTIVE_TAB = tab;
+  document.querySelectorAll('.lm-tab').forEach(el => {
+    el.classList.toggle('lm-tab-active', el.dataset.lmtab === tab);
+  });
+  lmRenderWorkspace();
+}
+
+function lmSelectStyle(parentAsin) {
+  LM_SELECTED_PARENT = parentAsin;
+  LM_SELECTED_ASIN = null;
+  const fam = (LM_TREE.families || []).find(f => f.parent_asin === parentAsin);
+  if (!fam) return;
+  document.getElementById('lm-workspace-title').textContent =
+    '[ STYLE: ' + (fam.style_label || parentAsin) + ' ]';
+  document.getElementById('lm-workspace-lineage').textContent =
+    'inherits: ' + (LM_TREE.workspace.brand || 'BRAND') + ' → this style';
+  document.getElementById('lm-footer-level').textContent = 'STYLE';
+  LM_ACTIVE_TAB = 'variations';
+  document.querySelectorAll('.lm-tab').forEach(el => {
+    el.classList.toggle('lm-tab-active', el.dataset.lmtab === 'variations');
+  });
+  lmRenderTree();
+  // Fetch matrix
+  fetch('/api/listing-manager/matrix/' + encodeURIComponent(parentAsin))
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) { LM_MATRIX_DATA = { error: d.error }; }
+      else { LM_MATRIX_DATA = d; }
+      lmRenderWorkspace();
+    })
+    .catch(e => { LM_MATRIX_DATA = { error: String(e) }; lmRenderWorkspace(); });
+}
+
 function lmSelectAsin(asin) {
   LM_SELECTED_ASIN = asin;
-  // Find the row in the tree
   let found = null, parent = null;
   for (const fam of (LM_TREE.families || [])) {
     for (const c of (fam.children || [])) {
@@ -353,6 +583,7 @@ function lmSelectAsin(asin) {
     if (found) break;
   }
   if (!found) return;
+  LM_SELECTED_PARENT = parent ? parent.parent_asin : null;
   document.getElementById('lm-workspace-title').textContent =
     '[ VARIANT: ' + asin + ' · ' + (found.color || '—') + ' / ' + (found.size || '—') + ' ]';
   document.getElementById('lm-workspace-lineage').textContent =
@@ -360,27 +591,148 @@ function lmSelectAsin(asin) {
   document.getElementById('lm-footer-level').textContent = 'VARIANT';
   lmRenderTree();
 
-  // Optional: load + show ground-truth title for context inside placeholder
+  // Default to content tab when a single variant is selected
+  if (LM_ACTIVE_TAB === 'variations' && parent && parent.parent_asin) {
+    // Stay on variations so user can see where this variant sits in the matrix
+  } else if (!LM_ACTIVE_TAB || LM_ACTIVE_TAB === 'variations') {
+    LM_ACTIVE_TAB = 'content';
+    document.querySelectorAll('.lm-tab').forEach(el => {
+      el.classList.toggle('lm-tab-active', el.dataset.lmtab === LM_ACTIVE_TAB);
+    });
+  }
+
+  // Load matrix for this variant's parent (for the variations tab)
+  if (parent && parent.parent_asin && (!LM_MATRIX_DATA || LM_MATRIX_DATA.parent_asin !== parent.parent_asin)) {
+    fetch('/api/listing-manager/matrix/' + encodeURIComponent(parent.parent_asin))
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) { LM_MATRIX_DATA = d; lmRenderWorkspace(); }
+      }).catch(() => {});
+  }
+
   fetch('/api/listing-manager/asin/' + encodeURIComponent(asin))
     .then(r => r.json())
     .then(d => {
-      if (!d.ok) return;
-      const ph = document.getElementById('lm-workspace-placeholder');
-      const t = (d.fields && d.fields.title) || '(no title set)';
-      const bullets = (d.fields && d.fields.bullets) || [];
-      ph.innerHTML =
-        '<strong>' + asin + '</strong>' +
-        '<div style="text-align:left; max-width:520px; margin:0 auto; font-family:ui-monospace,monospace; font-size:11px; color:#94A3B8;">' +
-        '<div style="color:#5EEAD4; font-size:9px; letter-spacing:0.12em; margin-bottom:4px;">TITLE</div>' +
-        '<div style="margin-bottom:14px; color:#E2E8F0;">' + (t || '—') + '</div>' +
-        '<div style="color:#5EEAD4; font-size:9px; letter-spacing:0.12em; margin-bottom:4px;">BULLETS (' + bullets.length + ')</div>' +
-        '<ol style="padding-left:18px; color:#94A3B8;">' +
-        bullets.map(b => '<li style="margin-bottom:4px;">' + (b || '') + '</li>').join('') +
-        '</ol>' +
-        '</div>' +
-        '<div class="lm-placeholder-sub">Read-only · editable workspace ships in v2</div>';
+      if (d.ok) { LM_ASIN_DATA = d; lmRenderWorkspace(); }
     })
     .catch(() => {});
+}
+
+let LM_ASIN_DATA = null;
+
+function lmRenderWorkspace() {
+  const body = document.getElementById('lm-workspace-body');
+  if (!body) return;
+
+  if (LM_ACTIVE_TAB === 'variations') {
+    body.innerHTML = lmRenderMatrix();
+    return;
+  }
+  if (LM_ACTIVE_TAB === 'content') {
+    body.innerHTML = lmRenderContent();
+    return;
+  }
+  // Other tabs: placeholder
+  body.innerHTML = '<div class="lm-placeholder"><strong>' + LM_ACTIVE_TAB.toUpperCase() + ' · v2</strong>' +
+    'Tab implementation pending. Design locked in wireframe.' +
+    '<div class="lm-placeholder-sub">' + LM_ACTIVE_TAB + ' ships in next slice</div></div>';
+}
+
+function lmRenderContent() {
+  if (!LM_ASIN_DATA || !LM_SELECTED_ASIN) {
+    return '<div class="lm-placeholder"><strong>Select a variant</strong>' +
+           'Pick a variant from the tree to see its current content.' +
+           '<div class="lm-placeholder-sub">v0.2 · read-only · editing ships in v0.3</div></div>';
+  }
+  const f = LM_ASIN_DATA.fields || {};
+  const bullets = f.bullets || [];
+  return '<div class="lm-placeholder" style="text-align:left; max-width:640px; margin:0 auto;">' +
+    '<strong style="display:block; text-align:center; margin-bottom:18px;">' + LM_SELECTED_ASIN + '</strong>' +
+    '<div style="font-family:ui-monospace,monospace; font-size:11px; color:#94A3B8;">' +
+    '<div style="color:#5EEAD4; font-size:9px; letter-spacing:0.12em; margin-bottom:4px;">TITLE</div>' +
+    '<div style="margin-bottom:18px; color:#E2E8F0; line-height:1.5;">' + (f.title || '(no title set)') + '</div>' +
+    '<div style="color:#5EEAD4; font-size:9px; letter-spacing:0.12em; margin-bottom:6px;">BULLETS (' + bullets.length + ')</div>' +
+    '<ol style="padding-left:18px; color:#94A3B8; line-height:1.6;">' +
+    (bullets.length ? bullets.map(b => '<li style="margin-bottom:6px;">' + (b || '') + '</li>').join('') : '<li style="color:#475569; list-style:none; margin-left:-18px;">no bullets set</li>') +
+    '</ol>' +
+    '</div>' +
+    '<div class="lm-placeholder-sub" style="text-align:center;">read-only · editable workspace ships in v0.3</div>' +
+    '</div>';
+}
+
+function lmRenderMatrix() {
+  if (!LM_MATRIX_DATA) {
+    return '<div class="lm-placeholder"><strong>Select a STYLE from the tree</strong>' +
+           'Click a style (parent ASIN) to see its color × size matrix.' +
+           '<div class="lm-placeholder-sub">v0.2 · matrix live</div></div>';
+  }
+  if (LM_MATRIX_DATA.error) {
+    return '<div class="lm-placeholder"><strong>Could not load matrix</strong>' +
+           LM_MATRIX_DATA.error + '</div>';
+  }
+  const colors = LM_MATRIX_DATA.colors || [];
+  const sizes = LM_MATRIX_DATA.sizes || [];
+  const cells = LM_MATRIX_DATA.cells || {};
+
+  if (!colors.length || !sizes.length) {
+    return '<div class="lm-placeholder"><strong>No variation axes</strong>' +
+           'This style has no color or size variants registered.' +
+           '<div class="lm-placeholder-sub">' + LM_MATRIX_DATA.parent_asin + '</div></div>';
+  }
+
+  let html = '<div class="lm-matrix-wrap">';
+  html += '<div class="lm-matrix-head">';
+  html += '<div><span class="lm-matrix-eyebrow">STYLE · ' + (LM_MATRIX_DATA.style_label || LM_MATRIX_DATA.parent_asin) + '</span>';
+  html += '<span class="lm-matrix-title">Variations Matrix</span></div>';
+  html += '<div style="font-family:ui-monospace,monospace; font-size:10px; color:#475569;">' +
+          colors.length + ' colors × ' + sizes.length + ' sizes · ' +
+          Object.keys(cells).length + ' variants</div>';
+  html += '</div>';
+
+  html += '<table class="lm-matrix-table"><thead><tr><th class="lm-matrix-th-corner"></th>';
+  for (const s of sizes) html += '<th class="lm-matrix-th-col">' + (s || '—') + '</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const c of colors) {
+    html += '<tr>';
+    html += '<th class="lm-matrix-th-row"><span class="lm-swatch" style="background:' + lmColorHex(c) + '"></span>' + (c || '—') + '</th>';
+    for (const s of sizes) {
+      const key = (c || '') + '|' + (s || '');
+      const cell = cells[key];
+      if (!cell) {
+        html += '<td class="lm-cell lm-cell-empty">' +
+                '<div class="lm-cell-empty-plus">+</div>' +
+                '<div class="lm-cell-sub">add variant</div>' +
+                '</td>';
+        continue;
+      }
+      const isCurrent = (cell.asin === LM_SELECTED_ASIN) ? ' lm-cell-current' : '';
+      let cls = '', label = '', dot = '○', dotColor = 'lm-status-notstarted';
+      if (cell.status === 'complete') {
+        cls = 'lm-cell-complete'; label = 'complete'; dot = '●'; dotColor = 'lm-status-complete';
+      } else if (cell.status === 'progress') {
+        cls = 'lm-cell-progress'; label = 'in progress'; dot = '●'; dotColor = 'lm-status-progress';
+      } else {
+        cls = 'lm-cell-notstarted'; label = 'not started'; dot = '○'; dotColor = 'lm-status-notstarted';
+      }
+      html += '<td class="lm-cell ' + cls + isCurrent + '" onclick="lmSelectAsin(\'' + cell.asin + '\')" title="' + cell.asin + '">' +
+              '<div class="lm-cell-dot ' + dotColor + '">' + dot + '</div>' +
+              '<div class="lm-cell-meta">' + label + '</div>' +
+              '<div class="lm-cell-sub">' + cell.asin + '</div>' +
+              '</td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+
+  html += '<div class="lm-matrix-legend">' +
+          '<span><span class="lm-status-complete">●</span> complete</span>' +
+          '<span><span class="lm-status-progress">●</span> in progress</span>' +
+          '<span><span class="lm-status-notstarted">○</span> not started</span>' +
+          '<span style="color:#475569;">+ add variant (no ASIN yet)</span>' +
+          '</div>';
+  html += '</div>';
+  return html;
 }
 
 function showListingManagerPage() {

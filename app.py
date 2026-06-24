@@ -18248,6 +18248,78 @@ def listing_manager_tree():
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
 
 
+@app.route("/api/listing-manager/matrix/<parent_asin>", methods=["GET"])
+def listing_manager_matrix(parent_asin):
+    """Color × size matrix for the given parent (STYLE).
+
+    Returns:
+      {
+        ok: true,
+        parent_asin, style_label,
+        colors: [unique color names in registration order],
+        sizes:  [unique sizes],
+        cells:  { "color|size": {asin, status: 'complete'|'progress'|'notstarted'} },
+      }
+    """
+    workspace_id = _lm_active_workspace_id()
+    try:
+        from substrate.asin_metadata import list_family_asins, get_asin_metadata
+        rows = list_family_asins(workspace_id, parent_asin)
+        parent_row = get_asin_metadata(workspace_id, parent_asin) or {}
+        parent_gtf = parent_row.get("ground_truth_fields") or {}
+        style_label = (
+            parent_gtf.get("model_name")
+            or parent_gtf.get("title")
+            or parent_asin
+        )
+
+        colors = []
+        sizes = []
+        cells = {}
+        for r in rows:
+            if r["asin"] == parent_asin:
+                continue
+            axes = r.get("variation_axes") or {}
+            gtf = r.get("ground_truth_fields") or {}
+            color = axes.get("color_name")
+            size = axes.get("size")
+            if color and color not in colors:
+                colors.append(color)
+            if size and size not in sizes:
+                sizes.append(size)
+            has_title = bool(gtf.get("title"))
+            bullet_count = sum(
+                1 for i in range(1, 6)
+                if gtf.get(f"bullet_{i}") or gtf.get(f"bullet{i}")
+            )
+            if has_title and bullet_count >= 5:
+                status = "complete"
+            elif has_title or bullet_count > 0:
+                status = "progress"
+            else:
+                status = "notstarted"
+            key = (color or "") + "|" + (size or "")
+            cells[key] = {
+                "asin": r["asin"],
+                "status": status,
+                "has_title": has_title,
+                "bullet_count": bullet_count,
+            }
+
+        return jsonify({
+            "ok": True,
+            "parent_asin": parent_asin,
+            "style_label": (style_label or "")[:60],
+            "colors": colors,
+            "sizes": sizes,
+            "cells": cells,
+            "variant_count": len(cells),
+        })
+    except Exception as exc:
+        print(f"[atlas] listing-manager/matrix failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/listing-manager/asin/<asin>", methods=["GET"])
 def listing_manager_asin(asin):
     """Single-ASIN read for the workspace placeholder.
