@@ -596,6 +596,134 @@
   font-size: 12px;
 }
 .lm-drawer-empty strong { color: #5EEAD4; display: block; margin-bottom: 8px; font-size: 14px; }
+
+/* ── Editable Content tab ── */
+.lm-edit-block {
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.lm-edit-block.lm-edit-dirty { border-color: #F59E0B; }
+.lm-edit-block.lm-edit-saving { border-color: #5EEAD4; }
+.lm-edit-block-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  background: #08111A;
+  border-bottom: 1px solid #1C2D40;
+}
+.lm-edit-label {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #5EEAD4;
+  font-weight: 700;
+}
+.lm-edit-status {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+}
+.lm-edit-status.lm-status-dirty { color: #F59E0B; }
+.lm-edit-status.lm-status-saved { color: #5EEAD4; }
+.lm-edit-status.lm-status-error { color: #EF4444; }
+.lm-edit-body { padding: 10px 12px; }
+.lm-edit-input {
+  width: 100%;
+  background: #08111A;
+  border: 1px solid #1C2D40;
+  color: #E2E8F0;
+  padding: 8px 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.lm-edit-input:focus {
+  outline: none;
+  border-color: #5EEAD4;
+}
+.lm-edit-foot {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #475569;
+}
+.lm-char-count { color: #94A3B8; }
+.lm-char-count.lm-over { color: #EF4444; }
+.lm-char-bar {
+  flex: 1;
+  height: 3px;
+  background: #1C2D40;
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.lm-char-bar-fill {
+  position: absolute; top: 0; left: 0; bottom: 0;
+  background: #5EEAD4;
+  transition: width 120ms;
+}
+.lm-char-bar-fill.lm-over { background: #EF4444; }
+.lm-edit-actions {
+  display: flex; gap: 6px;
+  margin-top: 8px;
+}
+.lm-save-btn {
+  background: #5EEAD4;
+  color: #08111A;
+  border: 1px solid #5EEAD4;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.lm-save-btn:hover { background: #4FD9C3; }
+.lm-save-btn:disabled {
+  background: #1C2D40;
+  color: #475569;
+  border-color: #1C2D40;
+  cursor: not-allowed;
+}
+.lm-discard-btn {
+  background: transparent;
+  color: #94A3B8;
+  border: 1px solid #1C2D40;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.lm-discard-btn:hover { color: #fff; background: #13212F; }
+.lm-content-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+  padding: 0 4px;
+}
+.lm-content-asin {
+  font-family: ui-monospace, monospace;
+  font-size: 18px;
+  color: #E2E8F0;
+  font-weight: 700;
+}
+.lm-content-sub {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
 </style>
 
 <div class="content" id="listing-manager-page" style="display:none; padding:0;">
@@ -906,27 +1034,212 @@ function lmRenderWorkspace() {
     '<div class="lm-placeholder-sub">' + LM_ACTIVE_TAB + ' ships in next slice</div></div>';
 }
 
+// Editable content tab
+// LM_EDIT_STATE: { [field]: { value, original, status: 'clean'|'dirty'|'saving'|'saved'|'error', error?: str } }
+let LM_EDIT_STATE = {};
+
+const LM_FIELD_LIMITS = {
+  title: 200,
+  bullet_1: 500, bullet_2: 500, bullet_3: 500, bullet_4: 500, bullet_5: 500,
+  description: 2000,
+  backend_keywords: 249,
+};
+
+function lmFieldLabel(field) {
+  if (field === 'title') return 'Product Title';
+  if (field.startsWith('bullet_')) return 'Bullet ' + field.slice(7);
+  if (field === 'description') return 'Description';
+  if (field === 'backend_keywords') return 'Backend Keywords';
+  return field;
+}
+
+function lmInitEditState() {
+  if (!LM_ASIN_DATA) { LM_EDIT_STATE = {}; return; }
+  const f = LM_ASIN_DATA.fields || {};
+  const bullets = f.bullets || [];
+  const fields = {
+    title: f.title || '',
+    bullet_1: bullets[0] || '',
+    bullet_2: bullets[1] || '',
+    bullet_3: bullets[2] || '',
+    bullet_4: bullets[3] || '',
+    bullet_5: bullets[4] || '',
+  };
+  LM_EDIT_STATE = {};
+  for (const [k, v] of Object.entries(fields)) {
+    LM_EDIT_STATE[k] = { value: v, original: v, status: 'clean' };
+  }
+}
+
+function lmEditOnInput(field, value) {
+  if (!LM_EDIT_STATE[field]) return;
+  LM_EDIT_STATE[field].value = value;
+  LM_EDIT_STATE[field].status =
+    (value === LM_EDIT_STATE[field].original) ? 'clean' : 'dirty';
+  lmUpdateEditBlockState(field);
+}
+
+function lmUpdateEditBlockState(field) {
+  const st = LM_EDIT_STATE[field];
+  if (!st) return;
+  const block = document.getElementById('lm-edit-block-' + field);
+  if (!block) return;
+  block.classList.toggle('lm-edit-dirty', st.status === 'dirty');
+  block.classList.toggle('lm-edit-saving', st.status === 'saving');
+
+  const statusEl = document.getElementById('lm-edit-status-' + field);
+  if (statusEl) {
+    statusEl.className = 'lm-edit-status';
+    if (st.status === 'dirty') { statusEl.classList.add('lm-status-dirty'); statusEl.textContent = 'unsaved'; }
+    else if (st.status === 'saving') { statusEl.textContent = 'saving…'; }
+    else if (st.status === 'saved') { statusEl.classList.add('lm-status-saved'); statusEl.textContent = '✓ saved'; }
+    else if (st.status === 'error') { statusEl.classList.add('lm-status-error'); statusEl.textContent = '✗ ' + (st.error || 'error'); }
+    else { statusEl.textContent = ''; }
+  }
+
+  // Char count
+  const limit = LM_FIELD_LIMITS[field] || 1000;
+  const count = (st.value || '').length;
+  const over = count > limit;
+  const cc = document.getElementById('lm-edit-count-' + field);
+  if (cc) {
+    cc.textContent = count + ' / ' + limit + ' chars';
+    cc.classList.toggle('lm-over', over);
+  }
+  const bar = document.getElementById('lm-edit-bar-' + field);
+  if (bar) {
+    bar.style.width = Math.min(100, (count / limit) * 100) + '%';
+    bar.classList.toggle('lm-over', over);
+  }
+
+  // Save button enable/disable
+  const save = document.getElementById('lm-save-' + field);
+  const discard = document.getElementById('lm-discard-' + field);
+  if (save) save.disabled = (st.status === 'clean' || st.status === 'saving' || over);
+  if (discard) discard.disabled = (st.status === 'clean' || st.status === 'saving');
+}
+
+async function lmSaveField(field) {
+  const st = LM_EDIT_STATE[field];
+  if (!st || st.status === 'clean' || st.status === 'saving') return;
+  const value = st.value;
+  const limit = LM_FIELD_LIMITS[field] || 1000;
+  if ((value || '').length > limit) {
+    st.status = 'error'; st.error = 'over char limit';
+    lmUpdateEditBlockState(field);
+    return;
+  }
+  st.status = 'saving';
+  lmUpdateEditBlockState(field);
+  try {
+    const r = await fetch('/api/listing-manager/asin/' + encodeURIComponent(LM_SELECTED_ASIN), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ field, value }),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      st.status = 'error'; st.error = (d.error || 'save failed').slice(0, 60);
+      lmUpdateEditBlockState(field);
+      return;
+    }
+    st.original = value;
+    st.status = 'saved';
+    lmUpdateEditBlockState(field);
+    // Revert status pill back to clean after 2s
+    setTimeout(() => {
+      if (LM_EDIT_STATE[field] && LM_EDIT_STATE[field].status === 'saved') {
+        LM_EDIT_STATE[field].status = 'clean';
+        lmUpdateEditBlockState(field);
+      }
+    }, 2000);
+    // Refresh matrix/tree so status dots reflect the save
+    if (LM_SELECTED_PARENT) {
+      fetch('/api/listing-manager/matrix/' + encodeURIComponent(LM_SELECTED_PARENT))
+        .then(r => r.json())
+        .then(dm => { if (dm.ok) { LM_MATRIX_DATA = dm; } })
+        .catch(() => {});
+    }
+  } catch (e) {
+    st.status = 'error'; st.error = String(e).slice(0, 60);
+    lmUpdateEditBlockState(field);
+  }
+}
+
+function lmDiscardField(field) {
+  const st = LM_EDIT_STATE[field];
+  if (!st) return;
+  st.value = st.original;
+  st.status = 'clean';
+  const ta = document.getElementById('lm-input-' + field);
+  if (ta) ta.value = st.original;
+  lmUpdateEditBlockState(field);
+}
+
+function lmRenderEditBlock(field) {
+  const st = LM_EDIT_STATE[field] || { value: '', original: '', status: 'clean' };
+  const limit = LM_FIELD_LIMITS[field] || 1000;
+  const rows = (field === 'title') ? 2 : (field === 'description' ? 6 : 3);
+  return '<div class="lm-edit-block" id="lm-edit-block-' + field + '">' +
+    '<div class="lm-edit-block-head">' +
+      '<span class="lm-edit-label">' + lmFieldLabel(field) + '</span>' +
+      '<span class="lm-edit-status" id="lm-edit-status-' + field + '"></span>' +
+    '</div>' +
+    '<div class="lm-edit-body">' +
+      '<textarea class="lm-edit-input" id="lm-input-' + field + '" rows="' + rows + '" ' +
+               'oninput="lmEditOnInput(\'' + field + '\', this.value)">' +
+               (st.value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>' +
+      '<div class="lm-edit-foot">' +
+        '<span class="lm-char-count" id="lm-edit-count-' + field + '">0 / ' + limit + ' chars</span>' +
+        '<span class="lm-char-bar"><span class="lm-char-bar-fill" id="lm-edit-bar-' + field + '" style="width:0%"></span></span>' +
+      '</div>' +
+      '<div class="lm-edit-actions">' +
+        '<button class="lm-save-btn" id="lm-save-' + field + '" onclick="lmSaveField(\'' + field + '\')" disabled>SAVE</button>' +
+        '<button class="lm-discard-btn" id="lm-discard-' + field + '" onclick="lmDiscardField(\'' + field + '\')" disabled>DISCARD</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
 function lmRenderContent() {
   if (!LM_ASIN_DATA || !LM_SELECTED_ASIN) {
     return '<div class="lm-placeholder"><strong>Select a variant</strong>' +
-           'Pick a variant from the tree to see its current content.' +
-           '<div class="lm-placeholder-sub">v0.2 · read-only · editing ships in v0.3</div></div>';
+           'Pick a variant from the tree to edit its title and bullets.' +
+           '<div class="lm-placeholder-sub">v0.5 · inline edit · no AI yet</div></div>';
   }
+  lmInitEditState();
   const f = LM_ASIN_DATA.fields || {};
-  const bullets = f.bullets || [];
-  return '<div class="lm-placeholder" style="text-align:left; max-width:640px; margin:0 auto;">' +
-    '<strong style="display:block; text-align:center; margin-bottom:18px;">' + LM_SELECTED_ASIN + '</strong>' +
-    '<div style="font-family:ui-monospace,monospace; font-size:11px; color:#94A3B8;">' +
-    '<div style="color:#5EEAD4; font-size:9px; letter-spacing:0.12em; margin-bottom:4px;">TITLE</div>' +
-    '<div style="margin-bottom:18px; color:#E2E8F0; line-height:1.5;">' + (f.title || '(no title set)') + '</div>' +
-    '<div style="color:#5EEAD4; font-size:9px; letter-spacing:0.12em; margin-bottom:6px;">BULLETS (' + bullets.length + ')</div>' +
-    '<ol style="padding-left:18px; color:#94A3B8; line-height:1.6;">' +
-    (bullets.length ? bullets.map(b => '<li style="margin-bottom:6px;">' + (b || '') + '</li>').join('') : '<li style="color:#475569; list-style:none; margin-left:-18px;">no bullets set</li>') +
-    '</ol>' +
-    '</div>' +
-    '<div class="lm-placeholder-sub" style="text-align:center;">read-only · editable workspace ships in v0.3</div>' +
-    '</div>';
+  let html = '<div style="max-width:760px; margin:0 auto;">';
+  html += '<div class="lm-content-header">' +
+          '<div><span class="lm-content-sub">VARIANT</span><br><span class="lm-content-asin">' + LM_SELECTED_ASIN + '</span></div>' +
+          '<div class="lm-content-sub">' + (f.color || '—') + ' / ' + (f.size || '—') + '</div>' +
+          '</div>';
+  html += lmRenderEditBlock('title');
+  html += lmRenderEditBlock('bullet_1');
+  html += lmRenderEditBlock('bullet_2');
+  html += lmRenderEditBlock('bullet_3');
+  html += lmRenderEditBlock('bullet_4');
+  html += lmRenderEditBlock('bullet_5');
+  html += '</div>';
+
+  // Initialize char bars after DOM insert
+  setTimeout(() => {
+    Object.keys(LM_EDIT_STATE).forEach(field => lmUpdateEditBlockState(field));
+  }, 0);
+
+  return html;
 }
+
+// Warn before navigating away with unsaved changes
+window.addEventListener('beforeunload', function(e) {
+  for (const k of Object.keys(LM_EDIT_STATE)) {
+    if (LM_EDIT_STATE[k].status === 'dirty') {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  }
+});
 
 function lmRenderMatrix() {
   if (!LM_MATRIX_DATA) {

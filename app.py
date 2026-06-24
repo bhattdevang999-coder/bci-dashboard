@@ -18547,6 +18547,88 @@ def listing_manager_issues():
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
 
 
+ALLOWED_LM_FIELDS = {
+    "title", "bullet_1", "bullet_2", "bullet_3", "bullet_4", "bullet_5",
+    "description", "backend_keywords",
+}
+
+
+@app.route("/api/listing-manager/asin/<asin>", methods=["PATCH", "POST"])
+def listing_manager_asin_update(asin):
+    """Update a single ground_truth_field on one ASIN.
+
+    Body: {field: str, value: str}
+    Allowed fields: title, bullet_1..bullet_5, description, backend_keywords.
+
+    Read-modify-write: pulls the existing row, merges the new value into
+    ground_truth_fields, writes back. Bumps revision. Records source as
+    operator-edit. Returns the updated record.
+
+    Race-condition note: no row-level lock. For 1-2 operators on the same
+    catalog this is fine; for multi-tenant editing add SELECT FOR UPDATE
+    later.
+    """
+    if request.method == "GET":  # shouldn't happen given route methods
+        return jsonify({"ok": False, "error": "use GET on /asin/<asin>"}), 405
+    workspace_id = _lm_active_workspace_id()
+    body = request.get_json(silent=True) or {}
+    field = (body.get("field") or "").strip()
+    value = body.get("value")
+    if field not in ALLOWED_LM_FIELDS:
+        return jsonify({
+            "ok": False,
+            "error": f"field '{field}' not allowed for inline edit",
+        }), 400
+    if value is not None and not isinstance(value, str):
+        return jsonify({
+            "ok": False, "error": "value must be a string",
+        }), 400
+    try:
+        from substrate.asin_metadata import (
+            get_asin_metadata, set_asin_metadata, record_field_source,
+        )
+        existing = get_asin_metadata(workspace_id, asin) or {}
+        gtf = dict(existing.get("ground_truth_fields") or {})
+        fs = dict(existing.get("field_sources") or {})
+
+        # Apply edit (empty string clears the field)
+        if value is None or value == "":
+            gtf.pop(field, None)
+        else:
+            gtf[field] = value
+
+        # Mark source as operator edit
+        fs[field] = {
+            "source": "listing_manager_inline_edit",
+            "confirmed_by_operator": True,
+        }
+
+        ok = set_asin_metadata(
+            workspace_id, asin,
+            parent_asin=existing.get("parent_asin"),
+            variation_family=existing.get("variation_family"),
+            variation_axes=existing.get("variation_axes") or {},
+            ground_truth_fields=gtf,
+            field_sources=fs,
+            set_by="listing_manager_user",
+            bump_revision=True,
+        )
+        if not ok:
+            return jsonify({
+                "ok": False,
+                "error": "DB write failed (pool may be cold)",
+            }), 500
+        return jsonify({
+            "ok": True,
+            "asin": asin,
+            "field": field,
+            "value": value or "",
+        })
+    except Exception as exc:
+        print(f"[atlas] listing-manager update failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/listing-manager/asin/<asin>", methods=["GET"])
 def listing_manager_asin(asin):
     """Single-ASIN read for the workspace placeholder.
