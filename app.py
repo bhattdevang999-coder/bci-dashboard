@@ -18091,6 +18091,201 @@ def atlas_studio_pdp_detail(variant_id):
 # End M7 — Atlas Creative Studio routes
 # ====================================================================
 
+
+# ====================================================================
+# Listing Manager — first vertical slice (port of styleintake wireframe)
+# Reads asin_metadata for active workspace; groups by parent ASIN.
+# Workspace + assistant editing ships in v2 — see substrate/STYLE_INTAKE.md
+# ====================================================================
+
+def _lm_active_workspace_id():
+    """Resolve the active workspace from query, cookie, or default to novelle."""
+    return (
+        request.args.get("workspace_id")
+        or request.cookies.get("atlas_workspace_id")
+        or "novelle"
+    ).strip() or "novelle"
+
+
+@app.route("/api/listing-manager/tree", methods=["GET"])
+def listing_manager_tree():
+    """Catalog tree for the Listing Manager left pane.
+
+    Returns:
+      {
+        ok: true,
+        workspace: {id, name, brand},
+        families: [
+          {
+            parent_asin: str | None,
+            style_label: str,
+            children: [{asin, color, size, has_title}],
+          },
+          ...
+        ],
+        total_asins: int,
+      }
+
+    Best-effort. If the DB pool is cold or empty, returns ok=true with
+    families=[] so the UI shows a clean "no catalog" state instead of erroring.
+    """
+    workspace_id = _lm_active_workspace_id()
+    try:
+        from substrate.brand_workspace import get_workspace
+        from substrate.db import get_pool
+
+        ws_row = get_workspace(workspace_id) or {}
+        ws = {
+            "id": workspace_id,
+            "name": ws_row.get("display_name") or workspace_id.title(),
+            "brand": (ws_row.get("display_name") or workspace_id).upper(),
+        }
+
+        pool = get_pool()
+        if pool is None:
+            return jsonify({
+                "ok": True, "workspace": ws,
+                "families": [], "total_asins": 0,
+            })
+
+        rows = []
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT asin, parent_asin, variation_axes,
+                           ground_truth_fields
+                    FROM asin_metadata
+                    WHERE workspace_id = %s
+                    ORDER BY parent_asin NULLS FIRST, asin
+                    """,
+                    (workspace_id,),
+                )
+                for r in cur.fetchall():
+                    rows.append({
+                        "asin": r[0],
+                        "parent_asin": r[1],
+                        "variation_axes": r[2] or {},
+                        "ground_truth_fields": r[3] or {},
+                    })
+
+        # Group by parent. Parent rows (parent_asin IS NULL) become family heads.
+        families_by_parent = {}
+        parent_meta = {}
+        for row in rows:
+            if row["parent_asin"] is None:
+                parent_meta[row["asin"]] = row
+        for row in rows:
+            if row["parent_asin"] is None:
+                # Skip pure parents from child list (they show as style row)
+                continue
+            parent = row["parent_asin"]
+            families_by_parent.setdefault(parent, []).append(row)
+
+        # Build response. One family per parent; orphans (no parent_asin
+        # and no children) become single-row families.
+        families = []
+        seen_parents = set()
+        for parent_asin, children in families_by_parent.items():
+            pm = parent_meta.get(parent_asin, {})
+            seen_parents.add(parent_asin)
+            style_label = (
+                (pm.get("ground_truth_fields") or {}).get("model_name")
+                or (pm.get("ground_truth_fields") or {}).get("title")
+                or parent_asin
+            )
+            families.append({
+                "parent_asin": parent_asin,
+                "style_label": (style_label or "")[:60],
+                "children": [
+                    {
+                        "asin": c["asin"],
+                        "color": (c["variation_axes"] or {}).get("color_name"),
+                        "size": (c["variation_axes"] or {}).get("size"),
+                        "has_title": bool(
+                            (c["ground_truth_fields"] or {}).get("title")
+                        ),
+                    }
+                    for c in children
+                ],
+            })
+
+        # Orphan ASINs (no parent registered, no children of their own)
+        orphans = [
+            r for r in rows
+            if r["parent_asin"] is None and r["asin"] not in {
+                c["asin"]
+                for fam in families_by_parent.values()
+                for c in fam
+            } and r["asin"] not in seen_parents
+        ]
+        if orphans:
+            families.append({
+                "parent_asin": None,
+                "style_label": "(orphans · no parent ASIN)",
+                "children": [
+                    {
+                        "asin": o["asin"],
+                        "color": (o["variation_axes"] or {}).get("color_name"),
+                        "size": (o["variation_axes"] or {}).get("size"),
+                        "has_title": bool(
+                            (o["ground_truth_fields"] or {}).get("title")
+                        ),
+                    }
+                    for o in orphans
+                ],
+            })
+
+        total_asins = sum(len(f["children"]) for f in families)
+        return jsonify({
+            "ok": True,
+            "workspace": ws,
+            "families": families,
+            "total_asins": total_asins,
+        })
+    except Exception as exc:
+        print(f"[atlas] listing-manager/tree failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/listing-manager/asin/<asin>", methods=["GET"])
+def listing_manager_asin(asin):
+    """Single-ASIN read for the workspace placeholder.
+
+    Returns title, bullets, and a few key attributes. Read-only.
+    Editable workspace ships in v2.
+    """
+    workspace_id = _lm_active_workspace_id()
+    try:
+        from substrate.asin_metadata import read_asin_metadata
+        meta = read_asin_metadata(workspace_id, asin) or {}
+        gtf = meta.get("ground_truth_fields") or {}
+        bullets = [
+            gtf.get(f"bullet_{i}") or gtf.get(f"bullet{i}")
+            for i in range(1, 6)
+        ]
+        bullets = [b for b in bullets if b]
+        return jsonify({
+            "ok": True,
+            "asin": asin,
+            "fields": {
+                "title": gtf.get("title"),
+                "bullets": bullets,
+                "color": (meta.get("variation_axes") or {}).get("color_name"),
+                "size": (meta.get("variation_axes") or {}).get("size"),
+                "brand": gtf.get("brand_name"),
+            },
+        })
+    except Exception as exc:
+        print(f"[atlas] listing-manager/asin failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ====================================================================
+# End Listing Manager
+# ====================================================================
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))

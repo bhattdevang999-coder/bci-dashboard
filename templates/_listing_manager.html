@@ -1,0 +1,397 @@
+<!-- ═══════════════════ LISTING MANAGER (port of Pass 1 wireframe) ═══════════════════ -->
+<style>
+/* All classes scoped under .lm-root to avoid colliding with Atlas globals */
+#listing-manager-page {
+  background: #08111A;
+  color: #E2E8F0;
+  font-family: 'Calibri', sans-serif;
+  padding: 0;
+  margin: 0;
+}
+
+.lm-root {
+  display: grid;
+  grid-template-columns: 25% 50% 25%;
+  height: calc(100vh - 120px);
+  min-height: 600px;
+  border: 1px solid #1C2D40;
+  background: #0E1A26;
+}
+
+.lm-pane {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #1C2D40;
+  overflow: hidden;
+}
+.lm-pane:last-child { border-right: none; }
+
+.lm-pane-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #1C2D40;
+  background: #08111A;
+  height: 44px;
+}
+.lm-pane-title {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #5EEAD4;
+  font-weight: 700;
+}
+
+/* ── Catalog tree ─────────────────────────────────────────── */
+.lm-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+}
+.lm-tree-search {
+  padding: 8px 12px;
+  border-bottom: 1px solid #1C2D40;
+}
+.lm-tree-search input {
+  width: 100%;
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+  color: #E2E8F0;
+  padding: 6px 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  border-radius: 4px;
+}
+.lm-tree-search input:focus {
+  outline: none;
+  border-color: #5EEAD4;
+}
+
+.lm-tree-node {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  color: #94A3B8;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lm-tree-node:hover { background: #13212F; color: #E2E8F0; }
+.lm-tree-node.lm-selected {
+  background: rgba(94,234,212,0.08);
+  color: #5EEAD4;
+  border-left: 2px solid #5EEAD4;
+  padding-left: 10px;
+}
+.lm-tree-toggle {
+  width: 12px;
+  text-align: center;
+  color: #475569;
+}
+.lm-tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.lm-tree-meta { color: #475569; font-size: 10px; }
+.lm-tree-status { font-size: 10px; }
+.lm-l0 { font-weight: 700; color: #E2E8F0; padding-left: 12px; }
+.lm-l1 { font-weight: 600; color: #E2E8F0; padding-left: 24px; }
+.lm-l2 { padding-left: 36px; }
+.lm-l3 { padding-left: 48px; }
+.lm-l4 { padding-left: 60px; color: #94A3B8; }
+
+.lm-status-progress   { color: #F59E0B; }
+.lm-status-review     { color: #EF4444; }
+.lm-status-notstarted { color: #475569; }
+.lm-status-complete   { color: #5EEAD4; }
+
+.lm-legend {
+  border-top: 1px solid #1C2D40;
+  padding: 8px 12px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #475569;
+}
+.lm-legend-row { display: flex; gap: 6px; padding: 1px 0; }
+
+/* ── Workspace pane (placeholder for v2) ─────────────────── */
+.lm-workspace-header {
+  padding: 10px 16px;
+  height: auto;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+.lm-workspace-eyebrow {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #5EEAD4;
+}
+.lm-workspace-title {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  color: #E2E8F0;
+}
+.lm-workspace-lineage {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #475569;
+  margin-top: 2px;
+}
+
+.lm-workspace-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: #08111A;
+}
+
+.lm-placeholder {
+  border: 1px dashed #1C2D40;
+  background: #0E1A26;
+  padding: 32px;
+  text-align: center;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: #94A3B8;
+  border-radius: 8px;
+}
+.lm-placeholder strong {
+  display: block;
+  font-size: 14px;
+  color: #5EEAD4;
+  margin-bottom: 6px;
+}
+.lm-placeholder .lm-placeholder-sub {
+  margin-top: 12px;
+  font-size: 10px;
+  color: #475569;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Assistant pane (placeholder) ─────────────────────────── */
+.lm-assistant-body {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #08111A;
+  color: #475569;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  text-align: center;
+}
+
+.lm-footer {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #08111A;
+  border-top: 1px solid #1C2D40;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  gap: 10px;
+}
+.lm-footer-value { color: #E2E8F0; }
+.lm-footer-spacer { flex: 1; }
+
+.lm-empty-tree {
+  padding: 24px 16px;
+  text-align: center;
+  color: #475569;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.lm-empty-tree strong { color: #94A3B8; display: block; margin-bottom: 6px; }
+</style>
+
+<div class="content" id="listing-manager-page" style="display:none; padding:0;">
+
+  <div class="lm-root">
+
+    <!-- LEFT PANE: Catalog tree -->
+    <aside class="lm-pane">
+      <div class="lm-pane-header">
+        <span class="lm-pane-title">CATALOG TREE</span>
+        <span class="lm-tree-meta" id="lm-asin-count">—</span>
+      </div>
+      <div class="lm-tree-search">
+        <input id="lm-tree-search-input" type="text" placeholder="search ASINs, styles, colors…">
+      </div>
+      <div class="lm-tree" id="lm-tree-body">
+        <div class="lm-empty-tree">
+          <strong>loading catalog…</strong>
+          fetching from your active brand workspace
+        </div>
+      </div>
+      <div class="lm-legend">
+        <div class="lm-legend-row"><span class="lm-status-complete">●</span> Complete</div>
+        <div class="lm-legend-row"><span class="lm-status-progress">●</span> In Progress</div>
+        <div class="lm-legend-row"><span class="lm-status-review">●</span> Needs Review</div>
+        <div class="lm-legend-row"><span class="lm-status-notstarted">○</span> Not Started</div>
+      </div>
+    </aside>
+
+    <!-- MIDDLE PANE: Workspace -->
+    <section class="lm-pane">
+      <div class="lm-pane-header lm-workspace-header">
+        <span class="lm-workspace-eyebrow">ACTIVE LEVEL</span>
+        <span class="lm-workspace-title" id="lm-workspace-title">[ select an ASIN from the catalog tree ]</span>
+        <span class="lm-workspace-lineage" id="lm-workspace-lineage">—</span>
+      </div>
+      <div class="lm-workspace-body">
+        <div class="lm-placeholder" id="lm-workspace-placeholder">
+          <strong>Workspace · v2</strong>
+          The Content / Attributes / Variations / Images / Compliance / Activity tabs ship here.
+          Currently this is read-only — click any ASIN on the left to see what the workspace will load.
+          <div class="lm-placeholder-sub">Design locked · Pass 2.1 + Pass 5 · implementation pending</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANE: AI Assistant -->
+    <aside class="lm-pane">
+      <div class="lm-pane-header">
+        <span class="lm-pane-title">AI ASSISTANT</span>
+      </div>
+      <div class="lm-assistant-body">
+        <div>
+          chat + insights ship in v2
+          <div class="lm-placeholder-sub" style="margin-top:8px;">Design locked · Pass 3</div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <div class="lm-footer">
+    <span>EDITING AT LEVEL:</span>
+    <span class="lm-footer-value" id="lm-footer-level">—</span>
+    <span class="lm-footer-spacer"></span>
+    <span>WORKSPACE:</span>
+    <span class="lm-footer-value" id="lm-footer-workspace">—</span>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════ Listing Manager (vertical slice 1) ═══════════════════
+// Loads the catalog tree from the active brand workspace.
+// Workspace + assistant panes are placeholders — Passes 2-5 ship in v2.
+
+let LM_TREE = null;       // {workspace, families: [{parent, children, variation_axes}]}
+let LM_SELECTED_ASIN = null;
+
+async function lmLoadTree() {
+  const body = document.getElementById('lm-tree-body');
+  try {
+    const r = await fetch('/api/listing-manager/tree');
+    const d = await r.json();
+    if (!d.ok) {
+      body.innerHTML = '<div class="lm-empty-tree"><strong>no catalog loaded</strong>' +
+        (d.error || 'no active brand workspace · upload a catalog first') + '</div>';
+      return;
+    }
+    LM_TREE = d;
+    document.getElementById('lm-asin-count').textContent =
+      '[' + d.families.length + ' parents · ' + d.total_asins + ' ASINs]';
+    document.getElementById('lm-footer-workspace').textContent = d.workspace.name || d.workspace.id;
+    lmRenderTree();
+  } catch (e) {
+    body.innerHTML = '<div class="lm-empty-tree"><strong>error loading catalog</strong>' + String(e) + '</div>';
+  }
+}
+
+function lmRenderTree() {
+  if (!LM_TREE) return;
+  const body = document.getElementById('lm-tree-body');
+  const q = (document.getElementById('lm-tree-search-input').value || '').toLowerCase().trim();
+  let html = '';
+  html += '<div class="lm-tree-node lm-l0"><span class="lm-tree-toggle">▾</span><span class="lm-tree-label">' +
+          (LM_TREE.workspace.brand || 'BRAND') + '</span><span class="lm-tree-meta">[' +
+          LM_TREE.families.length + ' families]</span></div>';
+
+  LM_TREE.families.forEach(fam => {
+    const parentLabel = fam.parent_asin || '(no parent)';
+    const styleLabel = fam.style_label || parentLabel;
+    const matches = !q || (styleLabel + ' ' + (fam.parent_asin || '') + ' ' +
+                           (fam.children || []).map(c => c.asin + ' ' + (c.color || '') + ' ' + (c.size || '')).join(' ')).toLowerCase().includes(q);
+    if (!matches) return;
+    html += '<div class="lm-tree-node lm-l1"><span class="lm-tree-toggle">▾</span>' +
+            '<span class="lm-tree-label">' + styleLabel + '</span>' +
+            '<span class="lm-status-progress lm-tree-status">●</span></div>';
+    (fam.children || []).forEach(c => {
+      const sel = (LM_SELECTED_ASIN === c.asin) ? ' lm-selected' : '';
+      const dot = c.has_title ? 'lm-status-progress' : 'lm-status-notstarted';
+      const dotChar = c.has_title ? '●' : '○';
+      const subLabel = c.asin + ' · ' + (c.color || '—') + ' / ' + (c.size || '—');
+      html += '<div class="lm-tree-node lm-l4' + sel + '" onclick="lmSelectAsin(\'' + c.asin + '\')">' +
+              '<span class="lm-tree-toggle">·</span>' +
+              '<span class="lm-tree-label">' + subLabel + '</span>' +
+              '<span class="' + dot + ' lm-tree-status">' + dotChar + '</span></div>';
+    });
+  });
+  body.innerHTML = html || '<div class="lm-empty-tree">no matches</div>';
+}
+
+function lmSelectAsin(asin) {
+  LM_SELECTED_ASIN = asin;
+  // Find the row in the tree
+  let found = null, parent = null;
+  for (const fam of (LM_TREE.families || [])) {
+    for (const c of (fam.children || [])) {
+      if (c.asin === asin) { found = c; parent = fam; break; }
+    }
+    if (found) break;
+  }
+  if (!found) return;
+  document.getElementById('lm-workspace-title').textContent =
+    '[ VARIANT: ' + asin + ' · ' + (found.color || '—') + ' / ' + (found.size || '—') + ' ]';
+  document.getElementById('lm-workspace-lineage').textContent =
+    'inherits: ' + (LM_TREE.workspace.brand || 'BRAND') + ' → ' + (parent.style_label || parent.parent_asin || '—') + ' → this variant';
+  document.getElementById('lm-footer-level').textContent = 'VARIANT';
+  lmRenderTree();
+
+  // Optional: load + show ground-truth title for context inside placeholder
+  fetch('/api/listing-manager/asin/' + encodeURIComponent(asin))
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) return;
+      const ph = document.getElementById('lm-workspace-placeholder');
+      const t = (d.fields && d.fields.title) || '(no title set)';
+      const bullets = (d.fields && d.fields.bullets) || [];
+      ph.innerHTML =
+        '<strong>' + asin + '</strong>' +
+        '<div style="text-align:left; max-width:520px; margin:0 auto; font-family:ui-monospace,monospace; font-size:11px; color:#94A3B8;">' +
+        '<div style="color:#5EEAD4; font-size:9px; letter-spacing:0.12em; margin-bottom:4px;">TITLE</div>' +
+        '<div style="margin-bottom:14px; color:#E2E8F0;">' + (t || '—') + '</div>' +
+        '<div style="color:#5EEAD4; font-size:9px; letter-spacing:0.12em; margin-bottom:4px;">BULLETS (' + bullets.length + ')</div>' +
+        '<ol style="padding-left:18px; color:#94A3B8;">' +
+        bullets.map(b => '<li style="margin-bottom:4px;">' + (b || '') + '</li>').join('') +
+        '</ol>' +
+        '</div>' +
+        '<div class="lm-placeholder-sub">Read-only · editable workspace ships in v2</div>';
+    })
+    .catch(() => {});
+}
+
+function showListingManagerPage() {
+  _showPage('listing-manager-page', 'Atlas · Listing Manager',
+    'Hierarchical catalog editor — port of styleintake wireframe (Pass 1, vertical slice 1)');
+  lmLoadTree();
+}
+
+// Wire up search
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('lm-tree-search-input');
+  if (inp) inp.addEventListener('input', lmRenderTree);
+});
+</script>

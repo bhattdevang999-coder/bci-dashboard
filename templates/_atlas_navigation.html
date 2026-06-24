@@ -344,6 +344,11 @@
         <span class="atlas-mm-item-name">Variations</span>
         <span class="atlas-mm-item-pill live">Live</span>
       </div>
+      <div class="atlas-mm-item" data-id="listing-manager" onclick="atlasGoTo('listing-manager')">
+        <span class="atlas-mm-item-dot"></span>
+        <span class="atlas-mm-item-name">Listing Manager</span>
+        <span class="atlas-mm-item-pill beta">Beta</span>
+      </div>
       <div class="atlas-mm-item soon" data-id="ab-test" onclick="atlasGoTo('ab-test')">
         <span class="atlas-mm-item-dot"></span>
         <span class="atlas-mm-item-name">A/B Test</span>
@@ -415,6 +420,7 @@ const ATLAS_NAV_ITEMS = [
   { id:'image-nis',      name:'Image → NIS',        sub:'One photo → drafted listing (Beta, vision-powered)',       mod:'CREATE',  pill:'beta', go:()=>showBetaImageNISPage(),  keys:'image photo vision beta create draft listing' },
   { id:'catalog-health', name:'Catalog Health',     sub:'Score every ASIN, find broken variations + content gaps',  mod:'MONITOR', pill:'live', go:()=>showCatalogPage(),       keys:'catalog health monitor scan check audit asin broken' },
   { id:'variations',     name:'Variations',         sub:'Fix broken variation families, reassign orphaned ASINs',   mod:'MANAGE',  pill:'live', go:()=>showMergePage(),         keys:'variations merge parent child orphan family' },
+  { id:'listing-manager',name:'Listing Manager',    sub:'Hierarchical catalog editor — BRAND → STYLE → VARIANT',    mod:'MANAGE',  pill:'beta', go:()=>showListingManagerPage(), keys:'listing manager catalog tree workspace hierarchy variant style manage edit' },
   { id:'engine',         name:'Inspect Rules',      sub:'Live conditional logic engine across every Amazon NIS PT', mod:'CREATE',  pill:'live', go:()=>showEnginePage(),        keys:'rules engine logic conditional inspect required optional admin' },
 
   // Soon modules → preview pages
