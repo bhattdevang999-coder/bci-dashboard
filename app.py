@@ -18107,6 +18107,73 @@ def _lm_active_workspace_id():
     ).strip() or "novelle"
 
 
+def _lm_findings_summary(workspace_id: str, asins: list) -> dict:
+    """Batch lookup of Catalog Health findings for a list of ASINs.
+
+    Returns:
+      { asin: {
+          critical: int, high: int, medium: int, low: int, strategic: int,
+          total: int,
+          top: {rule_name, severity, priority_score} | None,
+        } }
+
+    Best-effort. Returns {} if the DB pool is cold or query fails.
+    """
+    if not asins:
+        return {}
+    try:
+        from substrate.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return {}
+        out = {a: {"critical": 0, "high": 0, "medium": 0,
+                   "low": 0, "strategic": 0, "total": 0, "top": None}
+               for a in asins}
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                # Counts by severity
+                cur.execute(
+                    """
+                    SELECT asin, severity, COUNT(*)
+                    FROM catalog_audit_findings
+                    WHERE workspace_id = %s AND asin = ANY(%s)
+                    GROUP BY asin, severity
+                    """,
+                    (workspace_id, asins),
+                )
+                for r in cur.fetchall():
+                    asin, sev, cnt = r[0], r[1], int(r[2])
+                    if asin in out and sev in out[asin]:
+                        out[asin][sev] = cnt
+                        out[asin]["total"] += cnt
+                # Top finding per ASIN (highest priority_score)
+                cur.execute(
+                    """
+                    SELECT DISTINCT ON (asin)
+                           asin, rule_name, severity, priority_score
+                    FROM catalog_audit_findings
+                    WHERE workspace_id = %s AND asin = ANY(%s)
+                    ORDER BY asin, priority_score DESC NULLS LAST,
+                             created_at DESC
+                    """,
+                    (workspace_id, asins),
+                )
+                for r in cur.fetchall():
+                    asin = r[0]
+                    if asin in out:
+                        out[asin]["top"] = {
+                            "rule_name": r[1],
+                            "severity": r[2],
+                            "priority_score":
+                                float(r[3]) if r[3] is not None else None,
+                        }
+        return out
+    except Exception as exc:
+        print(f"[atlas] listing-manager findings lookup failed: {exc}",
+              flush=True)
+        return {}
+
+
 @app.route("/api/listing-manager/tree", methods=["GET"])
 def listing_manager_tree():
     """Catalog tree for the Listing Manager left pane.
@@ -18182,6 +18249,14 @@ def listing_manager_tree():
             parent = row["parent_asin"]
             families_by_parent.setdefault(parent, []).append(row)
 
+        # Batch fetch Catalog Health findings for all child ASINs.
+        all_child_asins = [
+            c["asin"]
+            for children in families_by_parent.values()
+            for c in children
+        ]
+        findings_map = _lm_findings_summary(workspace_id, all_child_asins)
+
         # Build response. One family per parent; orphans (no parent_asin
         # and no children) become single-row families.
         families = []
@@ -18205,6 +18280,10 @@ def listing_manager_tree():
                         "has_title": bool(
                             (c["ground_truth_fields"] or {}).get("title")
                         ),
+                        "findings": findings_map.get(c["asin"]) or {
+                            "critical": 0, "high": 0, "medium": 0,
+                            "low": 0, "strategic": 0, "total": 0, "top": None,
+                        },
                     }
                     for c in children
                 ],
@@ -18220,6 +18299,9 @@ def listing_manager_tree():
             } and r["asin"] not in seen_parents
         ]
         if orphans:
+            orphan_findings = _lm_findings_summary(
+                workspace_id, [o["asin"] for o in orphans]
+            )
             families.append({
                 "parent_asin": None,
                 "style_label": "(orphans · no parent ASIN)",
@@ -18231,6 +18313,10 @@ def listing_manager_tree():
                         "has_title": bool(
                             (o["ground_truth_fields"] or {}).get("title")
                         ),
+                        "findings": orphan_findings.get(o["asin"]) or {
+                            "critical": 0, "high": 0, "medium": 0,
+                            "low": 0, "strategic": 0, "total": 0, "top": None,
+                        },
                     }
                     for o in orphans
                 ],
@@ -18273,6 +18359,12 @@ def listing_manager_matrix(parent_asin):
             or parent_asin
         )
 
+        # Batch fetch findings for all variant ASINs (excludes parent).
+        variant_asins = [
+            r["asin"] for r in rows if r["asin"] != parent_asin
+        ]
+        findings_map = _lm_findings_summary(workspace_id, variant_asins)
+
         colors = []
         sizes = []
         cells = {}
@@ -18292,8 +18384,17 @@ def listing_manager_matrix(parent_asin):
                 1 for i in range(1, 6)
                 if gtf.get(f"bullet_{i}") or gtf.get(f"bullet{i}")
             )
-            if has_title and bullet_count >= 5:
+            findings = findings_map.get(r["asin"]) or {
+                "critical": 0, "high": 0, "medium": 0,
+                "low": 0, "strategic": 0, "total": 0, "top": None,
+            }
+            # Findings override content-derived status.
+            if findings["critical"] > 0 or findings["high"] > 0:
+                status = "critical"
+            elif has_title and bullet_count >= 5 and findings["medium"] == 0:
                 status = "complete"
+            elif has_title and bullet_count >= 5:
+                status = "warning"  # complete content but has medium findings
             elif has_title or bullet_count > 0:
                 status = "progress"
             else:
@@ -18304,6 +18405,7 @@ def listing_manager_matrix(parent_asin):
                 "status": status,
                 "has_title": has_title,
                 "bullet_count": bullet_count,
+                "findings": findings,
             }
 
         return jsonify({

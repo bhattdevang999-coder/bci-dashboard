@@ -251,6 +251,27 @@
 .lm-cell-complete { background: rgba(94,234,212,0.04); }
 .lm-cell-progress .lm-cell-dot { color: #F59E0B; }
 .lm-cell-notstarted .lm-cell-dot { color: #475569; }
+.lm-cell-critical {
+  background: rgba(239,68,68,0.06);
+  box-shadow: inset 0 0 0 1px rgba(239,68,68,0.3);
+}
+.lm-cell-critical .lm-cell-dot { color: #EF4444; }
+.lm-cell-warning {
+  background: rgba(245,158,11,0.06);
+}
+.lm-cell-warning .lm-cell-dot { color: #F59E0B; }
+.lm-cell-findings {
+  position: absolute;
+  top: 4px; right: 6px;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 1px 4px;
+  border: 1px solid currentColor;
+}
+.lm-cell-findings-critical { color: #EF4444; }
+.lm-cell-findings-warning  { color: #F59E0B; }
+.lm-cell-findings-info     { color: #94A3B8; }
 .lm-cell-empty {
   background: repeating-linear-gradient(
     45deg,
@@ -389,9 +410,9 @@
         </div>
       </div>
       <div class="lm-legend">
-        <div class="lm-legend-row"><span class="lm-status-complete">●</span> Complete</div>
-        <div class="lm-legend-row"><span class="lm-status-progress">●</span> In Progress</div>
-        <div class="lm-legend-row"><span class="lm-status-review">●</span> Needs Review</div>
+        <div class="lm-legend-row"><span class="lm-status-review">●</span> Critical / High (audit)</div>
+        <div class="lm-legend-row"><span class="lm-status-progress">●</span> Medium (audit)</div>
+        <div class="lm-legend-row"><span class="lm-status-complete">●</span> No issues</div>
         <div class="lm-legend-row"><span class="lm-status-notstarted">○</span> Not Started</div>
       </div>
     </aside>
@@ -527,10 +548,21 @@ function lmRenderTree() {
             '<span class="lm-status-progress lm-tree-status">●</span></div>';
     (fam.children || []).forEach(c => {
       const sel = (LM_SELECTED_ASIN === c.asin) ? ' lm-selected' : '';
-      const dot = c.has_title ? 'lm-status-progress' : 'lm-status-notstarted';
-      const dotChar = c.has_title ? '●' : '○';
+      const f = c.findings || {};
+      let dot = 'lm-status-notstarted', dotChar = '○';
+      let titleHint = c.has_title ? 'has title' : 'no title';
+      if ((f.critical || 0) + (f.high || 0) > 0) {
+        dot = 'lm-status-review'; dotChar = '●';
+        titleHint = (f.critical + f.high) + ' critical' + (f.top && f.top.rule_name ? ' · ' + f.top.rule_name : '');
+      } else if ((f.medium || 0) > 0) {
+        dot = 'lm-status-progress'; dotChar = '●';
+        titleHint = f.medium + ' warning' + (f.top && f.top.rule_name ? ' · ' + f.top.rule_name : '');
+      } else if (c.has_title) {
+        dot = 'lm-status-complete'; dotChar = '●';
+        titleHint = 'no issues';
+      }
       const subLabel = c.asin + ' · ' + (c.color || '—') + ' / ' + (c.size || '—');
-      html += '<div class="lm-tree-node lm-l4' + sel + '" onclick="lmSelectAsin(\'' + c.asin + '\')">' +
+      html += '<div class="lm-tree-node lm-l4' + sel + '" onclick="lmSelectAsin(\'' + c.asin + '\')" title="' + titleHint + '">' +
               '<span class="lm-tree-toggle">·</span>' +
               '<span class="lm-tree-label">' + subLabel + '</span>' +
               '<span class="' + dot + ' lm-tree-status">' + dotChar + '</span></div>';
@@ -707,18 +739,42 @@ function lmRenderMatrix() {
         continue;
       }
       const isCurrent = (cell.asin === LM_SELECTED_ASIN) ? ' lm-cell-current' : '';
+      const f = cell.findings || {};
+      const critCount = (f.critical || 0) + (f.high || 0);
+      const warnCount = (f.medium || 0);
+
       let cls = '', label = '', dot = '○', dotColor = 'lm-status-notstarted';
-      if (cell.status === 'complete') {
+      let sublabel = cell.asin;
+      if (cell.status === 'critical') {
+        cls = 'lm-cell-critical'; label = 'critical'; dot = '●'; dotColor = 'lm-status-review';
+        if (f.top && f.top.rule_name) sublabel = f.top.rule_name.replace(/_/g, ' ');
+      } else if (cell.status === 'warning') {
+        cls = 'lm-cell-warning'; label = 'has warnings'; dot = '●'; dotColor = 'lm-status-progress';
+        if (f.top && f.top.rule_name) sublabel = f.top.rule_name.replace(/_/g, ' ');
+      } else if (cell.status === 'complete') {
         cls = 'lm-cell-complete'; label = 'complete'; dot = '●'; dotColor = 'lm-status-complete';
       } else if (cell.status === 'progress') {
         cls = 'lm-cell-progress'; label = 'in progress'; dot = '●'; dotColor = 'lm-status-progress';
       } else {
         cls = 'lm-cell-notstarted'; label = 'not started'; dot = '○'; dotColor = 'lm-status-notstarted';
       }
-      html += '<td class="lm-cell ' + cls + isCurrent + '" onclick="lmSelectAsin(\'' + cell.asin + '\')" title="' + cell.asin + '">' +
+
+      // Findings badge (top-right)
+      let badge = '';
+      if (critCount > 0) {
+        badge = '<div class="lm-cell-findings lm-cell-findings-critical">' + critCount + ' CRIT</div>';
+      } else if (warnCount > 0) {
+        badge = '<div class="lm-cell-findings lm-cell-findings-warning">' + warnCount + ' WARN</div>';
+      } else if ((f.low || 0) + (f.strategic || 0) > 0) {
+        badge = '<div class="lm-cell-findings lm-cell-findings-info">' + (f.low + f.strategic) + ' INFO</div>';
+      }
+
+      const tt = cell.asin + (f.top && f.top.rule_name ? ' — ' + f.top.rule_name : '');
+      html += '<td class="lm-cell ' + cls + isCurrent + '" onclick="lmSelectAsin(\'' + cell.asin + '\')" title="' + tt + '">' +
+              badge +
               '<div class="lm-cell-dot ' + dotColor + '">' + dot + '</div>' +
               '<div class="lm-cell-meta">' + label + '</div>' +
-              '<div class="lm-cell-sub">' + cell.asin + '</div>' +
+              '<div class="lm-cell-sub">' + sublabel + '</div>' +
               '</td>';
     }
     html += '</tr>';
@@ -726,10 +782,11 @@ function lmRenderMatrix() {
   html += '</tbody></table>';
 
   html += '<div class="lm-matrix-legend">' +
-          '<span><span class="lm-status-complete">●</span> complete</span>' +
-          '<span><span class="lm-status-progress">●</span> in progress</span>' +
+          '<span><span class="lm-status-review">●</span> critical (Catalog Health)</span>' +
+          '<span><span class="lm-status-progress">●</span> warning / in progress</span>' +
+          '<span><span class="lm-status-complete">●</span> complete · no issues</span>' +
           '<span><span class="lm-status-notstarted">○</span> not started</span>' +
-          '<span style="color:#475569;">+ add variant (no ASIN yet)</span>' +
+          '<span style="color:#475569;">+ add variant</span>' +
           '</div>';
   html += '</div>';
   return html;
