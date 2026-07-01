@@ -74,6 +74,7 @@ _HEADER_ALIASES = {
     "size":            ["productsize", "size"],
     "upc":             ["upccode", "upc"],
     "asin":            ["childasin"],
+    "parent_asin":     ["parentasin", "parentid"],
     "sku":             ["sku"],
     "due_date":        ["duedateearliestshipdate", "duedate", "earliestshipdate", "shipdate"],
     "amazon_cost":     ["amazoncost", "amznwholesale", "wholesale", "cost", "costprice"],

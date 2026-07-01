@@ -1,0 +1,170 @@
+<!-- ═══════════════════ CATALOG INTEL ═══════════════════ -->
+<style>
+#catalog-intel-page {
+  background: #08111A;
+  color: #E2E8F0;
+  font-family: 'Calibri', sans-serif;
+  padding: 0;
+  margin: 0;
+}
+
+.ci-root {
+  height: calc(100vh - 120px);
+  min-height: 600px;
+  display: flex; flex-direction: column;
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+}
+
+.ci-topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 20px;
+  background: #08111A;
+  border-bottom: 1px solid #1C2D40;
+}
+.ci-title-block { display: flex; flex-direction: column; gap: 2px; }
+.ci-eyebrow {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #5EEAD4;
+}
+.ci-title {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #E2E8F0;
+}
+.ci-workspace-picker {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94A3B8;
+}
+.ci-workspace-picker select {
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+  color: #E2E8F0;
+  padding: 5px 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  border-radius: 3px;
+}
+
+.ci-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px 20px;
+}
+
+.ci-empty {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 40px 20px;
+}
+.ci-dropzone {
+  border: 2px dashed #1C2D40;
+  border-radius: 8px;
+  padding: 60px 40px;
+  background: #08111A;
+  color: #475569;
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  cursor: not-allowed;
+  transition: border-color 120ms, background 120ms;
+}
+.ci-dropzone strong {
+  display: block;
+  color: #94A3B8;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.ci-dropzone-sub {
+  color: #475569;
+  font-size: 11px;
+  margin-top: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ci-help {
+  margin-top: 24px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #94A3B8;
+  line-height: 1.6;
+}
+.ci-help a { color: #5EEAD4; text-decoration: underline dotted; }
+.ci-status-note {
+  margin-top: 32px;
+  padding: 12px 16px;
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #F59E0B;
+  text-align: left;
+}
+.ci-status-note strong {
+  color: #F59E0B;
+  display: block;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+}
+</style>
+
+<div class="content" id="catalog-intel-page" style="display:none; padding:0;">
+
+  <div class="ci-root">
+
+    <div class="ci-topbar">
+      <div class="ci-title-block">
+        <span class="ci-eyebrow">MONITOR · UPLOAD-DRIVEN AUDIT</span>
+        <span class="ci-title">Catalog Intel</span>
+      </div>
+      <div class="ci-workspace-picker">
+        <span>WORKSPACE:</span>
+        <select disabled><option>—</option></select>
+      </div>
+    </div>
+
+    <div class="ci-body">
+      <div class="ci-empty">
+        <div class="ci-dropzone">
+          <strong>Drop your Amazon catalog export</strong>
+          Ingest ships in v0.2 — this is a placeholder.
+          <div class="ci-dropzone-sub">.xlsx · .xlsm · up to 100MB</div>
+        </div>
+
+        <div class="ci-help">
+          Once ingest lands, we'll analyze up to 15 dimensions of your catalog
+          and tell you exactly what more data unlocks deeper insight.<br><br>
+          File schema matches the template: <a href="#">Catalog + optional Sales sheet</a>.
+        </div>
+
+        <div class="ci-status-note">
+          <strong>v0.1 · shell only</strong>
+          Spec locked in <code style="color:#94A3B8;">substrate/CATALOG_INTEL.md</code>. Next slice (v0.2)
+          adds the ingest routes and snapshot storage. Then coverage matrix (v0.3),
+          then the 15 analyses (v0.4-v0.5).
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function showCatalogIntelPage() {
+  _showPage('catalog-intel-page', 'Atlas · Catalog Intel',
+    'Upload-driven brand audit — coverage matrix, findings, drilldowns');
+}
+</script>

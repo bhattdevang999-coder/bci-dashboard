@@ -18422,6 +18422,200 @@ def listing_manager_matrix(parent_asin):
         return jsonify({"ok": False, "error": str(exc)[:200]}), 500
 
 
+@app.route("/api/listing-manager/import-preupload", methods=["POST"])
+def listing_manager_import_preupload():
+    """Ingest a preupload xlsx/xlsm into asin_metadata.
+
+    multipart/form-data: file=<xlsx>
+    Optional form fields: workspace_id (else from cookie/default)
+
+    For each (style × color × size) variation in the sheet:
+      - If the row has a Child ASIN: upsert that asin_metadata row
+      - Otherwise: synthesize a DRAFT placeholder ASIN so the row appears
+        in the catalog tree (user can attach the real ASIN later)
+      - parent_asin = the style number (so the family hierarchy works)
+      - variation_axes = {color_name, size}
+      - ground_truth_fields = {title (from name), model_name, sub_class}
+
+    Existing rows are merged (we keep existing ground_truth_fields the operator
+    has already edited; preupload only fills blanks).
+    """
+    if "file" not in request.files:
+        return jsonify({"ok": False, "error": "no file uploaded"}), 400
+    f = request.files["file"]
+    if not f.filename:
+        return jsonify({"ok": False, "error": "empty filename"}), 400
+
+    workspace_id = (
+        request.form.get("workspace_id")
+        or _lm_active_workspace_id()
+    )
+
+    tmp = BASE_DIR / "uploads" / "listing_manager_preupload"
+    tmp.mkdir(parents=True, exist_ok=True)
+    dest = tmp / f.filename
+    f.save(str(dest))
+
+    try:
+        from nis_engine.preupload_importer import parse_preupload
+        from substrate.asin_metadata import (
+            set_asin_metadata_bulk, get_asin_metadata,
+        )
+        parsed = parse_preupload(str(dest))
+        brand = parsed.get("brand") or ""
+        styles = parsed.get("styles") or {}
+
+        # Build rows for bulk upsert.
+        # The parser yields one record per style with sets of colors/sizes;
+        # the raw rows (one per UPC) hold the variant-level color/size/ASIN.
+        # We re-read the workbook to walk per-row for variant granularity.
+        import openpyxl
+        wb = openpyxl.load_workbook(str(dest), data_only=True)
+        ws = None
+        for sn in wb.sheetnames:
+            if "upload" in sn.lower() and "upc" in sn.lower():
+                ws = wb[sn]; break
+        if ws is None:
+            ws = wb[wb.sheetnames[0]]
+
+        # Build the column map again, locally
+        from nis_engine.preupload_importer import _build_column_map
+        header = [ws.cell(row=1, column=c).value
+                  for c in range(1, ws.max_column + 1)]
+        cmap = _build_column_map(header)
+
+        def _get(r, key):
+            ci = cmap.get(key)
+            if not ci:
+                return None
+            v = ws.cell(row=r, column=ci).value
+            if v is None:
+                return None
+            s = str(v).strip()
+            return s or None
+
+        # First pass: collect parent ASIN candidates per style (uses Parent ASIN
+        # column if present, else falls back to style number string).
+        parent_asin_col = cmap.get("parent_asin")
+
+        rows = []
+        parents_seen = set()
+        rows_skipped = 0
+        rows_drafted = 0
+        rows_with_asin = 0
+
+        for r in range(2, ws.max_row + 1):
+            style = _get(r, "style")
+            if not style:
+                continue
+            # Skip sentinel/template-annotation rows the parser also skips
+            if style.upper() in {"REQUIRED", "OPTIONAL", "IMPORTANT",
+                                  "CONDITIONALLY REQUIRED", "RECOMMENDED"}:
+                continue
+            if " " in style or len(style) > 14 or len(style) < 4:
+                continue
+
+            color = _get(r, "color")
+            color_code = _get(r, "color_code")
+            size = _get(r, "size")
+            asin = _get(r, "asin")
+            upc = _get(r, "upc")
+            sku = _get(r, "sku")
+            name = _get(r, "name")
+            sub_class = _get(r, "sub_class")
+            model = _get(r, "model")
+
+            parent_asin = (
+                ws.cell(row=r, column=parent_asin_col).value if parent_asin_col else None
+            )
+            parent_asin = str(parent_asin).strip() if parent_asin else f"STYLE-{style}"
+
+            # Add a parent_asin row once per style if not yet emitted
+            if parent_asin not in parents_seen:
+                parents_seen.add(parent_asin)
+                # Merge with existing parent if present
+                existing = get_asin_metadata(workspace_id, parent_asin) or {}
+                merged_gtf = dict(existing.get("ground_truth_fields") or {})
+                if name and not merged_gtf.get("title"):
+                    merged_gtf["title"] = name
+                if name and not merged_gtf.get("model_name"):
+                    merged_gtf["model_name"] = name
+                if sub_class and not merged_gtf.get("sub_class"):
+                    merged_gtf["sub_class"] = sub_class
+                if brand and not merged_gtf.get("brand_name"):
+                    merged_gtf["brand_name"] = brand
+                rows.append({
+                    "asin": parent_asin,
+                    "parent_asin": None,
+                    "variation_family": style,
+                    "variation_axes": existing.get("variation_axes") or {},
+                    "ground_truth_fields": merged_gtf,
+                    "field_sources": existing.get("field_sources") or {},
+                })
+
+            # Variant row
+            if not asin:
+                # Synthesize a placeholder so the row appears in the tree
+                ck = (color_code or color or "NA").replace(" ", "")[:6]
+                sk = (size or "NA").replace(" ", "")[:6]
+                asin = f"DRAFT-{style}-{ck}-{sk}"
+                rows_drafted += 1
+            else:
+                rows_with_asin += 1
+
+            existing = get_asin_metadata(workspace_id, asin) or {}
+            merged_gtf = dict(existing.get("ground_truth_fields") or {})
+            if name and not merged_gtf.get("title"):
+                merged_gtf["title"] = name
+            if model and not merged_gtf.get("model_name"):
+                merged_gtf["model_name"] = model
+            if brand and not merged_gtf.get("brand_name"):
+                merged_gtf["brand_name"] = brand
+            if sub_class and not merged_gtf.get("sub_class"):
+                merged_gtf["sub_class"] = sub_class
+            if upc and not merged_gtf.get("upc"):
+                merged_gtf["upc"] = upc
+            if sku and not merged_gtf.get("sku"):
+                merged_gtf["sku"] = sku
+
+            merged_axes = dict(existing.get("variation_axes") or {})
+            if color and not merged_axes.get("color_name"):
+                merged_axes["color_name"] = color
+            if size and not merged_axes.get("size"):
+                merged_axes["size"] = size
+            if color_code and not merged_axes.get("color_code"):
+                merged_axes["color_code"] = color_code
+
+            rows.append({
+                "asin": asin,
+                "parent_asin": parent_asin,
+                "variation_family": style,
+                "variation_axes": merged_axes,
+                "ground_truth_fields": merged_gtf,
+                "field_sources": existing.get("field_sources") or {},
+            })
+
+        n = set_asin_metadata_bulk(
+            workspace_id, rows,
+            set_by="listing_manager_preupload_import",
+            bump_revision=False,
+        )
+
+        return jsonify({
+            "ok": True,
+            "workspace_id": workspace_id,
+            "brand": brand,
+            "styles_seen": len(styles),
+            "rows_upserted": n,
+            "variants_with_asin": rows_with_asin,
+            "variants_drafted": rows_drafted,
+            "variants_skipped": rows_skipped,
+        })
+    except Exception as exc:
+        print(f"[atlas] listing-manager import-preupload failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/listing-manager/issues", methods=["GET"])
 def listing_manager_issues():
     """All Catalog Health findings for the active workspace, with family context.
