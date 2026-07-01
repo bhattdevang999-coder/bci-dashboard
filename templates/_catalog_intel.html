@@ -118,6 +118,90 @@
   letter-spacing: 0.08em;
   font-size: 10px;
 }
+
+/* Live dropzone states */
+.ci-dropzone.ci-drop-active {
+  border-color: #5EEAD4;
+  background: rgba(94,234,212,0.05);
+  cursor: pointer;
+}
+.ci-dropzone.ci-drop-active:hover { border-color: #4FD9C3; }
+.ci-dropzone.ci-drop-hover {
+  border-color: #5EEAD4;
+  background: rgba(94,234,212,0.1);
+}
+.ci-dropzone.ci-drop-uploading {
+  border-color: #F59E0B;
+  background: rgba(245,158,11,0.05);
+  cursor: wait;
+}
+
+/* Snapshot history */
+.ci-snapshots {
+  max-width: 960px;
+  margin: 32px auto 0;
+}
+.ci-snapshots-head {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #5EEAD4;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #1C2D40;
+}
+.ci-snap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+}
+.ci-snap-table th, .ci-snap-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid #1C2D40;
+}
+.ci-snap-table th {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94A3B8;
+  font-weight: 600;
+  background: #08111A;
+}
+.ci-snap-table td { color: #E2E8F0; }
+.ci-snap-warnings {
+  color: #F59E0B;
+  font-size: 10px;
+}
+
+/* Upload result banner */
+.ci-upload-result {
+  max-width: 640px;
+  margin: 20px auto;
+  padding: 14px 18px;
+  background: rgba(94,234,212,0.06);
+  border: 1px solid #5EEAD4;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #E2E8F0;
+}
+.ci-upload-result.ci-upload-error {
+  background: rgba(239,68,68,0.06);
+  border-color: #EF4444;
+  color: #EF4444;
+}
+.ci-upload-result strong {
+  display: block;
+  color: #5EEAD4;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+}
+.ci-upload-result.ci-upload-error strong { color: #EF4444; }
 </style>
 
 <div class="content" id="catalog-intel-page" style="display:none; padding:0;">
@@ -137,23 +221,47 @@
 
     <div class="ci-body">
       <div class="ci-empty">
-        <div class="ci-dropzone">
-          <strong>Drop your Amazon catalog export</strong>
-          Ingest ships in v0.2 — this is a placeholder.
-          <div class="ci-dropzone-sub">.xlsx · .xlsm · up to 100MB</div>
+        <div class="ci-dropzone ci-drop-active" id="ci-dropzone"
+             onclick="document.getElementById('ci-file-input').click()">
+          <strong id="ci-drop-strong">Drop your Amazon catalog export</strong>
+          <div id="ci-drop-body">Click or drag an .xlsx / .xlsm here</div>
+          <div class="ci-dropzone-sub">up to 100MB · Catalog sheet required · Sales sheet optional</div>
         </div>
+        <input type="file" id="ci-file-input" style="display:none;"
+               accept=".xlsx,.xlsm" onchange="ciHandleFile(this.files[0])">
 
         <div class="ci-help">
-          Once ingest lands, we'll analyze up to 15 dimensions of your catalog
-          and tell you exactly what more data unlocks deeper insight.<br><br>
-          File schema matches the template: <a href="#">Catalog + optional Sales sheet</a>.
+          Analyzes up to 15 dimensions of your catalog and tells you exactly
+          what more data unlocks deeper insight (coverage matrix + 360° opportunities panel).<br><br>
+          File schema matches the canonical template stored at
+          <code style="color:#94A3B8;">data/fixtures/ROXY-Atlas_Catalog_Data_Template_20260519-FINAL.xlsx</code>.
         </div>
 
+        <div id="ci-upload-result"></div>
+
         <div class="ci-status-note">
-          <strong>v0.1 · shell only</strong>
-          Spec locked in <code style="color:#94A3B8;">substrate/CATALOG_INTEL.md</code>. Next slice (v0.2)
-          adds the ingest routes and snapshot storage. Then coverage matrix (v0.3),
-          then the 15 analyses (v0.4-v0.5).
+          <strong>v0.2 · ingest live · rules pack shipping in v0.4</strong>
+          Ingest works: file is saved immutably, snapshot row created,
+          catalog rows merged into <code style="color:#94A3B8;">asin_metadata</code>,
+          sales rows upserted into <code style="color:#94A3B8;">asin_sales_metrics</code>
+          (deduped on period_end). Coverage matrix + analyses drop next.
+        </div>
+
+        <div class="ci-snapshots" id="ci-snapshots-block" style="display:none;">
+          <div class="ci-snapshots-head">Recent snapshots</div>
+          <table class="ci-snap-table">
+            <thead>
+              <tr>
+                <th>Uploaded</th>
+                <th>File</th>
+                <th>Catalog rows</th>
+                <th>Sales rows</th>
+                <th>Period</th>
+                <th>Warnings</th>
+              </tr>
+            </thead>
+            <tbody id="ci-snap-body"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -163,8 +271,120 @@
 </div>
 
 <script>
+// ============== Catalog Intel v0.2 ==============
+
+async function ciHandleFile(file) {
+  if (!file) return;
+  const zone = document.getElementById('ci-dropzone');
+  const body = document.getElementById('ci-drop-body');
+  const strong = document.getElementById('ci-drop-strong');
+  const result = document.getElementById('ci-upload-result');
+
+  zone.classList.remove('ci-drop-active');
+  zone.classList.add('ci-drop-uploading');
+  strong.textContent = 'Uploading…';
+  body.textContent = file.name + ' · ' + (file.size / 1024 / 1024).toFixed(1) + ' MB';
+  result.innerHTML = '';
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  try {
+    const r = await fetch('/api/catalog-intel/upload', {
+      method: 'POST',
+      body: fd,
+    });
+    const d = await r.json();
+    zone.classList.remove('ci-drop-uploading');
+    zone.classList.add('ci-drop-active');
+
+    if (!d.ok) {
+      strong.textContent = 'Upload failed';
+      body.textContent = 'Click to try again';
+      result.innerHTML = '<div class="ci-upload-result ci-upload-error">' +
+        '<strong>Error</strong>' + (d.error || 'unknown') + '</div>';
+      return;
+    }
+
+    strong.textContent = 'Ingested successfully';
+    body.textContent = 'Click or drop another file to add a new snapshot';
+    const w = (d.warnings || []).join(' · ');
+    result.innerHTML = '<div class="ci-upload-result">' +
+      '<strong>✓ ' + d.file_name + '</strong>' +
+      'Snapshot: <code>' + d.snapshot_id.slice(0,8) + '</code><br>' +
+      'Catalog rows: <strong>' + d.row_count_catalog.toLocaleString() + '</strong> · ' +
+      'Sales rows: <strong>' + d.row_count_sales.toLocaleString() + '</strong>' +
+      (d.period_end ? ' · through ' + d.period_end : '') +
+      (w ? '<br><span style="color:#F59E0B;">Warnings: ' + w + '</span>' : '') +
+      (d.sample_asins && d.sample_asins.length ?
+        '<br><span style="color:#94A3B8; font-size:10px;">Sample ASINs: ' +
+        d.sample_asins.join(', ') + '</span>' : '') +
+      '</div>';
+
+    ciLoadSnapshots();
+  } catch (e) {
+    zone.classList.remove('ci-drop-uploading');
+    zone.classList.add('ci-drop-active');
+    strong.textContent = 'Upload failed';
+    body.textContent = 'Click to try again';
+    result.innerHTML = '<div class="ci-upload-result ci-upload-error">' +
+      '<strong>Network error</strong>' + String(e) + '</div>';
+  }
+}
+
+async function ciLoadSnapshots() {
+  try {
+    const r = await fetch('/api/catalog-intel/snapshots');
+    const d = await r.json();
+    if (!d.ok || !d.snapshots || !d.snapshots.length) {
+      document.getElementById('ci-snapshots-block').style.display = 'none';
+      return;
+    }
+    document.getElementById('ci-snapshots-block').style.display = 'block';
+    const tb = document.getElementById('ci-snap-body');
+    tb.innerHTML = d.snapshots.map(s => {
+      const upl = s.uploaded_at ? new Date(s.uploaded_at).toLocaleString() : '—';
+      const period = (s.period_start || '—') + ' → ' + (s.period_end || '—');
+      const warns = (s.parse_warnings || []).length
+        ? '<span class="ci-snap-warnings">' + s.parse_warnings.length + '</span>'
+        : '—';
+      return '<tr>' +
+             '<td>' + upl + '</td>' +
+             '<td>' + (s.file_name || '—') + '</td>' +
+             '<td>' + (s.row_count_catalog || 0).toLocaleString() + '</td>' +
+             '<td>' + (s.row_count_sales || 0).toLocaleString() + '</td>' +
+             '<td>' + period + '</td>' +
+             '<td>' + warns + '</td>' +
+             '</tr>';
+    }).join('');
+  } catch (e) { /* silent */ }
+}
+
+// Drag/drop handlers
+(function() {
+  const zone = document.getElementById('ci-dropzone');
+  if (!zone) return;
+  ['dragenter', 'dragover'].forEach(ev =>
+    zone.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      zone.classList.add('ci-drop-hover');
+    })
+  );
+  ['dragleave', 'drop'].forEach(ev =>
+    zone.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      zone.classList.remove('ci-drop-hover');
+    })
+  );
+  zone.addEventListener('drop', e => {
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) ciHandleFile(f);
+  });
+})();
+
 function showCatalogIntelPage() {
   _showPage('catalog-intel-page', 'Atlas · Catalog Intel',
     'Upload-driven brand audit — coverage matrix, findings, drilldowns');
+  ciLoadSnapshots();
 }
 </script>

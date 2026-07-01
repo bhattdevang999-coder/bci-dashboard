@@ -1529,3 +1529,79 @@ CREATE INDEX IF NOT EXISTS idx_pdp_variants_starred
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v13', 'M7 Day 1: Creative Studio substrate — image_library M7 columns + image_surfaces + image_tags + caption_library + pdp_variants.')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- ============================================================
+-- Catalog Intel  (v0.2)
+--
+-- Client-facing upload-driven audit. See substrate/CATALOG_INTEL.md.
+-- Snapshots are immutable. Sales metrics are per-period, deduped on
+-- (workspace_id, asin, period_end) so re-uploading the same period
+-- overwrites the old numbers for that period.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS catalog_snapshots (
+    snapshot_id       UUID        PRIMARY KEY,
+    workspace_id      TEXT        NOT NULL,
+    uploaded_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    uploaded_by       TEXT        DEFAULT 'devang',
+    file_name         TEXT,
+    file_path         TEXT,                   -- local uploads/ path
+    row_count_catalog INT         DEFAULT 0,
+    row_count_sales   INT         DEFAULT 0,
+    period_start      DATE,
+    period_end        DATE,
+    parse_warnings    JSONB       DEFAULT '[]'::jsonb,
+    notes             TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_snapshots_workspace
+    ON catalog_snapshots (workspace_id, uploaded_at DESC);
+
+
+CREATE TABLE IF NOT EXISTS asin_sales_metrics (
+    workspace_id  TEXT        NOT NULL,
+    asin          TEXT        NOT NULL,
+    period_start  DATE,
+    period_end    DATE        NOT NULL,
+    sessions      INT         DEFAULT 0,
+    units         INT         DEFAULT 0,
+    revenue       NUMERIC(12,2) DEFAULT 0,
+    cvr_pct       NUMERIC(6,3),
+    snapshot_id   UUID,                       -- FK-ish; not enforced to allow best-effort ingest
+    inserted_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (workspace_id, asin, period_end)
+);
+
+CREATE INDEX IF NOT EXISTS idx_asin_sales_metrics_workspace_revenue
+    ON asin_sales_metrics (workspace_id, revenue DESC);
+
+CREATE INDEX IF NOT EXISTS idx_asin_sales_metrics_workspace_sessions
+    ON asin_sales_metrics (workspace_id, sessions DESC);
+
+CREATE INDEX IF NOT EXISTS idx_asin_sales_metrics_snapshot
+    ON asin_sales_metrics (snapshot_id);
+
+
+CREATE TABLE IF NOT EXISTS catalog_intel_findings (
+    finding_id     UUID        PRIMARY KEY,
+    snapshot_id    UUID        NOT NULL,
+    workspace_id   TEXT        NOT NULL,
+    asin           TEXT,                       -- NULL for catalog-wide findings
+    rule_name      TEXT        NOT NULL,
+    severity       TEXT        NOT NULL,      -- critical | high | medium | low | strategic
+    priority_score NUMERIC(8,3),
+    evidence_json  JSONB       DEFAULT '{}'::jsonb,
+    proposed_fix   TEXT,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_intel_findings_snapshot
+    ON catalog_intel_findings (snapshot_id, severity, priority_score DESC);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_intel_findings_workspace_asin
+    ON catalog_intel_findings (workspace_id, asin);
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v14', 'Catalog Intel v0.2: catalog_snapshots + asin_sales_metrics + catalog_intel_findings.')
+    ON CONFLICT (version) DO NOTHING;

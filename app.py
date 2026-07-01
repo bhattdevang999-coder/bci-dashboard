@@ -18861,6 +18861,381 @@ def listing_manager_asin(asin):
 # ====================================================================
 
 
+# ====================================================================
+# Catalog Intel v0.2 — ingest routes
+#
+# Contract: client uploads a workbook (Catalog sheet + optional Sales),
+# we create an immutable snapshot row, save the raw file, then parse
+# and upsert into asin_metadata + asin_sales_metrics.
+#
+# See substrate/CATALOG_INTEL.md for the full spec.
+# ====================================================================
+
+
+def _ci_active_workspace_id():
+    return (
+        request.form.get("workspace_id")
+        or request.args.get("workspace_id")
+        or request.cookies.get("atlas_workspace_id")
+        or "novelle"
+    ).strip() or "novelle"
+
+
+# Column-name resolver. Case-insensitive, whitespace-tolerant.
+def _ci_norm(s):
+    return "".join(str(s or "").lower().split())
+
+_CI_CATALOG_ALIASES = {
+    "asin":             ["asin", "childasin"],
+    "parent_asin":      ["parentasin", "parent_asin"],
+    "sku":              ["sku"],
+    "upc":              ["upc", "upccode"],
+    "style_number":     ["style#", "stylenumber", "style"],
+    "model_name":       ["modelname", "model"],
+    "title":            ["title", "producttitle"],
+    "bullet_1":         ["bullet1", "bulletpoint1"],
+    "bullet_2":         ["bullet2", "bulletpoint2"],
+    "bullet_3":         ["bullet3", "bulletpoint3"],
+    "bullet_4":         ["bullet4", "bulletpoint4"],
+    "bullet_5":         ["bullet5", "bulletpoint5"],
+    "description":      ["description", "productdescription"],
+    "backend_keywords": ["backendkeywords", "searchterms"],
+    "color":            ["color", "colorname"],
+    "size":             ["size", "productsize"],
+    "variation_theme":  ["variationtheme"],
+    "parent_child":     ["parent/child", "parentchild"],
+    "main_image_url":   ["mainimageurl", "imageurl"],
+    "other_image_urls": ["otherimageurls"],
+    "image_count":      ["imagecount"],
+    "video_count":      ["videocount"],
+    "brand":            ["brand", "brandname"],
+    "category":         ["category"],
+    "subcategory":      ["subcategory"],
+    "item_type_keyword":["itemtypekeyword", "itemtype"],
+    "list_price":       ["listprice", "amazonlistprice"],
+    "sale_price":       ["saleprice"],
+    "buy_box_price":    ["buyboxprice"],
+    "buy_box_winner":   ["buyboxwinner"],
+    "quantity":         ["quantity", "qty"],
+    "fabric_material":  ["fabric/material", "fabricmaterial", "material"],
+    "country_of_origin":["countryoforigin", "coo"],
+    "care_instructions":["careinstructions"],
+    "item_weight":      ["itemweight", "weight"],
+    "package_dimensions":["packagedimensions"],
+    "a_plus_status":    ["a+/ebcstatus", "aplusstatus", "a+status", "aplus/ebcstatus"],
+    "listing_status":   ["listingstatus"],
+    "fulfillment_method":["fulfillmentmethod", "fulfilledby"],
+}
+
+_CI_SALES_ALIASES = {
+    "asin":         ["asin"],
+    "sessions":     ["sessions", "sessionsttm"],
+    "units":        ["units", "unitssold", "unitsttm"],
+    "revenue":      ["revenue", "revenuettm", "salesttm"],
+    "cvr_pct":      ["cvr", "cvrpct", "conversionrate"],
+    "period_start": ["periodstart", "startdate"],
+    "period_end":   ["periodend", "enddate"],
+}
+
+
+def _ci_build_column_map(headers, alias_map):
+    """Given raw sheet headers and an alias map, return {logical_key: col_index (1-based)}."""
+    normed = {_ci_norm(h): i + 1 for i, h in enumerate(headers) if h}
+    out = {}
+    for logical, aliases in alias_map.items():
+        for a in aliases:
+            if a in normed:
+                out[logical] = normed[a]
+                break
+    return out
+
+
+@app.route("/api/catalog-intel/upload", methods=["POST"])
+def catalog_intel_upload():
+    """Ingest a Catalog Intel workbook.
+
+    multipart/form-data: file=<xlsx/xlsm>
+    Optional form fields: workspace_id
+
+    Response: {ok, snapshot_id, workspace_id, row_count_catalog,
+               row_count_sales, warnings[], sample_asins[]}
+    """
+    if "file" not in request.files:
+        return jsonify({"ok": False, "error": "no file uploaded"}), 400
+    up = request.files["file"]
+    if not up.filename:
+        return jsonify({"ok": False, "error": "empty filename"}), 400
+
+    workspace_id = _ci_active_workspace_id()
+
+    # Save raw upload immutably under uploads/catalog_intel/<workspace>/<snapshot_id>/
+    from substrate.catalog_snapshots import (
+        create_snapshot, update_row_counts,
+    )
+    snapshot_id = create_snapshot(
+        workspace_id,
+        file_name=up.filename,
+    )
+    if snapshot_id is None:
+        return jsonify({
+            "ok": False,
+            "error": "DB unavailable (could not create snapshot)",
+        }), 500
+
+    save_dir = BASE_DIR / "uploads" / "catalog_intel" / workspace_id / snapshot_id
+    save_dir.mkdir(parents=True, exist_ok=True)
+    dest = save_dir / up.filename
+    up.save(str(dest))
+
+    warnings = []
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(str(dest), data_only=True, read_only=True)
+
+        # ----- Catalog sheet -----
+        catalog_ws = None
+        for sn in wb.sheetnames:
+            if _ci_norm(sn) == "catalog":
+                catalog_ws = wb[sn]; break
+        if catalog_ws is None:
+            # Fallback: first non-README sheet
+            for sn in wb.sheetnames:
+                if _ci_norm(sn) != "readme":
+                    catalog_ws = wb[sn]; break
+        if catalog_ws is None:
+            return jsonify({
+                "ok": False,
+                "error": "no Catalog sheet found in workbook",
+            }), 400
+
+        rows_iter = catalog_ws.iter_rows(values_only=True)
+        headers = list(next(rows_iter))
+        cmap = _ci_build_column_map(headers, _CI_CATALOG_ALIASES)
+        if "asin" not in cmap or "title" not in cmap:
+            return jsonify({
+                "ok": False,
+                "error": (
+                    "Catalog sheet is missing required columns (need at "
+                    "least ASIN and Title). Detected headers: " +
+                    ", ".join(str(h) for h in headers if h)[:200]
+                ),
+            }), 400
+
+        catalog_rows = []
+        sample_asins = []
+        for i, row in enumerate(rows_iter, start=2):
+            asin = row[cmap["asin"] - 1] if cmap.get("asin") else None
+            if asin is None:
+                continue
+            asin = str(asin).strip()
+            if not asin:
+                continue
+            # Skip legend/instructional rows (values like "Required", "Optional")
+            if asin.upper() in {"REQUIRED", "OPTIONAL", "IMPORTANT",
+                                 "RECOMMENDED", "CONDITIONALLY REQUIRED"}:
+                continue
+
+            def _pick(key):
+                ci = cmap.get(key)
+                if not ci:
+                    return None
+                v = row[ci - 1]
+                if v is None or v == "":
+                    return None
+                if isinstance(v, str):
+                    s = v.strip()
+                    return s or None
+                return v
+
+            parent_asin = _pick("parent_asin")
+            gtf = {}
+            for key in (
+                "sku", "upc", "style_number", "model_name", "title",
+                "bullet_1", "bullet_2", "bullet_3", "bullet_4", "bullet_5",
+                "description", "backend_keywords", "category", "subcategory",
+                "item_type_keyword", "list_price", "sale_price",
+                "buy_box_price", "buy_box_winner", "quantity",
+                "fabric_material", "country_of_origin", "care_instructions",
+                "item_weight", "package_dimensions", "a_plus_status",
+                "listing_status", "fulfillment_method", "main_image_url",
+                "other_image_urls", "image_count", "video_count",
+                "variation_theme", "parent_child",
+            ):
+                v = _pick(key)
+                if v is not None:
+                    gtf[key] = v
+            # brand
+            brand = _pick("brand")
+            if brand:
+                gtf["brand_name"] = brand
+
+            variation_axes = {}
+            color = _pick("color")
+            size = _pick("size")
+            if color:
+                variation_axes["color_name"] = color
+            if size:
+                variation_axes["size"] = size
+            variation_theme = _pick("variation_theme")
+            if variation_theme:
+                variation_axes["variation_theme"] = variation_theme
+
+            catalog_rows.append({
+                "asin": asin,
+                "parent_asin": parent_asin if parent_asin != asin else None,
+                "variation_family": _pick("style_number"),
+                "variation_axes": variation_axes,
+                "ground_truth_fields": gtf,
+            })
+            if len(sample_asins) < 5:
+                sample_asins.append(asin)
+
+        # Bulk upsert catalog rows (merge with existing to preserve operator edits)
+        from substrate.asin_metadata import (
+            set_asin_metadata_bulk, get_asin_metadata,
+        )
+        n_catalog = 0
+        if catalog_rows:
+            # Merge-preserving pass: read existing rows and merge gtf/axes
+            merged = []
+            for cr in catalog_rows:
+                existing = get_asin_metadata(workspace_id, cr["asin"]) or {}
+                merged_gtf = dict(existing.get("ground_truth_fields") or {})
+                for k, v in cr["ground_truth_fields"].items():
+                    if not merged_gtf.get(k):
+                        merged_gtf[k] = v
+                merged_axes = dict(existing.get("variation_axes") or {})
+                for k, v in cr["variation_axes"].items():
+                    if not merged_axes.get(k):
+                        merged_axes[k] = v
+                merged.append({
+                    "asin": cr["asin"],
+                    "parent_asin": (cr["parent_asin"]
+                                    or existing.get("parent_asin")),
+                    "variation_family": (cr["variation_family"]
+                                          or existing.get("variation_family")),
+                    "variation_axes": merged_axes,
+                    "ground_truth_fields": merged_gtf,
+                    "field_sources": existing.get("field_sources") or {},
+                })
+            n_catalog = set_asin_metadata_bulk(
+                workspace_id, merged,
+                set_by="catalog_intel_ingest",
+                bump_revision=False,
+            )
+
+        # ----- Sales sheet (optional) -----
+        sales_ws = None
+        for sn in wb.sheetnames:
+            nsn = _ci_norm(sn)
+            if nsn == "sales" or nsn.startswith("sales("):
+                sales_ws = wb[sn]; break
+        n_sales = 0
+        period_start = None
+        period_end = None
+        if sales_ws is not None:
+            rows_iter = sales_ws.iter_rows(values_only=True)
+            sheaders = list(next(rows_iter))
+            smap = _ci_build_column_map(sheaders, _CI_SALES_ALIASES)
+            if "asin" not in smap:
+                warnings.append("Sales sheet has no ASIN column — skipped.")
+            else:
+                sales_rows = []
+                for row in rows_iter:
+                    asin = row[smap["asin"] - 1] if smap.get("asin") else None
+                    if not asin:
+                        continue
+                    asin = str(asin).strip()
+                    if not asin or asin.upper() in {"REQUIRED", "OPTIONAL"}:
+                        continue
+
+                    def _sp(key):
+                        ci = smap.get(key)
+                        return row[ci - 1] if ci else None
+
+                    pe = _sp("period_end")
+                    ps = _sp("period_start")
+                    sales_rows.append({
+                        "asin": asin,
+                        "period_start": ps,
+                        "period_end": pe,
+                        "sessions": _sp("sessions"),
+                        "units": _sp("units"),
+                        "revenue": _sp("revenue"),
+                        "cvr_pct": _sp("cvr_pct"),
+                    })
+                    if period_end is None and pe:
+                        period_end = pe
+                    if period_start is None and ps:
+                        period_start = ps
+
+                if sales_rows and period_end is None:
+                    # Sales without a period_end can't be deduped safely
+                    warnings.append(
+                        "Sales sheet has no period_end column; "
+                        "skipped ingest (add period_end to enable dedup)."
+                    )
+                elif sales_rows:
+                    from substrate.asin_sales_metrics import upsert_metrics_bulk
+                    n_sales = upsert_metrics_bulk(
+                        workspace_id, sales_rows,
+                        snapshot_id=snapshot_id,
+                    )
+
+        # Patch snapshot row-counts + warnings
+        update_row_counts(
+            snapshot_id,
+            row_count_catalog=n_catalog,
+            row_count_sales=n_sales,
+            parse_warnings=warnings,
+        )
+
+        return jsonify({
+            "ok": True,
+            "snapshot_id": snapshot_id,
+            "workspace_id": workspace_id,
+            "file_name": up.filename,
+            "row_count_catalog": n_catalog,
+            "row_count_sales": n_sales,
+            "period_start": (period_start.isoformat()
+                              if hasattr(period_start, "isoformat") else period_start),
+            "period_end": (period_end.isoformat()
+                            if hasattr(period_end, "isoformat") else period_end),
+            "sample_asins": sample_asins,
+            "warnings": warnings,
+        })
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/upload failed: {exc}", flush=True)
+        import traceback; traceback.print_exc()
+        return jsonify({
+            "ok": False,
+            "snapshot_id": snapshot_id,
+            "error": str(exc)[:200],
+        }), 500
+
+
+@app.route("/api/catalog-intel/snapshots", methods=["GET"])
+def catalog_intel_snapshots():
+    """List catalog-intel snapshots for a workspace (newest first)."""
+    workspace_id = _ci_active_workspace_id()
+    try:
+        from substrate.catalog_snapshots import list_snapshots
+        rows = list_snapshots(workspace_id, limit=50)
+        return jsonify({
+            "ok": True,
+            "workspace_id": workspace_id,
+            "snapshots": rows,
+        })
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/snapshots failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ====================================================================
+# End Catalog Intel v0.2 ingest routes
+# ====================================================================
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))
