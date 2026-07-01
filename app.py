@@ -19214,6 +19214,131 @@ def catalog_intel_upload():
         }), 500
 
 
+@app.route("/api/catalog-intel/coverage", methods=["GET"])
+def catalog_intel_coverage():
+    """Coverage matrix for the active workspace.
+
+    Returns:
+      {
+        ok: true,
+        workspace_id,
+        total_asins, sales_asin_count, snapshot_count,
+        analyses: [ {id, label, status, reason, sample_size, coverage_pct, category}, ...],
+        opportunities: [ {id, label, unlocks_when, why, current_state}, ...],
+        field_fill: {gtf_key: pct},   # top-level fill rate per field
+      }
+
+    Coverage is computed against the workspace's CURRENT asin_metadata + sales,
+    not against a single snapshot. Re-ingesting an improved file automatically
+    upgrades the matrix.
+    """
+    workspace_id = _ci_active_workspace_id()
+    try:
+        from substrate.db import get_pool
+        from substrate.catalog_intel_analyses import (
+            compute_coverage, compute_opportunities, ANALYSES,
+        )
+        pool = get_pool()
+        if pool is None:
+            return jsonify({
+                "ok": True, "workspace_id": workspace_id,
+                "total_asins": 0, "sales_asin_count": 0, "snapshot_count": 0,
+                "analyses": [], "opportunities": [],
+                "field_fill": {},
+                "note": "DB unavailable",
+            })
+
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                # Total ASINs in this workspace
+                cur.execute(
+                    "SELECT COUNT(*) FROM asin_metadata WHERE workspace_id = %s",
+                    (workspace_id,),
+                )
+                total_asins = int(cur.fetchone()[0] or 0)
+
+                # Per-key fill counts from ground_truth_fields JSONB
+                field_fill_counts = {}
+                if total_asins > 0:
+                    cur.execute(
+                        """
+                        SELECT key, COUNT(*)
+                        FROM asin_metadata,
+                             LATERAL jsonb_object_keys(
+                               COALESCE(ground_truth_fields, '{}'::jsonb)
+                             ) AS key
+                        WHERE workspace_id = %s
+                          AND ground_truth_fields IS NOT NULL
+                        GROUP BY key
+                        """,
+                        (workspace_id,),
+                    )
+                    for r in cur.fetchall():
+                        field_fill_counts[r[0]] = int(r[1])
+
+                # Base-column fills (parent_asin only for now)
+                cur.execute(
+                    """
+                    SELECT COUNT(*) FROM asin_metadata
+                    WHERE workspace_id = %s AND parent_asin IS NOT NULL
+                    """,
+                    (workspace_id,),
+                )
+                parent_asin_fill = int(cur.fetchone()[0] or 0)
+                base_field_fill = {"parent_asin": parent_asin_fill}
+
+                # Sales coverage: distinct ASINs with any sales row
+                cur.execute(
+                    """
+                    SELECT COUNT(DISTINCT asin) FROM asin_sales_metrics
+                    WHERE workspace_id = %s
+                    """,
+                    (workspace_id,),
+                )
+                sales_asin_count = int(cur.fetchone()[0] or 0)
+
+                # Snapshot count
+                cur.execute(
+                    "SELECT COUNT(*) FROM catalog_snapshots WHERE workspace_id = %s",
+                    (workspace_id,),
+                )
+                snapshot_count = int(cur.fetchone()[0] or 0)
+
+        analyses = compute_coverage(
+            total_asins=total_asins,
+            field_fill_counts=field_fill_counts,
+            base_field_fill=base_field_fill,
+            sales_asin_count=sales_asin_count,
+            snapshot_count=snapshot_count,
+        )
+        opportunities = compute_opportunities(
+            field_fill_counts=field_fill_counts,
+            total_asins=total_asins,
+            snapshot_count=snapshot_count,
+        )
+
+        # Also return field-level fill % for the fill_rate_report tile
+        field_fill_pct = {
+            k: round(100 * v / total_asins, 1) if total_asins else 0
+            for k, v in field_fill_counts.items()
+        }
+
+        return jsonify({
+            "ok": True,
+            "workspace_id": workspace_id,
+            "total_asins": total_asins,
+            "sales_asin_count": sales_asin_count,
+            "snapshot_count": snapshot_count,
+            "analyses": analyses,
+            "opportunities": opportunities,
+            "field_fill": field_fill_pct,
+        })
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/coverage failed: {exc}", flush=True)
+        import traceback; traceback.print_exc()
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/catalog-intel/snapshots", methods=["GET"])
 def catalog_intel_snapshots():
     """List catalog-intel snapshots for a workspace (newest first)."""

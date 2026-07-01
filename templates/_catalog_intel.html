@@ -202,6 +202,157 @@
   font-size: 10px;
 }
 .ci-upload-result.ci-upload-error strong { color: #EF4444; }
+
+/* Coverage matrix */
+.ci-coverage-wrap {
+  max-width: 1080px;
+  margin: 32px auto 0;
+}
+.ci-coverage-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #1C2D40;
+}
+.ci-coverage-title {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #E2E8F0;
+}
+.ci-coverage-stats {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: flex; gap: 16px;
+}
+.ci-coverage-stat strong { color: #5EEAD4; margin-right: 4px; }
+
+.ci-cov-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  margin-top: 8px;
+}
+.ci-cov-table th, .ci-cov-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid #1C2D40;
+  vertical-align: top;
+}
+.ci-cov-table th {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94A3B8;
+  font-weight: 600;
+  background: #08111A;
+  border-bottom: 1px solid #1C2D40;
+}
+.ci-cov-table td { color: #E2E8F0; }
+.ci-cov-analysis-label { font-weight: 600; }
+.ci-cov-analysis-desc {
+  font-size: 10px;
+  color: #94A3B8;
+  font-weight: normal;
+  margin-top: 2px;
+}
+.ci-cov-status {
+  display: inline-block;
+  font-size: 9px;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ci-cov-runnable { color: #5EEAD4; }
+.ci-cov-partial  { color: #F59E0B; }
+.ci-cov-blocked  { color: #EF4444; }
+.ci-cov-reason { font-size: 10px; color: #94A3B8; }
+.ci-cov-fillbar {
+  width: 80px;
+  height: 4px;
+  background: #1C2D40;
+  position: relative;
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.ci-cov-fillbar-fill {
+  position: absolute; top: 0; left: 0; bottom: 0;
+  background: #5EEAD4;
+}
+.ci-cov-fillbar-fill.ci-fillbar-partial { background: #F59E0B; }
+.ci-cov-fillbar-fill.ci-fillbar-blocked { background: #EF4444; }
+.ci-cov-cat {
+  font-size: 8px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+/* Opportunities panel */
+.ci-opps {
+  max-width: 1080px;
+  margin: 32px auto 0;
+  padding-top: 16px;
+  border-top: 1px solid #1C2D40;
+}
+.ci-opps-head {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #E2E8F0;
+  margin-bottom: 4px;
+}
+.ci-opps-sub {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #94A3B8;
+  margin-bottom: 12px;
+}
+.ci-opp {
+  padding: 10px 14px;
+  background: #08111A;
+  border: 1px solid #1C2D40;
+  border-left: 3px solid #A78BFA;
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+.ci-opp-title {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: #E2E8F0;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.ci-opp-why {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #94A3B8;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+.ci-opp-current {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  color: #F59E0B;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ci-opp-unlock {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #5EEAD4;
+  margin-top: 4px;
+  font-style: italic;
+}
 </style>
 
 <div class="content" id="catalog-intel-page" style="display:none; padding:0;">
@@ -239,12 +390,39 @@
 
         <div id="ci-upload-result"></div>
 
-        <div class="ci-status-note">
-          <strong>v0.2 · ingest live · rules pack shipping in v0.4</strong>
-          Ingest works: file is saved immutably, snapshot row created,
-          catalog rows merged into <code style="color:#94A3B8;">asin_metadata</code>,
-          sales rows upserted into <code style="color:#94A3B8;">asin_sales_metrics</code>
-          (deduped on period_end). Coverage matrix + analyses drop next.
+        <div class="ci-status-note" id="ci-status-note">
+          <strong>v0.3 · coverage matrix live · analyses ship in v0.4</strong>
+          Coverage matrix appears below after your first upload. Each analysis
+          is marked runnable / partial / blocked based on the actual fill rate
+          of the fields it requires. The 360° opportunities panel names data
+          you don't have yet and what each would unlock.
+        </div>
+
+        <div class="ci-coverage-wrap" id="ci-coverage-wrap" style="display:none;">
+          <div class="ci-coverage-head">
+            <div>
+              <div class="ci-coverage-title">Coverage Matrix</div>
+              <div class="ci-coverage-stats" id="ci-coverage-stats"></div>
+            </div>
+            <button class="link-btn" style="background:transparent;border:1px solid #1C2D40;color:#5EEAD4;padding:4px 10px;font-family:ui-monospace,monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;cursor:pointer;" onclick="ciLoadCoverage()">refresh</button>
+          </div>
+          <table class="ci-cov-table">
+            <thead>
+              <tr>
+                <th>Analysis</th>
+                <th>Status</th>
+                <th>Fill</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="ci-cov-body"></tbody>
+          </table>
+        </div>
+
+        <div class="ci-opps" id="ci-opps-wrap" style="display:none;">
+          <div class="ci-opps-head">360° Opportunities</div>
+          <div class="ci-opps-sub">Analyses you can't run yet — named data would unlock each.</div>
+          <div id="ci-opps-body"></div>
         </div>
 
         <div class="ci-snapshots" id="ci-snapshots-block" style="display:none;">
@@ -322,6 +500,7 @@ async function ciHandleFile(file) {
       '</div>';
 
     ciLoadSnapshots();
+    ciLoadCoverage();
   } catch (e) {
     zone.classList.remove('ci-drop-uploading');
     zone.classList.add('ci-drop-active');
@@ -330,6 +509,61 @@ async function ciHandleFile(file) {
     result.innerHTML = '<div class="ci-upload-result ci-upload-error">' +
       '<strong>Network error</strong>' + String(e) + '</div>';
   }
+}
+
+async function ciLoadCoverage() {
+  try {
+    const r = await fetch('/api/catalog-intel/coverage');
+    const d = await r.json();
+    if (!d.ok || !d.total_asins) {
+      document.getElementById('ci-coverage-wrap').style.display = 'none';
+      document.getElementById('ci-opps-wrap').style.display = 'none';
+      return;
+    }
+    document.getElementById('ci-coverage-wrap').style.display = 'block';
+
+    // Stats line
+    document.getElementById('ci-coverage-stats').innerHTML =
+      '<span class="ci-coverage-stat"><strong>' + d.total_asins.toLocaleString() + '</strong>ASINs</span>' +
+      '<span class="ci-coverage-stat"><strong>' + d.sales_asin_count.toLocaleString() + '</strong>with sales</span>' +
+      '<span class="ci-coverage-stat"><strong>' + d.snapshot_count + '</strong>snapshot' + (d.snapshot_count===1?'':'s') + '</span>';
+
+    // Coverage table — group by status: runnable first, then partial, then blocked
+    const order = { runnable: 0, partial: 1, blocked: 2 };
+    const sorted = [...(d.analyses || [])].sort((a, b) => order[a.status] - order[b.status]);
+    const tb = document.getElementById('ci-cov-body');
+    tb.innerHTML = sorted.map(a => {
+      const barCls = a.status === 'runnable' ? '' :
+                     a.status === 'partial'  ? 'ci-fillbar-partial' : 'ci-fillbar-blocked';
+      const fill = Math.min(100, Math.max(0, a.coverage_pct || 0));
+      return '<tr>' +
+             '<td><div class="ci-cov-analysis-label">' + a.label + '</div>' +
+               '<div class="ci-cov-analysis-desc">' + (a.description || '') + '</div>' +
+               '<div class="ci-cov-cat">' + (a.category || '') + '</div></td>' +
+             '<td><span class="ci-cov-status ci-cov-' + a.status + '">' + a.status + '</span></td>' +
+             '<td><div style="font-size:11px;color:#E2E8F0;">' + fill.toFixed(0) + '%</div>' +
+               '<div class="ci-cov-fillbar"><div class="ci-cov-fillbar-fill ' + barCls + '" style="width:' + fill + '%"></div></div>' +
+               '<div class="ci-cov-cat" style="margin-top:6px;">n=' + (a.sample_size||0).toLocaleString() + '</div></td>' +
+             '<td><div class="ci-cov-reason">' + (a.reason || '') + '</div></td>' +
+             '</tr>';
+    }).join('');
+
+    // Opportunities
+    const opps = d.opportunities || [];
+    if (opps.length === 0) {
+      document.getElementById('ci-opps-wrap').style.display = 'none';
+    } else {
+      document.getElementById('ci-opps-wrap').style.display = 'block';
+      document.getElementById('ci-opps-body').innerHTML = opps.map(op =>
+        '<div class="ci-opp">' +
+        '<div class="ci-opp-title">' + op.label + '</div>' +
+        '<div class="ci-opp-why">' + op.why + '</div>' +
+        '<div class="ci-opp-current">CURRENT: ' + (op.current_state || 'not unlocked') + '</div>' +
+        '<div class="ci-opp-unlock">unlocks when: ' + op.unlocks_when + '</div>' +
+        '</div>'
+      ).join('');
+    }
+  } catch (e) { /* silent */ }
 }
 
 async function ciLoadSnapshots() {
@@ -386,5 +620,6 @@ function showCatalogIntelPage() {
   _showPage('catalog-intel-page', 'Atlas · Catalog Intel',
     'Upload-driven brand audit — coverage matrix, findings, drilldowns');
   ciLoadSnapshots();
+  ciLoadCoverage();
 }
 </script>
