@@ -353,6 +353,110 @@
   margin-top: 4px;
   font-style: italic;
 }
+
+/* Findings block */
+.ci-findings-wrap {
+  max-width: 1080px;
+  margin: 32px auto 0;
+}
+.ci-findings-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #1C2D40;
+}
+.ci-findings-title {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #E2E8F0;
+}
+.ci-findings-totals {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #94A3B8;
+  display: flex; gap: 14px;
+}
+.ci-sev-tally { display: inline-flex; align-items: center; gap: 4px; }
+.ci-sev-dot { font-size: 10px; }
+.ci-sev-critical { color: #EF4444; }
+.ci-sev-high     { color: #EF4444; }
+.ci-sev-medium   { color: #F59E0B; }
+.ci-sev-low      { color: #94A3B8; }
+.ci-sev-strategic{ color: #A78BFA; }
+
+.ci-run-btn {
+  background: #5EEAD4;
+  color: #08111A;
+  border: 1px solid #5EEAD4;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.ci-run-btn:disabled { opacity: 0.5; cursor: wait; }
+
+.ci-finding {
+  padding: 12px 14px;
+  background: #08111A;
+  border: 1px solid #1C2D40;
+  border-left: 3px solid #475569;
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+.ci-finding-critical { border-left-color: #EF4444; }
+.ci-finding-high     { border-left-color: #EF4444; }
+.ci-finding-medium   { border-left-color: #F59E0B; }
+.ci-finding-low      { border-left-color: #94A3B8; }
+.ci-finding-strategic{ border-left-color: #A78BFA; }
+
+.ci-finding-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 6px;
+}
+.ci-finding-sev {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.ci-finding-rule {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: #E2E8F0;
+  font-weight: 700;
+  flex: 1;
+}
+.ci-finding-asin {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #5EEAD4;
+}
+.ci-finding-fix {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #94A3B8;
+  line-height: 1.5;
+  margin: 4px 0;
+}
+.ci-finding-evidence {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #475569;
+  padding: 6px 8px;
+  background: #0E1A26;
+  border-left: 2px solid #1C2D40;
+  margin-top: 6px;
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow-y: auto;
+}
 </style>
 
 <div class="content" id="catalog-intel-page" style="display:none; padding:0;">
@@ -417,6 +521,17 @@
             </thead>
             <tbody id="ci-cov-body"></tbody>
           </table>
+        </div>
+
+        <div class="ci-findings-wrap" id="ci-findings-wrap" style="display:none;">
+          <div class="ci-findings-head">
+            <div>
+              <div class="ci-findings-title">Findings</div>
+              <div class="ci-findings-totals" id="ci-findings-totals"></div>
+            </div>
+            <button class="ci-run-btn" id="ci-run-btn" onclick="ciRunAnalyses()">Run analyses</button>
+          </div>
+          <div id="ci-findings-body"></div>
         </div>
 
         <div class="ci-opps" id="ci-opps-wrap" style="display:none;">
@@ -501,6 +616,8 @@ async function ciHandleFile(file) {
 
     ciLoadSnapshots();
     ciLoadCoverage();
+    // Auto-run analyses after successful upload
+    ciRunAnalyses();
   } catch (e) {
     zone.classList.remove('ci-drop-uploading');
     zone.classList.add('ci-drop-active');
@@ -509,6 +626,58 @@ async function ciHandleFile(file) {
     result.innerHTML = '<div class="ci-upload-result ci-upload-error">' +
       '<strong>Network error</strong>' + String(e) + '</div>';
   }
+}
+
+async function ciRunAnalyses() {
+  const btn = document.getElementById('ci-run-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Running…'; }
+  try {
+    const r = await fetch('/api/catalog-intel/run', { method: 'POST' });
+    const d = await r.json();
+    if (!d.ok) {
+      alert('Run failed: ' + (d.error || 'unknown'));
+    }
+  } catch (e) {
+    alert('Network error: ' + String(e));
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Re-run analyses'; }
+  ciLoadFindings();
+}
+
+async function ciLoadFindings() {
+  try {
+    const r = await fetch('/api/catalog-intel/findings');
+    const d = await r.json();
+    if (!d.ok || !d.findings || !d.findings.length) {
+      document.getElementById('ci-findings-wrap').style.display = 'none';
+      return;
+    }
+    document.getElementById('ci-findings-wrap').style.display = 'block';
+    // Totals line
+    const t = d.totals || {};
+    document.getElementById('ci-findings-totals').innerHTML =
+      Object.entries(t).filter(([_, n]) => n > 0).map(([sev, n]) =>
+        '<span class="ci-sev-tally"><span class="ci-sev-dot ci-sev-' + sev + '">●</span> ' +
+        n + ' ' + sev + '</span>'
+      ).join('');
+    // Findings (priority-sorted)
+    const tb = document.getElementById('ci-findings-body');
+    tb.innerHTML = d.findings.map(f => {
+      const sev = f.severity || 'medium';
+      const evStr = (f.evidence && Object.keys(f.evidence).length)
+        ? JSON.stringify(f.evidence, null, 2)
+        : '';
+      return '<div class="ci-finding ci-finding-' + sev + '">' +
+             '<div class="ci-finding-row">' +
+               '<span class="ci-finding-sev ci-sev-' + sev + '">' + sev + '</span>' +
+               '<span class="ci-finding-rule">' + (f.rule_name || '').replace(/_/g, ' ') + '</span>' +
+               (f.asin ? '<span class="ci-finding-asin">' + f.asin + '</span>' : '') +
+             '</div>' +
+             (f.proposed_fix ? '<div class="ci-finding-fix">' + f.proposed_fix + '</div>' : '') +
+             (evStr ? '<div class="ci-finding-evidence">' + evStr + '</div>' : '') +
+             '</div>';
+    }).join('');
+  } catch (e) { /* silent */ }
 }
 
 async function ciLoadCoverage() {
@@ -621,5 +790,6 @@ function showCatalogIntelPage() {
     'Upload-driven brand audit — coverage matrix, findings, drilldowns');
   ciLoadSnapshots();
   ciLoadCoverage();
+  ciLoadFindings();
 }
 </script>

@@ -19214,6 +19214,53 @@ def catalog_intel_upload():
         }), 500
 
 
+@app.route("/api/catalog-intel/run", methods=["POST"])
+def catalog_intel_run():
+    """Run every analysis for the active workspace and write findings.
+
+    Optional form: snapshot_id (attributes findings to a specific snapshot;
+    otherwise workspace-scoped).
+    """
+    workspace_id = _ci_active_workspace_id()
+    snapshot_id = (request.form.get("snapshot_id")
+                    or request.args.get("snapshot_id") or None)
+    try:
+        from substrate.catalog_intel_runner import run_all
+        result = run_all(workspace_id, snapshot_id=snapshot_id)
+        return jsonify(result)
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/run failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/catalog-intel/findings", methods=["GET"])
+def catalog_intel_findings_route():
+    """List findings for a workspace (or snapshot), priority-sorted."""
+    workspace_id = _ci_active_workspace_id()
+    snapshot_id = request.args.get("snapshot_id")
+    try:
+        from substrate.catalog_intel_runner import get_findings
+        rows = get_findings(workspace_id, snapshot_id=snapshot_id, limit=500)
+        # Bucket by severity for UI convenience
+        by_sev = {"critical": [], "high": [], "medium": [], "low": [],
+                  "strategic": []}
+        for r in rows:
+            s = r.get("severity")
+            if s in by_sev:
+                by_sev[s].append(r)
+        return jsonify({
+            "ok": True,
+            "workspace_id": workspace_id,
+            "snapshot_id": snapshot_id,
+            "findings": rows,
+            "by_severity": by_sev,
+            "totals": {k: len(v) for k, v in by_sev.items()},
+        })
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/findings failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
 @app.route("/api/catalog-intel/coverage", methods=["GET"])
 def catalog_intel_coverage():
     """Coverage matrix for the active workspace.
