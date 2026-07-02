@@ -585,24 +585,25 @@ def _sheet_revenue_concentration(wb, flat_rows):
         for c_i in range(2, 8):
             ws.cell(row=r, column=c_i).alignment = ALIGN_L if c_i == 4 else ALIGN_R
 
-    # Conditional format: dim rows beyond the Top-N picker
+    # Conditional format: dim rows beyond the Top-N picker (only if any rows)
     last_row = 8 + show_max - 1
-    ws.conditional_formatting.add(
-        f"B8:G{last_row}",
-        FormulaRule(
-            formula=[f'$B8>$C$5'],
-            fill=PatternFill("solid", fgColor="F1F5F9"),
-            font=_font(color=COL_INK_FAINT, size=10),
-        ),
-    )
-    # Also highlight the top of the list
-    ws.conditional_formatting.add(
-        f"B8:G{last_row}",
-        FormulaRule(
-            formula=[f'$B8<=$C$5'],
-            fill=PatternFill("solid", fgColor="F0F9FF"),
-        ),
-    )
+    if show_max > 0:
+        ws.conditional_formatting.add(
+            f"B8:G{last_row}",
+            FormulaRule(
+                formula=[f'$B8>$C$5'],
+                fill=PatternFill("solid", fgColor="F1F5F9"),
+                font=_font(color=COL_INK_FAINT, size=10),
+            ),
+        )
+        # Also highlight the top of the list
+        ws.conditional_formatting.add(
+            f"B8:G{last_row}",
+            FormulaRule(
+                formula=[f'$B8<=$C$5'],
+                fill=PatternFill("solid", fgColor="F0F9FF"),
+            ),
+        )
 
     # Right-side threshold summary — pure lookup on the ranked table
     ws["I7"] = "Concentration thresholds"
@@ -613,10 +614,13 @@ def _sheet_revenue_concentration(wb, flat_rows):
     ws["I11"] = "Total active ASINs (rev>0):"
     ws["I12"] = "Total revenue:"
 
-    # COUNTIF against cumulative percentage column
-    ws["J8"]  = f'=COUNTIF(G8:G{last_row},"<0.5")+1'
-    ws["J9"]  = f'=COUNTIF(G8:G{last_row},"<0.8")+1'
-    ws["J10"] = f'=COUNTIF(G8:G{last_row},"<0.9")+1'
+    # COUNTIF against cumulative percentage column (guarded for empty case)
+    if show_max > 0:
+        ws["J8"]  = f'=COUNTIF(G8:G{last_row},"<0.5")+1'
+        ws["J9"]  = f'=COUNTIF(G8:G{last_row},"<0.8")+1'
+        ws["J10"] = f'=COUNTIF(G8:G{last_row},"<0.9")+1'
+    else:
+        ws["J8"] = ws["J9"] = ws["J10"] = 0
     ws["J11"] = '=COUNTIF(Catalog[Revenue],">0")'
     ws["J12"] = '=SUM(Catalog[Revenue])'
     for r in (8, 9, 10, 11):
