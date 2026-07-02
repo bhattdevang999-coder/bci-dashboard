@@ -389,6 +389,30 @@
 }
 .lm-empty-tree strong { color: #94A3B8; display: block; margin-bottom: 6px; }
 
+/* ── Catalog Intel drilldown filter chip ── */
+.lm-filter-chip {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; margin: 8px 10px 4px 10px;
+  background: linear-gradient(180deg, #1B2C1F 0%, #142219 100%);
+  border: 1px solid #2E5A3C;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+}
+.lm-filter-chip-label { color: #86EFAC; letter-spacing: 0.02em; }
+.lm-filter-chip-label strong { color: #DCFCE7; font-weight: 600; }
+.lm-filter-chip-clear {
+  background: transparent;
+  border: 1px solid #2E5A3C;
+  color: #86EFAC;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.lm-filter-chip-clear:hover { background: #2E5A3C; color: #F0FDF4; }
+
 /* ── Listing-Manager topbar (above root) ── */
 .lm-topbar {
   display: flex; align-items: center; gap: 14px;
@@ -836,6 +860,8 @@
 // Workspace + assistant panes are placeholders — Passes 2-5 ship in v2.
 
 let LM_TREE = null;       // {workspace, families: [{parent, children, variation_axes}]}
+let LM_FILTER_ASINS = null; // Set<string> or null. If set, tree shows only these ASINs.
+let LM_FILTER_LABEL = '';   // human label for the active filter, e.g. "Catalog Intel: dead_inventory"
 let LM_SELECTED_ASIN = null;
 let LM_SELECTED_PARENT = null;
 let LM_ACTIVE_TAB = 'variations';
@@ -883,17 +909,44 @@ async function lmLoadTree() {
     document.getElementById('lm-asin-count').textContent =
       '[' + d.families.length + ' parents · ' + d.total_asins + ' ASINs]';
     document.getElementById('lm-footer-workspace').textContent = d.workspace.name || d.workspace.id;
-    lmRenderTree();
+    // If a Catalog Intel drilldown stashed a focus ASIN, apply it now.
+    if (window.__LM_PENDING_FOCUS) {
+      const focus = window.__LM_PENDING_FOCUS;
+      window.__LM_PENDING_FOCUS = null;
+      lmSelectAsin(focus);
+    } else {
+      lmRenderTree();
+    }
   } catch (e) {
     body.innerHTML = '<div class="lm-empty-tree"><strong>error loading catalog</strong>' + String(e) + '</div>';
   }
+}
+
+function lmClearFilter() {
+  LM_FILTER_ASINS = null;
+  LM_FILTER_LABEL = '';
+  lmRenderTree();
 }
 
 function lmRenderTree() {
   if (!LM_TREE) return;
   const body = document.getElementById('lm-tree-body');
   const q = (document.getElementById('lm-tree-search-input').value || '').toLowerCase().trim();
+  const filt = LM_FILTER_ASINS;
+  // Precompute filtered-family count for the header
+  let visibleFamilyCount = 0;
+  let visibleAsinCount = 0;
   let html = '';
+  // Filter chip (if any)
+  if (filt && filt.size) {
+    html += '<div class="lm-filter-chip">' +
+            '<span class="lm-filter-chip-label">' +
+              'Filter: ' + (LM_FILTER_LABEL || 'Catalog Intel drilldown') +
+              ' <strong>(' + filt.size + ' ASINs)</strong>' +
+            '</span>' +
+            '<button class="lm-filter-chip-clear" onclick="lmClearFilter()">clear ✕</button>' +
+            '</div>';
+  }
   html += '<div class="lm-tree-node lm-l0"><span class="lm-tree-toggle">▾</span><span class="lm-tree-label">' +
           (LM_TREE.workspace.brand || 'BRAND') + '</span><span class="lm-tree-meta">[' +
           LM_TREE.families.length + ' families]</span></div>';
@@ -901,16 +954,23 @@ function lmRenderTree() {
   LM_TREE.families.forEach(fam => {
     const parentLabel = fam.parent_asin || '(no parent)';
     const styleLabel = fam.style_label || parentLabel;
+    // Filter children by LM_FILTER_ASINS if active
+    const filteredChildren = filt
+      ? (fam.children || []).filter(c => filt.has(c.asin))
+      : (fam.children || []);
+    if (filt && filteredChildren.length === 0) return;
     const matches = !q || (styleLabel + ' ' + (fam.parent_asin || '') + ' ' +
-                           (fam.children || []).map(c => c.asin + ' ' + (c.color || '') + ' ' + (c.size || '')).join(' ')).toLowerCase().includes(q);
+                           filteredChildren.map(c => c.asin + ' ' + (c.color || '') + ' ' + (c.size || '')).join(' ')).toLowerCase().includes(q);
     if (!matches) return;
+    visibleFamilyCount += 1;
+    visibleAsinCount += filteredChildren.length;
     const styleSel = (LM_SELECTED_PARENT === fam.parent_asin && !LM_SELECTED_ASIN) ? ' lm-selected' : '';
     const styleClick = fam.parent_asin ? ' onclick="lmSelectStyle(\'' + fam.parent_asin + '\')"' : '';
     html += '<div class="lm-tree-node lm-l1' + styleSel + '"' + styleClick + '>' +
             '<span class="lm-tree-toggle">▾</span>' +
             '<span class="lm-tree-label">' + styleLabel + '</span>' +
             '<span class="lm-status-progress lm-tree-status">●</span></div>';
-    (fam.children || []).forEach(c => {
+    filteredChildren.forEach(c => {
       const sel = (LM_SELECTED_ASIN === c.asin) ? ' lm-selected' : '';
       const f = c.findings || {};
       let dot = 'lm-status-notstarted', dotChar = '○';
@@ -932,7 +992,32 @@ function lmRenderTree() {
               '<span class="' + dot + ' lm-tree-status">' + dotChar + '</span></div>';
     });
   });
-  body.innerHTML = html || '<div class="lm-empty-tree">no matches</div>';
+  if (filt && visibleAsinCount === 0) {
+    body.innerHTML = html + '<div class="lm-empty-tree"><strong>no ASINs match this drilldown</strong>' +
+                            'The sample ASINs from this finding are not in the current tree. ' +
+                            'They may belong to a workspace you haven\'t loaded, or the tree needs to be refreshed.</div>';
+  } else {
+    body.innerHTML = html || '<div class="lm-empty-tree">no matches</div>';
+  }
+}
+
+// Called from Catalog Intel drilldown. `asins` = Array<string>, `focusAsin` = optional single ASIN to auto-select.
+function lmSetFilterAndShow(asins, label, focusAsin) {
+  LM_FILTER_ASINS = new Set(asins || []);
+  LM_FILTER_LABEL = label || '';
+  // Ensure LM page is visible
+  showListingManagerPage();
+  // If tree already loaded, apply filter now; otherwise lmLoadTree will call lmRenderTree.
+  if (LM_TREE) {
+    if (focusAsin) {
+      lmSelectAsin(focusAsin);
+    } else {
+      lmRenderTree();
+    }
+  } else {
+    // stash the focus so lmLoadTree's onSuccess can pick it up
+    window.__LM_PENDING_FOCUS = focusAsin || null;
+  }
 }
 
 function lmSwitchTab(tab) {

@@ -457,6 +457,25 @@
   max-height: 120px;
   overflow-y: auto;
 }
+.ci-finding-drill {
+  margin: 6px 0 4px 0;
+}
+.ci-drill-btn {
+  background: transparent;
+  border: 1px solid #1E3A5F;
+  color: #7DD3FC;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.ci-drill-btn:hover {
+  background: #1E3A5F;
+  color: #E0F2FE;
+  border-color: #3B82F6;
+}
 </style>
 
 <div class="content" id="catalog-intel-page" style="display:none; padding:0;">
@@ -664,16 +683,40 @@ async function ciLoadFindings() {
     const tb = document.getElementById('ci-findings-body');
     tb.innerHTML = d.findings.map(f => {
       const sev = f.severity || 'medium';
-      const evStr = (f.evidence && Object.keys(f.evidence).length)
-        ? JSON.stringify(f.evidence, null, 2)
+      const ev = f.evidence || {};
+      const evStr = Object.keys(ev).length
+        ? JSON.stringify(ev, null, 2)
         : '';
+      const ruleLabel = (f.rule_name || '').replace(/_/g, ' ');
+
+      // Drilldown link:
+      //  - per-ASIN finding -> "View ASIN →"
+      //  - aggregate with sample_asins list in evidence -> "View N ASINs →"
+      let drill = '';
+      if (f.asin) {
+        drill = '<button class="ci-drill-btn" onclick="ciDrillToLM([\'' + f.asin + '\'], \'' +
+                (f.rule_name || '') + '\', \'' + f.asin + '\')">' +
+                'View ASIN in Listing Manager →</button>';
+      } else if (Array.isArray(ev.sample_asins) && ev.sample_asins.length > 0) {
+        const n = ev.sample_asins.length;
+        const total = ev.affected_asins || ev.matching_asins || ev.dead_asins ||
+                      ev.orphaned_asins || ev.no_desc_asins || ev.missing_asins || n;
+        const label = (n < total) ? ('View sample ' + n + ' of ' + total + ' affected ASINs →')
+                                  : ('View ' + n + ' affected ASINs →');
+        // Escape ASINs list safely: JSON.stringify + attribute-escape
+        const payload = JSON.stringify(ev.sample_asins).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+        drill = '<button class="ci-drill-btn" onclick="ciDrillToLM(JSON.parse(this.dataset.asins), \'' +
+                (f.rule_name || '') + '\')" data-asins="' + payload + '">' + label + '</button>';
+      }
+
       return '<div class="ci-finding ci-finding-' + sev + '">' +
              '<div class="ci-finding-row">' +
                '<span class="ci-finding-sev ci-sev-' + sev + '">' + sev + '</span>' +
-               '<span class="ci-finding-rule">' + (f.rule_name || '').replace(/_/g, ' ') + '</span>' +
+               '<span class="ci-finding-rule">' + ruleLabel + '</span>' +
                (f.asin ? '<span class="ci-finding-asin">' + f.asin + '</span>' : '') +
              '</div>' +
              (f.proposed_fix ? '<div class="ci-finding-fix">' + f.proposed_fix + '</div>' : '') +
+             (drill ? '<div class="ci-finding-drill">' + drill + '</div>' : '') +
              (evStr ? '<div class="ci-finding-evidence">' + evStr + '</div>' : '') +
              '</div>';
     }).join('');
@@ -784,6 +827,17 @@ async function ciLoadSnapshots() {
     if (f) ciHandleFile(f);
   });
 })();
+
+function ciDrillToLM(asins, ruleName, focusAsin) {
+  // Called from Catalog Intel finding drilldown buttons.
+  // Delegates to Listing Manager's lmSetFilterAndShow.
+  const label = 'Catalog Intel → ' + (ruleName || '').replace(/_/g, ' ');
+  if (typeof lmSetFilterAndShow === 'function') {
+    lmSetFilterAndShow(asins, label, focusAsin);
+  } else {
+    console.error('lmSetFilterAndShow not available — is _listing_manager.html loaded?');
+  }
+}
 
 function showCatalogIntelPage() {
   _showPage('catalog-intel-page', 'Atlas · Catalog Intel',

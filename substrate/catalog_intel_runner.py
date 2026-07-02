@@ -796,6 +796,19 @@ def run_description_presence(cur, workspace_id: str) -> dict:
     missing = total - with_desc
     pct_with = round(100 * with_desc / total, 1) if total else 0
 
+    # Sample ASINs missing descriptions (up to 20)
+    cur.execute(
+        """
+        SELECT asin FROM asin_metadata
+        WHERE workspace_id = %s
+          AND (NOT (ground_truth_fields ? 'description')
+               OR LENGTH(ground_truth_fields->>'description') = 0)
+        LIMIT 20
+        """,
+        (workspace_id,),
+    )
+    no_desc_asins = [r[0] for r in cur.fetchall() if r[0]]
+
     summary = {
         "total": total,
         "with_description": with_desc,
@@ -803,6 +816,7 @@ def run_description_presence(cur, workspace_id: str) -> dict:
         "pct_with_description": pct_with,
         "avg_length_chars": avg_len,
         "short_descriptions_under_200": short,
+        "no_desc_sample": no_desc_asins,
     }
     severity = "high" if pct_with < 70 else "medium"
     findings = [
@@ -850,11 +864,27 @@ def run_buy_box_ownership(cur, workspace_id: str) -> dict:
             owner_name = top["winner"]
             likely_owner_pct = round(100 * top["count"] / total, 1)
 
+    # Sample ASINs where the operator does NOT own the buy box (up to 20)
+    lost_buybox_asins: list = []
+    if owner_name:
+        cur.execute(
+            """
+            SELECT asin FROM asin_metadata
+            WHERE workspace_id = %s
+              AND COALESCE(ground_truth_fields->>'buy_box_winner', '') <> %s
+              AND COALESCE(ground_truth_fields->>'buy_box_winner', '') <> ''
+            LIMIT 20
+            """,
+            (workspace_id, owner_name),
+        )
+        lost_buybox_asins = [r[0] for r in cur.fetchall() if r[0]]
+
     summary = {
         "total": total,
         "distribution": dist[:10],
         "likely_owner": owner_name,
         "likely_owner_pct": likely_owner_pct,
+        "lost_buybox_sample": lost_buybox_asins,
     }
     severity = "medium" if likely_owner_pct < 80 and total > 0 else "low"
     findings = [
@@ -892,7 +922,22 @@ def run_fabric_material_coverage(cur, workspace_id: str) -> dict:
     filled = int(r[0] or 0)
     total = int(r[1] or 0)
     pct = round(100 * filled / total, 1) if total else 0
-    summary = {"total": total, "filled": filled, "pct_filled": pct}
+
+    # Sample ASINs missing fabric/material (up to 20)
+    cur.execute(
+        """
+        SELECT asin FROM asin_metadata
+        WHERE workspace_id = %s
+          AND (NOT (ground_truth_fields ? 'fabric_material')
+               OR LENGTH(ground_truth_fields->>'fabric_material') = 0)
+        LIMIT 20
+        """,
+        (workspace_id,),
+    )
+    missing_fabric_asins = [r[0] for r in cur.fetchall() if r[0]]
+
+    summary = {"total": total, "filled": filled, "pct_filled": pct,
+               "missing_fabric_sample": missing_fabric_asins}
     findings = [
         _finding(
             "fabric_material_coverage",
@@ -930,6 +975,56 @@ ANALYSIS_FUNCS = [
     ("buy_box_ownership",             run_buy_box_ownership),
     ("fabric_material_coverage",      run_fabric_material_coverage),
 ]
+
+
+# Known evidence-JSON keys that carry per-ASIN sample lists.
+# Each analysis uses its own descriptive name (dead_asin_sample, outlier_sample,
+# missing_sample, etc.) so operators reading the raw evidence understand it.
+# We normalize into `sample_asins` (flat list of ASIN strings) for UI drilldown.
+_SAMPLE_KEYS_FLAT = (
+    "sample",
+    "dead_asin_sample",
+    "missing_sample",
+    "inconsistent_sample",
+    "no_desc_sample",
+    "no_bullet_sample",
+    "no_image_sample",
+    "missing_fabric_sample",
+    "lost_buybox_sample",
+)
+_SAMPLE_KEYS_DICT_ASIN = (
+    "outlier_sample",       # [{asin, price}, ...]
+)
+
+
+def _normalize_sample_asins(evidence: dict) -> None:
+    """In-place: add a `sample_asins` list to evidence for UI drilldown.
+
+    Collects ASIN strings from known keys (flat lists or list-of-dicts with 'asin').
+    Non-destructive: original keys are preserved. Skips if already present.
+    """
+    if not isinstance(evidence, dict):
+        return
+    if evidence.get("sample_asins"):
+        return
+    out: list = []
+    seen: set = set()
+    for k in _SAMPLE_KEYS_FLAT:
+        v = evidence.get(k)
+        if isinstance(v, list):
+            for a in v:
+                if isinstance(a, str) and a and a not in seen:
+                    out.append(a); seen.add(a)
+    for k in _SAMPLE_KEYS_DICT_ASIN:
+        v = evidence.get(k)
+        if isinstance(v, list):
+            for row in v:
+                if isinstance(row, dict):
+                    a = row.get("asin")
+                    if isinstance(a, str) and a and a not in seen:
+                        out.append(a); seen.add(a)
+    if out:
+        evidence["sample_asins"] = out
 
 
 def run_all(workspace_id: str, *, snapshot_id: Optional[str] = None) -> dict:
@@ -971,6 +1066,8 @@ def run_all(workspace_id: str, *, snapshot_id: Optional[str] = None) -> dict:
                             result = fn(ac, workspace_id)
                         findings = result.get("findings", [])
                         for f in findings:
+                            # Normalize sample ASINs for UI drilldown
+                            _normalize_sample_asins(f.get("evidence_json") or {})
                             fid = str(uuid.uuid4())
                             cur.execute(
                                 """
