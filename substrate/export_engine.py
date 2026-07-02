@@ -31,14 +31,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib import colors
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak,
-)
-from reportlab.lib.enums import TA_LEFT
+# reportlab is imported lazily inside build_pdf() so that CSV/XLSX exports
+# work even if reportlab isn't installed (belt-and-suspenders — it's now in
+# requirements.txt, but keeping this decoupled prevents module-load failure
+# on any deploy env that hasn't installed it yet).
 
 # Import rule specs (verifiability layer)
 from substrate.rules_catalog import RULE_SPECS
@@ -337,26 +333,45 @@ def build_csv(findings: list, snapshot: Optional[dict], workspace_id: str) -> io
 # PDF builder
 # ================================================================
 
-# Palette (matches dashboard's dark theme adapted for print/light)
-COL_PRIMARY = colors.HexColor("#0F172A")
-COL_ACCENT  = colors.HexColor("#1E3A5F")
-COL_MUTED   = colors.HexColor("#64748B")
-COL_TEXT    = colors.HexColor("#28251D")
-COL_BORDER  = colors.HexColor("#D4D1CA")
-COL_BG      = colors.HexColor("#F9F8F5")
-SEV_COLORS = {
-    "critical": colors.HexColor("#7f1d1d"),
-    "high":     colors.HexColor("#A12C7B"),
-    "medium":   colors.HexColor("#964219"),
-    "low":      colors.HexColor("#437A22"),
-    "info":     colors.HexColor("#64748B"),
-    "strategic":colors.HexColor("#0891B2"),
+# Palette hex values (converted to reportlab colors inside build_pdf)
+_PALETTE_HEX = {
+    "primary":  "#0F172A",
+    "accent":   "#1E3A5F",
+    "muted":    "#64748B",
+    "text":     "#28251D",
+    "border":   "#D4D1CA",
+    "bg":       "#F9F8F5",
+}
+_SEV_HEX = {
+    "critical": "#7f1d1d",
+    "high":     "#A12C7B",
+    "medium":   "#964219",
+    "low":      "#437A22",
+    "info":     "#64748B",
+    "strategic":"#0891B2",
 }
 
 
 def build_pdf(findings: list, snapshot: Optional[dict], workspace_id: str,
               affected_asins_by_finding: Optional[dict] = None) -> io.BytesIO:
     """Professional client-facing PDF: cover + findings + methodology appendix."""
+    # Lazy-import reportlab so CSV/XLSX aren't blocked if it's unavailable
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak,
+    )
+    # Local palette bound to reportlab colors
+    COL_PRIMARY = colors.HexColor(_PALETTE_HEX["primary"])
+    COL_ACCENT  = colors.HexColor(_PALETTE_HEX["accent"])
+    COL_MUTED   = colors.HexColor(_PALETTE_HEX["muted"])
+    COL_TEXT    = colors.HexColor(_PALETTE_HEX["text"])
+    COL_BORDER  = colors.HexColor(_PALETTE_HEX["border"])
+    COL_BG      = colors.HexColor(_PALETTE_HEX["bg"])
+    SEV_COLORS  = {k: colors.HexColor(v) for k, v in _SEV_HEX.items()}
+
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf, pagesize=letter,
@@ -395,17 +410,34 @@ def build_pdf(findings: list, snapshot: Optional[dict], workspace_id: str,
         textColor=COL_TEXT, leftIndent=12, spaceAfter=6,
     ))
 
+    # Palette dict passed to helpers so they don't need to re-import reportlab
+    palette = {
+        "primary": COL_PRIMARY, "accent": COL_ACCENT, "muted": COL_MUTED,
+        "text": COL_TEXT, "border": COL_BORDER, "bg": COL_BG,
+        "sev": SEV_COLORS,
+    }
+    pdf_ctx = {
+        "Paragraph": Paragraph, "Spacer": Spacer, "Table": Table,
+        "TableStyle": TableStyle, "PageBreak": PageBreak,
+        "inch": inch, "colors": colors, "palette": palette,
+    }
+
     story = []
-    _pdf_cover(story, styles, findings, snapshot, workspace_id)
-    _pdf_findings(story, styles, findings, affected_asins_by_finding or {})
-    _pdf_methodology(story, styles)
+    _pdf_cover(story, styles, findings, snapshot, workspace_id, pdf_ctx)
+    _pdf_findings(story, styles, findings, affected_asins_by_finding or {}, pdf_ctx)
+    _pdf_methodology(story, styles, pdf_ctx)
 
     doc.build(story)
     buf.seek(0)
     return buf
 
 
-def _pdf_cover(story, styles, findings, snapshot, workspace_id):
+def _pdf_cover(story, styles, findings, snapshot, workspace_id, ctx):
+    Paragraph, Spacer, Table, TableStyle, PageBreak = (
+        ctx["Paragraph"], ctx["Spacer"], ctx["Table"], ctx["TableStyle"], ctx["PageBreak"]
+    )
+    inch, colors, palette = ctx["inch"], ctx["colors"], ctx["palette"]
+    COL_PRIMARY, COL_BG, COL_BORDER = palette["primary"], palette["bg"], palette["border"]
     story.append(Paragraph("Catalog Intel — Audit Report", styles["AtlasH1"]))
     subline_parts = []
     if workspace_id:
@@ -456,7 +488,10 @@ def _pdf_cover(story, styles, findings, snapshot, workspace_id):
     story.append(PageBreak())
 
 
-def _pdf_findings(story, styles, findings, resolved_map: dict):
+def _pdf_findings(story, styles, findings, resolved_map, ctx):
+    Paragraph, Spacer, PageBreak = ctx["Paragraph"], ctx["Spacer"], ctx["PageBreak"]
+    inch, palette = ctx["inch"], ctx["palette"]
+    COL_MUTED, SEV_COLORS = palette["muted"], palette["sev"]
     story.append(Paragraph("Findings", styles["AtlasH2"]))
     story.append(Paragraph(
         "Sorted by severity, then priority. Each finding includes the rule "
@@ -471,7 +506,8 @@ def _pdf_findings(story, styles, findings, resolved_map: dict):
         sev = (f.get("severity") or "medium").lower()
         title_txt = f"{i}. {spec.get('label') or rule}"
         # Severity chip in the heading
-        sev_color = SEV_COLORS.get(sev, COL_MUTED).hexval()
+        sev_color_obj = SEV_COLORS.get(sev, COL_MUTED)
+        sev_color = sev_color_obj.hexval() if hasattr(sev_color_obj, 'hexval') else str(sev_color_obj)
         story.append(Paragraph(
             f'<font color="{sev_color}"><b>{sev.upper()}</b></font>  ·  '
             f'{title_txt}',
@@ -528,7 +564,9 @@ def _pdf_findings(story, styles, findings, resolved_map: dict):
     story.append(PageBreak())
 
 
-def _pdf_methodology(story, styles):
+def _pdf_methodology(story, styles, ctx):
+    Paragraph, Spacer = ctx["Paragraph"], ctx["Spacer"]
+    inch = ctx["inch"]
     story.append(Paragraph("Methodology Appendix", styles["AtlasH2"]))
     story.append(Paragraph(
         "For every rule in Catalog Intel, this section lists the exact "
