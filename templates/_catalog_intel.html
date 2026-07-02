@@ -812,8 +812,9 @@ async function ciHandleFile(file) {
 
     ciLoadSnapshots();
     ciLoadCoverage();
-    // Auto-run analyses after successful upload
-    ciRunAnalyses();
+    // Auto-run analyses after successful upload — pass fresh snapshot_id
+    // so findings are attributed to this snapshot (preserving history for diff).
+    ciRunAnalyses(d.snapshot_id);
   } catch (e) {
     zone.classList.remove('ci-drop-uploading');
     zone.classList.add('ci-drop-active');
@@ -824,11 +825,16 @@ async function ciHandleFile(file) {
   }
 }
 
-async function ciRunAnalyses() {
+async function ciRunAnalyses(snapshotId) {
   const btn = document.getElementById('ci-run-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Running…'; }
   try {
-    const r = await fetch('/api/catalog-intel/run', { method: 'POST' });
+    // Attribute findings to a specific snapshot when provided; otherwise the
+    // server defaults to the latest snapshot for this workspace.
+    const url = snapshotId
+      ? '/api/catalog-intel/run?snapshot_id=' + encodeURIComponent(snapshotId)
+      : '/api/catalog-intel/run';
+    const r = await fetch(url, { method: 'POST' });
     const d = await r.json();
     if (!d.ok) {
       alert('Run failed: ' + (d.error || 'unknown'));

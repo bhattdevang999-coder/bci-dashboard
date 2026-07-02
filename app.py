@@ -19226,6 +19226,13 @@ def catalog_intel_run():
                     or request.args.get("snapshot_id") or None)
     try:
         from substrate.catalog_intel_runner import run_all
+        # Default: attribute findings to the latest snapshot. This ensures
+        # history is preserved across re-runs — diffs work.
+        if not snapshot_id:
+            from substrate.catalog_snapshots import list_snapshots
+            snaps = list_snapshots(workspace_id, limit=1) or []
+            if snaps:
+                snapshot_id = snaps[0]["snapshot_id"]
         result = run_all(workspace_id, snapshot_id=snapshot_id)
         return jsonify(result)
     except Exception as exc:
@@ -19517,6 +19524,81 @@ def catalog_intel_finding_asins(finding_id):
 
 # ====================================================================
 # End Catalog Intel v0.7 full drilldown
+# ====================================================================
+
+
+# ====================================================================
+# Catalog Intel v0.8 — Snapshot diff
+# ====================================================================
+
+@app.route("/api/catalog-intel/diff", methods=["GET"])
+def catalog_intel_diff():
+    """Diff findings between two snapshots of the same workspace.
+
+    Query params:
+      to   (optional): snapshot_id to compare TO. Default = latest snapshot.
+      from (optional): snapshot_id to compare FROM. Default = the snapshot
+                       immediately before `to` (by uploaded_at).
+
+    Returns resolved / new / unchanged / changed buckets plus a totals
+    summary. Each row carries both the from_finding and to_finding
+    (where applicable) so the UI can render rule spec + math for either.
+    """
+    workspace_id = _ci_active_workspace_id()
+    to_id = request.args.get("to")
+    from_id = request.args.get("from")
+    try:
+        from substrate.catalog_snapshots import list_snapshots
+        from substrate.catalog_intel_runner import get_findings
+        from substrate.diff_engine import compute_diff
+
+        snapshots = list_snapshots(workspace_id, limit=50) or []
+        if not snapshots:
+            return jsonify({"ok": False, "error": "no snapshots for workspace"}), 404
+
+        # Resolve to_id: default = newest
+        if not to_id:
+            to_id = snapshots[0]["snapshot_id"]
+        # Resolve from_id: default = the snapshot immediately before to_id
+        if not from_id:
+            idx = next((i for i, s in enumerate(snapshots) if s["snapshot_id"] == to_id), None)
+            if idx is None:
+                return jsonify({"ok": False, "error": "to snapshot not found"}), 404
+            if idx + 1 >= len(snapshots):
+                return jsonify({
+                    "ok": True,
+                    "note": "no prior snapshot to diff against — this is the first upload",
+                    "from_snapshot": None,
+                    "to_snapshot": snapshots[idx],
+                    "resolved": [], "new": [], "unchanged": [], "changed": [],
+                    "totals": {"resolved": 0, "new": 0, "unchanged": 0,
+                               "changed": 0, "improved": 0, "worsened": 0},
+                })
+            from_id = snapshots[idx + 1]["snapshot_id"]
+
+        # Find snapshot metadata
+        from_snap = next((s for s in snapshots if s["snapshot_id"] == from_id), None)
+        to_snap = next((s for s in snapshots if s["snapshot_id"] == to_id), None)
+        if not from_snap or not to_snap:
+            return jsonify({"ok": False, "error": "from or to snapshot not found"}), 404
+
+        # Load findings for each snapshot
+        from_findings = get_findings(workspace_id, snapshot_id=from_id, limit=1000)
+        to_findings = get_findings(workspace_id, snapshot_id=to_id, limit=1000)
+
+        result = compute_diff(
+            from_findings, to_findings,
+            from_snapshot=from_snap, to_snapshot=to_snap,
+        )
+        result["workspace_id"] = workspace_id
+        return jsonify(result)
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/diff failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ====================================================================
+# End Catalog Intel v0.8 snapshot diff
 # ====================================================================
 
 
