@@ -634,6 +634,89 @@
   overflow-x: auto;
   white-space: pre-wrap;
 }
+
+/* ── Snapshot diff panel ── */
+.ci-diff-wrap {
+  background: linear-gradient(180deg, #0E1A26 0%, #0A1620 100%);
+  border: 1px solid #1E3A5F;
+  border-radius: 4px;
+  margin: 16px 0 12px 0;
+  padding: 14px 20px;
+}
+.ci-diff-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.ci-diff-title {
+  font-family: ui-monospace, monospace;
+  font-size: 13px; color: #E2E8F0; font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ci-diff-vs {
+  color: #64748B; font-size: 11px; font-family: ui-monospace, monospace;
+  margin-left: 8px; font-weight: 400;
+}
+.ci-diff-picker {
+  background: #0A1620; border: 1px solid #1C2D40;
+  color: #94A3B8; padding: 4px 8px; border-radius: 3px;
+  font-family: ui-monospace, monospace; font-size: 10px;
+}
+.ci-diff-totals {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin: 8px 0 4px 0;
+}
+.ci-diff-total {
+  padding: 6px 12px; border-radius: 3px;
+  font-family: ui-monospace, monospace; font-size: 11px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.ci-diff-total:hover { filter: brightness(1.2); }
+.ci-diff-total.active {
+  border-color: currentColor;
+  filter: brightness(1.15);
+}
+.ci-diff-total .ci-diff-count {
+  font-weight: 600; font-size: 13px; margin-right: 4px;
+}
+.ci-diff-total.ci-diff-resolved  { color: #86EFAC; background: rgba(46, 90, 60, 0.20); }
+.ci-diff-total.ci-diff-improved  { color: #7DD3FC; background: rgba(30, 58, 95, 0.30); }
+.ci-diff-total.ci-diff-worsened  { color: #FBBF24; background: rgba(120, 60, 20, 0.30); }
+.ci-diff-total.ci-diff-new       { color: #FB7185; background: rgba(120, 30, 50, 0.30); }
+.ci-diff-total.ci-diff-unchanged { color: #94A3B8; background: rgba(50, 60, 75, 0.30); }
+.ci-diff-total.ci-diff-all       { color: #E2E8F0; background: rgba(30, 45, 65, 0.40); }
+.ci-diff-note {
+  color: #64748B; font-size: 10px; font-family: ui-monospace, monospace;
+  margin-top: 4px;
+}
+
+/* Diff-badge shown on each finding when in diff view */
+.ci-diff-badge {
+  display: inline-block;
+  padding: 1px 8px; margin-left: 8px;
+  border-radius: 3px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ci-diff-badge.resolved  { background: rgba(46, 90, 60, 0.35); color: #86EFAC; border: 1px solid #2E5A3C; }
+.ci-diff-badge.improved  { background: rgba(30, 58, 95, 0.40); color: #7DD3FC; border: 1px solid #1E3A5F; }
+.ci-diff-badge.worsened  { background: rgba(120, 60, 20, 0.40); color: #FBBF24; border: 1px solid #78431A; }
+.ci-diff-badge.new       { background: rgba(120, 30, 50, 0.40); color: #FB7185; border: 1px solid #78243A; }
+
+.ci-diff-delta {
+  display: inline-block; margin-top: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #94A3B8;
+}
+.ci-diff-delta .arrow { color: #64748B; margin: 0 4px; }
+.ci-diff-delta .from  { color: #64748B; }
+.ci-diff-delta .to    { color: #E2E8F0; font-weight: 500; }
+.ci-diff-delta.improved .to { color: #86EFAC; }
+.ci-diff-delta.worsened .to { color: #FBBF24; }
 </style>
 
 <div class="content" id="catalog-intel-page" style="display:none; padding:0;">
@@ -700,10 +783,24 @@
           </table>
         </div>
 
+        <div class="ci-diff-wrap" id="ci-diff-wrap" style="display:none;">
+          <div class="ci-diff-head">
+            <div>
+              <span class="ci-diff-title">Snapshot diff</span>
+              <span class="ci-diff-vs" id="ci-diff-vs">—</span>
+            </div>
+            <select class="ci-diff-picker" id="ci-diff-picker" onchange="ciLoadDiff(this.value || null)">
+              <option value="">latest vs previous</option>
+            </select>
+          </div>
+          <div class="ci-diff-totals" id="ci-diff-totals"></div>
+          <div class="ci-diff-note" id="ci-diff-note"></div>
+        </div>
+
         <div class="ci-findings-wrap" id="ci-findings-wrap" style="display:none;">
           <div class="ci-findings-head">
             <div>
-              <div class="ci-findings-title">Findings</div>
+              <div class="ci-findings-title" id="ci-findings-title">Findings</div>
               <div class="ci-findings-totals" id="ci-findings-totals"></div>
             </div>
             <button class="ci-run-btn" id="ci-run-btn" onclick="ciRunAnalyses()">Run analyses</button>
@@ -844,6 +941,7 @@ async function ciRunAnalyses(snapshotId) {
   }
   if (btn) { btn.disabled = false; btn.textContent = 'Re-run analyses'; }
   ciLoadFindings();
+  ciLoadDiff();
 }
 
 async function ciLoadFindings() {
@@ -852,6 +950,7 @@ async function ciLoadFindings() {
     const d = await r.json();
     if (!d.ok || !d.findings || !d.findings.length) {
       document.getElementById('ci-findings-wrap').style.display = 'none';
+      CI_ALL_FINDINGS = [];
       return;
     }
     document.getElementById('ci-findings-wrap').style.display = 'block';
@@ -862,7 +961,14 @@ async function ciLoadFindings() {
         '<span class="ci-sev-tally"><span class="ci-sev-dot ci-sev-' + sev + '">●</span> ' +
         n + ' ' + sev + '</span>'
       ).join('');
-    // Findings (priority-sorted)
+    // Cache for diff-view rendering
+    CI_ALL_FINDINGS = d.findings;
+    // If a non-'all' diff view is active, keep it; otherwise render standard list
+    if (CI_DIFF_VIEW !== 'all') {
+      ciRenderFindingsList(CI_DIFF_VIEW);
+      return;
+    }
+    // Findings (priority-sorted) — legacy inline render path retained
     const tb = document.getElementById('ci-findings-body');
     tb.innerHTML = d.findings.map((f, i) => {
       const sev = f.severity || 'medium';
@@ -1212,12 +1318,246 @@ async function ciDrillFullToLM(findingId, ruleName, btn) {
   }
 }
 
+// ====== Snapshot diff state ======
+let CI_DIFF_DATA = null;      // full diff response, cached across tab switches
+let CI_DIFF_VIEW = 'all';     // 'all' | 'resolved' | 'new' | 'changed' | 'unchanged' | 'improved' | 'worsened'
+let CI_ALL_FINDINGS = null;   // cached raw findings for 'all' view
+
+async function ciLoadDiff(fromSnapshotId) {
+  // Called on page load and whenever the user picks a different 'from' snapshot.
+  // Populates the diff panel and refreshes the findings list to show 'all' view.
+  const wrap = document.getElementById('ci-diff-wrap');
+  if (!wrap) return;
+  try {
+    const q = fromSnapshotId ? ('?from=' + encodeURIComponent(fromSnapshotId)) : '';
+    const r = await fetch('/api/catalog-intel/diff' + q);
+    const d = await r.json();
+    if (!d.ok) { wrap.style.display = 'none'; return; }
+    CI_DIFF_DATA = d;
+    // Only show the diff panel if there IS a from snapshot to compare against
+    if (!d.from_snapshot) {
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = 'block';
+    // Header text
+    const fSnap = d.from_snapshot || {};
+    const tSnap = d.to_snapshot || {};
+    const fDate = fSnap.uploaded_at ? new Date(fSnap.uploaded_at).toLocaleDateString() : '—';
+    const tDate = tSnap.uploaded_at ? new Date(tSnap.uploaded_at).toLocaleDateString() : '—';
+    document.getElementById('ci-diff-vs').textContent = fDate + '  →  ' + tDate;
+    // Populate picker
+    ciPopulateDiffPicker(fSnap.snapshot_id);
+    // Totals row — clickable filters
+    const t = d.totals || {};
+    const totals = [
+      ['resolved',  t.resolved,  'resolved'],
+      ['improved',  t.improved,  'improved'],
+      ['worsened',  t.worsened,  'worsened'],
+      ['new',       t.new,       'new'],
+      ['unchanged', t.unchanged, 'unchanged'],
+    ];
+    document.getElementById('ci-diff-totals').innerHTML = totals.map(([label, n, view]) =>
+      '<div class="ci-diff-total ci-diff-' + view + (CI_DIFF_VIEW === view ? ' active' : '') +
+      '" onclick="ciSetDiffView(\'' + view + '\')">' +
+      '<span class="ci-diff-count">' + (n || 0) + '</span>' + label +
+      '</div>'
+    ).join('') +
+      '<div class="ci-diff-total ci-diff-all' + (CI_DIFF_VIEW === 'all' ? ' active' : '') +
+      '" onclick="ciSetDiffView(\'all\')">' +
+      '<span class="ci-diff-count">∑</span>all findings</div>';
+    document.getElementById('ci-diff-note').textContent =
+      'Comparing findings by (rule_name, ASIN). Materiality: 1pt for percentages, 5 for counts — smaller deltas count as unchanged.';
+  } catch (e) {
+    wrap.style.display = 'none';
+  }
+}
+
+function ciPopulateDiffPicker(activeFromId) {
+  // Populate the picker from the snapshot list already loaded by ciLoadSnapshots.
+  // Falls back to a bare list if snapshots haven't been fetched yet.
+  fetch('/api/catalog-intel/snapshots').then(r => r.json()).then(d => {
+    if (!d.ok) return;
+    const snaps = d.snapshots || [];
+    if (snaps.length < 2) return;
+    const picker = document.getElementById('ci-diff-picker');
+    if (!picker) return;
+    // Skip the newest — that's always the 'to' snapshot
+    const options = snaps.slice(1).map(s => {
+      const upl = s.uploaded_at ? new Date(s.uploaded_at).toLocaleDateString() : (s.snapshot_id||'').slice(0,8);
+      const selected = s.snapshot_id === activeFromId ? ' selected' : '';
+      return '<option value="' + s.snapshot_id + '"' + selected + '>vs ' + upl +
+             ' (' + (s.file_name || 'snapshot').slice(0, 24) + ')</option>';
+    }).join('');
+    picker.innerHTML = '<option value="">latest vs previous</option>' + options;
+  });
+}
+
+function ciSetDiffView(view) {
+  CI_DIFF_VIEW = view;
+  // Highlight the active total chip
+  document.querySelectorAll('.ci-diff-total').forEach(el => el.classList.remove('active'));
+  const active = document.querySelector('.ci-diff-total.ci-diff-' + view);
+  if (active) active.classList.add('active');
+  // Update the findings title + body
+  const titleEl = document.getElementById('ci-findings-title');
+  if (titleEl) {
+    titleEl.textContent = view === 'all' ? 'Findings'
+      : 'Findings — ' + view + ' since ' + (CI_DIFF_DATA?.from_snapshot?.uploaded_at
+          ? new Date(CI_DIFF_DATA.from_snapshot.uploaded_at).toLocaleDateString() : 'prior');
+  }
+  ciRenderFindingsList(view);
+}
+
+function ciRenderFindingsList(view) {
+  // Renders the findings body given the current diff view.
+  //   - 'all'      -> the standard current-snapshot findings list
+  //   - 'resolved' -> from_finding only (with 'resolved' badge)
+  //   - 'new'      -> to_finding only (with 'new' badge)
+  //   - 'improved' / 'worsened' -> to_finding with delta strip
+  //   - 'unchanged'/ 'changed'  -> to_finding with delta strip if metric present
+  const body = document.getElementById('ci-findings-body');
+  if (!body) return;
+
+  let rowsToRender = [];
+  if (view === 'all' || !CI_DIFF_DATA) {
+    rowsToRender = (CI_ALL_FINDINGS || []).map(f => ({finding: f, badge: null, delta: null}));
+  } else if (view === 'resolved') {
+    rowsToRender = (CI_DIFF_DATA.resolved || []).map(r => ({
+      finding: r.from_finding, badge: 'resolved', delta: null,
+    }));
+  } else if (view === 'new') {
+    rowsToRender = (CI_DIFF_DATA.new || []).map(r => ({
+      finding: r.to_finding, badge: 'new', delta: null,
+    }));
+  } else if (view === 'improved' || view === 'worsened') {
+    rowsToRender = (CI_DIFF_DATA.changed || [])
+      .filter(r => (r.metric?.direction) === view)
+      .map(r => ({finding: r.to_finding, badge: view, delta: r.metric}));
+  } else if (view === 'unchanged') {
+    rowsToRender = (CI_DIFF_DATA.unchanged || []).map(r => ({
+      finding: r.to_finding, badge: null, delta: r.metric,
+    }));
+  }
+
+  if (!rowsToRender.length) {
+    body.innerHTML = '<div style="padding:24px;text-align:center;color:#64748B;font-family:ui-monospace,monospace;font-size:11px;">' +
+      (view === 'all' ? 'No findings yet.' : 'Nothing in this bucket.') +
+      '</div>';
+    return;
+  }
+
+  body.innerHTML = rowsToRender.map((row, i) => ciRenderFindingRow(row.finding, i, row.badge, row.delta)).join('');
+}
+
+function ciRenderFindingRow(f, i, badge, deltaMetric) {
+  // Extracted from ciLoadFindings so it can be reused for diff views.
+  if (!f) return '';
+  const sev = f.severity || 'medium';
+  const ev = f.evidence || {};
+  const rd = ev.rule_definition || null;
+  const ruleName = f.rule_name || '';
+  const ruleLabel = (rd && rd.label) ? rd.label : ruleName.replace(/_/g, ' ');
+
+  const ruleLinkHtml = ruleName
+    ? '<span class="ci-finding-rule"><a class="ci-rule-link" onclick="ciOpenRuleModal(\'' + ruleName + '\')">' + ruleLabel + '</a></span>'
+    : '<span class="ci-finding-rule">' + ruleLabel + '</span>';
+
+  const badgeHtml = badge
+    ? '<span class="ci-diff-badge ' + badge + '">' + badge + '</span>'
+    : '';
+
+  let deltaHtml = '';
+  if (deltaMetric && deltaMetric.from !== null && deltaMetric.to !== null && deltaMetric.key) {
+    const dir = deltaMetric.direction || '';
+    const arrow = ' → ';
+    const fmtNum = (x) => (Math.abs(x) < 100 ? x.toFixed(1) : Math.round(x).toLocaleString());
+    deltaHtml = '<div class="ci-diff-delta ' + dir + '">' +
+                deltaMetric.key + ': <span class="from">' + fmtNum(deltaMetric.from) + '</span>' +
+                '<span class="arrow">' + arrow + '</span>' +
+                '<span class="to">' + fmtNum(deltaMetric.to) + '</span>' +
+                (deltaMetric.delta !== null ?
+                  ' <span style="color:#64748B;">(' + (deltaMetric.delta > 0 ? '+' : '') +
+                    fmtNum(deltaMetric.delta) + ')</span>' : '') +
+                '</div>';
+  }
+
+  const AGGREGATE_ONLY_RULES = new Set(['fill_rate_report','concentration_pareto','a_plus_lift','subcategory_rollup']);
+  let drill = '';
+  if (f.asin) {
+    drill = '<button class="ci-drill-btn" onclick="ciDrillToLM([\'' + f.asin + '\'], \'' +
+            ruleName + '\', \'' + f.asin + '\')">' +
+            'View ASIN in Listing Manager →</button>';
+  } else if (!AGGREGATE_ONLY_RULES.has(ruleName) && f.finding_id) {
+    drill = '<button class="ci-drill-btn" onclick="ciDrillFullToLM(\'' + f.finding_id + '\', \'' + ruleName + '\', this)">' +
+            'View all affected ASINs (with reasons) →</button>';
+  }
+
+  const mathId = 'ci-math-' + view_prefix() + '-' + i;
+  let mathBlock = '';
+  if (rd) {
+    const mathKeys = [
+      ['total', 'Total ASINs checked'],
+      ['total_catalog', 'Total ASINs checked'],
+      ['total_asins', 'Total ASINs checked'],
+      ['dead_count', 'ASINs matched'],
+      ['missing_description', 'ASINs matched'],
+      ['inconsistent_count', 'ASINs matched'],
+      ['filled', 'ASINs with value'],
+      ['with_description', 'ASINs with value'],
+      ['pct_filled', 'Fill rate'],
+      ['pct_with_description', 'Fill rate'],
+      ['dead_pct', 'Match rate'],
+      ['likely_owner_pct', 'Buy box ownership'],
+      ['likely_owner', 'Likely owner'],
+      ['active_asins', 'Active ASINs'],
+      ['top_50pct_asins', 'ASINs to 50% revenue'],
+      ['top_80pct_asins', 'ASINs to 80% revenue'],
+      ['top_90pct_asins', 'ASINs to 90% revenue'],
+    ];
+    const rows = mathKeys
+      .filter(([k]) => ev[k] !== undefined && ev[k] !== null)
+      .map(([k, label]) => '<div class="ci-math-row"><span class="ci-math-key">' + label +
+                           '</span><span class="ci-math-val">' +
+                           (typeof ev[k] === 'number' ? ev[k].toLocaleString() : String(ev[k])) +
+                           '</span></div>').join('');
+    mathBlock =
+      '<button class="ci-math-toggle" onclick="ciToggleMath(\'' + mathId + '\', this)">▾ show math</button>' +
+      '<div class="ci-math-block" id="' + mathId + '">' +
+        rows +
+        '<div class="ci-math-predicate">' +
+          '<strong style="color:#94A3B8;">Rule predicate:</strong><br>' + (rd.predicate || '—') +
+        '</div>' +
+        '<div class="ci-math-predicate" style="border-top:none;padding-top:2px;">' +
+          '<strong style="color:#94A3B8;">Threshold:</strong> ' + (rd.threshold || '—') + '<br>' +
+          '<strong style="color:#94A3B8;">Severity logic:</strong> ' + (rd.severity_logic || '—') +
+        '</div>' +
+      '</div>';
+  }
+
+  return '<div class="ci-finding ci-finding-' + sev + '">' +
+         '<div class="ci-finding-row">' +
+           '<span class="ci-finding-sev ci-sev-' + sev + '">' + sev + '</span>' +
+           ruleLinkHtml +
+           badgeHtml +
+           (f.asin ? '<span class="ci-finding-asin">' + f.asin + '</span>' : '') +
+         '</div>' +
+         (f.proposed_fix ? '<div class="ci-finding-fix">' + f.proposed_fix + '</div>' : '') +
+         deltaHtml +
+         (drill ? '<div class="ci-finding-drill">' + drill + '</div>' : '') +
+         mathBlock +
+         '</div>';
+}
+
+function view_prefix() { return CI_DIFF_VIEW; }
+
 function showCatalogIntelPage() {
   _showPage('catalog-intel-page', 'Atlas · Catalog Intel',
     'Upload-driven brand audit — coverage matrix, findings, drilldowns');
   ciLoadSnapshots();
   ciLoadCoverage();
   ciLoadFindings();
+  ciLoadDiff();
   ciLoadRules();
 }
 </script>
