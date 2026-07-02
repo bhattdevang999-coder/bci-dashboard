@@ -1605,3 +1605,46 @@ CREATE INDEX IF NOT EXISTS idx_catalog_intel_findings_workspace_asin
 INSERT INTO substrate_schema_version (version, notes)
     VALUES ('v14', 'Catalog Intel v0.2: catalog_snapshots + asin_sales_metrics + catalog_intel_findings.')
     ON CONFLICT (version) DO NOTHING;
+
+
+-- v15 MIGRATION (Catalog Intel v1.0, 2026-07-01): finding status workflow.
+--
+-- Status must persist across snapshot re-runs — findings are wiped and
+-- rewritten on each run, so status is keyed on the stable identity
+-- (workspace_id, rule_name, asin) rather than on finding_id.
+-- Aggregate findings store empty string for asin so we can PK cleanly.
+
+CREATE TABLE IF NOT EXISTS catalog_intel_finding_status (
+    workspace_id   TEXT        NOT NULL,
+    rule_name      TEXT        NOT NULL,
+    asin           TEXT        NOT NULL DEFAULT '',  -- '' = aggregate finding
+    status         TEXT        NOT NULL DEFAULT 'open'
+                   CHECK (status IN ('open','acknowledged','in_progress','fixed','wontfix')),
+    note           TEXT,
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by     TEXT,
+    PRIMARY KEY (workspace_id, rule_name, asin)
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_intel_finding_status_workspace
+    ON catalog_intel_finding_status (workspace_id, status);
+
+-- Audit history of every status transition (immutable log).
+CREATE TABLE IF NOT EXISTS catalog_intel_status_history (
+    history_id     BIGSERIAL   PRIMARY KEY,
+    workspace_id   TEXT        NOT NULL,
+    rule_name      TEXT        NOT NULL,
+    asin           TEXT        NOT NULL DEFAULT '',
+    old_status     TEXT,
+    new_status     TEXT        NOT NULL,
+    note           TEXT,
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by     TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_intel_status_history_workspace
+    ON catalog_intel_status_history (workspace_id, updated_at DESC);
+
+INSERT INTO substrate_schema_version (version, notes)
+    VALUES ('v15', 'Catalog Intel v1.0: finding_status + status_history for workflow.')
+    ON CONFLICT (version) DO NOTHING;

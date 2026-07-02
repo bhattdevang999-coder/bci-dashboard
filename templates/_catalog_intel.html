@@ -991,99 +991,13 @@ async function ciLoadFindings() {
       ).join('');
     // Cache for diff-view rendering
     CI_ALL_FINDINGS = d.findings;
-    // If a non-'all' diff view is active, keep it; otherwise render standard list
-    if (CI_DIFF_VIEW !== 'all') {
-      ciRenderFindingsList(CI_DIFF_VIEW);
-      return;
-    }
-    // Findings (priority-sorted) — legacy inline render path retained
-    const tb = document.getElementById('ci-findings-body');
-    tb.innerHTML = d.findings.map((f, i) => {
-      const sev = f.severity || 'medium';
-      const ev = f.evidence || {};
-      const rd = ev.rule_definition || null;
-      const ruleName = f.rule_name || '';
-      const ruleLabel = (rd && rd.label) ? rd.label : ruleName.replace(/_/g, ' ');
-
-      // Rule name is a clickable link that opens the rule's spec modal.
-      const ruleLinkHtml = ruleName
-        ? '<span class="ci-finding-rule"><a class="ci-rule-link" onclick="ciOpenRuleModal(\'' + ruleName + '\')">' + ruleLabel + '</a></span>'
-        : '<span class="ci-finding-rule">' + ruleLabel + '</span>';
-
-      // Drilldown link:
-      //  - per-ASIN finding -> "View ASIN →"
-      //  - aggregate with a per-ASIN resolver -> "View all affected ASINs →"
-      //    (fetches full list on click via /findings/<id>/asins)
-      //  - aggregate-only rules with no resolver -> no button
-      let drill = '';
-      const AGGREGATE_ONLY_RULES = new Set(['fill_rate_report','concentration_pareto','a_plus_lift','subcategory_rollup']);
-      if (f.asin) {
-        drill = '<button class="ci-drill-btn" onclick="ciDrillToLM([\'' + f.asin + '\'], \'' +
-                ruleName + '\', \'' + f.asin + '\')">' +
-                'View ASIN in Listing Manager →</button>';
-      } else if (!AGGREGATE_ONLY_RULES.has(ruleName) && f.finding_id) {
-        // Full drilldown — fetch complete list + reason tags from server
-        drill = '<button class="ci-drill-btn" onclick="ciDrillFullToLM(\'' + f.finding_id + '\', \'' + ruleName + '\', this)">' +
-                'View all affected ASINs (with reasons) →</button>';
-      }
-
-      // "Show math" expander — renders the rule spec + key numbers
-      const mathId = 'ci-math-' + i;
-      let mathBlock = '';
-      if (rd) {
-        // Pull key math numbers from evidence — the field names vary by rule, so we
-        // surface known summary keys with descriptive labels.
-        const mathKeys = [
-          ['total', 'Total ASINs checked'],
-          ['total_catalog', 'Total ASINs checked'],
-          ['total_asins', 'Total ASINs checked'],
-          ['dead_count', 'ASINs matched'],
-          ['missing_description', 'ASINs matched'],
-          ['inconsistent_count', 'ASINs matched'],
-          ['filled', 'ASINs with value'],
-          ['with_description', 'ASINs with value'],
-          ['pct_filled', 'Fill rate'],
-          ['pct_with_description', 'Fill rate'],
-          ['dead_pct', 'Match rate'],
-          ['likely_owner_pct', 'Buy box ownership'],
-          ['likely_owner', 'Likely owner'],
-          ['active_asins', 'Active ASINs'],
-          ['top_50pct_asins', 'ASINs to 50% revenue'],
-          ['top_80pct_asins', 'ASINs to 80% revenue'],
-          ['top_90pct_asins', 'ASINs to 90% revenue'],
-        ];
-        const rows = mathKeys
-          .filter(([k]) => ev[k] !== undefined && ev[k] !== null)
-          .map(([k, label]) => '<div class="ci-math-row"><span class="ci-math-key">' + label +
-                               '</span><span class="ci-math-val">' +
-                               (typeof ev[k] === 'number' ? ev[k].toLocaleString() : String(ev[k])) +
-                               '</span></div>').join('');
-        mathBlock =
-          '<button class="ci-math-toggle" onclick="ciToggleMath(\'' + mathId + '\', this)">▾ show math</button>' +
-          '<div class="ci-math-block" id="' + mathId + '">' +
-            rows +
-            '<div class="ci-math-predicate">' +
-              '<strong style="color:#94A3B8;">Rule predicate:</strong><br>' +
-              (rd.predicate || '—') +
-            '</div>' +
-            '<div class="ci-math-predicate" style="border-top:none;padding-top:2px;">' +
-              '<strong style="color:#94A3B8;">Threshold:</strong> ' + (rd.threshold || '—') + '<br>' +
-              '<strong style="color:#94A3B8;">Severity logic:</strong> ' + (rd.severity_logic || '—') +
-            '</div>' +
-          '</div>';
-      }
-
-      return '<div class="ci-finding ci-finding-' + sev + '">' +
-             '<div class="ci-finding-row">' +
-               '<span class="ci-finding-sev ci-sev-' + sev + '">' + sev + '</span>' +
-               ruleLinkHtml +
-               (f.asin ? '<span class="ci-finding-asin">' + f.asin + '</span>' : '') +
-             '</div>' +
-             (f.proposed_fix ? '<div class="ci-finding-fix">' + f.proposed_fix + '</div>' : '') +
-             (drill ? '<div class="ci-finding-drill">' + drill + '</div>' : '') +
-             mathBlock +
-             '</div>';
-    }).join('');
+    // Delegate rendering to the shared helper so status chip + all diff
+    // views work uniformly. If a non-'all' diff view is active, keep it.
+    ciRenderFindingsList(CI_DIFF_VIEW);
+    // Update status filter counts + show the filter bar
+    ciUpdateStatusFilterCounts(d.findings);
+    // Re-apply any active status filter (survives refresh)
+    if (CI_STATUS_FILTER) ciSetStatusFilter(CI_STATUS_FILTER);
   } catch (e) { /* silent */ }
 }
 
@@ -1495,6 +1409,16 @@ function ciRenderFindingRow(f, i, badge, deltaMetric) {
     ? '<span class="ci-diff-badge ' + badge + '">' + badge + '</span>'
     : '';
 
+  // Status chip — always shown so operator can set from any finding row.
+  const status = f.status || 'open';
+  const statusLabel = status.replace('_', ' ');
+  const asinAttr = (f.asin || '').replace(/'/g, "&#39;");
+  const noteAttr = (f.status_note || 'click to change status').replace(/"/g, '&quot;');
+  const statusChipHtml =
+    '<span class="ci-status-chip ' + status + '" ' +
+    'onclick="ciOpenStatusMenu(event, \'' + ruleName + '\', \'' + asinAttr + '\', \'' + status + '\')" ' +
+    'title="' + noteAttr + '">' + statusLabel + ' ▾</span>';
+
   let deltaHtml = '';
   if (deltaMetric && deltaMetric.from !== null && deltaMetric.to !== null && deltaMetric.key) {
     const dir = deltaMetric.direction || '';
@@ -1563,13 +1487,15 @@ function ciRenderFindingRow(f, i, badge, deltaMetric) {
       '</div>';
   }
 
-  return '<div class="ci-finding ci-finding-' + sev + '">' +
+  return '<div class="ci-finding ci-finding-' + sev + '" data-status="' + status + '" data-rule="' + ruleName + '">' +
          '<div class="ci-finding-row">' +
            '<span class="ci-finding-sev ci-sev-' + sev + '">' + sev + '</span>' +
            ruleLinkHtml +
            badgeHtml +
+           statusChipHtml +
            (f.asin ? '<span class="ci-finding-asin">' + f.asin + '</span>' : '') +
          '</div>' +
+         (f.status_note ? '<div class="ci-finding-fix" style="color:#7DD3FC;font-style:italic;">note: ' + f.status_note + '</div>' : '') +
          (f.proposed_fix ? '<div class="ci-finding-fix">' + f.proposed_fix + '</div>' : '') +
          deltaHtml +
          (drill ? '<div class="ci-finding-drill">' + drill + '</div>' : '') +
@@ -1578,6 +1504,101 @@ function ciRenderFindingRow(f, i, badge, deltaMetric) {
 }
 
 function view_prefix() { return CI_DIFF_VIEW; }
+
+// ====== Finding status workflow ======
+let CI_STATUS_FILTER = '';  // '' | 'open' | 'acknowledged' | 'in_progress' | 'fixed' | 'wontfix'
+
+function ciUpdateStatusFilterCounts(findings) {
+  const bar = document.getElementById('ci-status-filter');
+  if (!bar || !findings || !findings.length) { if (bar) bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  const counts = {open:0, acknowledged:0, in_progress:0, fixed:0, wontfix:0};
+  for (const f of findings) counts[f.status || 'open'] = (counts[f.status || 'open']||0) + 1;
+  for (const s of Object.keys(counts)) {
+    const el = document.getElementById('ci-sf-c-' + s);
+    if (el) el.textContent = '· ' + counts[s];
+  }
+}
+
+function ciSetStatusFilter(status) {
+  CI_STATUS_FILTER = status || '';
+  // Highlight active chip
+  document.querySelectorAll('.ci-status-filter .chip').forEach(el => {
+    el.classList.toggle('active', (el.dataset.status || '') === CI_STATUS_FILTER);
+  });
+  // Apply filter to already-rendered finding rows
+  const rows = document.querySelectorAll('.ci-finding');
+  rows.forEach(row => {
+    if (!CI_STATUS_FILTER) { row.style.display = ''; return; }
+    row.style.display = (row.dataset.status === CI_STATUS_FILTER) ? '' : 'none';
+  });
+}
+
+function ciOpenStatusMenu(event, ruleName, asin, currentStatus) {
+  event.stopPropagation();
+  // Close any existing menu
+  ciCloseStatusMenu();
+  const menu = document.createElement('div');
+  menu.className = 'ci-status-menu';
+  menu.id = 'ci-status-menu-active';
+  const options = [
+    ['open', 'Open'],
+    ['acknowledged', 'Acknowledged'],
+    ['in_progress', 'In progress'],
+    ['fixed', 'Fixed'],
+    ['wontfix', "Won't fix"],
+  ];
+  menu.innerHTML = options.map(([val, label]) => {
+    const marker = (val === currentStatus) ? '● ' : '   ';
+    return '<button data-status="' + val + '" onclick="ciApplyStatus(event, \'' + ruleName +
+           '\', \'' + asin + '\', \'' + val + '\')">' + marker + label + '</button>';
+  }).join('') +
+  '<div class="divider"></div>' +
+  '<div style="color:#64748B;font-size:10px;padding:2px 4px;">Optional note:</div>' +
+  '<textarea id="ci-status-note" class="note-input" rows="2" placeholder="e.g. handed off to agency 2026-07-05"></textarea>';
+
+  document.body.appendChild(menu);
+  // Position at click
+  const rect = event.target.getBoundingClientRect();
+  menu.style.left = (rect.left + window.scrollX) + 'px';
+  menu.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  // Click-outside-to-close
+  setTimeout(() => document.addEventListener('click', ciCloseStatusMenu, {once: true}), 0);
+}
+
+function ciCloseStatusMenu() {
+  const m = document.getElementById('ci-status-menu-active');
+  if (m) m.remove();
+}
+
+async function ciApplyStatus(event, ruleName, asin, newStatus) {
+  event.stopPropagation();
+  // Grab note before removing the menu
+  const noteEl = document.getElementById('ci-status-note');
+  const note = noteEl ? noteEl.value.trim() : '';
+  ciCloseStatusMenu();
+  try {
+    const r = await fetch('/api/catalog-intel/finding-status', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        rule_name: ruleName,
+        asin: asin || null,
+        status: newStatus,
+        note: note || null,
+      }),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      alert('Status update failed: ' + (d.error || 'unknown'));
+      return;
+    }
+    // Refresh findings to reflect new status
+    ciLoadFindings();
+  } catch (e) {
+    alert('Network error: ' + String(e));
+  }
+}
 
 function ciExport(format) {
   // Trigger download via a hidden anchor (browser handles the file save).

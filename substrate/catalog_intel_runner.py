@@ -1176,7 +1176,7 @@ def get_findings(
                         (workspace_id, int(limit)),
                     )
                 rows = cur.fetchall()
-        return [{
+        findings = [{
             "finding_id":   str(r[0]),
             "snapshot_id":  str(r[1]) if r[1] else None,
             "asin":         r[2],
@@ -1187,6 +1187,19 @@ def get_findings(
             "proposed_fix": r[7],
             "created_at":   r[8].isoformat() if r[8] else None,
         } for r in rows]
+        # Attach workflow status (stable identity survives snapshot re-runs)
+        try:
+            from substrate.finding_status import list_status
+            status_map = list_status(workspace_id)
+            for f in findings:
+                key = (f["rule_name"], f.get("asin") or "")
+                s = status_map.get(key)
+                f["status"] = (s or {}).get("status", "open")
+                f["status_note"] = (s or {}).get("note")
+                f["status_updated_at"] = (s or {}).get("updated_at")
+        except Exception as exc:
+            logger.warning("status attach failed: %s", exc)
+        return findings
     except Exception as exc:
         logger.warning("get_findings failed: %s", exc)
         return []

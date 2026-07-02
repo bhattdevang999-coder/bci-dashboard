@@ -19709,6 +19709,94 @@ def catalog_intel_export_pdf():
 # ====================================================================
 
 
+# ====================================================================
+# Catalog Intel v1.0 — Finding status workflow
+# ====================================================================
+
+@app.route("/api/catalog-intel/finding-status", methods=["GET"])
+def catalog_intel_status_list():
+    """Return status for every finding tracked in the active workspace,
+    plus counts by status.
+    """
+    workspace_id = _ci_active_workspace_id()
+    try:
+        from substrate.finding_status import list_status, counts_by_status
+        status_map = list_status(workspace_id)
+        # Convert tuple keys to a JSON-friendly list
+        rows = []
+        for (rule, asin), v in status_map.items():
+            rows.append({
+                "rule_name": rule,
+                "asin": asin or None,
+                **v,
+            })
+        return jsonify({
+            "ok": True,
+            "workspace_id": workspace_id,
+            "rows": rows,
+            "counts": counts_by_status(workspace_id),
+        })
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/finding-status GET failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/catalog-intel/finding-status", methods=["POST"])
+def catalog_intel_status_set():
+    """Set the status for a finding. Body (JSON or form):
+      rule_name  (required)
+      asin       (optional; blank/absent = aggregate finding)
+      status     (required; one of open/acknowledged/in_progress/fixed/wontfix)
+      note       (optional)
+      updated_by (optional; user identifier)
+    """
+    workspace_id = _ci_active_workspace_id()
+    data = request.get_json(silent=True) or request.form
+    rule_name = (data.get("rule_name") or "").strip()
+    status = (data.get("status") or "").strip()
+    asin = (data.get("asin") or "").strip() or None
+    note = data.get("note") or None
+    updated_by = data.get("updated_by") or None
+    if not rule_name or not status:
+        return jsonify({"ok": False, "error": "rule_name and status are required"}), 400
+    try:
+        from substrate.finding_status import set_status
+        result = set_status(workspace_id, rule_name, status,
+                            asin=asin, note=note, updated_by=updated_by)
+        code = 200 if result.get("ok") else 400
+        return jsonify(result), code
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/finding-status POST failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/catalog-intel/finding-status/history", methods=["GET"])
+def catalog_intel_status_history():
+    """Audit history of every status transition. Optional filters:
+      rule_name, asin, limit (default 100).
+    """
+    workspace_id = _ci_active_workspace_id()
+    try:
+        from substrate.finding_status import get_history
+        rows = get_history(
+            workspace_id,
+            rule_name=request.args.get("rule_name") or None,
+            asin=request.args.get("asin") or None,
+            limit=int(request.args.get("limit", 100)),
+        )
+        return jsonify({"ok": True, "workspace_id": workspace_id, "history": rows})
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/finding-status/history failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ====================================================================
+# End Catalog Intel v1.0 finding status
+# ====================================================================
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))
