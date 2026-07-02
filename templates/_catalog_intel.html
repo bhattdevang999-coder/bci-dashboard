@@ -476,6 +476,164 @@
   color: #E0F2FE;
   border-color: #3B82F6;
 }
+
+/* Rule-name link inside findings */
+.ci-rule-link {
+  color: #7DD3FC;
+  text-decoration: none;
+  cursor: pointer;
+  border-bottom: 1px dashed #1E3A5F;
+}
+.ci-rule-link:hover { color: #E0F2FE; border-bottom-color: #3B82F6; }
+
+/* Expandable math block per finding */
+.ci-math-toggle {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+.ci-math-toggle:hover { color: #94A3B8; }
+.ci-math-block {
+  display: none;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: #0A1620;
+  border: 1px solid #1C2D40;
+  border-radius: 3px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #94A3B8;
+  line-height: 1.6;
+}
+.ci-math-block.open { display: block; }
+.ci-math-row { display: flex; justify-content: space-between; padding: 2px 0; }
+.ci-math-key { color: #64748B; }
+.ci-math-val { color: #CBD5E1; font-weight: 500; }
+.ci-math-predicate {
+  margin-top: 6px; padding-top: 6px; border-top: 1px dashed #1C2D40;
+  color: #7DD3FC; white-space: pre-wrap; word-break: break-word;
+}
+
+/* Rules catalog panel */
+.ci-rules-wrap {
+  background: #0E1A26;
+  border: 1px solid #1C2D40;
+  border-radius: 4px;
+  margin: 20px 0;
+  padding: 16px 20px;
+}
+.ci-rules-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.ci-rules-title {
+  font-family: ui-monospace, monospace;
+  font-size: 14px;
+  color: #E2E8F0;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ci-rules-sub {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #64748B;
+  margin-bottom: 12px;
+}
+.ci-rules-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.ci-rule-card {
+  background: #0A1620;
+  border: 1px solid #1C2D40;
+  border-radius: 3px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 120ms ease;
+}
+.ci-rule-card:hover { border-color: #3B82F6; }
+.ci-rule-card-label {
+  color: #E2E8F0; font-size: 12px; font-weight: 500; margin-bottom: 3px;
+  font-family: ui-monospace, monospace;
+}
+.ci-rule-card-cat {
+  color: #64748B; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: ui-monospace, monospace;
+}
+.ci-rule-card-ds {
+  color: #7DD3FC; font-size: 10px; margin-top: 3px;
+  font-family: ui-monospace, monospace;
+}
+
+/* Rule detail modal */
+.ci-modal-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(3, 8, 15, 0.85);
+  z-index: 9999;
+  align-items: flex-start; justify-content: center;
+  padding: 60px 20px 20px;
+  overflow-y: auto;
+}
+.ci-modal-backdrop.open { display: flex; }
+.ci-modal {
+  background: #0E1A26;
+  border: 1px solid #1E3A5F;
+  border-radius: 6px;
+  max-width: 800px;
+  width: 100%;
+  padding: 24px 28px;
+  font-family: ui-monospace, monospace;
+  color: #CBD5E1;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ci-modal-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.ci-modal-title {
+  font-size: 16px; color: #E0F2FE; font-weight: 600;
+}
+.ci-modal-close {
+  background: transparent; border: none; color: #64748B;
+  cursor: pointer; font-size: 20px; padding: 0 4px;
+}
+.ci-modal-close:hover { color: #E2E8F0; }
+.ci-modal-cat {
+  color: #7DD3FC; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.06em; margin-bottom: 16px;
+}
+.ci-modal-section {
+  margin: 12px 0; padding-top: 10px;
+  border-top: 1px dashed #1C2D40;
+}
+.ci-modal-section-label {
+  color: #64748B; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.08em; margin-bottom: 4px;
+}
+.ci-modal-section-body {
+  color: #CBD5E1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ci-modal-code {
+  background: #030812;
+  border: 1px solid #1C2D40;
+  padding: 8px 12px;
+  border-radius: 3px;
+  color: #7DD3FC;
+  font-size: 11px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
 </style>
 
 <div class="content" id="catalog-intel-page" style="display:none; padding:0;">
@@ -551,6 +709,25 @@
             <button class="ci-run-btn" id="ci-run-btn" onclick="ciRunAnalyses()">Run analyses</button>
           </div>
           <div id="ci-findings-body"></div>
+        </div>
+
+        <div class="ci-rules-wrap" id="ci-rules-wrap">
+          <div class="ci-rules-head">
+            <div class="ci-rules-title">Rules catalog</div>
+            <button class="link-btn" style="background:transparent;border:1px solid #1C2D40;color:#5EEAD4;padding:4px 10px;font-family:ui-monospace,monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;cursor:pointer;" onclick="ciLoadRules()">refresh</button>
+          </div>
+          <div class="ci-rules-sub">
+            Every rule Catalog Intel can fire. Click a rule to see its exact predicate,
+            threshold, severity logic, and a standalone SQL query you can run against
+            your own database to independently reproduce any count.
+          </div>
+          <div class="ci-rules-body" id="ci-rules-body">
+            <div style="color:#64748B;font-size:10px;">loading…</div>
+          </div>
+        </div>
+
+        <div class="ci-modal-backdrop" id="ci-rule-modal" onclick="if(event.target===this)ciCloseRuleModal()">
+          <div class="ci-modal" id="ci-modal-body"></div>
         </div>
 
         <div class="ci-opps" id="ci-opps-wrap" style="display:none;">
@@ -681,13 +858,17 @@ async function ciLoadFindings() {
       ).join('');
     // Findings (priority-sorted)
     const tb = document.getElementById('ci-findings-body');
-    tb.innerHTML = d.findings.map(f => {
+    tb.innerHTML = d.findings.map((f, i) => {
       const sev = f.severity || 'medium';
       const ev = f.evidence || {};
-      const evStr = Object.keys(ev).length
-        ? JSON.stringify(ev, null, 2)
-        : '';
-      const ruleLabel = (f.rule_name || '').replace(/_/g, ' ');
+      const rd = ev.rule_definition || null;
+      const ruleName = f.rule_name || '';
+      const ruleLabel = (rd && rd.label) ? rd.label : ruleName.replace(/_/g, ' ');
+
+      // Rule name is a clickable link that opens the rule's spec modal.
+      const ruleLinkHtml = ruleName
+        ? '<span class="ci-finding-rule"><a class="ci-rule-link" onclick="ciOpenRuleModal(\'' + ruleName + '\')">' + ruleLabel + '</a></span>'
+        : '<span class="ci-finding-rule">' + ruleLabel + '</span>';
 
       // Drilldown link:
       //  - per-ASIN finding -> "View ASIN →"
@@ -695,7 +876,7 @@ async function ciLoadFindings() {
       let drill = '';
       if (f.asin) {
         drill = '<button class="ci-drill-btn" onclick="ciDrillToLM([\'' + f.asin + '\'], \'' +
-                (f.rule_name || '') + '\', \'' + f.asin + '\')">' +
+                ruleName + '\', \'' + f.asin + '\')">' +
                 'View ASIN in Listing Manager →</button>';
       } else if (Array.isArray(ev.sample_asins) && ev.sample_asins.length > 0) {
         const n = ev.sample_asins.length;
@@ -703,21 +884,66 @@ async function ciLoadFindings() {
                       ev.orphaned_asins || ev.no_desc_asins || ev.missing_asins || n;
         const label = (n < total) ? ('View sample ' + n + ' of ' + total + ' affected ASINs →')
                                   : ('View ' + n + ' affected ASINs →');
-        // Escape ASINs list safely: JSON.stringify + attribute-escape
         const payload = JSON.stringify(ev.sample_asins).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
         drill = '<button class="ci-drill-btn" onclick="ciDrillToLM(JSON.parse(this.dataset.asins), \'' +
-                (f.rule_name || '') + '\')" data-asins="' + payload + '">' + label + '</button>';
+                ruleName + '\')" data-asins="' + payload + '">' + label + '</button>';
+      }
+
+      // "Show math" expander — renders the rule spec + key numbers
+      const mathId = 'ci-math-' + i;
+      let mathBlock = '';
+      if (rd) {
+        // Pull key math numbers from evidence — the field names vary by rule, so we
+        // surface known summary keys with descriptive labels.
+        const mathKeys = [
+          ['total', 'Total ASINs checked'],
+          ['total_catalog', 'Total ASINs checked'],
+          ['total_asins', 'Total ASINs checked'],
+          ['dead_count', 'ASINs matched'],
+          ['missing_description', 'ASINs matched'],
+          ['inconsistent_count', 'ASINs matched'],
+          ['filled', 'ASINs with value'],
+          ['with_description', 'ASINs with value'],
+          ['pct_filled', 'Fill rate'],
+          ['pct_with_description', 'Fill rate'],
+          ['dead_pct', 'Match rate'],
+          ['likely_owner_pct', 'Buy box ownership'],
+          ['likely_owner', 'Likely owner'],
+          ['active_asins', 'Active ASINs'],
+          ['top_50pct_asins', 'ASINs to 50% revenue'],
+          ['top_80pct_asins', 'ASINs to 80% revenue'],
+          ['top_90pct_asins', 'ASINs to 90% revenue'],
+        ];
+        const rows = mathKeys
+          .filter(([k]) => ev[k] !== undefined && ev[k] !== null)
+          .map(([k, label]) => '<div class="ci-math-row"><span class="ci-math-key">' + label +
+                               '</span><span class="ci-math-val">' +
+                               (typeof ev[k] === 'number' ? ev[k].toLocaleString() : String(ev[k])) +
+                               '</span></div>').join('');
+        mathBlock =
+          '<button class="ci-math-toggle" onclick="ciToggleMath(\'' + mathId + '\', this)">▾ show math</button>' +
+          '<div class="ci-math-block" id="' + mathId + '">' +
+            rows +
+            '<div class="ci-math-predicate">' +
+              '<strong style="color:#94A3B8;">Rule predicate:</strong><br>' +
+              (rd.predicate || '—') +
+            '</div>' +
+            '<div class="ci-math-predicate" style="border-top:none;padding-top:2px;">' +
+              '<strong style="color:#94A3B8;">Threshold:</strong> ' + (rd.threshold || '—') + '<br>' +
+              '<strong style="color:#94A3B8;">Severity logic:</strong> ' + (rd.severity_logic || '—') +
+            '</div>' +
+          '</div>';
       }
 
       return '<div class="ci-finding ci-finding-' + sev + '">' +
              '<div class="ci-finding-row">' +
                '<span class="ci-finding-sev ci-sev-' + sev + '">' + sev + '</span>' +
-               '<span class="ci-finding-rule">' + ruleLabel + '</span>' +
+               ruleLinkHtml +
                (f.asin ? '<span class="ci-finding-asin">' + f.asin + '</span>' : '') +
              '</div>' +
              (f.proposed_fix ? '<div class="ci-finding-fix">' + f.proposed_fix + '</div>' : '') +
              (drill ? '<div class="ci-finding-drill">' + drill + '</div>' : '') +
-             (evStr ? '<div class="ci-finding-evidence">' + evStr + '</div>' : '') +
+             mathBlock +
              '</div>';
     }).join('');
   } catch (e) { /* silent */ }
@@ -828,6 +1054,116 @@ async function ciLoadSnapshots() {
   });
 })();
 
+function ciToggleMath(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const open = el.classList.toggle('open');
+  btn.textContent = open ? '▴ hide math' : '▾ show math';
+}
+
+// Rules catalog cache (loaded once per session)
+let CI_RULES_CACHE = null;
+
+async function ciLoadRules() {
+  const body = document.getElementById('ci-rules-body');
+  if (!body) return;
+  body.innerHTML = '<div style="color:#64748B;font-size:10px;">loading…</div>';
+  try {
+    const r = await fetch('/api/catalog-intel/rules');
+    const d = await r.json();
+    if (!d.ok) {
+      body.innerHTML = '<div style="color:#F87171;font-size:10px;">error: ' + (d.error || 'unknown') + '</div>';
+      return;
+    }
+    CI_RULES_CACHE = d.rules || {};
+    const idx = d.index || [];
+    body.innerHTML = idx.map(r => {
+      const spec = CI_RULES_CACHE[r.rule_name] || {};
+      return '<div class="ci-rule-card" onclick="ciOpenRuleModal(\'' + r.rule_name + '\')">' +
+             '<div class="ci-rule-card-label">' + (spec.label || r.rule_name.replace(/_/g, ' ')) + '</div>' +
+             '<div class="ci-rule-card-cat">' + (r.category || '') + '</div>' +
+             '<div class="ci-rule-card-ds">source: ' + (spec.data_source || '?') + '</div>' +
+             '</div>';
+    }).join('');
+  } catch (e) {
+    body.innerHTML = '<div style="color:#F87171;font-size:10px;">network error: ' + String(e) + '</div>';
+  }
+}
+
+async function ciOpenRuleModal(ruleName) {
+  // Ensure cache is loaded
+  if (!CI_RULES_CACHE) {
+    await ciLoadRules();
+  }
+  const spec = (CI_RULES_CACHE || {})[ruleName];
+  if (!spec) {
+    // Fallback: fetch single rule
+    try {
+      const r = await fetch('/api/catalog-intel/rules?rule_name=' + encodeURIComponent(ruleName));
+      const d = await r.json();
+      if (!d.ok) { alert('Rule not found: ' + ruleName); return; }
+      (CI_RULES_CACHE = CI_RULES_CACHE || {})[ruleName] = d.spec;
+      return ciOpenRuleModal(ruleName);
+    } catch (e) { alert('Failed to load rule: ' + String(e)); return; }
+  }
+  const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const modal = document.getElementById('ci-modal-body');
+  const fieldsLabel = Array.isArray(spec.checks_field) && spec.checks_field.length
+    ? spec.checks_field.join(', ')
+    : '(cross-catalog rule — no single field)';
+  modal.innerHTML =
+    '<div class="ci-modal-head">' +
+      '<div>' +
+        '<div class="ci-modal-title">' + esc(spec.label) + '</div>' +
+        '<div class="ci-modal-cat">' + esc(spec.category) + ' · rule_name: <span style="color:#94A3B8">' + esc(ruleName) + '</span></div>' +
+      '</div>' +
+      '<button class="ci-modal-close" onclick="ciCloseRuleModal()">✕</button>' +
+    '</div>' +
+    '<div class="ci-modal-section">' +
+      '<div class="ci-modal-section-label">What this rule checks</div>' +
+      '<div class="ci-modal-section-body">' + esc(spec.predicate) + '</div>' +
+    '</div>' +
+    '<div class="ci-modal-section">' +
+      '<div class="ci-modal-section-label">Fields inspected</div>' +
+      '<div class="ci-modal-section-body">' + esc(fieldsLabel) + '</div>' +
+    '</div>' +
+    '<div class="ci-modal-section">' +
+      '<div class="ci-modal-section-label">Data source required</div>' +
+      '<div class="ci-modal-section-body">' + esc(spec.data_source) + '</div>' +
+    '</div>' +
+    '<div class="ci-modal-section">' +
+      '<div class="ci-modal-section-label">Threshold</div>' +
+      '<div class="ci-modal-section-body">' + esc(spec.threshold) + '</div>' +
+    '</div>' +
+    '<div class="ci-modal-section">' +
+      '<div class="ci-modal-section-label">Severity logic</div>' +
+      '<div class="ci-modal-section-body">' + esc(spec.severity_logic) + '</div>' +
+    '</div>' +
+    '<div class="ci-modal-section">' +
+      '<div class="ci-modal-section-label">Minimum coverage to trust the result</div>' +
+      '<div class="ci-modal-section-body">' + esc(spec.min_coverage) + '</div>' +
+    '</div>' +
+    '<div class="ci-modal-section">' +
+      '<div class="ci-modal-section-label">SQL predicate as executed</div>' +
+      '<pre class="ci-modal-code">' + esc(spec.sql_predicate) + '</pre>' +
+    '</div>' +
+    '<div class="ci-modal-section">' +
+      '<div class="ci-modal-section-label">Standalone verify query (run against your own DB)</div>' +
+      '<pre class="ci-modal-code">' + esc(spec.verify_query) + '</pre>' +
+    '</div>';
+  document.getElementById('ci-rule-modal').classList.add('open');
+}
+
+function ciCloseRuleModal() {
+  const m = document.getElementById('ci-rule-modal');
+  if (m) m.classList.remove('open');
+}
+
+// Close modal on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') ciCloseRuleModal();
+});
+
 function ciDrillToLM(asins, ruleName, focusAsin) {
   // Called from Catalog Intel finding drilldown buttons.
   // Delegates to Listing Manager's lmSetFilterAndShow.
@@ -845,5 +1181,6 @@ function showCatalogIntelPage() {
   ciLoadSnapshots();
   ciLoadCoverage();
   ciLoadFindings();
+  ciLoadRules();
 }
 </script>
