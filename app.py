@@ -19408,6 +19408,43 @@ def catalog_intel_snapshots():
 # ====================================================================
 
 
+# ====================================================================
+# Catalog Intel v0.6 — Rules catalog (verifiability layer)
+# ====================================================================
+
+@app.route("/api/catalog-intel/rules", methods=["GET"])
+def catalog_intel_rules():
+    """Return the full rules catalog — every rule Catalog Intel can fire, with
+    its predicate, threshold, severity logic, data-source requirements, and a
+    standalone verify_query the client can run against their own DB.
+
+    This is the trust layer — anyone reading a finding should be able to look
+    up the rule that produced it and independently reproduce the count.
+    """
+    try:
+        from substrate.rules_catalog import RULE_SPECS, list_registered_rules
+        specific = request.args.get("rule_name")
+        if specific:
+            spec = RULE_SPECS.get(specific)
+            if not spec:
+                return jsonify({"ok": False, "error": f"unknown rule: {specific}"}), 404
+            return jsonify({"ok": True, "rule_name": specific, "spec": spec})
+        return jsonify({
+            "ok": True,
+            "count": len(RULE_SPECS),
+            "index": list_registered_rules(),
+            "rules": RULE_SPECS,
+        })
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/rules failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ====================================================================
+# End Catalog Intel v0.6 rules catalog
+# ====================================================================
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))

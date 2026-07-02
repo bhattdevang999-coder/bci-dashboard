@@ -1027,6 +1027,22 @@ def _normalize_sample_asins(evidence: dict) -> None:
         evidence["sample_asins"] = out
 
 
+def _attach_rule_definition(evidence: dict, rule_name: str) -> None:
+    """In-place: attach a compact rule spec to each finding's evidence.
+
+    Import here (not at module load) so the runner degrades gracefully if
+    rules_catalog isn't deployed yet.
+    """
+    if not isinstance(evidence, dict):
+        return
+    try:
+        from substrate.rules_catalog import get_rule_definition_for_finding
+        evidence["rule_definition"] = get_rule_definition_for_finding(rule_name)
+    except Exception:
+        # Non-fatal: findings still write, just without inline rule spec
+        pass
+
+
 def run_all(workspace_id: str, *, snapshot_id: Optional[str] = None) -> dict:
     """Run every analysis and write findings.
 
@@ -1066,8 +1082,11 @@ def run_all(workspace_id: str, *, snapshot_id: Optional[str] = None) -> dict:
                             result = fn(ac, workspace_id)
                         findings = result.get("findings", [])
                         for f in findings:
+                            ev = f.get("evidence_json") or {}
                             # Normalize sample ASINs for UI drilldown
-                            _normalize_sample_asins(f.get("evidence_json") or {})
+                            _normalize_sample_asins(ev)
+                            # Attach compact rule spec inline (verifiability layer)
+                            _attach_rule_definition(ev, f.get("rule_name", aid))
                             fid = str(uuid.uuid4())
                             cur.execute(
                                 """
