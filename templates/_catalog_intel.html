@@ -717,6 +717,29 @@
 .ci-diff-delta .to    { color: #E2E8F0; font-weight: 500; }
 .ci-diff-delta.improved .to { color: #86EFAC; }
 .ci-diff-delta.worsened .to { color: #FBBF24; }
+
+/* Export buttons */
+.ci-findings-actions {
+  display: flex; gap: 6px; align-items: center;
+}
+.ci-export-btn {
+  background: transparent;
+  border: 1px solid #1C2D40;
+  color: #94A3B8;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ci-export-btn:hover {
+  background: #13212F;
+  color: #E2E8F0;
+  border-color: #1E3A5F;
+}
 </style>
 
 <div class="content" id="catalog-intel-page" style="display:none; padding:0;">
@@ -803,7 +826,12 @@
               <div class="ci-findings-title" id="ci-findings-title">Findings</div>
               <div class="ci-findings-totals" id="ci-findings-totals"></div>
             </div>
-            <button class="ci-run-btn" id="ci-run-btn" onclick="ciRunAnalyses()">Run analyses</button>
+            <div class="ci-findings-actions">
+              <button class="ci-export-btn" onclick="ciExport('pdf')" title="Client-facing PDF with methodology appendix">Export PDF</button>
+              <button class="ci-export-btn" onclick="ciExport('xlsx')" title="Multi-sheet workbook: findings, affected ASINs, rules methodology, snapshot info">Export XLSX</button>
+              <button class="ci-export-btn" onclick="ciExport('csv')" title="Flat CSV of findings">Export CSV</button>
+              <button class="ci-run-btn" id="ci-run-btn" onclick="ciRunAnalyses()">Run analyses</button>
+            </div>
           </div>
           <div id="ci-findings-body"></div>
         </div>
@@ -1550,6 +1578,18 @@ function ciRenderFindingRow(f, i, badge, deltaMetric) {
 }
 
 function view_prefix() { return CI_DIFF_VIEW; }
+
+function ciExport(format) {
+  // Trigger download via a hidden anchor (browser handles the file save).
+  // Format: 'csv' | 'xlsx' | 'pdf'.
+  const url = '/api/catalog-intel/export/' + encodeURIComponent(format);
+  const link = document.createElement('a');
+  link.href = url;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
 function showCatalogIntelPage() {
   _showPage('catalog-intel-page', 'Atlas · Catalog Intel',

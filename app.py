@@ -19602,6 +19602,113 @@ def catalog_intel_diff():
 # ====================================================================
 
 
+# ====================================================================
+# Catalog Intel v0.9 — Export (CSV / XLSX / PDF)
+# ====================================================================
+
+def _export_gather(workspace_id, snapshot_id, include_affected_asins: bool):
+    """Shared setup for all three export endpoints. Returns
+    (findings, snapshot_meta, affected_asins_by_finding)."""
+    from substrate.catalog_intel_runner import get_findings
+    from substrate.catalog_snapshots import list_snapshots
+    from substrate.rules_resolver import resolve_full_asins, AGGREGATE_ONLY
+    from substrate.db import get_pool
+
+    # Resolve snapshot metadata
+    snapshot_meta = None
+    if snapshot_id:
+        snaps = list_snapshots(workspace_id, limit=50) or []
+        snapshot_meta = next((s for s in snaps if s["snapshot_id"] == snapshot_id), None)
+
+    findings = get_findings(workspace_id, snapshot_id=snapshot_id, limit=1000)
+
+    affected: dict = {}
+    if include_affected_asins and findings:
+        pool = get_pool()
+        if pool is not None:
+            with pool.connection() as conn:
+                for f in findings:
+                    rule = f.get("rule_name") or ""
+                    if rule in AGGREGATE_ONLY or f.get("asin"):
+                        continue
+                    fid = f.get("finding_id")
+                    try:
+                        with conn.cursor() as cur:
+                            affected[fid] = resolve_full_asins(cur, rule, workspace_id) or []
+                    except Exception as exc:
+                        print(f"[atlas] resolver failed for {rule}: {exc}", flush=True)
+                        affected[fid] = []
+    return findings, snapshot_meta, affected
+
+
+def _export_filename(prefix, workspace_id, snapshot_id, ext):
+    ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    ws = (workspace_id or "workspace").replace(" ", "_")
+    tag = (snapshot_id or "latest")[:8]
+    return f"{prefix}_{ws}_{tag}_{ts}.{ext}"
+
+
+@app.route("/api/catalog-intel/export/csv", methods=["GET"])
+def catalog_intel_export_csv():
+    """Flat CSV of findings with rule spec inline (one row per finding)."""
+    workspace_id = _ci_active_workspace_id()
+    snapshot_id = request.args.get("snapshot_id")
+    try:
+        from substrate.export_engine import build_csv
+        findings, snap, _ = _export_gather(workspace_id, snapshot_id, include_affected_asins=False)
+        buf = build_csv(findings, snap, workspace_id)
+        fname = _export_filename("catalog_intel_findings", workspace_id, snapshot_id, "csv")
+        return send_file(buf, mimetype="text/csv",
+                         as_attachment=True, download_name=fname)
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/export/csv failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/catalog-intel/export/xlsx", methods=["GET"])
+def catalog_intel_export_xlsx():
+    """Multi-sheet workbook: Findings, Affected ASINs, Rules Methodology, Snapshot Info."""
+    workspace_id = _ci_active_workspace_id()
+    snapshot_id = request.args.get("snapshot_id")
+    try:
+        from substrate.export_engine import build_xlsx
+        findings, snap, affected = _export_gather(
+            workspace_id, snapshot_id, include_affected_asins=True)
+        buf = build_xlsx(findings, snap, workspace_id, affected_asins_by_finding=affected)
+        fname = _export_filename("catalog_intel_audit", workspace_id, snapshot_id, "xlsx")
+        return send_file(
+            buf,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True, download_name=fname,
+        )
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/export/xlsx failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+@app.route("/api/catalog-intel/export/pdf", methods=["GET"])
+def catalog_intel_export_pdf():
+    """Client-facing PDF: cover + findings + methodology appendix."""
+    workspace_id = _ci_active_workspace_id()
+    snapshot_id = request.args.get("snapshot_id")
+    try:
+        from substrate.export_engine import build_pdf
+        findings, snap, affected = _export_gather(
+            workspace_id, snapshot_id, include_affected_asins=True)
+        buf = build_pdf(findings, snap, workspace_id, affected_asins_by_finding=affected)
+        fname = _export_filename("catalog_intel_report", workspace_id, snapshot_id, "pdf")
+        return send_file(buf, mimetype="application/pdf",
+                         as_attachment=True, download_name=fname)
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/export/pdf failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ====================================================================
+# End Catalog Intel v0.9 export
+# ====================================================================
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))
