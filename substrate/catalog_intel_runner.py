@@ -71,12 +71,22 @@ def run_concentration_pareto(cur, workspace_id: str) -> dict:
     total_rev = sum(r[1] for r in rows)
     cum = 0.0
     thresholds = {50: None, 80: None, 90: None}
+    # Sampled curve for visualization — ~30 evenly-spaced points
+    # of (asin_rank_pct, cumulative_revenue_pct).
+    n = len(rows)
+    sample_step = max(1, n // 30)
+    curve = []
     for i, (_, rev) in enumerate(rows, start=1):
         cum += rev
         pct = 100 * cum / total_rev
         for t in thresholds:
             if thresholds[t] is None and pct >= t:
                 thresholds[t] = i
+        if i == 1 or i == n or i % sample_step == 0:
+            curve.append({
+                "rank_pct": round(100 * i / n, 2),
+                "cum_rev_pct": round(pct, 2),
+            })
 
     summary = {
         "active_asins": len(rows),
@@ -84,6 +94,7 @@ def run_concentration_pareto(cur, workspace_id: str) -> dict:
         "top_50pct_asins": thresholds[50],
         "top_80pct_asins": thresholds[80],
         "top_90pct_asins": thresholds[90],
+        "pareto_curve": curve,
     }
     return {
         "summary": summary,
