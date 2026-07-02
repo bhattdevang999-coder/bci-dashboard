@@ -740,6 +740,16 @@
   color: #E2E8F0;
   border-color: #1E3A5F;
 }
+.ci-export-btn-primary {
+  background: rgba(32, 128, 141, 0.15);
+  color: #5EEAD4;
+  border-color: #20808D;
+}
+.ci-export-btn-primary:hover {
+  background: rgba(32, 128, 141, 0.30);
+  color: #A7F3D0;
+  border-color: #5EEAD4;
+}
 
 /* ── Finding status chip ── */
 .ci-status-chip {
@@ -952,9 +962,10 @@
               <div class="ci-findings-totals" id="ci-findings-totals"></div>
             </div>
             <div class="ci-findings-actions">
-              <button class="ci-export-btn" onclick="ciExport('pdf')" title="Client-facing PDF with methodology appendix">Export PDF</button>
-              <button class="ci-export-btn" onclick="ciExport('xlsx')" title="Multi-sheet workbook: findings, affected ASINs, rules methodology, snapshot info">Export XLSX</button>
-              <button class="ci-export-btn" onclick="ciExport('csv')" title="Flat CSV of findings">Export CSV</button>
+              <button class="ci-export-btn ci-export-btn-primary" onclick="ciExport('workbook')" title="Interactive 15-sheet workbook — every KPI is a live formula the client can trace">Export Interactive Workbook</button>
+              <button class="ci-export-btn" onclick="ciExport('pdf')" title="Client-facing PDF with methodology appendix">PDF</button>
+              <button class="ci-export-btn" onclick="ciExport('xlsx')" title="Flat multi-sheet export of findings">XLSX</button>
+              <button class="ci-export-btn" onclick="ciExport('csv')" title="Flat CSV of findings">CSV</button>
               <button class="ci-run-btn" id="ci-run-btn" onclick="ciRunAnalyses()">Run analyses</button>
             </div>
           </div>

@@ -19797,6 +19797,95 @@ def catalog_intel_status_history():
 # ====================================================================
 
 
+# ====================================================================
+# Catalog Intel v1.2 — Interactive verification workbook
+# ====================================================================
+
+@app.route("/api/catalog-intel/export/workbook", methods=["GET"])
+def catalog_intel_export_workbook():
+    """Interactive verification workbook — consultant-style multi-sheet
+    XLSX where every downstream number is a live formula pointing at
+    the raw data sheets.
+
+    Includes 15 sheets covering the current audit (KPIs, coverage matrix,
+    revenue concentration, cohorts, content health, findings, rules
+    methodology, data gaps) plus 4 trend-skeleton sheets (KPI trend,
+    per-rule trend, fix-effectiveness, historical upload plan) so the
+    client can see what more analyses become available once they send
+    additional snapshots.
+    """
+    workspace_id = _ci_active_workspace_id()
+    snapshot_id = request.args.get("snapshot_id")
+    try:
+        from substrate.workbook_builder import build_interactive_workbook
+        from substrate.asin_metadata import get_asin_metadata
+        from substrate.asin_sales_metrics import aggregate_by_asin
+        from substrate.catalog_intel_runner import get_findings
+        from substrate.catalog_snapshots import list_snapshots
+        from substrate.db import get_pool
+
+        # Fetch all catalog rows for workspace (single query, no per-ASIN N+1)
+        pool = get_pool()
+        catalog_rows = []
+        if pool is not None:
+            with pool.connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT asin, parent_asin, ground_truth_fields
+                    FROM asin_metadata
+                    WHERE workspace_id = %s
+                    ORDER BY asin
+                    """,
+                    (workspace_id,),
+                )
+                catalog_rows = [
+                    {"asin": r[0], "parent_asin": r[1], "ground_truth_fields": r[2] or {}}
+                    for r in cur.fetchall()
+                ]
+
+        # Fetch sales rollup keyed by ASIN
+        sales_rows = aggregate_by_asin(workspace_id)
+        sales_by_asin = {r["asin"]: r for r in sales_rows if r.get("asin")}
+
+        # Fetch findings for the target snapshot (or latest)
+        if not snapshot_id:
+            snaps = list_snapshots(workspace_id, limit=1) or []
+            if snaps:
+                snapshot_id = snaps[0]["snapshot_id"]
+        snapshot_meta = None
+        if snapshot_id:
+            snaps = list_snapshots(workspace_id, limit=50) or []
+            snapshot_meta = next((s for s in snaps if s["snapshot_id"] == snapshot_id), None)
+        findings = get_findings(workspace_id, snapshot_id=snapshot_id, limit=1000)
+
+        buf = build_interactive_workbook(
+            catalog_rows=catalog_rows,
+            sales_by_asin=sales_by_asin,
+            findings=findings,
+            snapshot=snapshot_meta,
+            workspace_id=workspace_id,
+        )
+
+        ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+        tag = (snapshot_id or "latest")[:8]
+        fname = f"catalog_intel_workbook_{workspace_id}_{tag}_{ts}.xlsx"
+        return send_file(
+            buf,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True, download_name=fname,
+        )
+    except Exception as exc:
+        import traceback
+        print(f"[atlas] catalog-intel/export/workbook failed: {exc}", flush=True)
+        traceback.print_exc()
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ====================================================================
+# End Catalog Intel v1.2 workbook
+# ====================================================================
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))
