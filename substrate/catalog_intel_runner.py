@@ -522,18 +522,413 @@ def run_fill_rate_report(cur, workspace_id: str) -> dict:
 
 
 # ============================================================
+# v0.5 analyses
+# ============================================================
+
+def run_list_price_dist(cur, workspace_id: str) -> dict:
+    """List-price histogram + outlier detection."""
+    cur.execute(
+        """
+        SELECT asin, ground_truth_fields->>'list_price' AS lp
+        FROM asin_metadata
+        WHERE workspace_id = %s
+          AND ground_truth_fields->>'list_price' IS NOT NULL
+        """,
+        (workspace_id,),
+    )
+    prices = []
+    for r in cur.fetchall():
+        try:
+            p = float(r[1])
+            if p > 0:
+                prices.append((r[0], p))
+        except (TypeError, ValueError):
+            continue
+
+    if not prices:
+        return {"summary": {"n": 0}, "findings": []}
+
+    vals = sorted(p for _, p in prices)
+    n = len(vals)
+    median = vals[n // 2]
+    p10 = vals[max(0, n // 10)]
+    p90 = vals[min(n - 1, n * 9 // 10)]
+    p99 = vals[min(n - 1, n * 99 // 100)]
+    minp, maxp = vals[0], vals[-1]
+
+    # Histogram bands
+    bands = [("$0-25", 0, 25), ("$25-50", 25, 50), ("$50-100", 50, 100),
+             ("$100-200", 100, 200), ("$200-500", 200, 500),
+             ("$500+", 500, float("inf"))]
+    hist = {label: 0 for label, _, _ in bands}
+    for v in vals:
+        for label, lo, hi in bands:
+            if lo <= v < hi:
+                hist[label] += 1
+                break
+
+    # Outliers: > 3x p90 (upper) or < 0.3x p10 (lower)
+    upper_cutoff = p90 * 3
+    outliers = [(a, p) for a, p in prices if p > upper_cutoff][:20]
+
+    summary = {
+        "n": n, "min": round(minp, 2), "max": round(maxp, 2),
+        "median": round(median, 2),
+        "p10": round(p10, 2), "p90": round(p90, 2), "p99": round(p99, 2),
+        "histogram": hist,
+        "outlier_count": len(outliers),
+    }
+    findings = [
+        _finding(
+            "list_price_dist", "strategic", 0.3,
+            evidence=summary,
+            proposed_fix=(
+                f"Prices range ${minp:.0f}–${maxp:.0f}, median ${median:.0f}. "
+                f"P90 is ${p90:.0f}, top 1% at ${p99:.0f}+. "
+                f"{len(outliers)} outliers above 3× P90 may be misconfigured."
+            ),
+        ),
+    ]
+    if outliers:
+        findings[0]["evidence_json"]["outlier_sample"] = [
+            {"asin": a, "price": p} for a, p in outliers[:10]
+        ]
+    return {"summary": summary, "findings": findings}
+
+
+def run_subcategory_rollup(cur, workspace_id: str) -> dict:
+    """Per-subcategory ASIN count, revenue, A+ coverage."""
+    cur.execute(
+        """
+        WITH sales AS (
+            SELECT asin, SUM(COALESCE(revenue, 0)) AS rev
+            FROM asin_sales_metrics
+            WHERE workspace_id = %s
+            GROUP BY asin
+        )
+        SELECT
+            COALESCE(am.ground_truth_fields->>'subcategory', '(none)') AS subcat,
+            COUNT(DISTINCT am.asin) AS n,
+            COALESCE(SUM(sales.rev), 0) AS rev,
+            SUM(CASE WHEN LOWER(am.ground_truth_fields->>'a_plus_status') IN
+                       ('yes','true','complete','published','1','y') THEN 1 ELSE 0 END) AS aplus_n
+        FROM asin_metadata am
+        LEFT JOIN sales ON sales.asin = am.asin
+        WHERE am.workspace_id = %s
+        GROUP BY subcat
+        ORDER BY rev DESC
+        """,
+        (workspace_id, workspace_id),
+    )
+    rows = cur.fetchall()
+    subcats = [{
+        "subcategory": r[0],
+        "asin_count": int(r[1]),
+        "revenue": float(r[2] or 0),
+        "a_plus_count": int(r[3]),
+        "a_plus_pct": round(100 * int(r[3]) / int(r[1]), 1) if r[1] else 0,
+    } for r in rows]
+
+    total_rev = sum(s["revenue"] for s in subcats)
+    for s in subcats:
+        s["revenue_share_pct"] = round(
+            100 * s["revenue"] / total_rev, 1) if total_rev else 0
+
+    summary = {
+        "n_subcategories": len(subcats),
+        "top_5": subcats[:5],
+        "all_subcategories": subcats[:30],  # cap for JSON size
+    }
+    findings = [
+        _finding(
+            "subcategory_rollup", "strategic", 0.4,
+            evidence=summary,
+            proposed_fix=(
+                f"{len(subcats)} subcategories on record. Top 5 by revenue "
+                f"generate ${sum(s['revenue'] for s in subcats[:5]):,.0f}. "
+                f"Review A+ coverage per subcategory — low-coverage subcats "
+                f"with high revenue are the biggest quick wins."
+            ),
+        ),
+    ]
+    return {"summary": summary, "findings": findings}
+
+
+def run_style_family_concentration(cur, workspace_id: str) -> dict:
+    """Children per parent. Orphans (childless parents), mega-clusters."""
+    cur.execute(
+        """
+        SELECT parent_asin, COUNT(*) AS n
+        FROM asin_metadata
+        WHERE workspace_id = %s AND parent_asin IS NOT NULL
+        GROUP BY parent_asin
+        ORDER BY n DESC
+        """,
+        (workspace_id,),
+    )
+    fam_sizes = [(r[0], int(r[1])) for r in cur.fetchall()]
+
+    # Parents that exist as their own row but have zero children
+    cur.execute(
+        """
+        SELECT COUNT(*) FROM asin_metadata am
+        WHERE am.workspace_id = %s
+          AND am.parent_asin IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM asin_metadata c
+            WHERE c.workspace_id = am.workspace_id
+              AND c.parent_asin = am.asin
+          )
+        """,
+        (workspace_id,),
+    )
+    orphan_parents = int(cur.fetchone()[0] or 0)
+
+    # Buckets
+    single = sum(1 for _, n in fam_sizes if n == 1)
+    small = sum(1 for _, n in fam_sizes if 2 <= n <= 5)
+    medium = sum(1 for _, n in fam_sizes if 6 <= n <= 20)
+    large = sum(1 for _, n in fam_sizes if 21 <= n <= 50)
+    mega = sum(1 for _, n in fam_sizes if n > 50)
+
+    mega_list = [(p, n) for p, n in fam_sizes if n > 50][:10]
+
+    summary = {
+        "total_families": len(fam_sizes),
+        "single_child": single,
+        "small_2_5": small,
+        "medium_6_20": medium,
+        "large_21_50": large,
+        "mega_gt_50": mega,
+        "orphan_parents": orphan_parents,
+        "mega_sample": [{"parent": p, "children": n} for p, n in mega_list],
+    }
+    severity = "medium" if mega > 5 or orphan_parents > 10 else "low"
+    findings = [
+        _finding(
+            "style_family_concentration", severity, 0.4,
+            evidence=summary,
+            proposed_fix=(
+                f"{len(fam_sizes)} variation families. {mega} ‘mega’ "
+                f"families with >50 children risk fragmented CVR (Amazon "
+                f"shoppers can’t pick). {orphan_parents} parents have no "
+                f"children on record."
+            ),
+        ),
+    ]
+    return {"summary": summary, "findings": findings}
+
+
+def run_variation_theme_integrity(cur, workspace_id: str) -> dict:
+    """Parents missing variation_theme; children with mismatched themes."""
+    cur.execute(
+        """
+        SELECT am.asin,
+               am.ground_truth_fields->>'variation_theme' AS theme,
+               COUNT(c.asin) AS n_children,
+               COUNT(DISTINCT c.ground_truth_fields->>'variation_theme')
+                    AS distinct_child_themes
+        FROM asin_metadata am
+        LEFT JOIN asin_metadata c
+          ON c.workspace_id = am.workspace_id
+         AND c.parent_asin = am.asin
+        WHERE am.workspace_id = %s
+          AND am.parent_asin IS NULL
+        GROUP BY am.asin, theme
+        HAVING COUNT(c.asin) > 0
+        """,
+        (workspace_id,),
+    )
+    parents = cur.fetchall()
+    missing_theme = [r[0] for r in parents if not r[1]]
+    inconsistent = [r[0] for r in parents if int(r[3] or 0) > 1]
+
+    summary = {
+        "parents_with_children": len(parents),
+        "missing_theme_count": len(missing_theme),
+        "inconsistent_children_count": len(inconsistent),
+        "missing_sample": missing_theme[:10],
+        "inconsistent_sample": inconsistent[:10],
+    }
+    severity = "high" if (len(missing_theme) + len(inconsistent)) > 20 else "medium"
+    findings = [
+        _finding(
+            "variation_theme_integrity", severity, 0.5,
+            evidence=summary,
+            proposed_fix=(
+                f"{len(missing_theme)} parents have children but no "
+                f"variation theme set. {len(inconsistent)} parents have "
+                f"children with inconsistent themes (multiple values). "
+                f"Both cause Amazon to break the variation family on the PDP."
+            ),
+        ),
+    ]
+    return {"summary": summary, "findings": findings}
+
+
+def run_description_presence(cur, workspace_id: str) -> dict:
+    """% of ASINs with description + length distribution."""
+    cur.execute(
+        """
+        SELECT
+            COUNT(*) FILTER (
+                WHERE ground_truth_fields ? 'description'
+                  AND LENGTH(ground_truth_fields->>'description') > 0
+            ) AS with_desc,
+            COUNT(*) AS total,
+            AVG(LENGTH(ground_truth_fields->>'description'))
+                FILTER (WHERE ground_truth_fields ? 'description')::int
+                AS avg_len,
+            COUNT(*) FILTER (
+                WHERE LENGTH(ground_truth_fields->>'description') < 200
+                  AND LENGTH(ground_truth_fields->>'description') > 0
+            ) AS short_desc
+        FROM asin_metadata
+        WHERE workspace_id = %s
+        """,
+        (workspace_id,),
+    )
+    r = cur.fetchone()
+    with_desc = int(r[0] or 0)
+    total = int(r[1] or 0)
+    avg_len = int(r[2] or 0) if r[2] is not None else 0
+    short = int(r[3] or 0)
+    missing = total - with_desc
+    pct_with = round(100 * with_desc / total, 1) if total else 0
+
+    summary = {
+        "total": total,
+        "with_description": with_desc,
+        "missing_description": missing,
+        "pct_with_description": pct_with,
+        "avg_length_chars": avg_len,
+        "short_descriptions_under_200": short,
+    }
+    severity = "high" if pct_with < 70 else "medium"
+    findings = [
+        _finding(
+            "description_presence", severity, 0.5,
+            evidence=summary,
+            proposed_fix=(
+                f"{missing:,} of {total:,} ASINs ({100-pct_with:.0f}%) have "
+                f"no description. Descriptions are not indexed for search but "
+                f"drive conversion on the PDP. {short:,} descriptions are "
+                f"under 200 chars (thin content)."
+            ),
+        ),
+    ]
+    return {"summary": summary, "findings": findings}
+
+
+def run_buy_box_ownership(cur, workspace_id: str) -> dict:
+    """% of ASINs where operator owns the buy box."""
+    cur.execute(
+        """
+        SELECT
+            COALESCE(ground_truth_fields->>'buy_box_winner', '(none)') AS winner,
+            COUNT(*) AS n
+        FROM asin_metadata
+        WHERE workspace_id = %s
+        GROUP BY winner
+        ORDER BY n DESC
+        """,
+        (workspace_id,),
+    )
+    rows = cur.fetchall()
+    dist = [{"winner": r[0], "count": int(r[1])} for r in rows]
+    total = sum(d["count"] for d in dist)
+
+    # Best guess: workspace's own brand name = the client. Look up in
+    # brand_workspace or fall back to majority winner.
+    likely_owner_pct = 0
+    owner_name = None
+    if dist:
+        # If a single "winner" holds >50%, treat as the operator
+        top = dist[0]
+        if top["winner"] and top["winner"] != "(none)" and \
+           100 * top["count"] / total > 50:
+            owner_name = top["winner"]
+            likely_owner_pct = round(100 * top["count"] / total, 1)
+
+    summary = {
+        "total": total,
+        "distribution": dist[:10],
+        "likely_owner": owner_name,
+        "likely_owner_pct": likely_owner_pct,
+    }
+    severity = "medium" if likely_owner_pct < 80 and total > 0 else "low"
+    findings = [
+        _finding(
+            "buy_box_ownership", severity, 0.3,
+            evidence=summary,
+            proposed_fix=(
+                f"Buy box is held by {owner_name or 'unknown'} on "
+                f"{likely_owner_pct:.0f}% of ASINs. Losses to 3P sellers cost "
+                f"revenue — audit price + FBA vs FBM on the losing ASINs."
+                if likely_owner_pct else
+                "Buy box ownership distribution is fragmented; no single "
+                "seller dominates. Investigate whether 3P sellers are "
+                "undercutting on top-revenue ASINs."
+            ),
+        ),
+    ]
+    return {"summary": summary, "findings": findings}
+
+
+def run_fabric_material_coverage(cur, workspace_id: str) -> dict:
+    """Apparel: % of ASINs with fabric/material populated."""
+    cur.execute(
+        """
+        SELECT
+            COUNT(*) FILTER (WHERE ground_truth_fields ? 'fabric_material'
+                             AND LENGTH(ground_truth_fields->>'fabric_material') > 0) AS filled,
+            COUNT(*) AS total
+        FROM asin_metadata
+        WHERE workspace_id = %s
+        """,
+        (workspace_id,),
+    )
+    r = cur.fetchone()
+    filled = int(r[0] or 0)
+    total = int(r[1] or 0)
+    pct = round(100 * filled / total, 1) if total else 0
+    summary = {"total": total, "filled": filled, "pct_filled": pct}
+    findings = [
+        _finding(
+            "fabric_material_coverage",
+            "low", 0.2,
+            evidence=summary,
+            proposed_fix=(
+                f"{filled:,} of {total:,} ASINs ({pct:.0f}%) have fabric "
+                f"composition set. Amazon requires this for apparel; missing "
+                f"values risk suppression."
+            ),
+        ),
+    ]
+    return {"summary": summary, "findings": findings}
+
+
+# ============================================================
 # Runner
 # ============================================================
 
 ANALYSIS_FUNCS = [
-    ("fill_rate_report",           run_fill_rate_report),
-    ("concentration_pareto",       run_concentration_pareto),
-    ("dead_inventory",             run_dead_inventory),
-    ("cohort_split",               run_cohort_split),
-    ("a_plus_lift",                run_a_plus_lift),
-    ("image_count_dist",           run_image_count_dist),
-    ("bullet_completeness_dist",   run_bullet_completeness_dist),
-    ("title_length_dist",          run_title_length_dist),
+    ("fill_rate_report",              run_fill_rate_report),
+    ("concentration_pareto",          run_concentration_pareto),
+    ("dead_inventory",                run_dead_inventory),
+    ("cohort_split",                  run_cohort_split),
+    ("a_plus_lift",                   run_a_plus_lift),
+    ("image_count_dist",              run_image_count_dist),
+    ("bullet_completeness_dist",      run_bullet_completeness_dist),
+    ("title_length_dist",             run_title_length_dist),
+    # v0.5
+    ("list_price_dist",               run_list_price_dist),
+    ("subcategory_rollup",            run_subcategory_rollup),
+    ("style_family_concentration",    run_style_family_concentration),
+    ("variation_theme_integrity",     run_variation_theme_integrity),
+    ("description_presence",          run_description_presence),
+    ("buy_box_ownership",             run_buy_box_ownership),
+    ("fabric_material_coverage",      run_fabric_material_coverage),
 ]
 
 
