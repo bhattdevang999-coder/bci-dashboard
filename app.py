@@ -19445,6 +19445,81 @@ def catalog_intel_rules():
 # ====================================================================
 
 
+# ====================================================================
+# Catalog Intel v0.7 — Full drilldown (per-ASIN reason tags)
+# ====================================================================
+
+@app.route("/api/catalog-intel/findings/<finding_id>/asins", methods=["GET"])
+def catalog_intel_finding_asins(finding_id):
+    """Return the FULL list of matching ASINs for a finding, each
+    annotated with a `reason_tag` explaining why it matched.
+
+    Re-executes the rule's predicate against current workspace state
+    (not the stale snapshot the finding was written from). If the client
+    uploaded a new snapshot after the finding was computed, drilldown
+    reflects reality, not history.
+
+    Returns:
+      {ok, finding_id, rule_name, workspace_id, asins: [{asin, reason_tag}], count}
+      or {ok: false, error} on failure.
+    """
+    workspace_id = _ci_active_workspace_id()
+    try:
+        from substrate.db import get_pool
+        from substrate.rules_resolver import resolve_full_asins, AGGREGATE_ONLY
+        pool = get_pool()
+        if pool is None:
+            return jsonify({"ok": False, "error": "no db pool"}), 500
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                # Look up finding to get rule_name + confirm workspace
+                cur.execute(
+                    """
+                    SELECT rule_name, workspace_id
+                    FROM catalog_intel_findings
+                    WHERE finding_id = %s
+                    """,
+                    (finding_id,),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return jsonify({"ok": False, "error": "finding not found"}), 404
+                rule_name, finding_ws = row
+                # Prefer the finding's workspace over session workspace — the finding
+                # was written for a specific workspace and drilldown should honor that.
+                target_ws = finding_ws or workspace_id
+                if rule_name in AGGREGATE_ONLY:
+                    return jsonify({
+                        "ok": True,
+                        "finding_id": finding_id,
+                        "rule_name": rule_name,
+                        "workspace_id": target_ws,
+                        "aggregate_only": True,
+                        "asins": [],
+                        "count": 0,
+                        "note": "This rule is aggregate-only — no per-ASIN drilldown available.",
+                    })
+                with conn.cursor() as ac:
+                    asins = resolve_full_asins(ac, rule_name, target_ws) or []
+                return jsonify({
+                    "ok": True,
+                    "finding_id": finding_id,
+                    "rule_name": rule_name,
+                    "workspace_id": target_ws,
+                    "aggregate_only": False,
+                    "asins": asins,
+                    "count": len(asins),
+                })
+    except Exception as exc:
+        print(f"[atlas] catalog-intel/findings/asins failed: {exc}", flush=True)
+        return jsonify({"ok": False, "error": str(exc)[:200]}), 500
+
+
+# ====================================================================
+# End Catalog Intel v0.7 full drilldown
+# ====================================================================
+
+
 if __name__ == "__main__":
     print("NIS Wizard v3 — TLG Amazon Intelligence starting on http://localhost:5000")
     port = int(os.environ.get("PORT", 5000))
