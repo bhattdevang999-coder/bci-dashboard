@@ -872,21 +872,19 @@ async function ciLoadFindings() {
 
       // Drilldown link:
       //  - per-ASIN finding -> "View ASIN →"
-      //  - aggregate with sample_asins list in evidence -> "View N ASINs →"
+      //  - aggregate with a per-ASIN resolver -> "View all affected ASINs →"
+      //    (fetches full list on click via /findings/<id>/asins)
+      //  - aggregate-only rules with no resolver -> no button
       let drill = '';
+      const AGGREGATE_ONLY_RULES = new Set(['fill_rate_report','concentration_pareto','a_plus_lift','subcategory_rollup']);
       if (f.asin) {
         drill = '<button class="ci-drill-btn" onclick="ciDrillToLM([\'' + f.asin + '\'], \'' +
                 ruleName + '\', \'' + f.asin + '\')">' +
                 'View ASIN in Listing Manager →</button>';
-      } else if (Array.isArray(ev.sample_asins) && ev.sample_asins.length > 0) {
-        const n = ev.sample_asins.length;
-        const total = ev.affected_asins || ev.matching_asins || ev.dead_asins ||
-                      ev.orphaned_asins || ev.no_desc_asins || ev.missing_asins || n;
-        const label = (n < total) ? ('View sample ' + n + ' of ' + total + ' affected ASINs →')
-                                  : ('View ' + n + ' affected ASINs →');
-        const payload = JSON.stringify(ev.sample_asins).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-        drill = '<button class="ci-drill-btn" onclick="ciDrillToLM(JSON.parse(this.dataset.asins), \'' +
-                ruleName + '\')" data-asins="' + payload + '">' + label + '</button>';
+      } else if (!AGGREGATE_ONLY_RULES.has(ruleName) && f.finding_id) {
+        // Full drilldown — fetch complete list + reason tags from server
+        drill = '<button class="ci-drill-btn" onclick="ciDrillFullToLM(\'' + f.finding_id + '\', \'' + ruleName + '\', this)">' +
+                'View all affected ASINs (with reasons) →</button>';
       }
 
       // "Show math" expander — renders the rule spec + key numbers
@@ -1165,13 +1163,46 @@ document.addEventListener('keydown', (e) => {
 });
 
 function ciDrillToLM(asins, ruleName, focusAsin) {
-  // Called from Catalog Intel finding drilldown buttons.
+  // Called from per-ASIN Catalog Intel finding drilldown buttons.
   // Delegates to Listing Manager's lmSetFilterAndShow.
   const label = 'Catalog Intel → ' + (ruleName || '').replace(/_/g, ' ');
   if (typeof lmSetFilterAndShow === 'function') {
     lmSetFilterAndShow(asins, label, focusAsin);
   } else {
     console.error('lmSetFilterAndShow not available — is _listing_manager.html loaded?');
+  }
+}
+
+async function ciDrillFullToLM(findingId, ruleName, btn) {
+  // Full drilldown for aggregate findings: fetch complete list + reason tags,
+  // then hand off to Listing Manager with a reason map so each filtered ASIN
+  // shows why it matched.
+  const origText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  try {
+    const r = await fetch('/api/catalog-intel/findings/' + encodeURIComponent(findingId) + '/asins');
+    const d = await r.json();
+    if (!d.ok) {
+      alert('Drilldown failed: ' + (d.error || 'unknown'));
+      return;
+    }
+    if (d.aggregate_only) {
+      alert('This rule is aggregate-only — no per-ASIN drilldown available.');
+      return;
+    }
+    const asins = (d.asins || []).map(x => x.asin);
+    const reasonMap = {};
+    for (const x of (d.asins || [])) reasonMap[x.asin] = x.reason_tag;
+    const label = 'Catalog Intel → ' + (ruleName || '').replace(/_/g, ' ');
+    if (typeof lmSetFilterAndShow === 'function') {
+      lmSetFilterAndShow(asins, label, null, reasonMap);
+    } else {
+      console.error('lmSetFilterAndShow not available');
+    }
+  } catch (e) {
+    alert('Network error: ' + String(e));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = origText; }
   }
 }
 

@@ -413,6 +413,21 @@
 }
 .lm-filter-chip-clear:hover { background: #2E5A3C; color: #F0FDF4; }
 
+/* Reason tag shown next to a filtered ASIN in the tree */
+.lm-tree-reason {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(30, 58, 95, 0.35);
+  border: 1px solid #1E3A5F;
+  color: #7DD3FC;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
 /* ── Listing-Manager topbar (above root) ── */
 .lm-topbar {
   display: flex; align-items: center; gap: 14px;
@@ -862,6 +877,7 @@
 let LM_TREE = null;       // {workspace, families: [{parent, children, variation_axes}]}
 let LM_FILTER_ASINS = null; // Set<string> or null. If set, tree shows only these ASINs.
 let LM_FILTER_LABEL = '';   // human label for the active filter, e.g. "Catalog Intel: dead_inventory"
+let LM_FILTER_REASONS = null; // {asin: reason_tag} — shows the reason next to each filtered ASIN
 let LM_SELECTED_ASIN = null;
 let LM_SELECTED_PARENT = null;
 let LM_ACTIVE_TAB = 'variations';
@@ -925,6 +941,7 @@ async function lmLoadTree() {
 function lmClearFilter() {
   LM_FILTER_ASINS = null;
   LM_FILTER_LABEL = '';
+  LM_FILTER_REASONS = null;
   lmRenderTree();
 }
 
@@ -986,9 +1003,15 @@ function lmRenderTree() {
         titleHint = 'no issues';
       }
       const subLabel = c.asin + ' · ' + (c.color || '—') + ' / ' + (c.size || '—');
-      html += '<div class="lm-tree-node lm-l4' + sel + '" onclick="lmSelectAsin(\'' + c.asin + '\')" title="' + titleHint + '">' +
+      // If a drilldown reason exists for this ASIN, show it as a subtle tag
+      const reason = (filt && LM_FILTER_REASONS) ? LM_FILTER_REASONS[c.asin] : null;
+      const reasonTag = reason
+        ? '<span class="lm-tree-reason">' + reason + '</span>'
+        : '';
+      html += '<div class="lm-tree-node lm-l4' + sel + '" onclick="lmSelectAsin(\'' + c.asin + '\')" title="' + (reason || titleHint) + '">' +
               '<span class="lm-tree-toggle">·</span>' +
               '<span class="lm-tree-label">' + subLabel + '</span>' +
+              reasonTag +
               '<span class="' + dot + ' lm-tree-status">' + dotChar + '</span></div>';
     });
   });
@@ -1001,10 +1024,12 @@ function lmRenderTree() {
   }
 }
 
-// Called from Catalog Intel drilldown. `asins` = Array<string>, `focusAsin` = optional single ASIN to auto-select.
-function lmSetFilterAndShow(asins, label, focusAsin) {
+// Called from Catalog Intel drilldown. `asins` = Array<string>, `focusAsin` = optional single ASIN to auto-select,
+// `reasonMap` = optional {asin: reason_tag} shown next to each filtered ASIN in the tree.
+function lmSetFilterAndShow(asins, label, focusAsin, reasonMap) {
   LM_FILTER_ASINS = new Set(asins || []);
   LM_FILTER_LABEL = label || '';
+  LM_FILTER_REASONS = reasonMap || null;
   // Ensure LM page is visible
   showListingManagerPage();
   // If tree already loaded, apply filter now; otherwise lmLoadTree will call lmRenderTree.
